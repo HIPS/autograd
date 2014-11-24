@@ -49,3 +49,29 @@ plt.plot(x, map(fun, x), x, map(d_fun, x), x, map(dd_fun, x))
 
 <img src="https://github.com/HIPS/FunkyYak/blob/master/examples/sinusoid_taylor.png" width="600">
 
+
+We can take the derivative of the derivative automatically as well, as many times as we like:
+
+```python
+# Define the tanh function
+def tanh(x):
+    return (1.0 - k(np.exp, -x))  / ( 1.0 + k(np.exp, -x))
+
+d_fun = grad(tanh)           # First derivative
+dd_fun = grad(d_fun)         # Second derivative
+ddd_fun = grad(dd_fun)       # Third derivative
+dddd_fun = grad(ddd_fun)     # Fourth derivative
+ddddd_fun = grad(dddd_fun)   # Fifth derivative
+dddddd_fun = grad(ddddd_fun) # Sixth derivative
+
+x = np.linspace(-7, 7, 200)
+plt.plot(x, map(tanh, x),
+         x, map(d_fun, x),
+         x, map(dd_fun, x),
+         x, map(ddd_fun, x),
+         x, map(dddd_fun, x),
+         x, map(ddddd_fun, x),
+         x, map(dddddd_fun, x))
+```
+
+<img src="https://github.com/HIPS/FunkyYak/blob/master/examples/tanh.png" width="600">
