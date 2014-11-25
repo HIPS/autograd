@@ -66,6 +66,7 @@ class Node(object):
     def __neg__(self):         return k(op.neg, self)
     def __pow__(self, power):  return k(op.pow, self, power)
     def __div__(self, other):  return k(op.div, self, other)
+    def __rdiv__(self, other): return k(op.div, other, self)
     def __lt__(self, other):   return self.value < getval(other)
     def __gt__(self, other):   return self.value > getval(other) 
     
@@ -100,7 +101,7 @@ gradfuns[op.add] = [lambda g, x, y : g, lambda g, x, y : g]
 gradfuns[op.mul] = [lambda g, x, y : y * g, lambda g, x, y : x * g]
 gradfuns[op.pow] =  lambda g, x, y : g * y * x ** (y - 1)
 gradfuns[op.sub] = [lambda g, x, y : g, lambda g, x, y : - g]
-gradfuns[op.neg] =  lambda g, x    : - g
+gradfuns[op.neg] = [lambda g, x : - g]
 gradfuns[op.div] = [lambda g, x, y : g / y, lambda g, x, y : - g * x / y**2]
 
 # ----- Trickier ones -----
