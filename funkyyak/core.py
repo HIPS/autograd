@@ -104,8 +104,11 @@ class numpyNode(Node):
         for axis, size in enumerate(self.shape):
             if size is 1:
                 new = k(np.sum, new, axis, keepdims=True)
-
         self.outgrad += new
+
+    def __getitem__(self, idxs):
+        if not isinstance(idxs, tuple): idxs = (idxs,)
+        return k(take, self, idxs)
 
     @property
     def T(self): return k(np.transpose, self)
@@ -134,6 +137,7 @@ gradfuns[np.expand_dims] = lambda g, x, axis : k(np.squeeze, g, axis)
 gradfuns[np.squeeze]     = lambda g, x, axis : k(np.repeat,  g, x.shape[axis], axis)
 gradfuns[np.repeat]      = lambda g, x, axis : k(np.sum, g, axis, keepdims=True)
 gradfuns[np.transpose]   = lambda g, x : k(np.transpose, g)
+
 gradfuns[op.neg] = [lambda g, x : - g]
 gradfuns[op.add] = [lambda g, x, y : g,     lambda g, x, y : g]
 gradfuns[op.mul] = [lambda g, x, y : y * g, lambda g, x, y : x * g]
@@ -169,6 +173,22 @@ def grad_np_dot_B(g, A, B):
     else:
         return g * A
 gradfuns[np.dot] = [grad_np_dot_A, grad_np_dot_B]
+
+# ----- New primitives -----
+
+def take(arr, idxs):
+    return arr[idxs]
+
+def pad_zeros(arr, shape, idxs):
+    # This is very inefficient but introducing mutable types would be messy.
+    A = np.zeros(shape)
+    A[idxs] = arr
+    return A
+
+gradfuns[take] = lambda g, x, idxs : k(pad_zeros, g, x.shape, idxs)
+gradfuns[pad_zeros] = lambda g, x, shape, idxs : k(take, g, idxs)
+
+# ----- Process gradients -----
 
 gradfuns = {k : v if isinstance(v, list) else [v]
             for k, v in gradfuns.iteritems()}

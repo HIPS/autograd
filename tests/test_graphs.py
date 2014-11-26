@@ -42,3 +42,4 @@ def test_hess_vector_prod():
 # Diamond patterns
 # Taking grad again after returning const
 # Empty functions
+# 2nd derivatives with fanout, thinking about the outgrad adder
