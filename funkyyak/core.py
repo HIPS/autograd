@@ -1,18 +1,18 @@
 import operator as op
 import numpy as np
 from functools import partial
+from operator import attrgetter
 
 # ----- Autodiff logic -----
 
 def grad(fun, argnum=0):
     def gradfun(*args):
-        args = list(args)
         tape = CalculationTape(highest_tape(args))
         start_node = new_node(args[argnum], tape)
+        args = list(args)
         args[argnum] = start_node
         ans = fun(*args)
-        if not isnode(ans): return 0.0
-        ans.outgrad = 1.0
+        if isnode(ans): ans.outgrad = 1.0
         for step_back in tape[::-1]:
             step_back()
         return start_node.outgrad
@@ -21,20 +21,18 @@ def grad(fun, argnum=0):
 
 def kyapply(fun, *args, **kwargs):
     tape = highest_tape(args)
-    if tape is not None:
+    if tape is None:
+        return fun(*args, **kwargs)
+    else:
         is_parent = lambda x : isnode(x) and x.tape is tape
         arg_vals = [arg.value if is_parent(arg) else arg for arg in args]
-        node = new_node(kyapply(fun, *arg_vals, **kwargs), tape)
+        cur_node = new_node(kyapply(fun, *arg_vals, **kwargs), tape)
+        def send_grad_back(gradfun, parent):
+            parent.add_outgrad(gradfun(cur_node.outgrad, *arg_vals, **kwargs))
         for i, arg in enumerate(args):
             if not is_parent(arg): continue
-            tape.append(partial(send_grad_back, node, gradfuns[fun][i],
-                                arg, arg_vals, kwargs))
-        return node
-    else:
-        return fun(*args, **kwargs)
-
-def send_grad_back(node, gradfun, parent, args, kwargs):
-    parent.outgrad += gradfun(node.outgrad, *args, **kwargs)
+            tape.append(partial(send_grad_back, gradfuns[fun][i], arg))
+        return cur_node
 
 class CalculationTape(list):
     def __init__(self, prev_tape):
@@ -43,15 +41,14 @@ class CalculationTape(list):
 
 def highest_tape(args):
     tapes = [node.tape for node in filter(isnode, args)]
-    return max(tapes, key=lambda x : x.priority) if tapes else None
-
-isnode = lambda x : isinstance(x, Node)
-getval = lambda x : getval(x.value) if isnode(x) else x
+    return max(tapes, key=attrgetter('priority')) if tapes else None
 
 # ----- Nodes and subclasses for operator overloading -----
 
 k = kyapply
-isarrayish = lambda x : isinstance(x, (np.ndarray, numpyNode))
+getval = lambda x : getval(x.value) if isnode(x) else x
+isnode = lambda x : isinstance(x, Node)
+isarrayish = lambda x : isinstance(getval(x), np.ndarray)
 
 def new_node(value, tape):
     if isarrayish(value):
@@ -65,6 +62,10 @@ class Node(object):
         self.tape = tape
         self.value = value
         self.outgrad = 0.0
+
+    def add_outgrad(self, new):
+        new = np.sum(new) if isarrayish(new) else new
+        self.outgrad += new
 
     # Ensure precedence of Node's __rmul__ over numpy's __mul__
     __array_priority__ = 100.0
@@ -95,6 +96,16 @@ class Node(object):
 class numpyNode(Node):
     def __init__(self, *args):
         super(numpyNode, self).__init__(*args)
+
+    def add_outgrad(self, new):
+        # Handle broadcasting
+        while new.ndim > self.ndim:
+            new = k(np.sum, new, 0)
+        for axis, size in enumerate(self.shape):
+            if size is 1:
+                new = k(np.sum, new, axis, keepdims=True)
+
+        self.outgrad += new
 
     @property
     def T(self): return k(np.transpose, self)
@@ -159,27 +170,5 @@ def grad_np_dot_B(g, A, B):
         return g * A
 gradfuns[np.dot] = [grad_np_dot_A, grad_np_dot_B]
 
-# ----- Process gradients -----
-
-def make_unbroadcasting(fun, i):
-    def unbroadcasting_fun(g, *args):
-        new_x = fun(g, *args)
-        old_x = args[i]
-        if isarrayish(new_x) and isarrayish(old_x):
-            while new_x.ndim > old_x.ndim:
-                new_x = k(np.sum, new_x, 0)
-            for axis, size in enumerate(old_x.shape):
-                if size is 1:
-                    new_x = k(np.sum, new_x, axis, keepdims=True)
-        elif isarrayish(new_x):
-            new_x = k(np.sum, new_x)
-        return new_x
-
-    return unbroadcasting_fun
-
 gradfuns = {k : v if isinstance(v, list) else [v]
             for k, v in gradfuns.iteritems()}
-
-for fun in [op.add, op.mul, op.sub, op.div, op.pow]:
-    for i, gradfun in enumerate(gradfuns[fun]):
-        gradfuns[fun][i] = make_unbroadcasting(gradfun, i)
