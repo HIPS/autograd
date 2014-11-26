@@ -14,7 +14,7 @@ def test_abs():
     check_grads(d_fun, -1.1)
 
 def test_sin():
-    fun = lambda x : np.sin(x)
+    fun = lambda x : k(np.sin, x)
     d_fun = grad(fun)
     check_grads(fun, npr.randn())
     check_grads(d_fun, npr.randn())
@@ -28,13 +28,13 @@ def test_sign():
     check_grads(d_fun, -1.1)
 
 def test_exp():
-    fun = lambda x : np.exp(x)
+    fun = lambda x : k(np.exp, x)
     d_fun = grad(fun)
     check_grads(fun, npr.randn())
     check_grads(d_fun, npr.randn())
 
 def test_log():
-    fun = lambda x : np.log(x)
+    fun = lambda x : k(np.log, x)
     d_fun = grad(fun)
     print npr.randn()
     print npr.randn()

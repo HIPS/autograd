@@ -1,1 +1,1 @@
-from core import kyapply, grad
+from core import kyapply, grad, numpy_wrapper

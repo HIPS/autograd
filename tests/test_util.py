@@ -1,6 +1,7 @@
 import numpy as np
 import itertools as it
-from funkyyak import grad
+from funkyyak import grad, kyapply, numpy_wrapper as kp
+k = kyapply
 
 def nd(fun, args, argnum):
     args = list(args)
@@ -34,4 +35,4 @@ def check_grads(fun, *args):
                 i, args, A - B)
 
 def to_scalar(x):
-    return np.sum(np.sin(x))
+    return kp.sum(kp.sin(x))

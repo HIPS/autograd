@@ -57,6 +57,5 @@ def test_vector_slice():
     check_grads(fun, A)
     check_grads(d_fun, A)
 
-
 # TODO:
 # reshape, squeeze, transpose, getitem

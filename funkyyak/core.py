@@ -7,7 +7,7 @@ from operator import attrgetter
 
 def grad(fun, argnum=0):
     def gradfun(*args):
-        tape = CalculationTape(highest_tape(args))
+        tape = CalculationTape(top_tape(args))
         start_node = new_node(args[argnum], tape)
         args = list(args)
         args[argnum] = start_node
@@ -20,7 +20,7 @@ def grad(fun, argnum=0):
     return gradfun
 
 def kyapply(fun, *args, **kwargs):
-    tape = highest_tape(args)
+    tape = top_tape(args)
     if tape is None:
         return fun(*args, **kwargs)
     else:
@@ -39,7 +39,7 @@ class CalculationTape(list):
         super(CalculationTape, self).__init__([])
         self.priority = 1 if prev_tape is None else prev_tape.priority + 1
 
-def highest_tape(args):
+def top_tape(args):
     tapes = [node.tape for node in filter(isnode, args)]
     return max(tapes, key=attrgetter('priority')) if tapes else None
 
@@ -64,19 +64,11 @@ class Node(object):
         self.outgrad = 0.0
 
     def add_outgrad(self, new):
-        new = np.sum(new) if isarrayish(new) else new
+        new = k(np.sum, new) if isarrayish(new) else new
         self.outgrad += new
 
     # Ensure precedence of Node's __rmul__ over numpy's __mul__
     __array_priority__ = 100.0
-
-    # Numpy overloads. A better mechanism, __numpy_ufunc__, is expected in numpy v1.10
-    def dot(self, other): return k(np.dot, self, other)
-    def sum(self, axis=None, **kwargs) : return k(np.sum, self, axis=axis)
-    def exp(self): return k(np.exp, self)
-    def log(self): return k(np.log, self)
-    def sin(self): return k(np.sin, self)
-    def cos(self): return k(np.cos, self)
 
     # General operator overloads
     def __add__(self, other):  return k(op.add, self, other)
@@ -122,6 +114,13 @@ class dictNode(Node):
 
 class listNode(Node):
     pass
+
+class numpy_wrapper_maker(object):
+    # A bit of a hack, but this lets you use numpy functions in the
+    # more familiar way instead of k(fun, *args).
+    def __getattr__(self, function_name):
+        return partial(k, getattr(np, function_name))
+numpy_wrapper = numpy_wrapper_maker()
 
 # ----- Easy gradients -----
 
