@@ -36,8 +36,6 @@ def test_exp():
 def test_log():
     fun = lambda x : k(np.log, x)
     d_fun = grad(fun)
-    print npr.randn()
-    print npr.randn()
     check_grads(fun, abs(npr.randn()))
     check_grads(d_fun, abs(npr.randn()))
 

@@ -8,7 +8,7 @@ npr.seed(1)
 def arg_pairs():
     scalar = 2.0
     vector = npr.randn(6)
-    mat = npr.randn(12, 6)
+    mat = npr.randn(7, 6)
     mat2 = npr.randn(1, 6)
     allargs = [scalar, vector, mat, mat2]
     for arg1, arg2 in it.product(allargs, allargs):
