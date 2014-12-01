@@ -16,6 +16,7 @@ def test_getter():
     input_dict = {'item_1' : npr.randn(5, 6),
                   'item_2' : npr.randn(4, 3),
                   'item_X' : npr.randn(2, 4)}
+
     result = d_fun(input_dict)
     assert np.allclose(result['item_1'], np.ones((5, 6)))
     assert np.allclose(result['item_2'], 2 * np.ones((4, 3)))
@@ -31,10 +32,12 @@ def test_grads():
         g = grad(fun)(input_dict)
         A = k(np.sum, g['item_1'])
         B = k(np.sum, k(np.sin, g['item_1']))
-        return A + B
+        C = k(np.sum, k(np.sin, g['item_2']))
+        return A + B + C
 
     input_dict = {'item_1' : npr.randn(5, 6),
                   'item_2' : npr.randn(4, 3),
                   'item_X' : npr.randn(2, 4)}
+
     check_grads(fun, input_dict)
     check_grads(d_fun, input_dict)
