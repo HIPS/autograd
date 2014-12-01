@@ -134,8 +134,13 @@ gradfuns[np.exp]  = [lambda g, x : k(np.exp, x) * g]
 gradfuns[np.log]  = [lambda g, x : g / x]
 gradfuns[np.sin]  = [lambda g, x : g * k(np.cos, x)]
 gradfuns[np.cos]  = [lambda g, x : - g * k(np.sin, x)]
+gradfuns[np.tan]  = [lambda g, x : g / k(np.cos, x) **2]
+gradfuns[np.sinh] = [lambda g, x : g * k(np.cosh, x)]
+gradfuns[np.cosh] = [lambda g, x : g * k(np.sinh, x)]
+gradfuns[np.tanh] = [lambda g, x : g / k(np.cosh, x) **2]
 gradfuns[np.sign] = [lambda g, x : 0.0]
 gradfuns[np.full] = [None, lambda g, shape, fill_value :  k(np.sum, g)]
+gradfuns[np.reshape]     = [lambda g, x, shape: k(np.reshape, g, x.shape)] 
 gradfuns[np.expand_dims] = [lambda g, x, axis : k(np.squeeze, g, axis)]
 gradfuns[np.squeeze]     = [lambda g, x, axis : k(np.repeat,  g, x.shape[axis], axis)]
 gradfuns[np.repeat]      = [lambda g, x, axis : k(np.sum, g, axis, keepdims=True)]
@@ -159,6 +164,7 @@ def grad_np_sum(g, x, axis=None, keepdims=False):
         g = k(np.expand_dims, g, axis)
     return k(np.repeat, g, x.shape[axis], axis)
 gradfuns[np.sum] = [grad_np_sum]
+gradfuns[np.max]  = [lambda g, x, *args, **kwargs : zeros_like(g)]
 
 def grad_np_dot_A(g, A, B):
     if B.ndim is 2:

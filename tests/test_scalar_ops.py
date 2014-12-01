@@ -6,7 +6,7 @@ k = kyapply
 npr.seed(1)
 
 def test_abs():
-    fun = lambda x : k(np.abs, x)
+    fun = lambda x : 3.0 * k(np.abs, x)
     d_fun = grad(fun)
     check_grads(fun, 1.1)
     check_grads(fun, -1.1)
@@ -14,13 +14,13 @@ def test_abs():
     check_grads(d_fun, -1.1)
 
 def test_sin():
-    fun = lambda x : k(np.sin, x)
+    fun = lambda x : 3.0 * k(np.sin, x)
     d_fun = grad(fun)
     check_grads(fun, npr.randn())
     check_grads(d_fun, npr.randn())
 
 def test_sign():
-    fun = lambda x : k(np.sign, x)
+    fun = lambda x : 3.0 * k(np.sign, x)
     d_fun = grad(fun)
     check_grads(fun, 1.1)
     check_grads(fun, -1.1)
@@ -28,19 +28,49 @@ def test_sign():
     check_grads(d_fun, -1.1)
 
 def test_exp():
-    fun = lambda x : k(np.exp, x)
+    fun = lambda x : 3.0 * k(np.exp, x)
     d_fun = grad(fun)
     check_grads(fun, npr.randn())
     check_grads(d_fun, npr.randn())
 
 def test_log():
-    fun = lambda x : k(np.log, x)
+    fun = lambda x : 3.0 * k(np.log, x)
     d_fun = grad(fun)
     check_grads(fun, abs(npr.randn()))
     check_grads(d_fun, abs(npr.randn()))
 
 def test_neg():
-    fun = lambda x : - x
+    fun = lambda x : 3.0 * - x
+    d_fun = grad(fun)
+    check_grads(fun, npr.randn())
+    check_grads(d_fun, npr.randn())
+
+def test_cos():
+    fun = lambda x : 3.0 * k(np.cos, x)
+    d_fun = grad(fun)
+    check_grads(fun, npr.randn())
+    check_grads(d_fun, npr.randn())
+
+def test_tan():
+    fun = lambda x : 3.0 * k(np.tan, x)
+    d_fun = grad(fun)
+    check_grads(fun, npr.randn())
+    check_grads(d_fun, npr.randn())
+
+def test_cosh():
+    fun = lambda x : 3.0 * k(np.cosh, x)
+    d_fun = grad(fun)
+    check_grads(fun, npr.randn())
+    check_grads(d_fun, npr.randn())
+
+def test_sinh():
+    fun = lambda x : 3.0 * k(np.sinh, x)
+    d_fun = grad(fun)
+    check_grads(fun, npr.randn())
+    check_grads(d_fun, npr.randn())
+
+def test_tanh():
+    fun = lambda x : 3.0 * k(np.tanh, x)
     d_fun = grad(fun)
     check_grads(fun, npr.randn())
     check_grads(d_fun, npr.randn())
