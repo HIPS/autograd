@@ -90,6 +90,8 @@ class Node(object):
     def shape(self): return self.value.shape
     @property
     def ndim(self): return self.value.ndim
+    @property
+    def size(self): return self.value.size
 
     def __getitem__(self, idx): return k(take, self, idx)
     def __add__(self, other):   return k(op.add, self, other)
