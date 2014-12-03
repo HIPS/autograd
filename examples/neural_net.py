@@ -45,7 +45,7 @@ def make_nn_funs(layer_sizes, L2_reg):
         return cur_units - logsumexp(cur_units, axis=1)
 
     def loss(W_vect, X, T):
-        log_prior = L2_reg * np.dot(W_vect, W_vect)
+        log_prior = -L2_reg * np.dot(W_vect, W_vect)
         log_lik = np.sum(predictions(W_vect, X) * T) 
         return - log_prior - log_lik
 

@@ -1,12 +1,11 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-from funkyyak import kyapply, grad # These are the only two functions exposed.
-k = kyapply # kyapply(fun, *args) applies `fun` to `*args`. `k` is shorthand.
+from funkyyak import grad, numpy_wrapper as kp
 
 # Define a function capable of taking `Node` objects
 def tanh(x):
-    return (1.0 - k(np.exp, -x))  / ( 1.0 + k(np.exp, -x))
+    return (1.0 - kp.exp(-x))  / ( 1.0 + kp.exp(-x))
 
 d_fun = grad(tanh)  # First derivative
 dd_fun = grad(d_fun) # Second derivative
