@@ -33,8 +33,9 @@ def kyapply(fun, *args, **kwargs):
         arg_vals = [arg.value if tape.hasmember(arg) else arg for arg in args]
         result = kyapply(fun, *arg_vals, **kwargs)
         parent_ops = [(gradfuns[fun][i], parent)
-                      for i, parent in enumerate(args) if tape.hasmember(parent)]
-        return Node(result, tape, parent_ops, arg_vals, kwargs)
+                      for i, parent in enumerate(args) if tape.hasmember(parent)
+                      and gradfuns[fun][i] is not None]
+        return Node(result, tape, parent_ops, arg_vals, kwargs, fun)
 k = kyapply
 
 class CalculationTape(list):
@@ -50,8 +51,8 @@ def top_tape(args):
     return max(tapes, key=attrgetter('priority')) if tapes else None
 
 class Node(object):
-    __slots__ = ['value', 'tape', 'parent_ops', 'args', 'kwargs', 'outgrads']
-    def __init__(self, value, tape, parent_ops=[], args=(), kwargs={}):
+    __slots__ = ['value', 'tape', 'parent_ops', 'args', 'kwargs', 'outgrads', 'fun']
+    def __init__(self, value, tape, parent_ops=[], args=(), kwargs={}, fun=None):
         if not isinstance(value, (Node, float, np.ndarray, dict, Setter)):
             raise TypeError("Can't differentiate wrt {0}".format(type(value)))
         self.value = value
@@ -61,6 +62,7 @@ class Node(object):
         self.kwargs = kwargs
         self.parent_ops = parent_ops
         self.outgrads = []
+        self.fun = fun
 
     def send_upstream(self):
         if self.outgrads:
@@ -118,6 +120,8 @@ def zeros_like(x):
         return np.zeros(x.shape)
     elif isinstance(x, dict):
         return {k : zeros_like(v) for k, v in x.iteritems()}
+    else:
+        raise TypeError("Can't produce zeros like {0}".format(type(x)))
 
 class numpy_wrapper_maker(object):
     # A bit of a hack, but this lets you use numpy functions in the
@@ -138,12 +142,12 @@ gradfuns[np.tan]  = [lambda g, x : g / k(np.cos, x) **2]
 gradfuns[np.sinh] = [lambda g, x : g * k(np.cosh, x)]
 gradfuns[np.cosh] = [lambda g, x : g * k(np.sinh, x)]
 gradfuns[np.tanh] = [lambda g, x : g / k(np.cosh, x) **2]
-gradfuns[np.sign] = [lambda g, x : 0.0]
+gradfuns[np.sign] = [None]
 gradfuns[np.full] = [None, lambda g, shape, fill_value :  k(np.sum, g)]
 gradfuns[np.reshape]     = [lambda g, x, shape: k(np.reshape, g, x.shape)] 
 gradfuns[np.expand_dims] = [lambda g, x, axis : k(np.squeeze, g, axis)]
 gradfuns[np.squeeze]     = [lambda g, x, axis : k(np.repeat,  g, x.shape[axis], axis)]
-gradfuns[np.repeat]      = [lambda g, x, axis : k(np.sum, g, axis, keepdims=True)]
+gradfuns[np.repeat]      = [lambda g, x, shape, axis : k(np.sum, g, axis, keepdims=True)]
 gradfuns[np.transpose]   = [lambda g, x : k(np.transpose, g)]
 gradfuns[op.neg] = [lambda g, x : - g]
 gradfuns[op.add] = [lambda g, x, y : g,     lambda g, x, y : g]
@@ -164,7 +168,11 @@ def grad_np_sum(g, x, axis=None, keepdims=False):
         g = k(np.expand_dims, g, axis)
     return k(np.repeat, g, x.shape[axis], axis)
 gradfuns[np.sum] = [grad_np_sum]
-gradfuns[np.max]  = [lambda g, x, *args, **kwargs : zeros_like(g)]
+
+def grad_np_max(g, x):
+    idxs = np.argmax(getval(x))
+    return k(untake, g, np.unravel_index(idxs, x.shape))
+gradfuns[np.max] = [grad_np_max]
 
 def grad_np_dot_A(g, A, B):
     if B.ndim is 2:
