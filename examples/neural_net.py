@@ -27,7 +27,7 @@ def make_batches(N_total, N_batch):
     return batches
 
 def logsumexp(X, axis):
-    max_X = np.max(X, axis=axis, keepdims=True)
+    max_X = np.max(X)
     return max_X + np.log(np.sum(np.exp(X - max_X), axis=axis, keepdims=True))
 
 def make_nn_funs(layer_sizes, L2_reg):
@@ -56,12 +56,12 @@ def make_nn_funs(layer_sizes, L2_reg):
 
 if __name__ == '__main__':
     # Network parameters
-    layer_sizes = [784, 100, 50, 10]
+    layer_sizes = [784, 200, 100, 10]
     L2_reg = 1.0
 
     # Training parameters
     param_scale = 0.1
-    learning_rate = 1e-4
+    learning_rate = 1e-3
     momentum = 0.9
     batch_size = 256
     num_epochs = 50

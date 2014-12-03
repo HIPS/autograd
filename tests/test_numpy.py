@@ -22,6 +22,13 @@ def test_dot():
     check_grads(fun, vect1, mat1)
     check_grads(fun, vect2, vect3)
 
+def test_max():
+    def fun(x): return to_scalar(k(np.max, x))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    mat = npr.randn(10, 11)
+    check_grads(fun, mat)
+    check_grads(d_fun, mat)
+
 def test_index_ints():
     A = npr.randn(5, 6, 4)
     def fun(x): return to_scalar(x[3, 0, 1])
@@ -53,6 +60,26 @@ def test_index_mixed():
 def test_vector_slice():
     A = npr.randn(5)
     def fun(x): return to_scalar(x[2:4])
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    check_grads(fun, A)
+    check_grads(d_fun, A)
+
+def test_index_slice_fanout():
+    A = npr.randn(5, 6, 4)
+    def fun(x):
+        y = x[::-1, 2:4, :]
+        z = x[::-1, 3:5, :]
+        return to_scalar(y + z)
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    check_grads(fun, A)
+    check_grads(d_fun, A)
+
+def test_index_multiple_slices():
+    A = npr.randn(7)
+    def fun(x):
+        y = x[2:6]
+        z = y[1:3]
+        return to_scalar(z)
     d_fun = lambda x : to_scalar(grad(fun)(x))
     check_grads(fun, A)
     check_grads(d_fun, A)
