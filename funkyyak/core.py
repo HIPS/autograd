@@ -127,7 +127,11 @@ class numpy_wrapper_maker(object):
     # A bit of a hack, but this lets you use numpy functions in the
     # more familiar way instead of k(fun, *args).
     def __getattr__(self, function_name):
-        return partial(k, getattr(np, function_name))
+        attr = getattr(np, function_name)
+        if attr in gradfuns:
+            return partial(k, attr)
+        else:
+            return attr
 numpy_wrapper = numpy_wrapper_maker()
 
 # ----- Easy gradients -----
@@ -142,6 +146,7 @@ gradfuns[np.tan]  = [lambda g, x : g / k(np.cos, x) **2]
 gradfuns[np.sinh] = [lambda g, x : g * k(np.cosh, x)]
 gradfuns[np.cosh] = [lambda g, x : g * k(np.sinh, x)]
 gradfuns[np.tanh] = [lambda g, x : g / k(np.cosh, x) **2]
+gradfuns[np.square] = [lambda g, x : g * 2 * x]
 gradfuns[np.sign] = [None]
 gradfuns[np.full] = [None, lambda g, shape, fill_value :  k(np.sum, g)]
 gradfuns[np.reshape]     = [lambda g, x, shape: k(np.reshape, g, x.shape)] 
