@@ -84,5 +84,19 @@ def test_index_multiple_slices():
     check_grads(fun, A)
     check_grads(d_fun, A)
 
+def test_reshape_method():
+    A = npr.randn(5, 6, 4)
+    def fun(x): return to_scalar(x.reshape((5 * 4, 6)))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    check_grads(fun, A)
+    check_grads(d_fun, A)
+
+def test_reshape_call():
+    A = npr.randn(5, 6, 4)
+    def fun(x): return to_scalar(kp.reshape(x, (5 * 4, 6)))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    check_grads(fun, A)
+    check_grads(d_fun, A)
+
 # TODO:
-# reshape, squeeze, transpose, getitem
+# squeeze, transpose, getitem

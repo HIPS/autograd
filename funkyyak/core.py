@@ -84,6 +84,10 @@ class Node(object):
     __array_priority__ = 100.0
 
     # Operator overloads and familiar methods
+    def reshape(self, shape, order=None):
+        return k(np.reshape, self, shape, order=order)
+    def squeeze(self, axis=None):
+        return k(np.squeeze, self, axis=axis)
     @property
     def T(self): return k(np.transpose, self)
     @property
@@ -151,7 +155,7 @@ gradfuns[np.tanh] = [lambda g, x : g / k(np.cosh, x) **2]
 gradfuns[np.square] = [lambda g, x : g * 2 * x]
 gradfuns[np.sign] = [None]
 gradfuns[np.full] = [None, lambda g, shape, fill_value :  k(np.sum, g)]
-gradfuns[np.reshape]     = [lambda g, x, shape: k(np.reshape, g, x.shape)] 
+gradfuns[np.reshape]     = [lambda g, x, shape, order=None: k(np.reshape, g, x.shape, order=order)]
 gradfuns[np.expand_dims] = [lambda g, x, axis : k(np.squeeze, g, axis)]
 gradfuns[np.squeeze]     = [lambda g, x, axis : k(np.repeat,  g, x.shape[axis], axis)]
 gradfuns[np.repeat]      = [lambda g, x, shape, axis : k(np.sum, g, axis, keepdims=True)]
