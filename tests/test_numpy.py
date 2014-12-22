@@ -1,7 +1,7 @@
 import numpy as np
 import numpy.random as npr
 from test_util import *
-from funkyyak import grad, kyapply
+from funkyyak import grad, kyapply, kylist
 k = kyapply
 npr.seed(1)
 
@@ -94,6 +94,22 @@ def test_reshape_method():
 def test_reshape_call():
     A = npr.randn(5, 6, 4)
     def fun(x): return to_scalar(kp.reshape(x, (5 * 4, 6)))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    check_grads(fun, A)
+    check_grads(d_fun, A)
+
+def test_concatenate_axis_0():
+    A = npr.randn(5, 6, 4)
+    B = npr.randn(5, 6, 4)
+    def fun(x): return to_scalar(kp.concatenate(kylist(B, x, B)))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    check_grads(fun, A)
+    check_grads(d_fun, A)
+
+def test_concatenate_axis_1():
+    A = npr.randn(5, 6, 4)
+    B = npr.randn(5, 6, 4)
+    def fun(x): return to_scalar(kp.concatenate(kylist(B, x, B), axis=1))
     d_fun = lambda x : to_scalar(grad(fun)(x))
     check_grads(fun, A)
     check_grads(d_fun, A)

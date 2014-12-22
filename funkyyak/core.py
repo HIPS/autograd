@@ -53,7 +53,7 @@ def top_tape(args):
 class Node(object):
     __slots__ = ['value', 'tape', 'parent_ops', 'args', 'kwargs', 'outgrads', 'fun']
     def __init__(self, value, tape, parent_ops=[], args=(), kwargs={}, fun=None):
-        if not isinstance(value, (Node, float, np.ndarray, dict, Setter)):
+        if not isinstance(value, (Node, float, np.ndarray, dict, list, Setter)):
             raise TypeError("Can't differentiate wrt {0}".format(type(value)))
         self.value = value
         self.tape = tape
@@ -111,6 +111,7 @@ class Node(object):
     def __rdiv__(self, other):  return k(op.div, other, self)
     def __lt__(self, other):    return getval(self) < getval(other)
     def __gt__(self, other):    return getval(self) > getval(other) 
+    def __len__(self):          return len(getval(self))
 
 # ----- Helper functions -----
 
@@ -126,6 +127,8 @@ def zeros_like(x):
         return np.zeros(x.shape)
     elif isinstance(x, dict):
         return {k : zeros_like(v) for k, v in x.iteritems()}
+    elif isinstance(x, list):
+        return [zeros_like(v) for v in x]
     else:
         raise TypeError("Can't produce zeros like {0}".format(type(x)))
 
@@ -201,6 +204,13 @@ def grad_np_dot_B(g, A, B):
         return g * A
 gradfuns[np.dot] = [grad_np_dot_A, grad_np_dot_B]
 
+def grad_np_concatenate(g, arr_list, axis=0):
+    sizes = [a.shape[axis] for a in getval(arr_list)[:-1]]
+    idxs = np.cumsum(sizes)
+    return k(np.split, g, idxs, axis=axis)
+gradfuns[np.concatenate] = [grad_np_concatenate]
+gradfuns[np.split] = [lambda g, A, idxs, axis=0 : k(np.concatenate, g, axis=axis)]
+
 # ----- New primitives -----
 
 Setter = namedtuple('Setter', ('idx', 'val'))
@@ -217,6 +227,17 @@ def take(A, idx):   return A[idx]
 def untake(x, idx): return Setter(idx, x)
 gradfuns[take]   = [lambda g, x, idx : k(untake, g, idx)]
 gradfuns[untake] = [lambda g, x, idx : k(take, g, idx)]
+
+class ArgnumGrad(object):
+    def __init__(self, fun_with_argnum):
+        self.fun = fun_with_argnum
+    def __getitem__(self, argnum):
+        return partial(self.fun, argnum)
+
+def make_list(*args):
+    return list(args)
+gradfuns[make_list] = ArgnumGrad(lambda argnum, g, *args : g[argnum])
+kylist = partial(k, make_list)
 
 # ----- Process gradients -----
 

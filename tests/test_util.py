@@ -19,7 +19,9 @@ def unary_nd(f, x):
         return tuple([unary_nd(indexed_function(f, list(x), i), x[i])
                       for i in range(len(x))])
     elif isinstance(x, dict):
-        return {k : unary_nd(indexed_function(f, x, k), x[k]) for k in x}
+        return {k : unary_nd(indexed_function(f, x, k), v) for k, v in x.iteritems()}
+    elif isinstance(x, list):
+        return [unary_nd(indexed_function(f, x, i), v) for i, v in enumerate(x)]
     else:
         return (f(x + eps/2) - f(x - eps/2)) / eps
 
