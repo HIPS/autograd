@@ -1,12 +1,11 @@
 import numpy as np
 import numpy.random as npr
 from test_util import *
-from funkyyak import grad, kyapply
-k = kyapply
+from funkyyak import grad
 npr.seed(1)
 
 def test_grad_fanout():
-    fun = lambda x : k(np.sin, k(np.sin, x) + k(np.sin, x))
+    fun = lambda x : np.sin(np.sin(x) + np.sin(x))
     df = grad(fun)
     check_grads(fun, npr.randn())
     check_grads(df, npr.rand())
@@ -27,10 +26,10 @@ def test_hess_vector_prod():
     npr.seed(1)
     randv = npr.randn(10)
     def fun(x):
-        return k(np.sin, k(np.dot, x, randv))
+        return np.sin(np.dot(x, randv))
     df = grad(fun)
     def vector_product(x, v):
-        return k(np.sin, k(np.dot, v, df(x)))
+        return np.sin(np.dot(v, df(x)))
     ddf = grad(vector_product)
     A = npr.randn(10)
     B = npr.randn(10)

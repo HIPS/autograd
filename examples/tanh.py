@@ -1,11 +1,11 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-from funkyyak import grad, numpy_wrapper as kp
+from funkyyak import grad
 
 # Define a function capable of taking `Node` objects
 def tanh(x):
-    return (1.0 - kp.exp(-x))  / ( 1.0 + kp.exp(-x))
+    return (1.0 - np.exp(-x))  / ( 1.0 + np.exp(-x))
 
 d_fun = grad(tanh)  # First derivative
 dd_fun = grad(d_fun) # Second derivative

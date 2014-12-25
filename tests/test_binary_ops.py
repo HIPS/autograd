@@ -1,8 +1,7 @@
 import numpy as np
 import numpy.random as npr
 from test_util import *
-from funkyyak import grad, kyapply
-k = kyapply
+from funkyyak import grad
 npr.seed(1)
 
 def arg_pairs():

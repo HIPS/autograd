@@ -1,12 +1,11 @@
 import numpy as np
 import numpy.random as npr
 from test_util import *
-from funkyyak import grad, kyapply, kylist
-k = kyapply
+from funkyyak import grad, kylist
 npr.seed(1)
 
 def test_dot():
-    def fun(x, y): return to_scalar(k(np.dot, x, y))
+    def fun(x, y): return to_scalar(np.dot(x, y))
 
     df_0 = grad(fun, argnum=0)
     df_1 = grad(fun, argnum=1)
@@ -23,7 +22,7 @@ def test_dot():
     check_grads(fun, vect2, vect3)
 
 def test_max():
-    def fun(x): return to_scalar(k(np.max, x))
+    def fun(x): return to_scalar(np.max(x))
     d_fun = lambda x : to_scalar(grad(fun)(x))
     mat = npr.randn(10, 11)
     check_grads(fun, mat)
@@ -93,7 +92,7 @@ def test_reshape_method():
 
 def test_reshape_call():
     A = npr.randn(5, 6, 4)
-    def fun(x): return to_scalar(kp.reshape(x, (5 * 4, 6)))
+    def fun(x): return to_scalar(np.reshape(x, (5 * 4, 6)))
     d_fun = lambda x : to_scalar(grad(fun)(x))
     check_grads(fun, A)
     check_grads(d_fun, A)
@@ -101,7 +100,7 @@ def test_reshape_call():
 def test_concatenate_axis_0():
     A = npr.randn(5, 6, 4)
     B = npr.randn(5, 6, 4)
-    def fun(x): return to_scalar(kp.concatenate(kylist(B, x, B)))
+    def fun(x): return to_scalar(np.concatenate(kylist(B, x, B)))
     d_fun = lambda x : to_scalar(grad(fun)(x))
     check_grads(fun, A)
     check_grads(d_fun, A)
@@ -109,7 +108,7 @@ def test_concatenate_axis_0():
 def test_concatenate_axis_1():
     A = npr.randn(5, 6, 4)
     B = npr.randn(5, 6, 4)
-    def fun(x): return to_scalar(kp.concatenate(kylist(B, x, B), axis=1))
+    def fun(x): return to_scalar(np.concatenate(kylist(B, x, B), axis=1))
     d_fun = lambda x : to_scalar(grad(fun)(x))
     check_grads(fun, A)
     check_grads(d_fun, A)

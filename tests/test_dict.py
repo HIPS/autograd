@@ -1,15 +1,14 @@
 import numpy as np
 import numpy.random as npr
 from test_util import *
-from funkyyak import grad, kyapply
-k = kyapply
+from funkyyak import grad
 npr.seed(1)
 
 def test_getter():
     def fun(input_dict):
-        A = k(np.sum, input_dict['item_1'])
-        B = k(np.sum, input_dict['item_2'])
-        C = k(np.sum, input_dict['item_2'])
+        A = np.sum(input_dict['item_1'])
+        B = np.sum(input_dict['item_2'])
+        C = np.sum(input_dict['item_2'])
         return A + B + C
 
     d_fun = grad(fun)
@@ -24,15 +23,15 @@ def test_getter():
 
 def test_grads():
     def fun(input_dict):
-        A = k(np.sum, k(np.sin, input_dict['item_1']))
-        B = k(np.sum, k(np.cos, input_dict['item_2']))
+        A = np.sum(np.sin(input_dict['item_1']))
+        B = np.sum(np.cos(input_dict['item_2']))
         return A + B
 
     def d_fun(input_dict):
         g = grad(fun)(input_dict)
-        A = k(np.sum, g['item_1'])
-        B = k(np.sum, k(np.sin, g['item_1']))
-        C = k(np.sum, k(np.sin, g['item_2']))
+        A = np.sum(g['item_1'])
+        B = np.sum(np.sin(g['item_1']))
+        C = np.sum(np.sin(g['item_2']))
         return A + B + C
 
     input_dict = {'item_1' : npr.randn(5, 6),

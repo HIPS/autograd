@@ -9,12 +9,11 @@ Example use:
 ```python
 import numpy as np
 import matplotlib.pyplot as plt
-from funkyyak import kyapply, grad # These are the only two functions exposed.
-k = kyapply # kyapply(fun, *args) applies `fun` to `*args`. `k` is shorthand.
+from funkyyak import grad
 
 # Define a function capable of taking `Node` objects
 def fun(x):
-    return k(np.sin, x)
+    return np.sin(x)
 
 d_fun = grad(fun)    # First derivative
 dd_fun = grad(d_fun) # Second derivative
@@ -36,7 +35,7 @@ def fun(x):
     for i in xrange(1000):
         currterm = - currterm * x ** 2 / ((2 * i + 3) * (2 * i + 2))
         ans = ans + currterm
-        if k(np.abs, currterm) < 0.2: break # (Very generous tolerance!)
+        if np.abs(currterm) < 0.2: break # (Very generous tolerance!)
 
     return ans
 
@@ -55,7 +54,7 @@ We can take the derivative of the derivative automatically as well, as many time
 ```python
 # Define the tanh function
 def tanh(x):
-    return (1.0 - k(np.exp, -x))  / ( 1.0 + k(np.exp, -x))
+    return (1.0 - np.exp(-x))  / ( 1.0 + np.exp(-x))
 
 d_fun = grad(tanh)           # First derivative
 dd_fun = grad(d_fun)         # Second derivative

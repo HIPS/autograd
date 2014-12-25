@@ -1,7 +1,7 @@
 import numpy as np
 import numpy.random as npr
 import matplotlib.pyplot as plt
-from funkyyak import grad, numpy_wrapper as np
+from funkyyak import grad
 npr.seed(1)
 
 class WeightsParser(object):

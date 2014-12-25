@@ -1,8 +1,7 @@
 import numpy as np
 import itertools as it
-from funkyyak import grad, kyapply, numpy_wrapper as kp
+from funkyyak import grad
 from copy import copy
-k = kyapply
 
 def nd(f, *args):
     unary_f = lambda x : f(*x)
@@ -54,4 +53,4 @@ def check_grads(fun, *args):
     check_equivalent(A, B)
 
 def to_scalar(x):
-    return kp.sum(kp.sin(x))
+    return np.sum(np.sin(x))

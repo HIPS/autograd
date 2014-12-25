@@ -1,1 +1,2 @@
-from core import kyapply, grad, numpy_wrapper, kylist
+from grads import kylist
+from core import grad, Differentiable
