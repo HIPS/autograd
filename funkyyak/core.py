@@ -36,6 +36,10 @@ class Differentiable(object):
                           for i, parent in enumerate(args) if tape.hasmember(parent)]
             return Node(result, tape, parent_ops, arg_vals, kwargs)
 
+    @property
+    def __name__(self):
+        return self.fun.__name__
+
 class CalculationTape(list):
     def __init__(self, prev_tape):
         super(CalculationTape, self).__init__([])
