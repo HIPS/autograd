@@ -110,6 +110,6 @@ kylist.gradfuns = ArgnumGrad(lambda argnum, g, *args : g[argnum])
 
 # Wrap the concatenation function to automatically wrap the list into a kylist.
 unwrapped_np_concatenate = np.concatenate
-def concatwrapper(args, **kwargs):
-    return unwrapped_np_concatenate(kylist(*args), **kwargs)
+def concatwrapper(*args, **kwargs):
+    return unwrapped_np_concatenate(kylist(*(args[0])), **kwargs)
 np.concatenate = concatwrapper

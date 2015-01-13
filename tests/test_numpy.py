@@ -110,5 +110,14 @@ def test_concatenate_axis_1():
     check_grads(fun, A)
     check_grads(d_fun, A)
 
+def test_concatenate_axis_1_unnamed():
+    """Tests whether you can specify the axis without saying "axis=1"."""
+    A = npr.randn(5, 6, 4)
+    B = npr.randn(5, 6, 4)
+    def fun(x): return to_scalar(np.concatenate((B, x, B), 1))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    check_grads(fun, A)
+    check_grads(d_fun, A)
+
 # TODO:
 # squeeze, transpose, getitem
