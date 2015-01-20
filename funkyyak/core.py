@@ -1,3 +1,4 @@
+import weakref
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
 from operator import attrgetter
@@ -46,10 +47,10 @@ class CalculationTape(list):
         self.priority = prev_tape.priority + 1 if prev_tape is not None else 1
 
     def hasmember(self, x):
-        return isinstance(x, Node) and x.tape is self
+        return isinstance(x, Node) and x.tape() is self
 
 def top_tape(args):
-    tapes = [node.tape for node in args if isinstance(node, Node)]
+    tapes = [node.tape() for node in args if isinstance(node, Node)]
     return max(tapes, key=attrgetter('priority')) if tapes else None
 
 class Node(object):
@@ -64,7 +65,7 @@ class Node(object):
 
     def __init__(self, value, tape, parent_ops=[], args=(), kwargs={}):
         self.value = value
-        self.tape = tape
+        self.tape = weakref.ref(tape)
         tape.append(self)
         self.args = args
         self.kwargs = kwargs
@@ -98,7 +99,7 @@ def getval(x):
     return getval(x.value) if isinstance(x, Node) else x
 
 def zeros_like(x):
-    return Node(x, []).zeros()
+    return Node(x, CalculationTape(None)).zeros()
 
 Setter = namedtuple('Setter', ('idx', 'val'))
 
