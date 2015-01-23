@@ -69,6 +69,16 @@ def grad_np_sum(g, x, axis=None, keepdims=False):
     return np.repeat(g, x.shape[axis], axis)
 np.sum = D(np.sum, [grad_np_sum])
 
+def grad_np_mean(g, x, axis=None, keepdims=False):
+    if not isarray(x):
+        return g
+    if axis is None:
+        return np.full(x.shape, g) / np.prod(x.shape)
+    elif not keepdims:
+        g = np.expand_dims(g, axis)
+    return np.repeat(g, x.shape[axis], axis) / x.shape[axis]
+np.mean = D(np.mean, [grad_np_mean])
+
 def grad_np_max(g, x):
     idxs = np.argmax(getval(x))
     return untake(g, np.unravel_index(idxs, x.shape))
