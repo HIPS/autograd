@@ -136,6 +136,20 @@ def test_reshape_call():
     check_grads(fun, A)
     check_grads(d_fun, A)
 
+def test_ravel_method():
+    A = npr.randn(5, 6, 4)
+    def fun(x): return to_scalar(x.ravel())
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    check_grads(fun, A)
+    check_grads(d_fun, A)
+
+def test_ravel_call():
+    A = npr.randn(5, 6, 4)
+    def fun(x): return to_scalar(np.ravel(x))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    check_grads(fun, A)
+    check_grads(d_fun, A)
+
 def test_concatenate_axis_0():
     A = npr.randn(5, 6, 4)
     B = npr.randn(5, 6, 4)

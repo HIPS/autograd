@@ -31,6 +31,8 @@ class ArrayNode(NumericNode):
         return np.zeros(self.shape)
     def reshape(self, shape, order=None):
         return np.reshape(self, shape, order=order)
+    def ravel(self, order=None):
+        return np.ravel(self, order=order)
     def squeeze(self, axis=None):
         return np.squeeze(self, axis=axis)
     @property
