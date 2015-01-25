@@ -33,9 +33,15 @@ class Differentiable(object):
         else:
             arg_vals = [arg.value if tape.hasmember(arg) else arg for arg in args]
             result = self(*arg_vals, **kwargs)
-            parent_ops = [(self.gradfuns[i], parent)
+            parent_ops = [(self.reverse_fun(i, arg_vals, kwargs), parent)
                           for i, parent in enumerate(args) if tape.hasmember(parent)]
-            return Node(result, tape, parent_ops, arg_vals, kwargs)
+            return Node(result, tape, parent_ops)
+
+    def reverse_fun(self, i, args, kwargs):
+        gradfun = self.gradfuns[i]
+        def reverse_fun(outgrad):
+            return gradfun(outgrad, *args, **kwargs)
+        return reverse_fun
 
     @property
     def __name__(self):
@@ -54,7 +60,7 @@ def top_tape(args):
     return max(tapes, key=attrgetter('priority')) if tapes else None
 
 class Node(object):
-    __slots__ = ['value', 'tape', 'parent_ops', 'args', 'kwargs', 'outgrads']
+    __slots__ = ['value', 'tape', 'parent_ops', 'outgrads']
     __metaclass__ = ABCMeta
     def __new__(cls, value, *args, **kwargs):
         try:
@@ -63,21 +69,18 @@ class Node(object):
         except KeyError:
             raise TypeError("Can't differentiate wrt {0}".format(type(value)))
 
-    def __init__(self, value, tape, parent_ops=[], args=(), kwargs={}):
+    def __init__(self, value, tape, parent_ops=[]):
         self.value = value
         self.tape = weakref.ref(tape)
         tape.append(self)
-        self.args = args
-        self.kwargs = kwargs
         self.parent_ops = parent_ops
         self.outgrads = []
 
     def send_upstream(self):
         if self.outgrads:
             outgrad_sum = self.sum_outgrads()
-            args, kwargs = self.args, self.kwargs
             for gradfun, parent in self.parent_ops:
-                parent.outgrads.append(gradfun(outgrad_sum, *args, **kwargs))
+                parent.outgrads.append(gradfun(outgrad_sum))
 
     def sum_outgrads(self):
         if len(self.outgrads) is 1 and not isinstance(getval(self.outgrads[0]), Setter):
