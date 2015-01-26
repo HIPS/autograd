@@ -22,9 +22,9 @@ def grad(fun, argnum=0):
     return gradfun
 
 class Differentiable(object):
-    def __init__(self, fun, gradfuns=None):
+    def __init__(self, fun, gradmaker=None):
         self.fun = fun
-        self.gradfuns = gradfuns
+        self.gradmaker = gradmaker
 
     def __call__(self, *args, **kwargs):
         tape = top_tape(args)
@@ -33,15 +33,10 @@ class Differentiable(object):
         else:
             arg_vals = [arg.value if tape.hasmember(arg) else arg for arg in args]
             result = self(*arg_vals, **kwargs)
-            parent_ops = [(self.reverse_fun(i, arg_vals, kwargs), parent)
+            gradfuns = self.gradmaker(result, *arg_vals, **kwargs)
+            parent_ops = [(gradfuns[i], parent)
                           for i, parent in enumerate(args) if tape.hasmember(parent)]
             return Node(result, tape, parent_ops)
-
-    def reverse_fun(self, i, args, kwargs):
-        gradfun = self.gradfuns[i]
-        def reverse_fun(outgrad):
-            return gradfun(outgrad, *args, **kwargs)
-        return reverse_fun
 
     @property
     def __name__(self):
@@ -118,11 +113,11 @@ def mutating_add(old, new):
     else:
         old += new
     return old
-mutating_add.gradfuns = [lambda g, old, new : g] * 2
+mutating_add.gradmaker = lambda ans, old, new: [lambda g : g] * 2
 
 @Differentiable
 def take(A, idx): return A[idx]
-take.gradfuns = [lambda g, x, idx : untake(g, idx)]
+take.gradmaker = lambda ans, A, idx : [lambda g : untake(g, idx)]
 @Differentiable
 def untake(x, idx): return Setter(idx, x)
-untake.gradfuns = [lambda g, x, idx : take(g, idx)]
+untake.gradmaker = lambda ans, x, idx : [lambda g : take(g, idx)]

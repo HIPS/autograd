@@ -6,105 +6,119 @@ from core import Differentiable, getval, untake
 D = Differentiable
 
 # ----- Operator gradients -----
-
-op.neg = D(op.neg, [lambda g, x : - g])
-op.add = D(op.add, [lambda g, x, y : g,     lambda g, x, y : g])
-op.mul = D(op.mul, [lambda g, x, y : y * g, lambda g, x, y : x * g])
-op.sub = D(op.sub, [lambda g, x, y : g,     lambda g, x, y : - g])
-op.div = D(op.div, [lambda g, x, y : g / y, lambda g, x, y : - g * x / y**2])
-op.pow = D(op.pow, [lambda g, x, y : g * y * x ** (y - 1),
-                    lambda g, x, y : g * np.log(x) * x ** y])
-
+I = lambda x : x # Identity operator
+op.neg = D(op.neg, lambda ans, x    : [op.neg])
+op.add = D(op.add, lambda ans, x, y : unbroadcast(ans, x, y, [I, I]))
+op.mul = D(op.mul, lambda ans, x, y : unbroadcast(ans, x, y, [lambda g : y * g, lambda g : x * g]))
+op.sub = D(op.sub, lambda ans, x, y : unbroadcast(ans, x, y, [I, op.neg]))
+op.div = D(op.div, lambda ans, x, y : unbroadcast(ans, x, y, [lambda g : g / y, lambda g : - g * x / y**2]))
+op.pow = D(op.pow, lambda ans, x, y : unbroadcast(ans, x, y, [lambda g : g * y * x ** (y - 1),
+                                                              lambda g : g * np.log(x) * x ** y]))
 isarray = lambda x : isinstance(getval(x), np.ndarray)
 isfloat = lambda x : isinstance(getval(x), float)
 
-def undo_broadcast(fun, argnum):
-    def new_fun(g, *args):
-        ans = fun(g, *args)
-        x = args[argnum]
-        if isfloat(x) and isarray(ans):
-            ans = np.sum(ans)
-        elif isarray(x):
-            while ans.ndim > x.ndim:
-                ans = np.sum(ans, axis=0)
-            for axis, size in enumerate(x.shape):
+def unbroadcast(ans, x, y, funs):
+    return [unbroadcast_fun(ans, x, funs[0]),
+            unbroadcast_fun(ans, y, funs[1])]
+
+def unbroadcast_fun(ans, x, fun):
+    if isfloat(x) and isarray(ans):
+        return lambda g : np.sum(fun(g))
+    elif isarray(x):
+        shape = x.shape
+        def new_fun(g):
+            result = fun(g)
+            while result.ndim > len(shape):
+                result = np.sum(result, axis=0)
+            for axis, size in enumerate(shape):
                 if size is 1:
-                    ans = np.sum(ans, axis, keepdims=True)
-        return ans
-
-    return new_fun
-
-broadcasting_ops = [op.add, op.mul, op.sub, op.div, op.pow]
-for fun, argnum in it.product(broadcasting_ops, [0, 1]):
-    fun.gradfuns[argnum] = undo_broadcast(fun.gradfuns[argnum], argnum)
+                    result = np.sum(result, axis, keepdims=True)
+            return result
+        return new_fun
+    else:
+        return fun
 
 # ----- Numpy gradients -----
 
-np.abs    = D(np.abs,    [lambda g, x : np.sign(x) * g])
-np.exp    = D(np.exp,    [lambda g, x : np.exp(x) * g])
-np.log    = D(np.log,    [lambda g, x : g / x])
-np.sin    = D(np.sin,    [lambda g, x : g * np.cos(x)])
-np.cos    = D(np.cos,    [lambda g, x : - g * np.sin(x)])
-np.tan    = D(np.tan,    [lambda g, x : g / np.cos(x) **2])
-np.sinh   = D(np.sinh,   [lambda g, x : g * np.cosh(x)])
-np.cosh   = D(np.cosh,   [lambda g, x : g * np.sinh(x)])
-np.tanh   = D(np.tanh,   [lambda g, x : g / np.cosh(x) **2])
-np.square = D(np.square, [lambda g, x : g * 2 * x])
-np.sign   = D(np.sign,   [lambda g, x : 0.0])
-np.full   = D(np.full,   [None, lambda g, shape, fill_value :  np.sum(g)])
-np.reshape     = D(np.reshape,     [lambda g, x, shape, order=None: np.reshape(g, x.shape, order=order)])
-np.ravel       = D(np.ravel,       [lambda g, x,        order=None: np.reshape(g, x.shape, order=order)])
-np.expand_dims = D(np.expand_dims, [lambda g, x, axis : np.squeeze(g, axis)])
-np.squeeze     = D(np.squeeze,     [lambda g, x, axis : np.repeat(g, x.shape[axis], axis)])
-np.repeat      = D(np.repeat,      [lambda g, x, shape, axis : np.sum(g, axis, keepdims=True)])
-np.transpose   = D(np.transpose,   [lambda g, x : np.transpose(g)])
-np.split       = D(np.split, [lambda g, A, idxs, axis=0 : np.concatenate(g, axis=axis)])
+np.abs    = D(np.abs,    lambda ans, x : [lambda g : np.sign(x) * g])
+np.exp    = D(np.exp,    lambda ans, x : [lambda g : ans * g])
+np.log    = D(np.log,    lambda ans, x : [lambda g : g / x])
+np.sin    = D(np.sin,    lambda ans, x : [lambda g : g * np.cos(x)])
+np.cos    = D(np.cos,    lambda ans, x : [lambda g : - g * np.sin(x)])
+np.tan    = D(np.tan,    lambda ans, x : [lambda g : g / np.cos(x) **2])
+np.sinh   = D(np.sinh,   lambda ans, x : [lambda g : g * np.cosh(x)])
+np.cosh   = D(np.cosh,   lambda ans, x : [lambda g : g * np.sinh(x)])
+np.tanh   = D(np.tanh,   lambda ans, x : [lambda g : g / np.cosh(x) **2])
+np.square = D(np.square, lambda ans, x : [lambda g : g * 2 * x])
+np.sign   = D(np.sign,   lambda ans, x : [lambda g : 0.0])
+np.full   = D(np.full,   lambda ans, shape, fill_value : [None, lambda g :  np.sum(g)])
+np.reshape     = D(np.reshape,     lambda ans, x, shape, order=None : [lambda g : np.reshape(g, x.shape, order=order)])
+np.ravel       = D(np.ravel,       lambda ans, x,        order=None : [lambda g : np.reshape(g, x.shape, order=order)])
+np.expand_dims = D(np.expand_dims, lambda ans, x, axis              : [lambda g : np.squeeze(g, axis)])
+np.squeeze     = D(np.squeeze,     lambda ans, x, axis              : [lambda g : np.repeat(g, x.shape[axis], axis)])
+np.repeat      = D(np.repeat,      lambda ans, x, shape, axis       : [lambda g : np.sum(g, axis, keepdims=True)])
+np.transpose   = D(np.transpose,   lambda ans, x                    : [lambda g : np.transpose(g)])
+np.split       = D(np.split,       lambda ans, A, idxs, axis=0      : [lambda g : np.concatenate(g, axis=axis)])
 
-def grad_np_sum(g, x, axis=None, keepdims=False):
+def make_grad_np_sum(ans, x, axis=None, keepdims=False):
     if not isarray(x):
-        return g
+        return [I]
+    shape = x.shape
     if axis is None:
-        return np.full(x.shape, g)
-    elif not keepdims:
-        g = np.expand_dims(g, axis)
-    return np.repeat(g, x.shape[axis], axis)
-np.sum = D(np.sum, [grad_np_sum])
+        return [lambda g : np.full(shape, g)]
+    else:
+        if keepdims:
+            return [lambda g : np.repeat(g, shape[axis], axis)]
+        else:
+            return [lambda g : np.repeat(np.expand_dims(g, axis),
+                                         shape[axis], axis)]
+np.sum = D(np.sum, make_grad_np_sum)
 
-def grad_np_mean(g, x, axis=None, keepdims=False):
+def make_grad_np_mean(ans, x, axis=None, keepdims=False):
     if not isarray(x):
-        return g
+        return [I]
+    shape = x.shape
     if axis is None:
-        return np.full(x.shape, g) / np.prod(x.shape)
-    elif not keepdims:
-        g = np.expand_dims(g, axis)
-    return np.repeat(g, x.shape[axis], axis) / x.shape[axis]
-np.mean = D(np.mean, [grad_np_mean])
-
-def grad_np_max(g, x):
-    idxs = np.argmax(getval(x))
-    return untake(g, np.unravel_index(idxs, x.shape))
-np.max = D(np.max, [grad_np_max])
-
-def grad_np_dot_A(g, A, B):
-    if B.ndim is 2:
-        return np.dot(g, B.T)
-    elif A.ndim is 2:
-        return np.outer(g, B)
+        return [lambda g : np.full(shape, g) / np.prod(shape)]
     else:
-        return g * B
-def grad_np_dot_B(g, A, B):
-    if A.ndim is 2:
-        return np.dot(A.T, g)
-    elif B.ndim is 2:
-        return np.outer(A, g)
-    else:
-        return g * A
-np.dot = D(np.dot, [grad_np_dot_A, grad_np_dot_B])
+        if keepdims:
+            return [lambda g : np.repeat(g, shape[axis], axis) / shape[axis]]
+        else:
+            return [lambda g : np.repeat(np.expand_dims(g, axis),
+                                         shape[axis], axis) / shape[axis]]
+np.mean = D(np.mean, make_grad_np_mean)
 
-def grad_np_concatenate(g, arr_list, axis=0):
-    idxs = np.cumsum([a.shape[axis] for a in getval(arr_list)[:-1]])
-    return np.split(g, idxs, axis=axis)
-np.concatenate = D(np.concatenate, [grad_np_concatenate])
+def make_grad_np_max(ans, x):
+    def gradfun(g):
+        idxs = np.argmax(getval(x))
+        return untake(g, np.unravel_index(idxs, x.shape))
+    return [gradfun]
+np.max = D(np.max, make_grad_np_max)
+
+def make_grad_np_dot(ans, A, B):
+    def grad_np_dot_A(g):
+        if B.ndim is 2:
+            return np.dot(g, B.T)
+        elif A.ndim is 2:
+            return np.outer(g, B)
+        else:
+            return g * B
+    def grad_np_dot_B(g):
+        if A.ndim is 2:
+            return np.dot(A.T, g)
+        elif B.ndim is 2:
+            return np.outer(A, g)
+        else:
+            return g * A
+    return [grad_np_dot_A, grad_np_dot_B]
+np.dot = D(np.dot, make_grad_np_dot)
+
+def make_grad_np_concatenate(ans, arr_list, axis=0):
+    def grad_np_concatenate(g):
+        idxs = np.cumsum([a.shape[axis] for a in getval(arr_list)[:-1]])
+        return np.split(g, idxs, axis=axis)
+    return [grad_np_concatenate]
+np.concatenate = D(np.concatenate, make_grad_np_concatenate)
 
 # ----- Special list constructor -----
 
@@ -117,7 +131,7 @@ class ArgnumGrad(object):
 @Differentiable
 def kylist(*args):
     return list(args)
-kylist.gradfuns = ArgnumGrad(lambda argnum, g, *args : g[argnum])
+kylist.gradmaker = lambda ans, *args : ArgnumGrad(lambda argnum, g : g[argnum])
 
 # Wrap the concatenation function to automatically wrap the list into a kylist.
 unwrapped_np_concatenate = np.concatenate

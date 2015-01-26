@@ -1,2 +1,2 @@
-from grads import kylist
+import grads
 from core import grad, Differentiable, getval
