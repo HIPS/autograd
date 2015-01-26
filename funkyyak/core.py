@@ -21,18 +21,15 @@ def grad(fun, argnum=0):
 
     return gradfun
 
-def Differentiable(fun, gradmaker, result_included=False):
+def Differentiable(fun, gradmaker):
     def differentiable_fun(*args, **kwargs):
         tape = top_tape(args)
         if tape is None:
             return fun(*args, **kwargs)
         else:
             arg_vals = [arg.value if tape.hasmember(arg) else arg for arg in args]
-            if result_included:
-                result, gradfuns = gradmaker(*arg_vals, **kwargs)
-            else:
-                result = differentiable_fun(*arg_vals, **kwargs)
-                gradfuns = gradmaker(result, *arg_vals, **kwargs)
+            result = differentiable_fun(*arg_vals, **kwargs)
+            gradfuns = gradmaker(result, *arg_vals, **kwargs)
             parent_ops = [(gradfuns[i], parent)
                           for i, parent in enumerate(args) if tape.hasmember(parent)]
             return Node(result, tape, parent_ops)
