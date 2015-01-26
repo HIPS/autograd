@@ -21,26 +21,23 @@ def grad(fun, argnum=0):
 
     return gradfun
 
-class Differentiable(object):
-    def __init__(self, fun, gradmaker=None):
-        self.fun = fun
-        self.gradmaker = gradmaker
-
-    def __call__(self, *args, **kwargs):
+def Differentiable(fun, gradmaker, result_included=False):
+    def differentiable_fun(*args, **kwargs):
         tape = top_tape(args)
         if tape is None:
-            return self.fun(*args, **kwargs)
+            return fun(*args, **kwargs)
         else:
             arg_vals = [arg.value if tape.hasmember(arg) else arg for arg in args]
-            result = self(*arg_vals, **kwargs)
-            gradfuns = self.gradmaker(result, *arg_vals, **kwargs)
+            if result_included:
+                result, gradfuns = gradmaker(*arg_vals, **kwargs)
+            else:
+                result = differentiable_fun(*arg_vals, **kwargs)
+                gradfuns = gradmaker(result, *arg_vals, **kwargs)
             parent_ops = [(gradfuns[i], parent)
                           for i, parent in enumerate(args) if tape.hasmember(parent)]
             return Node(result, tape, parent_ops)
-
-    @property
-    def __name__(self):
-        return self.fun.__name__
+        differentiable_fun.__name__ = fun.__name__
+    return differentiable_fun
 
 class CalculationTape(list):
     def __init__(self, prev_tape):
@@ -103,7 +100,6 @@ Setter = namedtuple('Setter', ('idx', 'val'))
 
 import node_types # Can only import after defining Node and Setter
 
-@Differentiable
 def mutating_add(old, new):
     if isinstance(new, Setter):
         if old[new.idx] is 0:
@@ -113,11 +109,10 @@ def mutating_add(old, new):
     else:
         old += new
     return old
-mutating_add.gradmaker = lambda ans, old, new: [lambda g : g] * 2
+mutating_add = Differentiable(mutating_add, lambda ans, old, new: [lambda g : g] * 2)
 
-@Differentiable
 def take(A, idx): return A[idx]
-take.gradmaker = lambda ans, A, idx : [lambda g : untake(g, idx)]
-@Differentiable
+take = Differentiable(take, lambda ans, A, idx : [lambda g : untake(g, idx)])
+
 def untake(x, idx): return Setter(idx, x)
-untake.gradmaker = lambda ans, x, idx : [lambda g : take(g, idx)]
+untake = Differentiable(untake, lambda ans, x, idx : [lambda g : take(g, idx)])

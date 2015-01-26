@@ -128,10 +128,9 @@ class ArgnumGrad(object):
     def __getitem__(self, argnum):
         return partial(self.fun, argnum)
 
-@Differentiable
 def kylist(*args):
     return list(args)
-kylist.gradmaker = lambda ans, *args : ArgnumGrad(lambda argnum, g : g[argnum])
+kylist = Differentiable(kylist, lambda ans, *args : ArgnumGrad(lambda argnum, g : g[argnum]))
 
 # Wrap the concatenation function to automatically wrap the list into a kylist.
 unwrapped_np_concatenate = np.concatenate
