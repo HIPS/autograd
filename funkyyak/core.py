@@ -21,19 +21,25 @@ def grad(fun, argnum=0):
 
     return gradfun
 
-def Differentiable(fun, gradmaker):
+def Differentiable(fun, forward_pass):
     def differentiable_fun(*args, **kwargs):
         tape = top_tape(args)
         if tape is None:
             return fun(*args, **kwargs)
         else:
             arg_vals = [arg.value if tape.hasmember(arg) else arg for arg in args]
-            result = differentiable_fun(*arg_vals, **kwargs)
-            gradfuns = gradmaker(result, *arg_vals, **kwargs)
+            result, gradfuns = forward_pass(*arg_vals, **kwargs)
             parent_ops = [(gradfuns[i], parent)
                           for i, parent in enumerate(args) if tape.hasmember(parent)]
             return Node(result, tape, parent_ops)
         differentiable_fun.__name__ = fun.__name__
+    return differentiable_fun
+
+def primitive(fun, gradmaker):
+    def forward_pass(*args, **kwargs):
+        ans = differentiable_fun(*args, **kwargs)
+        return ans, gradmaker(ans, *args, **kwargs)
+    differentiable_fun = Differentiable(fun, forward_pass)
     return differentiable_fun
 
 class CalculationTape(list):
@@ -106,10 +112,10 @@ def mutating_add(old, new):
     else:
         old += new
     return old
-mutating_add = Differentiable(mutating_add, lambda ans, old, new: [lambda g : g] * 2)
+mutating_add = primitive(mutating_add, lambda ans, old, new: [lambda g : g] * 2)
 
 def take(A, idx): return A[idx]
-take = Differentiable(take, lambda ans, A, idx : [lambda g : untake(g, idx)])
+take = primitive(take, lambda ans, A, idx : [lambda g : untake(g, idx)])
 
 def untake(x, idx): return Setter(idx, x)
-untake = Differentiable(untake, lambda ans, x, idx : [lambda g : take(g, idx)])
+untake = primitive(untake, lambda ans, x, idx : [lambda g : take(g, idx)])

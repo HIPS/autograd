@@ -2,17 +2,18 @@ import numpy as np
 import operator as op
 import itertools as it
 from functools import partial
-from core import Differentiable, getval, untake
-D = Differentiable
+from core import primitive, getval, untake
+
+P = primitive
 
 # ----- Operator gradients -----
 I = lambda x : x # Identity operator
-op.neg = D(op.neg, lambda ans, x    : [op.neg])
-op.add = D(op.add, lambda ans, x, y : unbroadcast(ans, x, y, [I, I]))
-op.mul = D(op.mul, lambda ans, x, y : unbroadcast(ans, x, y, [lambda g : y * g, lambda g : x * g]))
-op.sub = D(op.sub, lambda ans, x, y : unbroadcast(ans, x, y, [I, op.neg]))
-op.div = D(op.div, lambda ans, x, y : unbroadcast(ans, x, y, [lambda g : g / y, lambda g : - g * x / y**2]))
-op.pow = D(op.pow, lambda ans, x, y : unbroadcast(ans, x, y, [lambda g : g * y * x ** (y - 1),
+op.neg = P(op.neg, lambda ans, x    : [op.neg])
+op.add = P(op.add, lambda ans, x, y : unbroadcast(ans, x, y, [I, I]))
+op.mul = P(op.mul, lambda ans, x, y : unbroadcast(ans, x, y, [lambda g : y * g, lambda g : x * g]))
+op.sub = P(op.sub, lambda ans, x, y : unbroadcast(ans, x, y, [I, op.neg]))
+op.div = P(op.div, lambda ans, x, y : unbroadcast(ans, x, y, [lambda g : g / y, lambda g : - g * x / y**2]))
+op.pow = P(op.pow, lambda ans, x, y : unbroadcast(ans, x, y, [lambda g : g * y * x ** (y - 1),
                                                               lambda g : g * np.log(x) * x ** y]))
 isarray = lambda x : isinstance(getval(x), np.ndarray)
 isfloat = lambda x : isinstance(getval(x), float)
@@ -40,25 +41,25 @@ def unbroadcast_fun(ans, x, fun):
 
 # ----- Numpy gradients -----
 
-np.abs    = D(np.abs,    lambda ans, x : [lambda g : np.sign(x) * g])
-np.exp    = D(np.exp,    lambda ans, x : [lambda g : ans * g])
-np.log    = D(np.log,    lambda ans, x : [lambda g : g / x])
-np.sin    = D(np.sin,    lambda ans, x : [lambda g : g * np.cos(x)])
-np.cos    = D(np.cos,    lambda ans, x : [lambda g : - g * np.sin(x)])
-np.tan    = D(np.tan,    lambda ans, x : [lambda g : g / np.cos(x) **2])
-np.sinh   = D(np.sinh,   lambda ans, x : [lambda g : g * np.cosh(x)])
-np.cosh   = D(np.cosh,   lambda ans, x : [lambda g : g * np.sinh(x)])
-np.tanh   = D(np.tanh,   lambda ans, x : [lambda g : g / np.cosh(x) **2])
-np.square = D(np.square, lambda ans, x : [lambda g : g * 2 * x])
-np.sign   = D(np.sign,   lambda ans, x : [lambda g : 0.0])
-np.full   = D(np.full,   lambda ans, shape, fill_value : [None, lambda g :  np.sum(g)])
-np.reshape     = D(np.reshape,     lambda ans, x, shape, order=None : [lambda g : np.reshape(g, x.shape, order=order)])
-np.ravel       = D(np.ravel,       lambda ans, x,        order=None : [lambda g : np.reshape(g, x.shape, order=order)])
-np.expand_dims = D(np.expand_dims, lambda ans, x, axis              : [lambda g : np.squeeze(g, axis)])
-np.squeeze     = D(np.squeeze,     lambda ans, x, axis              : [lambda g : np.repeat(g, x.shape[axis], axis)])
-np.repeat      = D(np.repeat,      lambda ans, x, shape, axis       : [lambda g : np.sum(g, axis, keepdims=True)])
-np.transpose   = D(np.transpose,   lambda ans, x                    : [lambda g : np.transpose(g)])
-np.split       = D(np.split,       lambda ans, A, idxs, axis=0      : [lambda g : np.concatenate(g, axis=axis)])
+np.abs    = P(np.abs,    lambda ans, x : [lambda g : np.sign(x) * g])
+np.exp    = P(np.exp,    lambda ans, x : [lambda g : ans * g])
+np.log    = P(np.log,    lambda ans, x : [lambda g : g / x])
+np.sin    = P(np.sin,    lambda ans, x : [lambda g : g * np.cos(x)])
+np.cos    = P(np.cos,    lambda ans, x : [lambda g : - g * np.sin(x)])
+np.tan    = P(np.tan,    lambda ans, x : [lambda g : g / np.cos(x) **2])
+np.sinh   = P(np.sinh,   lambda ans, x : [lambda g : g * np.cosh(x)])
+np.cosh   = P(np.cosh,   lambda ans, x : [lambda g : g * np.sinh(x)])
+np.tanh   = P(np.tanh,   lambda ans, x : [lambda g : g / np.cosh(x) **2])
+np.square = P(np.square, lambda ans, x : [lambda g : g * 2 * x])
+np.sign   = P(np.sign,   lambda ans, x : [lambda g : 0.0])
+np.full   = P(np.full,   lambda ans, shape, fill_value : [None, lambda g :  np.sum(g)])
+np.reshape     = P(np.reshape,     lambda ans, x, shape, order=None : [lambda g : np.reshape(g, x.shape, order=order)])
+np.ravel       = P(np.ravel,       lambda ans, x,        order=None : [lambda g : np.reshape(g, x.shape, order=order)])
+np.expand_dims = P(np.expand_dims, lambda ans, x, axis              : [lambda g : np.squeeze(g, axis)])
+np.squeeze     = P(np.squeeze,     lambda ans, x, axis              : [lambda g : np.repeat(g, x.shape[axis], axis)])
+np.repeat      = P(np.repeat,      lambda ans, x, shape, axis       : [lambda g : np.sum(g, axis, keepdims=True)])
+np.transpose   = P(np.transpose,   lambda ans, x                    : [lambda g : np.transpose(g)])
+np.split       = P(np.split,       lambda ans, A, idxs, axis=0      : [lambda g : np.concatenate(g, axis=axis)])
 
 def make_grad_np_sum(ans, x, axis=None, keepdims=False):
     if not isarray(x):
@@ -72,7 +73,7 @@ def make_grad_np_sum(ans, x, axis=None, keepdims=False):
         else:
             return [lambda g : np.repeat(np.expand_dims(g, axis),
                                          shape[axis], axis)]
-np.sum = D(np.sum, make_grad_np_sum)
+np.sum = P(np.sum, make_grad_np_sum)
 
 def make_grad_np_mean(ans, x, axis=None, keepdims=False):
     if not isarray(x):
@@ -86,14 +87,14 @@ def make_grad_np_mean(ans, x, axis=None, keepdims=False):
         else:
             return [lambda g : np.repeat(np.expand_dims(g, axis),
                                          shape[axis], axis) / shape[axis]]
-np.mean = D(np.mean, make_grad_np_mean)
+np.mean = P(np.mean, make_grad_np_mean)
 
 def make_grad_np_max(ans, x):
     def gradfun(g):
         idxs = np.argmax(getval(x))
         return untake(g, np.unravel_index(idxs, x.shape))
     return [gradfun]
-np.max = D(np.max, make_grad_np_max)
+np.max = P(np.max, make_grad_np_max)
 
 def make_grad_np_dot(ans, A, B):
     def grad_np_dot_A(g):
@@ -111,14 +112,14 @@ def make_grad_np_dot(ans, A, B):
         else:
             return g * A
     return [grad_np_dot_A, grad_np_dot_B]
-np.dot = D(np.dot, make_grad_np_dot)
+np.dot = P(np.dot, make_grad_np_dot)
 
 def make_grad_np_concatenate(ans, arr_list, axis=0):
     def grad_np_concatenate(g):
         idxs = np.cumsum([a.shape[axis] for a in getval(arr_list)[:-1]])
         return np.split(g, idxs, axis=axis)
     return [grad_np_concatenate]
-np.concatenate = D(np.concatenate, make_grad_np_concatenate)
+np.concatenate = P(np.concatenate, make_grad_np_concatenate)
 
 # ----- Special list constructor -----
 
@@ -130,7 +131,7 @@ class ArgnumGrad(object):
 
 def kylist(*args):
     return list(args)
-kylist = Differentiable(kylist, lambda ans, *args : ArgnumGrad(lambda argnum, g : g[argnum]))
+kylist = primitive(kylist, lambda ans, *args : ArgnumGrad(lambda argnum, g : g[argnum]))
 
 # Wrap the concatenation function to automatically wrap the list into a kylist.
 unwrapped_np_concatenate = np.concatenate
