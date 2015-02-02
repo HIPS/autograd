@@ -4,11 +4,11 @@ from collections import namedtuple
 from operator import attrgetter
 
 def grad(fun, argnum=0):
-    def gradfun(*args):
+    def gradfun(*args, **kwargs):
         tape = CalculationTape(top_tape(args))
         start_node = Node(args[argnum], tape)
         args = args[:argnum] + (start_node,) + args[argnum+1:]
-        end_node = fun(*args)
+        end_node = fun(*args, **kwargs)
         if not tape.hasmember(end_node):
             return start_node.sum_outgrads()
         if not isinstance(getval(end_node), float):
