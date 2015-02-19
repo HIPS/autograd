@@ -11,7 +11,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from funkyyak import grad
 
-# Define a function capable of taking `Node` objects
 def fun(x):
     return np.sin(x)
 
