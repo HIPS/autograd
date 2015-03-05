@@ -3,3 +3,4 @@ scratch/
 examples/data
 .idea/
 .DS_Store
+build/

@@ -73,3 +73,13 @@ plt.plot(x, map(tanh, x),
 ```
 
 <img src="https://github.com/HIPS/FunkyYak/blob/master/examples/tanh.png" width="600">
+
+## How to install:
+
+Simply run
+
+```bash
+git clone https://github.com/HIPS/FunkyYak.git
+cd FunkyYak/
+python setup.py install
+```
