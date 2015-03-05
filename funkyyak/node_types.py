@@ -21,7 +21,7 @@ class NumericNode(Node):
     def __gt__(self, other):    return getval(self) > getval(other) 
 
 class FloatNode(NumericNode):
-    _value_types = [float, np.float64]
+    _value_types = [float, np.float16, np.float32, np.float64]
     def zeros(self):
         return 0.0
 
