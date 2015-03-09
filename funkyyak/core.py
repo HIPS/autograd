@@ -2,10 +2,11 @@ import weakref
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
 from operator import attrgetter
+from itertools import count
 
 def grad(fun, argnum=0):
     def gradfun(*args, **kwargs):
-        tape = CalculationTape(top_tape(args))
+        tape = CalculationTape()
         start_node = Node(args[argnum], tape)
         args = args[:argnum] + (start_node,) + args[argnum+1:]
         end_node = fun(*args, **kwargs)
@@ -43,9 +44,10 @@ def primitive(fun, gradmaker):
     return differentiable_fun
 
 class CalculationTape(list):
-    def __init__(self, prev_tape):
+    tape_count = count(0)
+    def __init__(self):
         super(CalculationTape, self).__init__([])
-        self.priority = prev_tape.priority + 1 if prev_tape is not None else 1
+        self.priority = self.tape_count.next()
 
     def hasmember(self, x):
         return isinstance(x, Node) and x.tape() is self
@@ -97,7 +99,7 @@ def getval(x):
     return getval(x.value) if isinstance(x, Node) else x
 
 def zeros_like(x):
-    return Node(x, CalculationTape(None)).zeros()
+    return Node(x, CalculationTape()).zeros()
 
 Setter = namedtuple('Setter', ('idx', 'val'))
 

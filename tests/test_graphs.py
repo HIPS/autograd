@@ -36,6 +36,18 @@ def test_hess_vector_prod():
     check_grads(fun, A)
     check_grads(vector_product, A, B)
 
+def test_enclosing_scope_ref():
+    def fun(x):
+        inner_fun = lambda y : x * y
+        return x * grad(inner_fun)(2.0)
+    check_grads(fun, 1.0)
+
+def test_enclosing_scope_ref_2():
+    def fun(x):
+        inner_fun = lambda y : y * x
+        return x * grad(inner_fun)(2.0)
+    check_grads(fun, 1.0)
+
 # TODO:
 # Grad three or more, wrt different args
 # Diamond patterns
