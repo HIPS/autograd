@@ -37,24 +37,19 @@ class ArrayNode(NumericNode):
         return np.squeeze(self, axis=axis)
     @property
     def T(self): return np.transpose(self)
-    @property
-    def shape(self): return self.value.shape
-    @property
-    def ndim(self): return self.value.ndim
-    @property
-    def size(self): return self.value.size
 
 class DictNode(Node):
     _value_types = [dict]
     def zeros(self):
-        return {k : zeros_like(v) for k, v in getval(self).iteritems()}
+        return {k : zeros_like(v) for k, v in self.iteritems()}
+
+    def __iter__(self):
+        return self.value.__iter__()
 
 class ListNode(Node):
     _value_types = [list]
     def zeros(self):
         return [zeros_like(v) for v in getval(self)]
-
-    def __len__(self): return len(self.value)
 
 class SetterNode(Node):
     _value_types = [Setter]

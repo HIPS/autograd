@@ -91,6 +91,9 @@ class Node(object):
     def __getitem__(self, idx):
         return take(self, idx)
 
+    def __getattr__(self, item):
+        return getattr(self.value, item)
+
     @abstractmethod
     def zeros(self):
         pass
