@@ -1,8 +1,6 @@
 import numpy as np
 import numpy.random as npr
-import matplotlib.pyplot as plt
-from funkyyak import grad
-npr.seed(1)
+from autograd import grad
 
 class WeightsParser(object):
     def __init__(self):
@@ -91,10 +89,11 @@ if __name__ == '__main__':
     loss_grad = grad(loss_fun)
 
     # Initialize weights
-    W = npr.randn(N_weights) * param_scale
+    rs = npr.RandomState()
+    W = rs.randn(N_weights) * param_scale
 
     # Check grads
-    rand_dir = npr.randn(N_weights) * param_scale
+    rand_dir = rs.randn(N_weights) * param_scale
     rand_dir = rand_dir / np.sqrt(np.dot(rand_dir, rand_dir))
     test_fun = lambda x : loss_fun(W + x * rand_dir, train_images, train_labels)
     nd = (test_fun(1e-4) - test_fun(-1e-4)) / 2e-4

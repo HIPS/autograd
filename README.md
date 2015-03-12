@@ -1,4 +1,4 @@
-# FunkyYak (Functional Kayak)
+# Autograd (Formerly FunkyYak)
 
 Taking a few lessons from developing and working with Kayak, here is a
 stateless reverse-mode autodiff implementation that also offers
@@ -9,7 +9,7 @@ Example use:
 ```python
 import numpy as np
 import matplotlib.pyplot as plt
-from funkyyak import grad
+from autograd import grad
 
 def fun(x):
     return np.sin(x)
@@ -20,7 +20,7 @@ dd_fun = grad(d_fun) # Second derivative
 x = np.linspace(-10, 10, 100)
 plt.plot(x, map(fun, x), x, map(d_fun, x), x, map(dd_fun, x))
 ```
-<img src="https://github.com/HIPS/FunkyYak/blob/master/examples/sinusoid.png" width="600">
+<img src="https://github.com/HIPS/autograd/blob/master/examples/sinusoid.png" width="600">
 
 The function can even have control flow, which raises the prospect
 of differentiating through an iterative routine like an
@@ -45,7 +45,7 @@ x = np.linspace(-10, 10, 100)
 plt.plot(x, map(fun, x), x, map(d_fun, x), x, map(dd_fun, x))
 ```
 
-<img src="https://github.com/HIPS/FunkyYak/blob/master/examples/sinusoid_taylor.png" width="600">
+<img src="https://github.com/HIPS/autograd/blob/master/examples/sinusoid_taylor.png" width="600">
 
 
 We can take the derivative of the derivative automatically as well, as many times as we like:
@@ -72,14 +72,14 @@ plt.plot(x, map(tanh, x),
          x, map(dddddd_fun, x))
 ```
 
-<img src="https://github.com/HIPS/FunkyYak/blob/master/examples/tanh.png" width="600">
+<img src="https://github.com/HIPS/autograd/blob/master/examples/tanh.png" width="600">
 
 ## How to install:
 
 Simply run
 
 ```bash
-git clone https://github.com/HIPS/FunkyYak.git
-cd FunkyYak/
+git clone https://github.com/HIPS/autograd.git
+cd autograd/
 python setup.py install
 ```

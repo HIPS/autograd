@@ -1,6 +1,5 @@
 import numpy as np
 import operator as op
-import itertools as it
 from functools import partial
 from core import primitive, getval, untake
 

@@ -1,6 +1,6 @@
 import numpy as np
 import itertools as it
-from funkyyak import grad
+from autograd import grad
 from copy import copy
 
 def nd(f, *args):

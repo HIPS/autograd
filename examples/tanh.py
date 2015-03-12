@@ -1,9 +1,7 @@
-
 import numpy as np
 import matplotlib.pyplot as plt
-from funkyyak import grad
+from autograd import grad
 
-# Define a function capable of taking `Node` objects
 def tanh(x):
     return (1.0 - np.exp(-x))  / ( 1.0 + np.exp(-x))
 
