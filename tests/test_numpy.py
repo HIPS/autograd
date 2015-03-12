@@ -175,5 +175,35 @@ def test_concatenate_axis_1_unnamed():
     check_grads(fun, A)
     check_grads(d_fun, A)
 
+def test_trace():
+    def fun(x): return np.trace(x)
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    mat = npr.randn(10, 10)
+    check_grads(fun, mat)
+    check_grads(d_fun, mat)
+
+def test_diag():
+    def fun(x): return to_scalar(np.diag(x))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    mat = npr.randn(10, 10)
+    check_grads(fun, mat)
+    check_grads(d_fun, mat)
+
+def test_inv():
+    def fun(x): return to_scalar(np.linalg.inv(x))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    mat = npr.randn(8, 8)
+    check_grads(fun, mat)
+    check_grads(d_fun, mat)
+
+def test_det():
+    def fun(x): return np.linalg.det(x)
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    D = 8
+    mat = npr.randn(D, D)
+    print "det: ", np.linalg.det(mat)
+    check_grads(fun, mat)
+    check_grads(d_fun, mat)
+
 # TODO:
 # squeeze, transpose, getitem
