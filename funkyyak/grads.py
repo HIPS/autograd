@@ -3,6 +3,7 @@ import operator as op
 import itertools as it
 from functools import partial
 from core import primitive, getval, untake
+import scipy.stats as sps
 
 P = primitive
 
@@ -60,6 +61,9 @@ np.squeeze     = P(np.squeeze,     lambda ans, x, axis              : [lambda g 
 np.repeat      = P(np.repeat,      lambda ans, x, shape, axis       : [lambda g : np.sum(g, axis, keepdims=True)])
 np.transpose   = P(np.transpose,   lambda ans, x                    : [lambda g : np.transpose(g)])
 np.split       = P(np.split,       lambda ans, A, idxs, axis=0      : [lambda g : np.concatenate(g, axis=axis)])
+
+# ----- Scipy gradients -----
+sps.norm.cdf   = P(sps.norm.cdf, lambda ans, x : [lambda g : g * 1./np.sqrt(2.0*np.pi)*np.exp(-(x**2.0)/2.0)])
 
 def make_grad_np_sum(ans, x, axis=None, keepdims=False):
     if not isarray(x):
