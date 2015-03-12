@@ -76,7 +76,9 @@ def test_tanh():
     check_grads(d_fun, npr.randn())
 
 def norm_cdf():
-    fun = lambda x : 3.0 * sps.norm.cdf(x)
+
+    loc = npr.randn()
+    fun = lambda x,loc,scale : 3.0 * sps.norm.cdf(x, loc=loc, scale=scale)
     d_fun = grad(fun)
-    check_grads(fun, npr.randn())
-    check_grads(d_fun, npr.randn())
+    check_grads(fun, npr.randn(), loc=npr.randn(), scale=npr.rand())
+    check_grads(d_fun, npr.randn(), loc=npr.randn(), scale=npr.rand())

@@ -63,7 +63,7 @@ np.transpose   = P(np.transpose,   lambda ans, x                    : [lambda g 
 np.split       = P(np.split,       lambda ans, A, idxs, axis=0      : [lambda g : np.concatenate(g, axis=axis)])
 
 # ----- Scipy gradients -----
-sps.norm.cdf   = P(sps.norm.cdf, lambda ans, x : [lambda g : g * 1./np.sqrt(2.0*np.pi)*np.exp(-(x**2.0)/2.0)])
+sps.norm.cdf   = P(sps.norm.cdf, lambda ans, x, loc=0.0, scale=1.0 : [lambda g : g * (1./(np.sqrt(2.0*np.pi)*scale)) *np.exp(-((x-loc)**2.0)/(2.0*(scale**2.)))])
 
 def make_grad_np_sum(ans, x, axis=None, keepdims=False):
     if not isarray(x):
