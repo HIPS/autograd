@@ -1,5 +1,6 @@
 import numpy as np
 import numpy.random as npr
+import scipy.stats as sps
 from test_util import *
 from funkyyak import grad
 npr.seed(1)
@@ -73,3 +74,11 @@ def test_tanh():
     d_fun = grad(fun)
     check_grads(fun, npr.randn())
     check_grads(d_fun, npr.randn())
+
+def norm_cdf():
+
+    loc = npr.randn()
+    fun = lambda x,loc,scale : 3.0 * sps.norm.cdf(x, loc=loc, scale=scale)
+    d_fun = grad(fun)
+    check_grads(fun, npr.randn(), loc=npr.randn(), scale=npr.rand())
+    check_grads(d_fun, npr.randn(), loc=npr.randn(), scale=npr.rand())
