@@ -2,6 +2,7 @@ import numpy as np
 import operator as op
 from functools import partial
 from core import primitive, getval, untake
+import scipy.stats as sps
 
 P = primitive
 
@@ -64,6 +65,9 @@ np.diag        = P(np.diag,        lambda ans, x                    : [lambda g 
 np.trace       = P(np.trace,       lambda ans, x                    : [lambda g : g * np.eye(x.shape[0])])
 np.linalg.inv  = P(np.linalg.inv,  lambda ans, x                    : [lambda g : -np.dot(np.dot(ans.T, g), ans.T)])
 np.linalg.det  = P(np.linalg.det,  lambda ans, x                    : [lambda g : g * ans * np.linalg.inv(x).T])
+
+# ----- Scipy gradients -----
+sps.norm.cdf   = P(sps.norm.cdf, lambda ans, x, loc=0.0, scale=1.0 : [lambda g : g * (1./(np.sqrt(2.0*np.pi)*scale)) *np.exp(-((x-loc)**2.0)/(2.0*(scale**2.)))])
 
 def make_grad_np_sum(ans, x, axis=None, keepdims=False):
     if not isarray(x):

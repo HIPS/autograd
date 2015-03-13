@@ -1,5 +1,6 @@
 import numpy as np
 import numpy.random as npr
+import scipy.stats as sps
 from test_util import *
 from autograd import grad
 npr.seed(1)
@@ -79,3 +80,10 @@ def test_sqrt():
     d_fun = grad(fun)
     check_grads(fun, 10.0*npr.rand())
     check_grads(d_fun, 10.0*npr.rand())
+
+def norm_cdf():
+    loc = npr.randn()
+    fun = lambda x,loc,scale : 3.0 * sps.norm.cdf(x, loc=loc, scale=scale)
+    d_fun = grad(fun)
+    check_grads(fun, npr.randn(), loc=npr.randn(), scale=npr.rand())
+    check_grads(d_fun, npr.randn(), loc=npr.randn(), scale=npr.rand())
