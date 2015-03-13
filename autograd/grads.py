@@ -8,12 +8,12 @@ P = primitive
 
 # ----- Operator gradients -----
 I = lambda x : x # Identity operator
-op.neg = P(op.neg, lambda ans, x    : [op.neg])
-op.add = P(op.add, lambda ans, x, y : unbroadcast(ans, x, y, [I, I]))
-op.mul = P(op.mul, lambda ans, x, y : unbroadcast(ans, x, y, [lambda g : y * g, lambda g : x * g]))
-op.sub = P(op.sub, lambda ans, x, y : unbroadcast(ans, x, y, [I, op.neg]))
-op.div = P(op.div, lambda ans, x, y : unbroadcast(ans, x, y, [lambda g : g / y, lambda g : - g * x / y**2]))
-op.pow = P(op.pow, lambda ans, x, y : unbroadcast(ans, x, y, [lambda g : g * y * x ** (y - 1),
+neg = P(op.neg, lambda ans, x    : [op.neg])
+add = P(op.add, lambda ans, x, y : unbroadcast(ans, x, y, [I, I]))
+mul = P(op.mul, lambda ans, x, y : unbroadcast(ans, x, y, [lambda g : y * g, lambda g : x * g]))
+sub = P(op.sub, lambda ans, x, y : unbroadcast(ans, x, y, [I, op.neg]))
+div = P(op.div, lambda ans, x, y : unbroadcast(ans, x, y, [lambda g : g / y, lambda g : - g * x / y**2]))
+pow = P(op.pow, lambda ans, x, y : unbroadcast(ans, x, y, [lambda g : g * y * x ** (y - 1),
                                                               lambda g : g * np.log(x) * x ** y]))
 isarray = lambda x : isinstance(getval(x), np.ndarray)
 isfloat = lambda x : isinstance(getval(x), float)
