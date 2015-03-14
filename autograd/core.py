@@ -61,9 +61,10 @@ def top_tape(args):
 class Node(object):
     __slots__ = ['value', 'tape', 'parent_ops', 'outgrads']
     __metaclass__ = ABCMeta
+    type_mappings = {}
     def __new__(cls, value, *args, **kwargs):
         try:
-            node_type = node_types.type_mappings[type(value)]
+            node_type = Node.type_mappings[type(value)]
             return super(Node, cls).__new__(node_type, value, *args, **kwargs)
         except KeyError:
             raise TypeError("Can't differentiate wrt {0}".format(type(value)))
@@ -104,8 +105,6 @@ def zeros_like(x):
     return Node(x, CalculationTape()).zeros()
 
 Setter = namedtuple('Setter', ('idx', 'val'))
-
-import node_types # Can only import after defining Node and Setter
 
 def mutating_add(old, new):
     if isinstance(new, Setter):

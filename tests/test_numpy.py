@@ -1,5 +1,5 @@
-import numpy as np
-import numpy.random as npr
+import autograd.numpy as np
+import autograd.numpy.random as npr
 from test_util import *
 from autograd import grad
 npr.seed(1)

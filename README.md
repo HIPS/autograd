@@ -7,7 +7,7 @@ higher-order derivatives.
 Example use:
 
 ```python
-import numpy as np
+import autograd.numpy as np
 import matplotlib.pyplot as plt
 from autograd import grad
 

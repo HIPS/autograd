@@ -1,7 +1,8 @@
-import numpy as np
+from __future__ import absolute_import
 import operator as op
+import autograd.numpy as np
 from functools import partial
-from core import primitive, getval, untake
+from autograd.core import primitive, getval, untake
 import scipy.stats as sps
 
 P = primitive

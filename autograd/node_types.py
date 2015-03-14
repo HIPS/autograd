@@ -1,22 +1,23 @@
-import numpy as np
+from __future__ import absolute_import
+import autograd.numpy as np
 from abc import ABCMeta
-from core import Node, Setter, getval, zeros_like
-import grads
+from autograd.core import Node, Setter, getval, zeros_like
+import autograd.grads
 
 class NumericNode(Node):
     __array_priority__ = 100.0 # Ensure precedence of Node's __rmul__ over numpy's __mul__
     __metaclass__ = ABCMeta
-    def __add__(self, other):   return grads.add(self, other)
-    def __radd__(self, other):  return grads.add(self, other)
-    def __sub__(self, other):   return grads.sub(self, other)
-    def __rsub__(self, other):  return grads.sub(other, self)
-    def __mul__(self, other):   return grads.mul(self, other)
-    def __rmul__(self, other):  return grads.mul(other, self)
-    def __neg__(self):          return grads.neg(self)
-    def __pow__(self, power):   return grads.pow(self, power)
-    def __rpow__(self, power):  return grads.pow(power, self)
-    def __div__(self, other):   return grads.div(self, other)
-    def __rdiv__(self, other):  return grads.div(other, self)
+    def __add__(self, other):   return autograd.grads.add(self, other)
+    def __radd__(self, other):  return autograd.grads.add(self, other)
+    def __sub__(self, other):   return autograd.grads.sub(self, other)
+    def __rsub__(self, other):  return autograd.grads.sub(other, self)
+    def __mul__(self, other):   return autograd.grads.mul(self, other)
+    def __rmul__(self, other):  return autograd.grads.mul(other, self)
+    def __neg__(self):          return autograd.grads.neg(self)
+    def __pow__(self, power):   return autograd.grads.pow(self, power)
+    def __rpow__(self, power):  return autograd.grads.pow(power, self)
+    def __div__(self, other):   return autograd.grads.div(self, other)
+    def __rdiv__(self, other):  return autograd.grads.div(other, self)
     def __lt__(self, other):    return getval(self) < getval(other)
     def __gt__(self, other):    return getval(self) > getval(other) 
 
@@ -65,8 +66,7 @@ class SetterNode(Node):
         raise Exception("Shouldn't get zeros of setter")
 
 node_types = [FloatNode, ArrayNode, DictNode, ListNode, SetterNode]
-type_mappings = {}
 for node_type in node_types:
-    type_mappings[node_type] = node_type
+    Node.type_mappings[node_type] = node_type
     for value_type in node_type._value_types:
-        type_mappings[value_type] = node_type
+        Node.type_mappings[value_type] = node_type

@@ -1,4 +1,4 @@
-import numpy as np
+import autograd.numpy as np
 import itertools as it
 from autograd import grad
 from copy import copy
