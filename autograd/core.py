@@ -1,4 +1,5 @@
 import weakref
+import warnings
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
 from operator import attrgetter
@@ -11,6 +12,7 @@ def grad(fun, argnum=0):
         args = args[:argnum] + (start_node,) + args[argnum+1:]
         end_node = fun(*args, **kwargs)
         if not tape.hasmember(end_node):
+            warnings.warn("Output seems independent of input. Returning zero gradient.")
             return start_node.sum_outgrads()
         if not isinstance(getval(end_node), float):
             raise TypeError("Can only take gradient of scalar-valued functions")
