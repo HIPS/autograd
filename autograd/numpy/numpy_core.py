@@ -2,7 +2,11 @@ from __future__ import absolute_import
 from functools import partial
 from numpy import *
 import numpy as np_orig
+from autograd.core import primitive, getval, untake, Node
+from autograd.basic_ops import log, NumericNode
+
 # ----- Objects in numpy.__dict__ not imported by * -----
+
 int     = np_orig.int
 unicode = np_orig.unicode
 complex = np_orig.complex
@@ -16,16 +20,48 @@ min     = np_orig.min
 str     = np_orig.str
 round   = np_orig.round
 
+# ----- Node version of ndarray -----
+
+class ArrayNode(NumericNode):
+    def zeros(self):
+        return zeros(self.shape)
+
+    def add_outgrad(self, outgrad):
+        if isinstance(getval(outgrad), ndarray):
+            shape = self.shape
+            while outgrad.ndim > len(shape):
+                outgrad = sum(outgrad, axis=0)
+            for axis, size in enumerate(shape):
+                if size is 1:
+                    outgrad = sum(outgrad, axis, keepdims=True)
+        self.outgrads.append(outgrad)
+
+    def reshape(self, shape, order=None):
+        return reshape(self, shape, order=order)
+    def ravel(self, order=None):
+        return ravel(self, order=order)
+    def squeeze(self, axis=None):
+        return squeeze(self, axis=axis)
+    def sum(self):
+        return sum(self)
+    @property
+    def T(self): return transpose(self)
+    @property
+    def shape(self): return self.value.shape
+    @property
+    def ndim(self): return self.value.ndim
+    @property
+    def size(self): return self.value.size
+Node.add_subclass(ArrayNode, [ndarray])
+
 # ----- Numpy gradients -----
 
-from autograd.core import primitive, getval, untake
 P = primitive
 isarray = lambda x : isinstance(getval(x), ndarray)
 I = lambda x : x # Identity operator
 
 abs    = P(abs,    lambda ans, x : [lambda g : sign(x) * g])
 exp    = P(exp,    lambda ans, x : [lambda g : ans * g])
-log    = P(log,    lambda ans, x : [lambda g : g / x])
 sin    = P(sin,    lambda ans, x : [lambda g : g * cos(x)])
 cos    = P(cos,    lambda ans, x : [lambda g : - g * sin(x)])
 tan    = P(tan,    lambda ans, x : [lambda g : g / cos(x) **2])
@@ -46,7 +82,7 @@ split       = P(split,       lambda ans, x, idxs, axis=0 : [lambda g : concatena
 diag        = P(diag,        lambda ans, x               : [lambda g : diag(g)])
 trace       = P(trace,       lambda ans, x               : [lambda g : g * eye(x.shape[0])])
 
-# ----- More subtle gradients -----
+# ----- Subtler gradients -----
 
 def make_grad_np_sum(ans, x, axis=None, keepdims=False):
     if not isarray(x):
@@ -59,7 +95,7 @@ def make_grad_np_sum(ans, x, axis=None, keepdims=False):
             return [lambda g : repeat(g, shape[axis], axis)]
         else:
             return [lambda g : repeat(expand_dims(g, axis),
-                                         shape[axis], axis)]
+                                      shape[axis], axis)]
 sum = P(sum, make_grad_np_sum)
 
 def make_grad_np_mean(ans, x, axis=None, keepdims=False):
@@ -73,7 +109,7 @@ def make_grad_np_mean(ans, x, axis=None, keepdims=False):
             return [lambda g : repeat(g, shape[axis], axis) / shape[axis]]
         else:
             return [lambda g : repeat(expand_dims(g, axis),
-                                         shape[axis], axis) / shape[axis]]
+                                      shape[axis], axis) / shape[axis]]
 mean = P(mean, make_grad_np_mean)
 
 def make_grad_np_max(ans, x):

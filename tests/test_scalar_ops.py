@@ -87,3 +87,4 @@ def norm_cdf():
     d_fun = grad(fun)
     check_grads(fun, npr.randn(), loc=npr.randn(), scale=npr.rand())
     check_grads(d_fun, npr.randn(), loc=npr.randn(), scale=npr.rand())
+    assert False

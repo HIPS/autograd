@@ -64,8 +64,8 @@ class Node(object):
     type_mappings = {}
     def __new__(cls, value, *args, **kwargs):
         try:
-            node_type = Node.type_mappings[type(value)]
-            return super(Node, cls).__new__(node_type, value, *args, **kwargs)
+            subclass = Node.type_mappings[type(value)]
+            return super(Node, cls).__new__(subclass, value, *args, **kwargs)
         except KeyError:
             raise TypeError("Can't differentiate wrt {0}".format(type(value)))
 
@@ -80,7 +80,7 @@ class Node(object):
         if self.outgrads:
             outgrad_sum = self.sum_outgrads()
             for gradfun, parent in self.parent_ops:
-                parent.outgrads.append(gradfun(outgrad_sum))
+                parent.add_outgrad(gradfun(outgrad_sum))
 
     def sum_outgrads(self):
         if len(self.outgrads) is 1 and not isinstance(getval(self.outgrads[0]), Setter):
@@ -91,12 +91,21 @@ class Node(object):
                 outgrad_sum = mutating_add(outgrad_sum, new)
             return outgrad_sum
 
+    def add_outgrad(self, outgrad):
+        self.outgrads.append(outgrad)
+
     def __getitem__(self, idx):
         return take(self, idx)
 
     @abstractmethod
     def zeros(self):
         pass
+
+    @staticmethod
+    def add_subclass(subclass, value_types):
+        Node.type_mappings[subclass] = subclass
+        for value_type in value_types:
+            Node.type_mappings[value_type] = subclass
 
 def getval(x):
     return getval(x.value) if isinstance(x, Node) else x
@@ -105,6 +114,10 @@ def zeros_like(x):
     return Node(x, CalculationTape()).zeros()
 
 Setter = namedtuple('Setter', ('idx', 'val'))
+class SetterNode(Node):
+    def zeros(self):
+        raise Exception("Shouldn't get zeros of setter")
+Node.add_subclass(SetterNode, [Setter])
 
 def mutating_add(old, new):
     if isinstance(new, Setter):
