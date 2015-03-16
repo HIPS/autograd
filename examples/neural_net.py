@@ -3,6 +3,7 @@ import numpy.random as npr
 from autograd import grad
 
 class WeightsParser(object):
+    """A helper class to index into a parameter vector."""
     def __init__(self):
         self.idxs_and_shapes = {}
         self.N = 0
@@ -71,6 +72,7 @@ if __name__ == '__main__':
     num_epochs = 50
     
     # Load and process MNIST data (borrowing from Kayak)
+    print "Loading training data..."
     import imp, urllib
     partial_flatten = lambda x : np.reshape(x, (x.shape[0], np.prod(x.shape[1:])))
     one_hot = lambda x, K : np.array(x[:,None] == np.arange(K)[None, :], dtype=int)
@@ -91,14 +93,6 @@ if __name__ == '__main__':
     # Initialize weights
     rs = npr.RandomState()
     W = rs.randn(N_weights) * param_scale
-
-    # Check grads
-    rand_dir = rs.randn(N_weights) * param_scale
-    rand_dir = rand_dir / np.sqrt(np.dot(rand_dir, rand_dir))
-    test_fun = lambda x : loss_fun(W + x * rand_dir, train_images, train_labels)
-    nd = (test_fun(1e-4) - test_fun(-1e-4)) / 2e-4
-    ad = np.dot(loss_grad(W, train_images, train_labels), rand_dir)
-    print "Checking grads. Relative diff is: {0}".format((nd - ad)/np.abs(nd))
 
     print "    Epoch      |    Train err  |   Test error  "
     def print_perf(epoch, W):
