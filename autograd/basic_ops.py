@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 import operator as op
 from abc import ABCMeta
-from numpy import log, float16, float32, float64
+from numpy import log, ndarray, float16, float32, float64
 from autograd.core import primitive, getval, Node
 import scipy.stats as sps
 
@@ -10,13 +10,15 @@ import scipy.stats as sps
 P = primitive
 I = lambda x : x # Identity operator
 neg = P(op.neg, lambda ans, x    : [op.neg])
-add = P(op.add, lambda ans, x, y : [I, I])
-mul = P(op.mul, lambda ans, x, y : [lambda g : y * g, lambda g : x * g])
-sub = P(op.sub, lambda ans, x, y : [I, op.neg])
-div = P(op.div, lambda ans, x, y : [lambda g : g / y, lambda g : - g * x / y**2])
-pow = P(op.pow, lambda ans, x, y : [lambda g : g * y * x ** (y - 1),
-                                    lambda g : g * log(x) * x ** y])
+add = P(op.add, lambda ans, x, y : unbroadcast[0](ans, x, y, [I, I]))
+mul = P(op.mul, lambda ans, x, y : unbroadcast[0](ans, x, y, [lambda g : y * g, lambda g : x * g]))
+sub = P(op.sub, lambda ans, x, y : unbroadcast[0](ans, x, y, [I, op.neg]))
+div = P(op.div, lambda ans, x, y : unbroadcast[0](ans, x, y, [lambda g : g / y, lambda g : - g * x / y**2]))
+pow = P(op.pow, lambda ans, x, y : unbroadcast[0](ans, x, y, [lambda g : g * y * x ** (y - 1),
+                                                           lambda g : g * log(x) * x ** y]))
 log = P(log,    lambda ans, x : [lambda g : g / x])
+
+unbroadcast = []
 
 # ----- Basic numeric node types -----
 
@@ -38,11 +40,6 @@ class NumericNode(Node):
     def __gt__(self, other):    return getval(self) > getval(other) 
 
 class FloatNode(NumericNode):
-    def add_outgrad(self, outgrad):
-        if not isinstance(getval(outgrad), float):
-            outgrad = outgrad.sum()
-        self.outgrads.append(outgrad)
-
     def zeros(self):
         return 0.0
 

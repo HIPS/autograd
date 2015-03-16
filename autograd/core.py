@@ -13,14 +13,14 @@ def grad(fun, argnum=0):
         end_node = fun(*args, **kwargs)
         if not tape.hasmember(end_node):
             warnings.warn("Output seems independent of input. Returning zero gradient.")
-            return start_node.sum_outgrads()
+            return start_node.zeros()
         if not isinstance(getval(end_node), float):
             raise TypeError("Can only take gradient of scalar-valued functions")
         else:
-            end_node.outgrads.append(1.0)
+            end_node.reverse_node.outgrads.append(1.0)
             for node in tape[::-1]:
                 node.send_upstream()
-            return start_node.sum_outgrads()
+            return start_node.reverse_node.sum_outgrads()
 
     return gradfun
 
@@ -32,7 +32,7 @@ def Differentiable(fun, forward_pass):
         else:
             arg_vals = [arg.value if tape.hasmember(arg) else arg for arg in args]
             result, gradfuns = forward_pass(*arg_vals, **kwargs)
-            parent_ops = [(gradfuns[i], parent)
+            parent_ops = [(gradfuns[i], parent.reverse_node)
                           for i, parent in enumerate(args) if tape.hasmember(parent)]
             return Node(result, tape, parent_ops)
         differentiable_fun.__name__ = fun.__name__
@@ -52,11 +52,31 @@ class CalculationTape(list):
         self.priority = self.tape_count.next()
 
     def hasmember(self, x):
-        return isinstance(x, Node) and x.tape() is self
+        return isinstance(x, Node) and x.tape is self
 
 def top_tape(args):
-    tapes = [node.tape() for node in args if isinstance(node, Node)]
+    tapes = [node.tape for node in args if isinstance(node, Node)]
     return max(tapes, key=attrgetter('priority')) if tapes else None
+
+class ReverseNode(object):
+    def __init__(self, parent_ops):
+        self.parent_ops = parent_ops
+        self.outgrads = []
+
+    def send_upstream(self):
+        if self.outgrads:
+            outgrad_sum = self.sum_outgrads()
+            for gradfun, parent in self.parent_ops:
+                parent.add_outgrad(gradfun(outgrad_sum))
+
+    def sum_outgrads(self):
+        outgrad_sum = self.outgrads[0]
+        for new in self.outgrads[1:]:
+            outgrad_sum = outgrad_sum + new
+        return outgrad_sum
+
+    def add_outgrad(self, outgrad):
+        self.outgrads.append(outgrad)
 
 class Node(object):
     __slots__ = ['value', 'tape', 'parent_ops', 'outgrads']
@@ -71,28 +91,9 @@ class Node(object):
 
     def __init__(self, value, tape, parent_ops=[]):
         self.value = value
-        self.tape = weakref.ref(tape)
-        tape.append(self)
-        self.parent_ops = parent_ops
-        self.outgrads = []
-
-    def send_upstream(self):
-        if self.outgrads:
-            outgrad_sum = self.sum_outgrads()
-            for gradfun, parent in self.parent_ops:
-                parent.add_outgrad(gradfun(outgrad_sum))
-
-    def sum_outgrads(self):
-        if len(self.outgrads) is 1 and not isinstance(getval(self.outgrads[0]), Setter):
-            return self.outgrads[0]
-        else:
-            outgrad_sum = self.zeros()
-            for new in self.outgrads:
-                outgrad_sum = mutating_add(outgrad_sum, new)
-            return outgrad_sum
-
-    def add_outgrad(self, outgrad):
-        self.outgrads.append(outgrad)
+        self.tape = tape
+        self.reverse_node = ReverseNode(parent_ops)
+        tape.append(self.reverse_node)
 
     def __getitem__(self, idx):
         return take(self, idx)
@@ -113,25 +114,11 @@ def getval(x):
 def zeros_like(x):
     return Node(x, CalculationTape()).zeros()
 
-Setter = namedtuple('Setter', ('idx', 'val'))
-class SetterNode(Node):
-    def zeros(self):
-        raise Exception("Shouldn't get zeros of setter")
-Node.add_subclass(SetterNode, [Setter])
-
-def mutating_add(old, new):
-    if isinstance(new, Setter):
-        if old[new.idx] is 0:
-            old[new.idx] = new.val
-        else:
-            old[new.idx] += new.val
-    else:
-        old += new
-    return old
-mutating_add = primitive(mutating_add, lambda ans, old, new: [lambda g : g] * 2)
-
 def take(A, idx): return A[idx]
-take = primitive(take, lambda ans, A, idx : [lambda g : untake(g, idx)])
+take = primitive(take, lambda ans, A, idx : [lambda g : untake(g, idx, lambda : zeros_like(A))])
 
-def untake(x, idx): return Setter(idx, x)
-untake = primitive(untake, lambda ans, x, idx : [lambda g : take(g, idx)])
+def untake(x, idx, zeros):
+    result = zeros()
+    result[idx] = x
+    return result
+untake = primitive(untake, lambda ans, x, idx, zeros : [lambda g : take(g, idx)])

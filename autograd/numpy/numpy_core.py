@@ -3,7 +3,7 @@ from functools import partial
 from numpy import *
 import numpy as np_orig
 from autograd.core import primitive, getval, untake, Node
-from autograd.basic_ops import log, NumericNode
+from autograd.basic_ops import log, NumericNode, unbroadcast
 
 # ----- Objects in numpy.__dict__ not imported by * -----
 
@@ -20,22 +20,38 @@ min     = np_orig.min
 str     = np_orig.str
 round   = np_orig.round
 
+# ----- Broadcasting logic -----
+
+isarray = lambda x : isinstance(getval(x), ndarray)
+isfloat = lambda x : isinstance(getval(x), float)
+
+def do_unbroadcast(ans, x, y, funs):
+    return [unbroadcast_fun(ans, x, funs[0]),
+            unbroadcast_fun(ans, y, funs[1])]
+unbroadcast.append(do_unbroadcast)
+
+def unbroadcast_fun(ans, x, fun):
+    if isfloat(x) and isarray(ans):
+        return lambda g : sum(fun(g))
+    elif isarray(x):
+        shape = x.shape
+        def new_fun(g):
+            result = fun(g)
+            while result.ndim > len(shape):
+                result = sum(result, axis=0)
+            for axis, size in enumerate(shape):
+                if size is 1:
+                    result = sum(result, axis, keepdims=True)
+            return result
+        return new_fun
+    else:
+        return fun
+
 # ----- Node version of ndarray -----
 
 class ArrayNode(NumericNode):
     def zeros(self):
         return zeros(self.shape)
-
-    def add_outgrad(self, outgrad):
-        if isinstance(getval(outgrad), ndarray):
-            shape = self.shape
-            while outgrad.ndim > len(shape):
-                outgrad = sum(outgrad, axis=0)
-            for axis, size in enumerate(shape):
-                if size is 1:
-                    outgrad = sum(outgrad, axis, keepdims=True)
-        self.outgrads.append(outgrad)
-
     def reshape(self, shape, order=None):
         return reshape(self, shape, order=order)
     def ravel(self, order=None):
@@ -115,7 +131,7 @@ mean = P(mean, make_grad_np_mean)
 def make_grad_np_max(ans, x):
     def gradfun(g):
         idxs = argmax(getval(x))
-        return untake(g, unravel_index(idxs, x.shape))
+        return untake(g, unravel_index(idxs, x.shape), lambda : zeros(x.shape))
     return [gradfun]
 max = P(max, make_grad_np_max)
 
