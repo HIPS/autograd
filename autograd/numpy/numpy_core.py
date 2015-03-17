@@ -53,8 +53,6 @@ def unbroadcast_fun(ans, x, fun):
 class ArrayNode(NumericNode):
     def __getitem__(self, idx):
         return take(self, idx)
-    def zeros(self):
-        return zeros(self.shape)
     def reshape(self, shape, order=None):
         return reshape(self, shape, order=order)
     def ravel(self, order=None):
@@ -91,8 +89,7 @@ class SparseArray(object):
         return self + other
 
 class SparseArrayNode(NumericNode):
-    def zeros(self):
-        return zeros(getval(self).shape)
+    pass
 Node.add_subclass(SparseArrayNode, [SparseArray])
 
 take = lambda A, idx : A[idx]
@@ -102,7 +99,7 @@ def make_grad_take(ans, A, idx):
 take = primitive(take, make_grad_take)
 
 untake = lambda x, idx, shape : SparseArray(shape, idx, x)
-untake = primitive(untake, lambda ans, x, idx, zeros : [lambda g : take(g, idx)])
+untake = primitive(untake, lambda ans, x, idx, shape : [lambda g : take(g, idx)])
 
 # ----- Numpy gradients -----
 

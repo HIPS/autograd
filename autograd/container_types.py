@@ -1,9 +1,7 @@
 from __future__ import absolute_import
-from autograd.core import primitive, Node, zeros_like_node, getval
+from autograd.core import primitive, Node, getval
 
 class DictNode(Node):
-    def zeros(self):
-        return {k : zeros_like_node(v) for k, v in getval(self).iteritems()}
     def __getitem__(self, idx):
         return take(self, idx)
     def __iter__(self):
@@ -11,8 +9,6 @@ class DictNode(Node):
 Node.add_subclass(DictNode, [dict])
 
 class ListNode(Node):
-    def zeros(self):
-        return [zeros_like_node(v) for v in getval(self)]
     def __getitem__(self, idx):
         return take(self, idx)
     def __len__(self): return len(self.value)
@@ -25,4 +21,4 @@ def untake(x, idx, zeros_fun):
     result = zeros_fun()
     result[idx] = x
     return result
-untake = primitive(untake, lambda ans, x, idx, zeros : [lambda g : take(g, idx)])
+untake = primitive(untake, lambda ans, x, idx, zeros_fun : [lambda g : take(g, idx)])

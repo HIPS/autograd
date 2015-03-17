@@ -13,7 +13,7 @@ def grad(fun, argnum=0):
         end_node = fun(*args, **kwargs)
         if not tape.hasmember(end_node):
             warnings.warn("Output seems independent of input. Returning zero gradient.")
-            return start_node.zeros()
+            return 0 * getval(start_node)
         if not isinstance(getval(end_node), float):
             raise TypeError("Can only take gradient of scalar-valued functions")
         else:
@@ -92,10 +92,6 @@ class Node(object):
         self.reverse_node = ReverseNode(parent_ops)
         tape.append(self.reverse_node)
 
-    @abstractmethod
-    def zeros(self):
-        pass
-
     @staticmethod
     def add_subclass(subclass, value_types):
         Node.type_mappings[subclass] = subclass
@@ -104,6 +100,3 @@ class Node(object):
 
 def getval(x):
     return getval(x.value) if isinstance(x, Node) else x
-
-def zeros_like_node(x):
-    return Node(x, CalculationTape()).zeros()

@@ -40,8 +40,7 @@ class NumericNode(Node):
     def __gt__(self, other):    return getval(self) > getval(other) 
 
 class FloatNode(NumericNode):
-    def zeros(self):
-        return 0.0
+    pass
 
 Node.add_subclass(FloatNode, [float, float16, float32, float64])
 
