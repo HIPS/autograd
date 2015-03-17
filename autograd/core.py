@@ -1,7 +1,4 @@
-import weakref
 import warnings
-from abc import ABCMeta, abstractmethod
-from collections import namedtuple
 from operator import attrgetter
 from itertools import count
 
@@ -14,16 +11,15 @@ def grad(fun, argnum=0):
         if not tape.hasmember(end_node):
             warnings.warn("Output seems independent of input. Returning zero gradient.")
             return 0 * getval(start_node)
-        if not isinstance(getval(end_node), float):
+        elif not isinstance(getval(end_node), float):
             raise TypeError("Can only take gradient of scalar-valued functions")
         else:
-            end_node.reverse_node.outgrads.append(1.0)
+            end_node.reverse_node.outgrad = 1.0
             for node in tape[::-1]:
-                outgrad_sum = sum(node.outgrads)
-                if outgrad_sum is not 0:
+                if node.outgrad is not 0:
                     for gradfun, parent in node.parent_ops:
-                        parent.outgrads.append(gradfun(outgrad_sum))
-            return sum(start_node.reverse_node.outgrads)
+                        parent.outgrad = parent.outgrad + gradfun(node.outgrad)
+            return start_node.reverse_node.outgrad
 
     return gradfun
 
@@ -61,11 +57,14 @@ def top_tape(args):
     tapes = [node.tape for node in args if isinstance(node, Node)]
     return max(tapes, key=attrgetter('priority')) if tapes else None
 
-ReverseNode = namedtuple('ReverseNode', ['parent_ops', 'outgrads'])
+class ReverseNode(object):
+    __slots__ = ['parent_ops', 'outgrad']
+    def __init__(self, parent_ops):
+        self.parent_ops = parent_ops
+        self.outgrad = 0
 
 class Node(object):
-    __slots__ = ['value', 'tape', 'parent_ops', 'outgrads']
-    __metaclass__ = ABCMeta
+    __slots__ = ['value', 'tape']
     type_mappings = {}
     def __new__(cls, value, *args, **kwargs):
         try:
@@ -77,7 +76,7 @@ class Node(object):
     def __init__(self, value, tape, parent_ops=[]):
         self.value = value
         self.tape = tape
-        self.reverse_node = ReverseNode(parent_ops, [])
+        self.reverse_node = ReverseNode(parent_ops)
         tape.append(self.reverse_node)
 
     @staticmethod
