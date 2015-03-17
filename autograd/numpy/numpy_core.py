@@ -92,7 +92,7 @@ class SparseArray(object):
 
 class SparseArrayNode(NumericNode):
     def zeros(self):
-        pass
+        return zeros(getval(self).shape)
 Node.add_subclass(SparseArrayNode, [SparseArray])
 
 take = lambda A, idx : A[idx]
@@ -188,28 +188,25 @@ def make_grad_np_dot(ans, A, B):
     return [grad_np_dot_A, grad_np_dot_B]
 dot = P(dot, make_grad_np_dot)
 
+concatenate_orig = concatenate
+def concatenate_args(axis, *args):
+    return concatenate_orig(args, axis)
+def make_grad_concatenate_args(ans, axis, *args):
+    high = 0
+    gradfuns = [None]
+    for a in args:
+        low = high
+        high += a.shape[axis]
+        idxs = [slice(None)] * ans.ndim
+        idxs[axis] = slice(low, high)
+        gradfuns.append(partial(take, idx=idxs))
+    return gradfuns
+concatenate_args = P(concatenate_args, make_grad_concatenate_args)
+concatenate = lambda arr_list, axis=0 : concatenate_args(axis, *arr_list)
+
 def make_grad_np_concatenate(ans, arr_list, axis=0):
+    idxs = cumsum([a.shape[axis] for a in arr_list[:-1]])
     def grad_np_concatenate(g):
-        idxs = cumsum([a.shape[axis] for a in getval(arr_list)[:-1]])
         return split(g, idxs, axis=axis)
     return [grad_np_concatenate]
 concatenate = P(concatenate, make_grad_np_concatenate)
-
-# ----- Special list constructor -----
-
-class ArgnumGrad(object):
-    def __init__(self, fun_with_argnum):
-        self.fun = fun_with_argnum
-    def __getitem__(self, argnum):
-        return partial(self.fun, argnum)
-
-def kylist(*args):
-    return list(args)
-kylist = primitive(kylist, lambda ans, *args : ArgnumGrad(lambda argnum, g : g[argnum]))
-
-# Wrap the concatenation function to automatically wrap the list into a kylist.
-unwrapped_np_concatenate = concatenate
-def concatwrapper(*args, **kwargs):
-    args = (kylist(*(args[0])),) + args[1:]
-    return unwrapped_np_concatenate(*args, **kwargs)
-concatenate = concatwrapper

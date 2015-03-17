@@ -150,6 +150,14 @@ def test_ravel_call():
     check_grads(fun, A)
     check_grads(d_fun, A)
 
+def test_simple_concatenate():
+    A = npr.randn(5, 6, 4)
+    B = npr.randn(4, 6, 4)
+    def fun(x): return to_scalar(np.concatenate((A, x)))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    check_grads(fun, B)
+    check_grads(d_fun, B)
+
 def test_concatenate_axis_0():
     A = npr.randn(5, 6, 4)
     B = npr.randn(5, 6, 4)
