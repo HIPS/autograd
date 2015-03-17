@@ -1,8 +1,9 @@
 from __future__ import absolute_import
 from functools import partial
+from copy import copy
 from numpy import *
 import numpy as np_orig
-from autograd.core import primitive, getval, untake, Node
+from autograd.core import primitive, getval, Node
 from autograd.basic_ops import log, NumericNode, unbroadcast
 
 # ----- Objects in numpy.__dict__ not imported by * -----
@@ -50,6 +51,8 @@ def unbroadcast_fun(ans, x, fun):
 # ----- Node version of ndarray -----
 
 class ArrayNode(NumericNode):
+    def __getitem__(self, idx):
+        return take(self, idx)
     def zeros(self):
         return zeros(self.shape)
     def reshape(self, shape, order=None):
@@ -69,6 +72,37 @@ class ArrayNode(NumericNode):
     @property
     def size(self): return self.value.size
 Node.add_subclass(ArrayNode, [ndarray])
+
+# ----- Sparse array -----
+
+class SparseArray(object):
+    __array_priority__ = 50.0
+    def __init__(self, shape, idx, val):
+        self.shape = shape
+        self.idx = idx
+        self.val = val
+
+    def __add__(self, other):
+        array = zeros(self.shape) if other is 0 else copy(other)
+        array[self.idx] += self.val
+        return array
+
+    def __radd__(self, other):
+        return self + other
+
+class SparseArrayNode(NumericNode):
+    def zeros(self):
+        pass
+Node.add_subclass(SparseArrayNode, [SparseArray])
+
+take = lambda A, idx : A[idx]
+def make_grad_take(ans, A, idx):
+    shape = A.shape
+    return [lambda g : untake(g, idx, shape)]
+take = primitive(take, make_grad_take)
+
+untake = lambda x, idx, shape : SparseArray(shape, idx, x)
+untake = primitive(untake, lambda ans, x, idx, zeros : [lambda g : take(g, idx)])
 
 # ----- Numpy gradients -----
 
@@ -131,7 +165,8 @@ mean = P(mean, make_grad_np_mean)
 def make_grad_np_max(ans, x):
     def gradfun(g):
         idxs = argmax(getval(x))
-        return untake(g, unravel_index(idxs, x.shape), lambda : zeros(x.shape))
+        shape = x.shape
+        return untake(g, unravel_index(idxs, shape), shape)
     return [gradfun]
 max = P(max, make_grad_np_max)
 

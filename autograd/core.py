@@ -70,10 +70,7 @@ class ReverseNode(object):
                 parent.add_outgrad(gradfun(outgrad_sum))
 
     def sum_outgrads(self):
-        outgrad_sum = self.outgrads[0]
-        for new in self.outgrads[1:]:
-            outgrad_sum = outgrad_sum + new
-        return outgrad_sum
+        return sum(self.outgrads)
 
     def add_outgrad(self, outgrad):
         self.outgrads.append(outgrad)
@@ -95,9 +92,6 @@ class Node(object):
         self.reverse_node = ReverseNode(parent_ops)
         tape.append(self.reverse_node)
 
-    def __getitem__(self, idx):
-        return take(self, idx)
-
     @abstractmethod
     def zeros(self):
         pass
@@ -111,14 +105,5 @@ class Node(object):
 def getval(x):
     return getval(x.value) if isinstance(x, Node) else x
 
-def zeros_like(x):
+def zeros_like_node(x):
     return Node(x, CalculationTape()).zeros()
-
-def take(A, idx): return A[idx]
-take = primitive(take, lambda ans, A, idx : [lambda g : untake(g, idx, lambda : zeros_like(A))])
-
-def untake(x, idx, zeros):
-    result = zeros()
-    result[idx] = x
-    return result
-untake = primitive(untake, lambda ans, x, idx, zeros : [lambda g : take(g, idx)])
