@@ -201,6 +201,7 @@ def test_inv():
     def fun(x): return to_scalar(np.linalg.inv(x))
     d_fun = lambda x : to_scalar(grad(fun)(x))
     mat = npr.randn(8, 8)
+    mat = np.dot(mat, mat) + 1.0 * np.eye(8)
     check_grads(fun, mat)
     check_grads(d_fun, mat)
 
