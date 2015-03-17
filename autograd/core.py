@@ -19,8 +19,11 @@ def grad(fun, argnum=0):
         else:
             end_node.reverse_node.outgrads.append(1.0)
             for node in tape[::-1]:
-                node.send_upstream()
-            return start_node.reverse_node.sum_outgrads()
+                outgrad_sum = sum(node.outgrads)
+                if outgrad_sum is not 0:
+                    for gradfun, parent in node.parent_ops:
+                        parent.outgrads.append(gradfun(outgrad_sum))
+            return sum(start_node.reverse_node.outgrads)
 
     return gradfun
 
@@ -58,22 +61,7 @@ def top_tape(args):
     tapes = [node.tape for node in args if isinstance(node, Node)]
     return max(tapes, key=attrgetter('priority')) if tapes else None
 
-class ReverseNode(object):
-    def __init__(self, parent_ops):
-        self.parent_ops = parent_ops
-        self.outgrads = []
-
-    def send_upstream(self):
-        if self.outgrads:
-            outgrad_sum = self.sum_outgrads()
-            for gradfun, parent in self.parent_ops:
-                parent.add_outgrad(gradfun(outgrad_sum))
-
-    def sum_outgrads(self):
-        return sum(self.outgrads)
-
-    def add_outgrad(self, outgrad):
-        self.outgrads.append(outgrad)
+ReverseNode = namedtuple('ReverseNode', ['parent_ops', 'outgrads'])
 
 class Node(object):
     __slots__ = ['value', 'tape', 'parent_ops', 'outgrads']
@@ -89,7 +77,7 @@ class Node(object):
     def __init__(self, value, tape, parent_ops=[]):
         self.value = value
         self.tape = tape
-        self.reverse_node = ReverseNode(parent_ops)
+        self.reverse_node = ReverseNode(parent_ops, [])
         tape.append(self.reverse_node)
 
     @staticmethod
