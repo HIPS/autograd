@@ -46,6 +46,15 @@ def test_sum_3():
     check_grads(fun, mat)
     check_grads(d_fun, mat)
 
+def test_non_numpy_sum():
+    def fun(x, y):
+        return to_scalar(sum([x, y]))
+    d_fun = lambda x, y : to_scalar(grad(fun)(x, y))
+    mat1 = npr.randn(10, 11)
+    mat2 = npr.randn(10, 11)
+    check_grads(fun, mat1, mat2)
+    check_grads(d_fun, mat1, mat2)
+
 def test_mean_1():
     def fun(x): return to_scalar(np.mean(x))
     d_fun = lambda x : to_scalar(grad(fun)(x))
