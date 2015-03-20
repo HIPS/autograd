@@ -18,7 +18,8 @@ class NumericNode(Node):
     def __div__(self, other):   return grads.div(self, other)
     def __rdiv__(self, other):  return grads.div(other, self)
     def __lt__(self, other):    return getval(self) < getval(other)
-    def __gt__(self, other):    return getval(self) > getval(other) 
+    def __gt__(self, other):    return getval(self) > getval(other)
+    def __eq__(self, other):    return getval(self) == getval(other)
 
 class FloatNode(NumericNode):
     _value_types = [float, np.float16, np.float32, np.float64]

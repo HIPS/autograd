@@ -69,40 +69,43 @@ np.linalg.det  = P(np.linalg.det,  lambda ans, x                    : [lambda g 
 # ----- Scipy gradients -----
 sps.norm.cdf   = P(sps.norm.cdf, lambda ans, x, loc=0.0, scale=1.0 : [lambda g : g * (1./(np.sqrt(2.0*np.pi)*scale)) *np.exp(-((x-loc)**2.0)/(2.0*(scale**2.)))])
 
+
+def repeat_to_match_shape(shape, axis, keepdims):
+    """Returns a function that repeats an array along axis to get a given shape.
+       Also returns the number of repetitions of the array."""
+    if axis is None:
+        return lambda g : np.full(shape, g), np.prod(shape)
+    else:
+        if keepdims:
+            return lambda g : np.repeat(g, shape[axis], axis), shape[axis]
+        else:
+            return lambda g : np.repeat(np.expand_dims(g, axis),
+                                         shape[axis], axis), shape[axis]
+
 def make_grad_np_sum(ans, x, axis=None, keepdims=False):
     if not isarray(x):
         return [I]
-    shape = x.shape
-    if axis is None:
-        return [lambda g : np.full(shape, g)]
-    else:
-        if keepdims:
-            return [lambda g : np.repeat(g, shape[axis], axis)]
-        else:
-            return [lambda g : np.repeat(np.expand_dims(g, axis),
-                                         shape[axis], axis)]
+    return [repeat_to_match_shape(x.shape, axis, keepdims)[0]]
+
 np.sum = P(np.sum, make_grad_np_sum)
 
 def make_grad_np_mean(ans, x, axis=None, keepdims=False):
     if not isarray(x):
         return [I]
-    shape = x.shape
-    if axis is None:
-        return [lambda g : np.full(shape, g) / np.prod(shape)]
-    else:
-        if keepdims:
-            return [lambda g : np.repeat(g, shape[axis], axis) / shape[axis]]
-        else:
-            return [lambda g : np.repeat(np.expand_dims(g, axis),
-                                         shape[axis], axis) / shape[axis]]
+    repeater, num_reps = repeat_to_match_shape(x.shape, axis, keepdims)
+    return [lambda g: repeater(g) / num_reps]
+
 np.mean = P(np.mean, make_grad_np_mean)
 
-def make_grad_np_max(ans, x):
-    def gradfun(g):
-        idxs = np.argmax(getval(x))
-        return untake(g, np.unravel_index(idxs, x.shape))
-    return [gradfun]
+def make_grad_np_max(ans, x, axis=None, keepdims=None):
+    if not isarray(x):
+        return [I]
+    repeater, _ = repeat_to_match_shape(x.shape, axis, keepdims)
+    argmax_locations = x == repeater(ans)   # TODO: Properly handle multiple equalities.
+    return [lambda g: repeater(g) * argmax_locations]
+
 np.max = P(np.max, make_grad_np_max)
+np.min = P(np.min, make_grad_np_max)  # Works because gradient uses ans.
 
 def make_grad_np_dot(ans, A, B):
     def grad_np_dot_A(g):
