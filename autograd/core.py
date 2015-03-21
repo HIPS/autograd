@@ -3,7 +3,7 @@ import warnings
 import operator as op
 from operator import attrgetter
 from itertools import count
-from numpy import log, float64
+from numpy import log, float64, ndarray
 
 def grad(fun, argnum=0):
     def gradfun(*args, **kwargs):
@@ -15,7 +15,7 @@ def grad(fun, argnum=0):
         if not (isinstance(end_node, Node) and tape in end_node.reverse_nodes):
             warnings.warn("Output seems independent of input. Returning zero gradient.")
             return 0 * start_node.value
-        elif not isinstance(end_node.value, float):
+        elif not isfloaty(end_node.value):
             raise TypeError("Can only take gradient of scalar-valued functions")
         else:
             end_node.reverse_nodes[tape].outgrad = 1.0
@@ -27,11 +27,17 @@ def grad(fun, argnum=0):
             return tape[0].outgrad
     return gradfun
 
+def isfloaty(x):
+    return isinstance(x, float) or (isinstance(x, ndarray) and x.shape == ())
+
 getval = lambda x : x.value if isinstance(x, Node) else x
 
 def primitive(fun, gradmaker):
     def wrapped_function(*args, **kwargs):
         result = fun(*map(getval, args), **kwargs)
+        assert not type(result) == ndarray, fun
+        if result is NotImplemented:
+            return result
         for i, arg in enumerate(args):
             if isinstance(arg, Node):
                 for tape in arg.reverse_nodes:
@@ -39,6 +45,7 @@ def primitive(fun, gradmaker):
                     gradfun = gradmaker(result, *args, **kwargs)[i]
                     result.add_reverse_op(tape, (gradfun, arg.reverse_nodes[tape]))
         return result
+    wrapped_function.__name__ = fun.__name__
     return wrapped_function
 
 def new_node(value):

@@ -27,6 +27,7 @@ def test_add():
     d_fun_0 = lambda x, y : to_scalar(grad(fun, 0)(x, y))
     d_fun_1 = lambda x, y : to_scalar(grad(fun, 1)(x, y))
     for arg1, arg2 in arg_pairs():
+        print type(arg1), type(arg2)
         check_grads(fun, arg1, arg2)
         check_grads(d_fun_0, arg1, arg2)
         check_grads(d_fun_1, arg1, arg2)
