@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from functools import partial
-from copy import copy
 from numpy import *
+from copy import copy
 import numpy as np_orig
 import operator as op
 from autograd.core import primitive, Node, log, getval
@@ -119,27 +119,6 @@ class ndarray(np_orig.ndarray):
     __rpow__ = P(np_orig.ndarray.__rpow__, reverse_args(grad_pow))
     __rdiv__ = P(np_orig.ndarray.__rdiv__, reverse_args(grad_div))
 
-# ----- Sparse array -----
-
-class SparseArray(object):
-    __array_priority__ = 50.0
-    def __init__(self, shape, idx, val):
-        self.shape = shape
-        self.idx = idx
-        self.val = val
-
-    def __add__(self, other):
-        array = zeros(self.shape) if other is 0 else copy(other)
-        array[self.idx] += self.val
-        return array
-
-    def __radd__(self, other):
-        return self + other
-
-class SparseArrayNode(Node):
-    pass
-Node.type_mappings[SparseArray] = SparseArrayNode
-
 take = lambda A, idx : A[idx]
 def make_grad_take(ans, A, idx):
     shape = A.shape
@@ -158,6 +137,7 @@ def wrap_output(fun):
     return wrapped_fun
 zeros = wrap_output(zeros)
 ones = wrap_output(ones)
+eye = wrap_output(eye)
 
 # ----- Numpy gradients -----
 
@@ -203,14 +183,14 @@ def make_grad_np_dot(ans, A, B):
         if B.ndim is 2:
             return dot(g, B.T)
         elif A.ndim is 2:
-            return outer(g, B)
+            return outer(g, B).view(ndarray)
         else:
             return g * B
     def grad_np_dot_B(g):
         if A.ndim is 2:
             return dot(A.T, g)
         elif B.ndim is 2:
-            return outer(A, g)
+            return outer(A, g).view(ndarray)
         else:
             return g * A
     return [grad_np_dot_A, grad_np_dot_B]
@@ -235,6 +215,7 @@ concatenate = lambda arr_list, axis=0 : concatenate_args(axis, *arr_list)
 # ----- Node version of ndarray -----
 
 class ArrayNode(Node):
+    __getitem__ = take
     # Constants w.r.t float data just pass though
     @property
     def shape(self): return self.value.shape
@@ -249,7 +230,6 @@ class ArrayNode(Node):
     reshape = reshape
     sum = sum
     mean = mean
-
     @property
     def T(self): return transpose(self)
     __neg__ = P(op.neg,  grad_neg)
@@ -265,4 +245,28 @@ class ArrayNode(Node):
     __rmul__ = ndarray.__rmul__.__func__
     __rpow__ = ndarray.__rpow__.__func__
     __rdiv__ = ndarray.__rdiv__.__func__
+
 Node.type_mappings[ndarray] = ArrayNode
+
+# ----- Sparse array -----
+
+class SparseArray(object):
+    __array_priority__ = 150.0
+    def __init__(self, shape, idx, val):
+        self.shape = shape
+        self.idx = idx
+        self.val = val
+
+    def __add__(self, other):
+        array = zeros(self.shape) if other is 0 else copy(other)
+        array[self.idx] += self.val
+        return array
+
+    def __radd__(self, other):
+        return self.__add__(other)
+
+class SparseArrayNode(Node):
+    __add__  = P(SparseArray.__add__ , grad_add)
+    __radd__ = P(SparseArray.__radd__, reverse_args(grad_add))
+
+Node.type_mappings[SparseArray] = SparseArrayNode
