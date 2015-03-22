@@ -3,24 +3,25 @@ import warnings
 import operator as op
 from operator import attrgetter
 from numpy import log, float64, ndarray
+from collections import OrderedDict
 
 def grad(fun, argnum=0):
     def gradfun(*args, **kwargs):
         tape = CalculationTape()
         start_node = new_node(args[argnum])
-        start_node.tapes[tape] = ReverseNode(tape, start_node)
+        tape.add_node(start_node)
         args = args[:argnum] + (start_node,) + args[argnum+1:]
         end_node = fun(*args, **kwargs)
-        if not isinstance(end_node, Node) or tape not in end_node.tapes:
+        if end_node not in tape:
             warnings.warn("Output seems independent of input. Returning zero gradient.")
             return 0 * start_node.value
         elif not isinstance(end_node.value, float):
             raise TypeError("Can only take gradient of scalar-valued functions")
         else:
-            end_node.tapes[tape].outgrad = 1.0
+            tape[end_node].outgrad = 1.0
             tape.finalize()
             while tape:
-                node = tape.pop()
+                _, node = tape.popitem()
                 if node.outgrad is not 0:
                     for gradfun, parent in node.parent_ops:
                         parent.outgrad += gradfun(node.outgrad)
@@ -40,7 +41,7 @@ def primitive(fun, gradmaker):
                 result = new_node(result)
                 gradfun = gradmaker(result, *args, **kwargs)[i]
                 for tape in arg.tapes:
-                    result.add_tape(tape, (gradfun, arg.tapes[tape]))
+                    tape.add_operation(result, (gradfun, tape[arg]))
         return result
     wrapped_function.__name__ = fun.__name__
     return wrapped_function
@@ -54,34 +55,34 @@ def new_node(value):
         raise TypeError("Can't differentiate wrt {0}".format(type(value)))
 
 class Node(object):
+    __slots__ = ['value', 'tape']
     type_mappings = {}
     def __init__(self, value):
         self.value = value
-        self.tapes = {}
-
-    def add_tape(self, tape, reverse_op):
-        if tape not in self.tapes:
-            self.tapes[tape] = ReverseNode(tape, self)
-        self.tapes[tape].parent_ops.append(reverse_op)
+        self.tapes = []
 
 class ReverseNode(object):
-    __slots__ = ['parent_ops', 'outgrad', 'node']
-    def __init__(self, tape, node):
-        tape.append(self)
+    __slots__ = ['parent_ops', 'outgrad']
+    def __init__(self):
         self.parent_ops = []
         self.outgrad = 0
-        self.node = node
 
     def remove_self_from_node(self, tape):
         del self.node.tapes[tape]
 
-class CalculationTape(list):
+class CalculationTape(OrderedDict):
     def finalize(self):
-        for node in self:
-            node.remove_self_from_node(self)
+        for node in self.keys():
+            node.tapes.remove(self)
 
-    def __hash__(self):
-        return id(self)
+    def add_operation(self, node, reverse_op):
+        if node not in self:
+            self.add_node(node)
+        self[node].parent_ops.append(reverse_op)
+
+    def add_node(self, node):
+        self[node] = ReverseNode()
+        node.tapes.append(self)
 
 I = lambda x : x
 grad_neg = lambda ans, x    : [op.neg]
