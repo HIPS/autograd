@@ -4,7 +4,7 @@ from numpy import *
 from copy import copy
 import numpy as np_orig
 import operator as op
-from autograd.core import primitive, Node, log, getval
+from autograd.core import primitive, Node, log
 
 # ----- Objects in numpy.__dict__ not imported by * -----
 
@@ -25,6 +25,7 @@ round   = np_orig.round
 
 isarray = lambda x : isinstance(getval(x), ndarray)
 isfloat = lambda x : isinstance(getval(x), float)
+getval = lambda x : x.value if isinstance(x, Node) else x
 
 def unbroadcast(ans, x, y, funs):
     return [unbroadcast_fun(ans, x, funs[0]),
@@ -221,6 +222,7 @@ concatenate = lambda arr_list, axis=0 : concatenate_args(axis, *arr_list)
 # ----- Node version of ndarray -----
 
 class ArrayNode(Node):
+    __slots__ = []
     __getitem__ = take
     # Constants w.r.t float data just pass though
     @property
@@ -272,6 +274,7 @@ class SparseArray(object):
         return self.__add__(other)
 
 class SparseArrayNode(Node):
+    __slots__ = []
     __add__  = P(SparseArray.__add__ , grad_add)
     __radd__ = P(SparseArray.__radd__, reverse_args(grad_add))
 

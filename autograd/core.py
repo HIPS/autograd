@@ -3,59 +3,63 @@ import warnings
 import operator as op
 from operator import attrgetter
 from numpy import log, float64, ndarray
-from collections import OrderedDict
 
 def grad(fun, argnum=0):
     def gradfun(*args, **kwargs):
         tape = CalculationTape()
-        start_node = new_node(args[argnum])
+        start_node = args[argnum]
+        if not isinstance(start_node, Node):
+            start_node = new_node(start_node)
         tape.add_node(start_node)
         args = args[:argnum] + (start_node,) + args[argnum+1:]
         end_node = fun(*args, **kwargs)
-        if end_node not in tape:
+        if end_node not in tape.nodes:
             warnings.warn("Output seems independent of input. Returning zero gradient.")
             return 0 * start_node.value
         elif not isinstance(end_node.value, float):
             raise TypeError("Can only take gradient of scalar-valued functions")
         else:
-            tape[end_node].outgrad = 1.0
+            tape.nodes[end_node].outgrad = 1.0
             tape.finalize()
-            while tape:
-                _, node = tape.popitem()
+            op_list = tape.op_list
+            while op_list:
+                node = op_list.pop()
                 if node.outgrad is not 0:
                     for gradfun, parent in node.parent_ops:
-                        parent.outgrad += gradfun(node.outgrad)
+                        parent.outgrad = parent.outgrad + gradfun(node.outgrad)
             return node.outgrad
     return gradfun
 
-getval = lambda x : x.value if isinstance(x, Node) else x
-
 def primitive(fun, gradmaker):
     def wrapped_function(*args, **kwargs):
-        result = fun(*map(getval, args), **kwargs)
-        assert not type(result) == ndarray, fun # Check for gaps in numpy wrapping
-        if result is NotImplemented:
-            return result
+        argvals = list(args)
+        tape_ops = {}
         for i, arg in enumerate(args):
-            if isinstance(arg, Node) and arg.tapes:
-                result = new_node(result)
-                gradfun = gradmaker(result, *args, **kwargs)[i]
+            if isinstance(arg, Node):
+                argvals[i] = arg.value
                 for tape in arg.tapes:
-                    tape.add_operation(result, (gradfun, tape[arg]))
+                    tape_ops.setdefault(tape, []).append((i, arg))
+
+        result = fun(*argvals, **kwargs)
+        assert not type(result) == ndarray, fun # Check for gaps in numpy wrapping
+        if result is NotImplemented: return result
+        if tape_ops:
+            result = new_node(result)
+            gradfuns = gradmaker(result, *args, **kwargs)
+            for tape, parents in tape_ops.iteritems():
+                tape.add_operations(result, gradfuns, parents)
         return result
     wrapped_function.__name__ = fun.__name__
     return wrapped_function
 
 def new_node(value):
-    if isinstance(value, Node):
-        return value
     try:
         return Node.type_mappings[type(value)](value)
     except KeyError:
         raise TypeError("Can't differentiate wrt {0}".format(type(value)))
 
 class Node(object):
-    __slots__ = ['value', 'tape']
+    __slots__ = ['value', 'tapes']
     type_mappings = {}
     def __init__(self, value):
         self.value = value
@@ -67,22 +71,26 @@ class ReverseNode(object):
         self.parent_ops = []
         self.outgrad = 0
 
-    def remove_self_from_node(self, tape):
-        del self.node.tapes[tape]
+class CalculationTape(object):
+    def __init__(self):
+        self.op_list = []
+        self.nodes = {}
 
-class CalculationTape(OrderedDict):
     def finalize(self):
-        for node in self.keys():
+        for node in self.nodes.keys():
             node.tapes.remove(self)
 
-    def add_operation(self, node, reverse_op):
-        if node not in self:
-            self.add_node(node)
-        self[node].parent_ops.append(reverse_op)
+    def add_operations(self, node, gradfuns, args):
+        rnode_ops = self.add_node(node).parent_ops
+        for i, arg in args:
+            rnode_ops.append((gradfuns[i], self.nodes[arg]))
 
     def add_node(self, node):
-        self[node] = ReverseNode()
+        new_rnode = ReverseNode()
+        self.op_list.append(new_rnode)
+        self.nodes[node] = new_rnode
         node.tapes.append(self)
+        return new_rnode
 
 I = lambda x : x
 grad_neg = lambda ans, x    : [op.neg]
@@ -103,6 +111,7 @@ def reverse_args(fun):
 
 P = primitive
 class FloatNode(Node):
+    __slots__ = []
     __add__  = P(float.__add__ , grad_add)
     __sub__  = P(float.__sub__,  grad_sub)
     __mul__  = P(float.__mul__,  grad_mul)
