@@ -13,14 +13,14 @@ def grad(fun, argnum=0):
         tape.add_node(start_node)
         args = args[:argnum] + (start_node,) + args[argnum+1:]
         end_node = fun(*args, **kwargs)
-        if end_node not in tape.nodes:
+        tape.active = False
+        if not isinstance(end_node, Node) or tape not in end_node.tapes:
             warnings.warn("Output seems independent of input. Returning zero gradient.")
             return 0 * start_node.value
         elif not isinstance(end_node.value, float):
             raise TypeError("Can only take gradient of scalar-valued functions")
         else:
-            tape.nodes[end_node].outgrad = 1.0
-            tape.finalize()
+            end_node.tapes[tape].outgrad = 1.0
             op_list = tape.op_list
             while op_list:
                 node = op_list.pop()
@@ -37,8 +37,11 @@ def primitive(fun, gradmaker):
         for i, arg in enumerate(args):
             if isinstance(arg, Node):
                 argvals[i] = arg.value
-                for tape in arg.tapes:
-                    tape_ops.setdefault(tape, []).append((i, arg))
+                for tape in arg.tapes.keys():
+                    if tape.active:
+                        tape_ops.setdefault(tape, []).append((i, arg))
+                    else:
+                        del arg.tapes[tape]
 
         result = fun(*argvals, **kwargs)
         assert not type(result) == ndarray, fun # Check for gaps in numpy wrapping
@@ -63,7 +66,7 @@ class Node(object):
     type_mappings = {}
     def __init__(self, value):
         self.value = value
-        self.tapes = []
+        self.tapes = {}
 
 class ReverseNode(object):
     __slots__ = ['parent_ops', 'outgrad']
@@ -74,22 +77,17 @@ class ReverseNode(object):
 class CalculationTape(object):
     def __init__(self):
         self.op_list = []
-        self.nodes = {}
-
-    def finalize(self):
-        for node in self.nodes.keys():
-            node.tapes.remove(self)
+        self.active = True
 
     def add_operations(self, node, gradfuns, args):
         rnode_ops = self.add_node(node).parent_ops
         for i, arg in args:
-            rnode_ops.append((gradfuns[i], self.nodes[arg]))
+            rnode_ops.append((gradfuns[i], arg.tapes[self]))
 
     def add_node(self, node):
         new_rnode = ReverseNode()
         self.op_list.append(new_rnode)
-        self.nodes[node] = new_rnode
-        node.tapes.append(self)
+        node.tapes[self] = new_rnode
         return new_rnode
 
 I = lambda x : x
