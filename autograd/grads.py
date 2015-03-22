@@ -98,7 +98,7 @@ np.mean = P(np.mean, make_grad_np_mean)
 def make_grad_chooser(ans, x, axis=None, keepdims=None):
     """Builds gradient of functions that choose a single item, such as min or max."""
     repeater, _ = repeat_to_match_shape(x, axis, keepdims)
-    argmax_locations = x == repeater(ans)   # TODO: Properly handle identical entries.
+    argmax_locations = x == repeater(ans)
     return [lambda g: repeater(g) * argmax_locations]
 np.max = P(np.max, make_grad_chooser)
 np.min = P(np.min, make_grad_chooser)
