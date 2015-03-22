@@ -70,9 +70,12 @@ np.linalg.det  = P(np.linalg.det,  lambda ans, x                    : [lambda g 
 sps.norm.cdf   = P(sps.norm.cdf, lambda ans, x, loc=0.0, scale=1.0 : [lambda g : g * (1./(np.sqrt(2.0*np.pi)*scale)) *np.exp(-((x-loc)**2.0)/(2.0*(scale**2.)))])
 
 
-def repeat_to_match_shape(shape, axis, keepdims):
+def repeat_to_match_shape(x, axis, keepdims):
     """Returns a function that repeats an array along axis to get a given shape.
        Also returns the number of repetitions of the array."""
+    if not isarray(x):
+        return I, 1
+    shape = x.shape
     if axis is None:
         return lambda g : np.full(shape, g), np.prod(shape)
     else:
@@ -83,29 +86,22 @@ def repeat_to_match_shape(shape, axis, keepdims):
                                          shape[axis], axis), shape[axis]
 
 def make_grad_np_sum(ans, x, axis=None, keepdims=False):
-    if not isarray(x):
-        return [I]
-    return [repeat_to_match_shape(x.shape, axis, keepdims)[0]]
-
+    repeater, _ = repeat_to_match_shape(x, axis, keepdims)
+    return [repeater]
 np.sum = P(np.sum, make_grad_np_sum)
 
 def make_grad_np_mean(ans, x, axis=None, keepdims=False):
-    if not isarray(x):
-        return [I]
-    repeater, num_reps = repeat_to_match_shape(x.shape, axis, keepdims)
+    repeater, num_reps = repeat_to_match_shape(x, axis, keepdims)
     return [lambda g: repeater(g) / num_reps]
-
 np.mean = P(np.mean, make_grad_np_mean)
 
-def make_grad_np_max(ans, x, axis=None, keepdims=None):
-    if not isarray(x):
-        return [I]
-    repeater, _ = repeat_to_match_shape(x.shape, axis, keepdims)
-    argmax_locations = x == repeater(ans)   # TODO: Properly handle multiple equalities.
+def make_grad_chooser(ans, x, axis=None, keepdims=None):
+    """Builds gradient of functions that choose a single item, such as min or max."""
+    repeater, _ = repeat_to_match_shape(x, axis, keepdims)
+    argmax_locations = x == repeater(ans)   # TODO: Properly handle identical entries.
     return [lambda g: repeater(g) * argmax_locations]
-
-np.max = P(np.max, make_grad_np_max)
-np.min = P(np.min, make_grad_np_max)  # Works because gradient uses ans.
+np.max = P(np.max, make_grad_chooser)
+np.min = P(np.min, make_grad_chooser)
 
 def make_grad_np_dot(ans, A, B):
     def grad_np_dot_A(g):
