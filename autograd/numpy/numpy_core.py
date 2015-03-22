@@ -107,6 +107,12 @@ def make_grad_take(ans, A, idx):
     return [lambda g : untake(g, idx, shape)]
 
 class ndarray(np_orig.ndarray):
+    def __array_wrap__(self, obj):
+        if obj.shape == ():
+            return obj[()] # Restoring behavior of regular ndarray
+        else:
+            return np_orig.ndarray.__array_wrap__(self, obj)
+
     # Wrap binary ops since the other operand could be a Node
     __add__  = P(np_orig.ndarray.__add__ , grad_add)
     __sub__  = P(np_orig.ndarray.__sub__,  grad_sub)
