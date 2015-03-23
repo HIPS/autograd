@@ -61,6 +61,7 @@ np.squeeze     = P(np.squeeze,     lambda ans, x, axis              : [lambda g 
 np.repeat      = P(np.repeat,      lambda ans, x, shape, axis       : [lambda g : np.sum(g, axis, keepdims=True)])
 np.transpose   = P(np.transpose,   lambda ans, x                    : [lambda g : np.transpose(g)])
 np.split       = P(np.split,       lambda ans, x, idxs, axis=0      : [lambda g : np.concatenate(g, axis=axis)])
+np.roll        = P(np.roll,        lambda ans, x, shift, axis=None  : [lambda g : np.roll(g, -shift, axis=axis)])
 np.diag        = P(np.diag,        lambda ans, x                    : [lambda g : np.diag(g)])
 np.trace       = P(np.trace,       lambda ans, x                    : [lambda g : g * np.eye(x.shape[0])])
 np.linalg.inv  = P(np.linalg.inv,  lambda ans, x                    : [lambda g : -np.dot(np.dot(ans.T, g), ans.T)])

@@ -256,5 +256,19 @@ def test_transpose():
     check_grads(fun, mat)
     check_grads(d_fun, mat)
 
+def test_roll():
+    def fun(x): return to_scalar(np.roll(x, 2, axis=1))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    mat = npr.randn(4, 5)
+    check_grads(fun, mat)
+    check_grads(d_fun, mat)
+
+def test_roll_no_axis():
+    def fun(x): return to_scalar(np.roll(x, 2, axis=1))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    mat = npr.randn(4, 5)
+    check_grads(fun, mat)
+    check_grads(d_fun, mat)
+
 # TODO:
 # squeeze, getitem
