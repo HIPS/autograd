@@ -147,4 +147,4 @@ FloatNode.__dict__['__rdiv__'].grads = swap_args(FloatNode.__dict__['__div__'].g
 FloatNode.__dict__['__rpow__'].grads = swap_args(FloatNode.__dict__['__pow__'].grads)
 
 log = P(log)
-log.grads[0] = lambda ans, x : lambda g : g / x
+log.defgrad(lambda ans, x : lambda g : g / x)

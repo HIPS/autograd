@@ -1,7 +1,7 @@
 from __future__ import absolute_import
-from .numpy_core import wrap_output
-from numpy.random import *
+from .numpy_wrapper import wrap_output
 import numpy.random as npr
+from numpy.random import *
 # Objects in numpy.random.__dict__ not imported by *:
 mtrand          = npr.mtrand
 RandomState     = npr.RandomState
