@@ -3,7 +3,7 @@ from functools import partial
 import numpy as np
 from copy import copy
 import operator as op
-from autograd.core import primitive, Node, log, reverse_args
+from autograd.core import primitive, Node, log, swap_args
 
 # ----- Wrap numpy functions -----
 
@@ -92,11 +92,7 @@ isarray = lambda x : isinstance(getval(x), np.ndarray)
 isfloat = lambda x : isinstance(getval(x), float)
 getval = lambda x : x.value if isinstance(x, Node) else x
 
-def unbroadcast(ans, x, y, funs):
-    return [unbroadcast_fun(ans, x, funs[0]),
-            unbroadcast_fun(ans, y, funs[1])]
-
-def unbroadcast_fun(ans, x, fun):
+def unbroadcast(ans, x, fun):
     if isfloat(x):
         return lambda g : sum(fun(g))
     elif isarray(x):
@@ -115,78 +111,80 @@ def unbroadcast_fun(ans, x, fun):
         return fun
 
 I = lambda x : x
-ndarray.__dict__['__add__'].gradmaker = lambda ans, x, y : unbroadcast(ans, x, y, [I, I])
-ndarray.__dict__['__mul__'].gradmaker = lambda ans, x, y : unbroadcast(ans, x, y, [lambda g : y * g, lambda g : x * g])
-ndarray.__dict__['__sub__'].gradmaker = lambda ans, x, y : unbroadcast(ans, x, y, [I, op.neg])
-ndarray.__dict__['__div__'].gradmaker = lambda ans, x, y : unbroadcast(ans, x, y, [lambda g : g / y, lambda g : - g * x / y**2])
-ndarray.__dict__['__pow__'].gradmaker = lambda ans, x, y : unbroadcast(ans, x, y, [lambda g : g * y * x ** (y - 1),
-                                                                                   lambda g : g * log(x) * x ** y])
+ndarray.__dict__['__add__'].defgrad(lambda ans, x, y : unbroadcast(ans, x, I))
+ndarray.__dict__['__add__'].defgrad(lambda ans, x, y : unbroadcast(ans, y, I), argnum=1)
+ndarray.__dict__['__mul__'].defgrad(lambda ans, x, y : unbroadcast(ans, x, lambda g : y * g))
+ndarray.__dict__['__mul__'].defgrad(lambda ans, x, y : unbroadcast(ans, y, lambda g : x * g), argnum=1)
+ndarray.__dict__['__sub__'].defgrad(lambda ans, x, y : unbroadcast(ans, x, I))
+ndarray.__dict__['__sub__'].defgrad(lambda ans, x, y : unbroadcast(ans, y, op.neg), argnum=1)
+ndarray.__dict__['__div__'].defgrad(lambda ans, x, y : unbroadcast(ans, x, lambda g : g / y))
+ndarray.__dict__['__div__'].defgrad(lambda ans, x, y : unbroadcast(ans, y, lambda g : - g * x / y**2), argnum=1)
+ndarray.__dict__['__pow__'].defgrad(lambda ans, x, y : unbroadcast(ans, x, lambda g : g * y * x ** (y - 1)))
+ndarray.__dict__['__pow__'].defgrad(lambda ans, x, y : unbroadcast(ans, y, lambda g : g * log(x) * x ** y), argnum=1)
 
-ndarray.__dict__['__radd__'].gradmaker = reverse_args(ndarray.__dict__['__add__'].gradmaker)
-ndarray.__dict__['__rmul__'].gradmaker = reverse_args(ndarray.__dict__['__mul__'].gradmaker)
-ndarray.__dict__['__rsub__'].gradmaker = reverse_args(ndarray.__dict__['__sub__'].gradmaker)
-ndarray.__dict__['__rdiv__'].gradmaker = reverse_args(ndarray.__dict__['__div__'].gradmaker)
-ndarray.__dict__['__rpow__'].gradmaker = reverse_args(ndarray.__dict__['__pow__'].gradmaker)
+ndarray.__dict__['__radd__'].grads = swap_args(ndarray.__dict__['__add__'].grads)
+ndarray.__dict__['__rmul__'].grads = swap_args(ndarray.__dict__['__mul__'].grads)
+ndarray.__dict__['__rsub__'].grads = swap_args(ndarray.__dict__['__sub__'].grads)
+ndarray.__dict__['__rdiv__'].grads = swap_args(ndarray.__dict__['__div__'].grads)
+ndarray.__dict__['__rpow__'].grads = swap_args(ndarray.__dict__['__pow__'].grads)
 
-abs.gradmaker    = lambda ans, x : [lambda g : sign(x) * g]
-exp.gradmaker    = lambda ans, x : [lambda g : ans * g]
-sin.gradmaker    = lambda ans, x : [lambda g : g * cos(x)]
-cos.gradmaker    = lambda ans, x : [lambda g : - g * sin(x)]
-tan.gradmaker    = lambda ans, x : [lambda g : g / cos(x) **2]
-sinh.gradmaker   = lambda ans, x : [lambda g : g * cosh(x)]
-cosh.gradmaker   = lambda ans, x : [lambda g : g * sinh(x)]
-tanh.gradmaker   = lambda ans, x : [lambda g : g / cosh(x) **2]
-square.gradmaker = lambda ans, x : [lambda g : g * 2 * x]
-sqrt.gradmaker   = lambda ans, x : [lambda g : g * 0.5 * x**-0.5]
-sign.gradmaker   = lambda ans, x : [lambda g : 0.0]
-full.gradmaker   = lambda ans, shape, fill_value : [None, lambda g :  sum(g)]
-reshape.gradmaker  = lambda ans, x, shape, order=None : [lambda g : reshape(g, x.shape, order=order)]
-ravel.gradmaker    = lambda ans, x, order=None    : [lambda g : reshape(g, x.shape, order=order)]
-expand_dims.gradmaker = lambda ans, x, axis : [lambda g : squeeze(g, axis)]
-squeeze.gradmaker     = lambda ans, x, axis : [lambda g : repeat(g, x.shape[axis], axis)]
-repeat.gradmaker      = lambda ans, x, shape, axis  : [lambda g : sum(g, axis, keepdims=True)]
-transpose.gradmaker   = lambda ans, x               : [lambda g : transpose(g)]
-split.gradmaker       = lambda ans, x, idxs, axis=0 : [lambda g : concatenate(g, axis=axis)]
-diag.gradmaker        = lambda ans, x               : [lambda g : diag(g)]
-trace.gradmaker       = lambda ans, x               : [lambda g : g * eye(x.shape[0])]
+abs.defgrad(   lambda ans, x : lambda g : sign(x) * g)
+exp.defgrad(   lambda ans, x : lambda g : ans * g)
+sin.defgrad(   lambda ans, x : lambda g : g * cos(x))
+cos.defgrad(   lambda ans, x : lambda g : - g * sin(x))
+tan.defgrad(   lambda ans, x : lambda g : g / cos(x) **2)
+sinh.defgrad(  lambda ans, x : lambda g : g * cosh(x))
+cosh.defgrad(  lambda ans, x : lambda g : g * sinh(x))
+tanh.defgrad(  lambda ans, x : lambda g : g / cosh(x) **2)
+square.defgrad(lambda ans, x : lambda g : g * 2 * x)
+sqrt.defgrad(  lambda ans, x : lambda g : g * 0.5 * x**-0.5)
+sign.defgrad(  lambda ans, x : lambda g : 0.0)
+reshape.defgrad( lambda ans, x, shape, order=None : lambda g : reshape(g, x.shape, order=order))
+ravel.defgrad(   lambda ans, x, order=None    : lambda g : reshape(g, x.shape, order=order))
+expand_dims.defgrad(lambda ans, x, axis : lambda g : squeeze(g, axis))
+squeeze.defgrad(    lambda ans, x, axis : lambda g : repeat(g, x.shape[axis], axis))
+repeat.defgrad(     lambda ans, x, shape, axis  : lambda g : sum(g, axis, keepdims=True))
+transpose.defgrad(  lambda ans, x               : lambda g : transpose(g))
+split.defgrad(      lambda ans, x, idxs, axis=0 : lambda g : concatenate(g, axis=axis))
+diag.defgrad(       lambda ans, x               : lambda g : diag(g))
+trace.defgrad(      lambda ans, x               : lambda g : g * eye(x.shape[0]))
+full.defgrad(lambda ans, shape, fill_value : lambda g :  sum(g), argnum=1)
 
 def make_grad_np_sum(ans, x, axis=None, keepdims=False):
     if not isarray(x):
-        return [I]
+        return I
     shape = x.shape
     if axis is None:
-        return [lambda g : full(shape, g)]
+        return lambda g : full(shape, g)
     else:
         if keepdims:
-            return [lambda g : repeat(g, shape[axis], axis)]
+            return lambda g : repeat(g, shape[axis], axis)
         else:
-            return [lambda g : repeat(expand_dims(g, axis),
-                                      shape[axis], axis)]
-sum.gradmaker = make_grad_np_sum
+            return lambda g : repeat(expand_dims(g, axis), shape[axis], axis)
+sum.defgrad(make_grad_np_sum)
 
 def make_grad_np_mean(ans, x, axis=None, keepdims=False):
     if not isarray(x):
-        return [I]
+        return I
     shape = x.shape
     if axis is None:
-        return [lambda g : full(shape, g) / prod(shape)]
+        return lambda g : full(shape, g) / prod(shape)
     else:
         if keepdims:
-            return [lambda g : repeat(g, shape[axis], axis) / shape[axis]]
+            return lambda g : repeat(g, shape[axis], axis) / shape[axis]
         else:
-            return [lambda g : repeat(expand_dims(g, axis),
-                                      shape[axis], axis) / shape[axis]]
-mean.gradmaker = make_grad_np_mean
+            return lambda g : repeat(expand_dims(g, axis), shape[axis], axis) / shape[axis]
+mean.defgrad(make_grad_np_mean)
 
 def make_grad_np_max(ans, x):
     def gradfun(g):
         idxs = argmax(getval(x))
         shape = x.shape
         return untake(g, unravel_index(idxs, shape), shape)
-    return [gradfun]
-max.gradmaker = make_grad_np_max
+    return gradfun
+max.defgrad(make_grad_np_max)
 
-def make_grad_np_dot(ans, A, B):
+def make_grad_np_dot_A(ans, A, B):
     def grad_np_dot_A(g):
         if B.ndim is 2:
             return dot(g, B.T)
@@ -194,6 +192,8 @@ def make_grad_np_dot(ans, A, B):
             return outer(g, B)
         else:
             return g * B
+    return grad_np_dot_A
+def make_grad_np_dot_B(ans, A, B):
     def grad_np_dot_B(g):
         if A.ndim is 2:
             return dot(A.T, g)
@@ -201,17 +201,18 @@ def make_grad_np_dot(ans, A, B):
             return outer(A, g)
         else:
             return g * A
-    return [grad_np_dot_A, grad_np_dot_B]
-dot.gradmaker = make_grad_np_dot
+    return grad_np_dot_B
+dot.defgrad(make_grad_np_dot_A)
+dot.defgrad(make_grad_np_dot_B, argnum=1)
 
 take = P(lambda A, idx : A[idx])
 def make_grad_take(ans, A, idx):
     shape = A.shape
-    return [lambda g : untake(g, idx, shape)]
-take.gradmaker =  make_grad_take
+    return lambda g : untake(g, idx, shape)
+take.defgrad(make_grad_take)
 
 untake = P(lambda x, idx, shape : SparseArray(shape, idx, x))
-untake.gradmaker = lambda ans, x, idx, shape : [lambda g : take(g, idx)]
+untake.defgrad(lambda ans, x, idx, shape : lambda g : take(g, idx))
 
 # ----- Subtler gradients -----
 
@@ -229,8 +230,9 @@ def make_grad_concatenate_args(ans, axis, *args):
         gradfuns.append(partial(take, idx=idxs))
     return gradfuns
 concatenate_args = P(W(concatenate_args))
-concatenate_args.gradmaker = make_grad_concatenate_args
-concatenate = lambda arr_list, axis=0 : concatenate_args(axis, *arr_list)
+concatenate_args.defgrad(make_grad_concatenate_args)
+
+concatenate_args.grads = lambda arr_list, axis=0 : concatenate_args(axis, *arr_list)
 
 # ----- Node version of ndarray -----
 
@@ -269,7 +271,7 @@ class ArrayNode(Node):
 
 Node.type_mappings[ndarray] = ArrayNode
 
-ArrayNode.__dict__['__neg__'].gradmaker = lambda ans, x : [op.neg]
+ArrayNode.__dict__['__neg__'].defgrad(lambda ans, x : op.neg)
 
 # ----- Sparse array -----
 
@@ -294,5 +296,6 @@ class SparseArrayNode(Node):
     __radd__ = P(SparseArray.__radd__)
 Node.type_mappings[SparseArray] = SparseArrayNode
 
-SparseArrayNode.__dict__['__add__'].gradmaker  = lambda ans, x, y : unbroadcast(ans, x, y, [I, I])
-SparseArrayNode.__dict__['__radd__'].gradmaker = lambda ans, x, y : unbroadcast(ans, x, y, [I, I])
+SparseArrayNode.__dict__['__add__'].defgrad(lambda ans, x, y : unbroadcast(ans, x, I))
+SparseArrayNode.__dict__['__add__'].defgrad(lambda ans, x, y : unbroadcast(ans, y, I), argnum=1)
+SparseArrayNode.__dict__['__radd__'].grads = swap_args(SparseArrayNode.__dict__['__add__'].grads)

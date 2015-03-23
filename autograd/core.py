@@ -35,9 +35,18 @@ def grad(fun, argnum=0):
 class primitive(object):
     def __init__(self, fun):
         self.fun = fun
+        self.grads = {}
 
     def gradmaker(self, *args, **kwargs):
-        raise NotImplementedError("Gradient of {0} not yet implemented".format(self.fun))
+        result = {}
+        for arg, arggradmaker in self.grads.iteritems():
+            result[arg] = arggradmaker(*args, **kwargs)
+        return result
+        # raise NotImplementedError("Gradient of {0} not yet implemented".format(self.fun))
+
+    def defgrad(self, gradmaker, argnum=0):
+        gradmaker.__name__ = "grad_{0}_{1}".format(argnum, self.fun.__name__)
+        self.grads[argnum] = gradmaker
 
     def __call__(self, *args, **kwargs):
         argvals = list(args)
@@ -99,11 +108,6 @@ class CalculationTape(object):
         node.tapes[self] = new_rnode
         return new_rnode
 
-def reverse_args(fun):
-    def reversed_fun(ans, x, y):
-        return fun(ans, y, x)[::-1]
-    return reversed_fun
-
 P = primitive
 class FloatNode(Node):
     __slots__ = []
@@ -122,19 +126,29 @@ Node.type_mappings[float] = FloatNode
 Node.type_mappings[float64] = FloatNode
 
 I = lambda x : x
-FloatNode.__dict__['__neg__'].gradmaker = lambda ans, x    : [op.neg]
-FloatNode.__dict__['__add__'].gradmaker = lambda ans, x, y : [I, I]
-FloatNode.__dict__['__mul__'].gradmaker = lambda ans, x, y : [lambda g : y * g, lambda g : x * g]
-FloatNode.__dict__['__sub__'].gradmaker = lambda ans, x, y : [I, op.neg]
-FloatNode.__dict__['__div__'].gradmaker = lambda ans, x, y : [lambda g : g / y, lambda g : - g * x / y**2]
-FloatNode.__dict__['__pow__'].gradmaker = lambda ans, x, y : [lambda g : g * y * x ** (y - 1),
-                                                             lambda g : g * log(x) * x ** y]
+FloatNode.__dict__['__neg__'].defgrad(lambda ans, x : op.neg)
 
-FloatNode.__dict__['__radd__'].gradmaker = reverse_args(FloatNode.__dict__['__add__'].gradmaker)
-FloatNode.__dict__['__rmul__'].gradmaker = reverse_args(FloatNode.__dict__['__mul__'].gradmaker)
-FloatNode.__dict__['__rsub__'].gradmaker = reverse_args(FloatNode.__dict__['__sub__'].gradmaker)
-FloatNode.__dict__['__rdiv__'].gradmaker = reverse_args(FloatNode.__dict__['__div__'].gradmaker)
-FloatNode.__dict__['__rpow__'].gradmaker = reverse_args(FloatNode.__dict__['__pow__'].gradmaker)
+FloatNode.__dict__['__add__'].defgrad(lambda ans, x, y : I)
+FloatNode.__dict__['__add__'].defgrad(lambda ans, x, y : I, argnum=1)
+FloatNode.__dict__['__mul__'].defgrad(lambda ans, x, y : lambda g : y * g)
+FloatNode.__dict__['__mul__'].defgrad(lambda ans, x, y : lambda g : x * g, argnum=1)
+FloatNode.__dict__['__sub__'].defgrad(lambda ans, x, y : I)
+FloatNode.__dict__['__sub__'].defgrad(lambda ans, x, y : op.neg, argnum=1)
+FloatNode.__dict__['__div__'].defgrad(lambda ans, x, y : lambda g : g / y)
+FloatNode.__dict__['__div__'].defgrad(lambda ans, x, y : lambda g : - g * x / y**2, argnum=1)
+FloatNode.__dict__['__pow__'].defgrad(lambda ans, x, y : lambda g : g * y * x ** (y - 1))
+FloatNode.__dict__['__pow__'].defgrad(lambda ans, x, y : lambda g : g * log(x) * x ** y, argnum=1)
+
+def swap_args(grads):
+    grad_0, grad_1 = grads[1], grads[0]
+    return {0 : lambda ans, y, x : grad_0(ans, x, y),
+            1 : lambda ans, y, x : grad_1(ans, x, y)}
+
+FloatNode.__dict__['__radd__'].grads = swap_args(FloatNode.__dict__['__add__'].grads)
+FloatNode.__dict__['__rmul__'].grads = swap_args(FloatNode.__dict__['__mul__'].grads)
+FloatNode.__dict__['__rsub__'].grads = swap_args(FloatNode.__dict__['__sub__'].grads)
+FloatNode.__dict__['__rdiv__'].grads = swap_args(FloatNode.__dict__['__div__'].grads)
+FloatNode.__dict__['__rpow__'].grads = swap_args(FloatNode.__dict__['__pow__'].grads)
 
 log = P(log)
-log.gradmaker = lambda ans, x : [lambda g : g / x]
+log.grads[0] = lambda ans, x : lambda g : g / x
