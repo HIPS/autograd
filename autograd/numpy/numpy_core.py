@@ -1,29 +1,13 @@
 from __future__ import absolute_import
 from functools import partial
-from numpy import *
+import numpy as np
 from copy import copy
-import numpy as np_orig
 import operator as op
 from autograd.core import primitive, Node, log
 
-# ----- Objects in numpy.__dict__ not imported by * -----
-
-int     = np_orig.int
-unicode = np_orig.unicode
-complex = np_orig.complex
-long    = np_orig.long
-abs     = np_orig.abs
-bool    = np_orig.bool
-float   = np_orig.float
-max     = np_orig.max
-object  = np_orig.object
-min     = np_orig.min
-str     = np_orig.str
-round   = np_orig.round
-
 # ----- Broadcasting logic -----
 
-isarray = lambda x : isinstance(getval(x), ndarray)
+isarray = lambda x : isinstance(getval(x), np.ndarray)
 isfloat = lambda x : isinstance(getval(x), float)
 getval = lambda x : x.value if isinstance(x, Node) else x
 
@@ -32,7 +16,7 @@ def unbroadcast(ans, x, y, funs):
             unbroadcast_fun(ans, y, funs[1])]
 
 def unbroadcast_fun(ans, x, fun):
-    if isfloat(x) and isarray(ans):
+    if isfloat(x):
         return lambda g : sum(fun(g))
     elif isarray(x):
         shape = x.shape
@@ -66,9 +50,9 @@ def make_grad_np_sum(ans, x, axis=None, keepdims=False):
 def keep_keepdims(fun, funname):
     def new_fun(*args, **kwargs):
         x = args[0]
-        return getattr(x, funname)(*args[1:], **kwargs) if isinstance(x, np_orig.ndarray) else x
+        return getattr(x, funname)(*args[1:], **kwargs) if isinstance(x, np.ndarray) else x
     return new_fun
-sum = primitive(keep_keepdims(sum, 'sum'), make_grad_np_sum)
+sum = primitive(keep_keepdims(np.sum, 'sum'), make_grad_np_sum)
 
 def make_grad_np_mean(ans, x, axis=None, keepdims=False):
     if not isarray(x):
@@ -82,7 +66,7 @@ def make_grad_np_mean(ans, x, axis=None, keepdims=False):
         else:
             return [lambda g : repeat(expand_dims(g, axis),
                                       shape[axis], axis) / shape[axis]]
-mean = primitive(keep_keepdims(mean, 'mean'), make_grad_np_mean)
+mean = primitive(keep_keepdims(np.mean, 'mean'), make_grad_np_mean)
 
 # ----- Slightly modified version of ndarray -----
 
@@ -107,24 +91,24 @@ def make_grad_take(ans, A, idx):
     shape = A.shape
     return [lambda g : untake(g, idx, shape)]
 
-class ndarray(np_orig.ndarray):
+class ndarray(np.ndarray):
     def __array_wrap__(self, obj):
         if obj.shape == ():
             return obj[()] # Restoring behavior of regular ndarray
         else:
-            return np_orig.ndarray.__array_wrap__(self, obj)
+            return np.ndarray.__array_wrap__(self, obj)
 
     # Wrap binary ops since the other operand could be a Node
-    __add__  = P(np_orig.ndarray.__add__ , grad_add)
-    __sub__  = P(np_orig.ndarray.__sub__,  grad_sub)
-    __mul__  = P(np_orig.ndarray.__mul__,  grad_mul)
-    __pow__  = P(np_orig.ndarray.__pow__,  grad_pow)
-    __div__  = P(np_orig.ndarray.__div__,  grad_div)
-    __radd__ = P(np_orig.ndarray.__radd__, reverse_args(grad_add))
-    __rsub__ = P(np_orig.ndarray.__rsub__, reverse_args(grad_sub))
-    __rmul__ = P(np_orig.ndarray.__rmul__, reverse_args(grad_mul))
-    __rpow__ = P(np_orig.ndarray.__rpow__, reverse_args(grad_pow))
-    __rdiv__ = P(np_orig.ndarray.__rdiv__, reverse_args(grad_div))
+    __add__  = P(np.ndarray.__add__ , grad_add)
+    __sub__  = P(np.ndarray.__sub__,  grad_sub)
+    __mul__  = P(np.ndarray.__mul__,  grad_mul)
+    __pow__  = P(np.ndarray.__pow__,  grad_pow)
+    __div__  = P(np.ndarray.__div__,  grad_div)
+    __radd__ = P(np.ndarray.__radd__, reverse_args(grad_add))
+    __rsub__ = P(np.ndarray.__rsub__, reverse_args(grad_sub))
+    __rmul__ = P(np.ndarray.__rmul__, reverse_args(grad_mul))
+    __rpow__ = P(np.ndarray.__rpow__, reverse_args(grad_pow))
+    __rdiv__ = P(np.ndarray.__rdiv__, reverse_args(grad_div))
 
 take = lambda A, idx : A[idx]
 def make_grad_take(ans, A, idx):
@@ -138,42 +122,42 @@ untake = primitive(untake, lambda ans, x, idx, shape : [lambda g : take(g, idx)]
 def wrap_output(fun):
     def wrapped_fun(*args, **kwargs):
         ans = fun(*args, **kwargs)
-        if isinstance(ans, np_orig.ndarray):
+        if isinstance(ans, np.ndarray):
             ans = ans.view(ndarray)
         return ans
     return wrapped_fun
-zeros = wrap_output(zeros)
-ones = wrap_output(ones)
-eye = wrap_output(eye)
+zeros = wrap_output(np.zeros)
+ones  = wrap_output(np.ones)
+eye   = wrap_output(np.eye)
 
 # ----- Numpy gradients -----
 
 W = wrap_output
 P = primitive
-isarray = lambda x : isinstance(getval(x), ndarray)
+isarray = lambda x : isinstance(getval(x), np.ndarray)
 I = lambda x : x
 
-abs    = P(abs,    lambda ans, x : [lambda g : sign(x) * g])
-exp    = P(exp,    lambda ans, x : [lambda g : ans * g])
-sin    = P(sin,    lambda ans, x : [lambda g : g * cos(x)])
-cos    = P(cos,    lambda ans, x : [lambda g : - g * sin(x)])
-tan    = P(tan,    lambda ans, x : [lambda g : g / cos(x) **2])
-sinh   = P(sinh,   lambda ans, x : [lambda g : g * cosh(x)])
-cosh   = P(cosh,   lambda ans, x : [lambda g : g * sinh(x)])
-tanh   = P(tanh,   lambda ans, x : [lambda g : g / cosh(x) **2])
-square = P(square, lambda ans, x : [lambda g : g * 2 * x])
-sqrt   = P(sqrt,   lambda ans, x : [lambda g : g * 0.5 * x**-0.5])
-sign   = P(sign,   lambda ans, x : [lambda g : 0.0])
-full   = P(W(full),   lambda ans, shape, fill_value : [None, lambda g :  sum(g)])
-reshape  = P(reshape, lambda ans, x, shape, order=None : [lambda g : reshape(g, x.shape, order=order)])
-ravel    = P(W(ravel), lambda ans, x, order=None    : [lambda g : reshape(g, x.shape, order=order)])
-expand_dims = P(W(expand_dims), lambda ans, x, axis : [lambda g : squeeze(g, axis)])
-squeeze     = P(squeeze,        lambda ans, x, axis : [lambda g : repeat(g, x.shape[axis], axis)])
-repeat      = P(repeat,      lambda ans, x, shape, axis  : [lambda g : sum(g, axis, keepdims=True)])
-transpose   = P(transpose,   lambda ans, x               : [lambda g : transpose(g)])
-split       = P(split,       lambda ans, x, idxs, axis=0 : [lambda g : concatenate(g, axis=axis)])
-diag        = P(W(diag),     lambda ans, x               : [lambda g : diag(g)])
-trace       = P(trace,       lambda ans, x               : [lambda g : g * eye(x.shape[0])])
+abs    = P(np.abs,    lambda ans, x : [lambda g : sign(x) * g])
+exp    = P(np.exp,    lambda ans, x : [lambda g : ans * g])
+sin    = P(np.sin,    lambda ans, x : [lambda g : g * cos(x)])
+cos    = P(np.cos,    lambda ans, x : [lambda g : - g * sin(x)])
+tan    = P(np.tan,    lambda ans, x : [lambda g : g / cos(x) **2])
+sinh   = P(np.sinh,   lambda ans, x : [lambda g : g * cosh(x)])
+cosh   = P(np.cosh,   lambda ans, x : [lambda g : g * sinh(x)])
+tanh   = P(np.tanh,   lambda ans, x : [lambda g : g / cosh(x) **2])
+square = P(np.square, lambda ans, x : [lambda g : g * 2 * x])
+sqrt   = P(np.sqrt,   lambda ans, x : [lambda g : g * 0.5 * x**-0.5])
+sign   = P(np.sign,   lambda ans, x : [lambda g : 0.0])
+full   = P(W(np.full),   lambda ans, shape, fill_value : [None, lambda g :  sum(g)])
+reshape  = P(np.reshape, lambda ans, x, shape, order=None : [lambda g : reshape(g, x.shape, order=order)])
+ravel    = P(W(np.ravel), lambda ans, x, order=None    : [lambda g : reshape(g, x.shape, order=order)])
+expand_dims = P(W(np.expand_dims), lambda ans, x, axis : [lambda g : squeeze(g, axis)])
+squeeze     = P(np.squeeze,        lambda ans, x, axis : [lambda g : repeat(g, x.shape[axis], axis)])
+repeat      = P(np.repeat,      lambda ans, x, shape, axis  : [lambda g : sum(g, axis, keepdims=True)])
+transpose   = P(np.transpose,   lambda ans, x               : [lambda g : transpose(g)])
+split       = P(np.split,       lambda ans, x, idxs, axis=0 : [lambda g : concatenate(g, axis=axis)])
+diag        = P(W(np.diag),     lambda ans, x               : [lambda g : diag(g)])
+trace       = P(np.trace,       lambda ans, x               : [lambda g : g * eye(x.shape[0])])
 
 # ----- Subtler gradients -----
 
@@ -183,27 +167,27 @@ def make_grad_np_max(ans, x):
         shape = x.shape
         return untake(g, unravel_index(idxs, shape), shape)
     return [gradfun]
-max = P(max, make_grad_np_max)
+max = P(np.max, make_grad_np_max)
 
 def make_grad_np_dot(ans, A, B):
     def grad_np_dot_A(g):
         if B.ndim is 2:
             return dot(g, B.T)
         elif A.ndim is 2:
-            return outer(g, B).view(ndarray)
+            return outer(g, B)
         else:
             return g * B
     def grad_np_dot_B(g):
         if A.ndim is 2:
             return dot(A.T, g)
         elif B.ndim is 2:
-            return outer(A, g).view(ndarray)
+            return outer(A, g)
         else:
             return g * A
     return [grad_np_dot_A, grad_np_dot_B]
-dot = P(dot, make_grad_np_dot)
+dot = P(np.dot, make_grad_np_dot)
 
-concatenate_orig = concatenate
+concatenate_orig = np.concatenate
 def concatenate_args(axis, *args):
     return concatenate_orig(args, axis)
 def make_grad_concatenate_args(ans, axis, *args):
@@ -234,10 +218,10 @@ class ArrayNode(Node):
 
     # Differentiable unary methods just apply to self
     squeeze = squeeze
-    ravel = ravel
+    ravel   = ravel
     reshape = reshape
-    sum = sum
-    mean = mean
+    sum     = sum
+    mean    = mean
     @property
     def T(self): return transpose(self)
     __neg__ = P(op.neg,  grad_neg)
@@ -279,3 +263,16 @@ class SparseArrayNode(Node):
     __radd__ = P(SparseArray.__radd__, reverse_args(grad_add))
 
 Node.type_mappings[SparseArray] = SparseArrayNode
+
+# ----- Grads still to be implemented -----
+
+prod = P(np.prod, [])
+outer = P(W(np.outer), [])
+
+# ----- Wrap without differentiating -----
+
+float64 = np.float64
+allclose = np.allclose
+round = np.round
+argmax = np.argmax
+unravel_index = np.unravel_index
