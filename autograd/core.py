@@ -39,7 +39,7 @@ class primitive(object):
         try:
             return self.grads[argnum](*args, **kwargs)
         except KeyError:
-            raise NotImplementedError("Gradient of {0} not yet implemented".format(self.fun))
+            raise NotImplementedError("Gradient of {0} wrt arg {1} not yet implemented".format(self.fun, argnum))
 
     def defgrad(self, gradmaker, argnum=0):
         gradmaker.__name__ = "grad_{0}_{1}".format(argnum, self.fun.__name__)
