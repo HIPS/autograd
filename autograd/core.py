@@ -1,6 +1,8 @@
 from __future__ import absolute_import
 import warnings
 import operator as op
+import types
+from functools import partial
 from operator import attrgetter
 from numpy import log, float64, ndarray
 
@@ -30,8 +32,12 @@ def grad(fun, argnum=0):
             return node.outgrad
     return gradfun
 
-def primitive(fun, gradmaker):
-    def wrapped_function(*args, **kwargs):
+class primitive(object):
+    def __init__(self, fun, gradmaker):
+        self.fun = fun
+        self.gradmaker = gradmaker
+
+    def __call__(self, *args, **kwargs):
         argvals = list(args)
         tape_ops = {}
         for i, arg in enumerate(args):
@@ -43,17 +49,18 @@ def primitive(fun, gradmaker):
                     else:
                         del arg.tapes[tape]
 
-        result = fun(*argvals, **kwargs)
-        assert not type(result) == ndarray, fun # Check for gaps in numpy wrapping
+        result = self.fun(*argvals, **kwargs)
+        assert not type(result) == ndarray, self.fun # Check for gaps in numpy wrapping
         if result is NotImplemented: return result
         if tape_ops:
             result = new_node(result)
-            gradfuns = gradmaker(result, *args, **kwargs)
+            gradfuns = self.gradmaker(result, *args, **kwargs)
             for tape, parents in tape_ops.iteritems():
                 tape.add_operations(result, gradfuns, parents)
         return result
-    wrapped_function.__name__ = fun.__name__
-    return wrapped_function
+
+    def __get__(self, obj, objtype):
+        return types.MethodType(self, obj, objtype)
 
 def new_node(value):
     try:
