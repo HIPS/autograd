@@ -6,5 +6,8 @@ from .numpy_core import dot
 # ----- Gradients -----
 
 P = primitive
-inv  = P(inv,  lambda ans, x : [lambda g : -dot(dot(ans.T, g), ans.T)])
-det  = P(det,  lambda ans, x : [lambda g : g * ans * inv(x).T])
+inv  = P(inv)
+det  = P(det)
+
+inv.gradmaker = lambda ans, x : [lambda g : -dot(dot(ans.T, g), ans.T)]
+det.gradmaker = lambda ans, x : [lambda g : g * ans * inv(x).T]

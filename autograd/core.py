@@ -33,9 +33,11 @@ def grad(fun, argnum=0):
     return gradfun
 
 class primitive(object):
-    def __init__(self, fun, gradmaker):
+    def __init__(self, fun):
         self.fun = fun
-        self.gradmaker = gradmaker
+
+    def gradmaker(self, *args, **kwargs):
+        raise NotImplementedError("Gradient of {0} not yet implemented".format(self.fun))
 
     def __call__(self, *args, **kwargs):
         argvals = list(args)
@@ -97,18 +99,6 @@ class CalculationTape(object):
         node.tapes[self] = new_rnode
         return new_rnode
 
-I = lambda x : x
-grad_neg = lambda ans, x    : [op.neg]
-grad_add = lambda ans, x, y : [I, I]
-grad_mul = lambda ans, x, y : [lambda g : y * g, lambda g : x * g]
-grad_sub = lambda ans, x, y : [I, op.neg]
-grad_div = lambda ans, x, y : [lambda g : g / y, lambda g : - g * x / y**2]
-grad_pow = lambda ans, x, y : [lambda g : g * y * x ** (y - 1),
-                               lambda g : g * log(x) * x ** y]
-grad_log = lambda ans, x    : [lambda g : g / x]
-
-log = primitive(log, grad_log)
-
 def reverse_args(fun):
     def reversed_fun(ans, x, y):
         return fun(ans, y, x)[::-1]
@@ -117,16 +107,34 @@ def reverse_args(fun):
 P = primitive
 class FloatNode(Node):
     __slots__ = []
-    __add__  = P(float.__add__ , grad_add)
-    __sub__  = P(float.__sub__,  grad_sub)
-    __mul__  = P(float.__mul__,  grad_mul)
-    __pow__  = P(float.__pow__,  grad_pow)
-    __div__  = P(float.__div__,  grad_div)
-    __neg__  = P(float.__neg__,  grad_neg)
-    __radd__ = P(float.__radd__, reverse_args(grad_add))
-    __rsub__ = P(float.__rsub__, reverse_args(grad_sub))
-    __rmul__ = P(float.__rmul__, reverse_args(grad_mul))
-    __rpow__ = P(float.__rpow__, reverse_args(grad_pow))
-    __rdiv__ = P(float.__rdiv__, reverse_args(grad_div))
+    __add__  = P(float.__add__)
+    __sub__  = P(float.__sub__)
+    __mul__  = P(float.__mul__)
+    __pow__  = P(float.__pow__)
+    __div__  = P(float.__div__)
+    __neg__  = P(float.__neg__)
+    __radd__ = P(float.__radd__)
+    __rsub__ = P(float.__rsub__)
+    __rmul__ = P(float.__rmul__)
+    __rpow__ = P(float.__rpow__)
+    __rdiv__ = P(float.__rdiv__)
 Node.type_mappings[float] = FloatNode
 Node.type_mappings[float64] = FloatNode
+
+I = lambda x : x
+FloatNode.__dict__['__neg__'].gradmaker = lambda ans, x    : [op.neg]
+FloatNode.__dict__['__add__'].gradmaker = lambda ans, x, y : [I, I]
+FloatNode.__dict__['__mul__'].gradmaker = lambda ans, x, y : [lambda g : y * g, lambda g : x * g]
+FloatNode.__dict__['__sub__'].gradmaker = lambda ans, x, y : [I, op.neg]
+FloatNode.__dict__['__div__'].gradmaker = lambda ans, x, y : [lambda g : g / y, lambda g : - g * x / y**2]
+FloatNode.__dict__['__pow__'].gradmaker = lambda ans, x, y : [lambda g : g * y * x ** (y - 1),
+                                                             lambda g : g * log(x) * x ** y]
+
+FloatNode.__dict__['__radd__'].gradmaker = reverse_args(FloatNode.__dict__['__add__'].gradmaker)
+FloatNode.__dict__['__rmul__'].gradmaker = reverse_args(FloatNode.__dict__['__mul__'].gradmaker)
+FloatNode.__dict__['__rsub__'].gradmaker = reverse_args(FloatNode.__dict__['__sub__'].gradmaker)
+FloatNode.__dict__['__rdiv__'].gradmaker = reverse_args(FloatNode.__dict__['__div__'].gradmaker)
+FloatNode.__dict__['__rpow__'].gradmaker = reverse_args(FloatNode.__dict__['__pow__'].gradmaker)
+
+log = P(log)
+log.gradmaker = lambda ans, x : [lambda g : g / x]
