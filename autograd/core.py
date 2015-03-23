@@ -2,8 +2,6 @@ from __future__ import absolute_import
 import warnings
 import operator as op
 import types
-from functools import partial
-from operator import attrgetter
 from numpy import log, float64, ndarray
 
 def grad(fun, argnum=0):
@@ -37,12 +35,11 @@ class primitive(object):
         self.fun = fun
         self.grads = {}
 
-    def gradmaker(self, *args, **kwargs):
-        result = {}
-        for arg, arggradmaker in self.grads.iteritems():
-            result[arg] = arggradmaker(*args, **kwargs)
-        return result
-        # raise NotImplementedError("Gradient of {0} not yet implemented".format(self.fun))
+    def gradmaker(self, argnum, *args, **kwargs):
+        try:
+            return self.grads[argnum](*args, **kwargs)
+        except KeyError:
+            raise NotImplementedError("Gradient of {0} not yet implemented".format(self.fun))
 
     def defgrad(self, gradmaker, argnum=0):
         gradmaker.__name__ = "grad_{0}_{1}".format(argnum, self.fun.__name__)
@@ -65,8 +62,8 @@ class primitive(object):
         if result is NotImplemented: return result
         if tape_ops:
             result = new_node(result)
-            gradfuns = self.gradmaker(result, *args, **kwargs)
             for tape, parents in tape_ops.iteritems():
+                gradfuns = {argnum : self.gradmaker(argnum, result, *args, **kwargs) for argnum, _ in parents}
                 tape.add_operations(result, gradfuns, parents)
         return result
 

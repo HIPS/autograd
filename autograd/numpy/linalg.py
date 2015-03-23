@@ -9,5 +9,5 @@ P = primitive
 inv  = P(inv)
 det  = P(det)
 
-inv.gradmaker = lambda ans, x : [lambda g : -dot(dot(ans.T, g), ans.T)]
-det.gradmaker = lambda ans, x : [lambda g : g * ans * inv(x).T]
+inv.defgrad(lambda ans, x : lambda g : -dot(dot(ans.T, g), ans.T))
+det.defgrad(lambda ans, x : lambda g : g * ans * inv(x).T)

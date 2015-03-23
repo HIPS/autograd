@@ -4,7 +4,7 @@ import numpy as np
 from copy import copy
 import operator as op
 from autograd.core import primitive, Node, log, swap_args
-
+python_sum = sum
 # ----- Wrap numpy functions -----
 
 def keep_keepdims(fun, funname):
@@ -193,6 +193,7 @@ def make_grad_np_dot_A(ans, A, B):
         else:
             return g * B
     return grad_np_dot_A
+dot.defgrad(make_grad_np_dot_A)
 def make_grad_np_dot_B(ans, A, B):
     def grad_np_dot_B(g):
         if A.ndim is 2:
@@ -202,7 +203,6 @@ def make_grad_np_dot_B(ans, A, B):
         else:
             return g * A
     return grad_np_dot_B
-dot.defgrad(make_grad_np_dot_A)
 dot.defgrad(make_grad_np_dot_B, argnum=1)
 
 take = P(lambda A, idx : A[idx])
@@ -214,25 +214,17 @@ take.defgrad(make_grad_take)
 untake = P(lambda x, idx, shape : SparseArray(shape, idx, x))
 untake.defgrad(lambda ans, x, idx, shape : lambda g : take(g, idx))
 
-# ----- Subtler gradients -----
-
 concatenate_orig = np.concatenate
 def concatenate_args(axis, *args):
     return concatenate_orig(args, axis)
-def make_grad_concatenate_args(ans, axis, *args):
-    high = 0
-    gradfuns = [None]
-    for a in args:
-        low = high
-        high += a.shape[axis]
-        idxs = [slice(None)] * ans.ndim
-        idxs[axis] = slice(low, high)
-        gradfuns.append(partial(take, idx=idxs))
-    return gradfuns
+def make_grad_concatenate_args(argnum, ans, axis, *args):
+    start = python_sum([a.shape[axis] for a in args[:argnum-1]])
+    idxs = [slice(None)] * ans.ndim
+    idxs[axis] = slice(start, start + args[argnum-1].shape[axis])
+    return lambda g : take(g, idxs)
 concatenate_args = P(W(concatenate_args))
-concatenate_args.defgrad(make_grad_concatenate_args)
-
-concatenate_args.grads = lambda arr_list, axis=0 : concatenate_args(axis, *arr_list)
+concatenate_args.gradmaker = make_grad_concatenate_args
+concatenate = lambda arr_list, axis=0 : concatenate_args(axis, *arr_list)
 
 # ----- Node version of ndarray -----
 
