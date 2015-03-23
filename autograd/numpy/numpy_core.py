@@ -93,9 +93,7 @@ isfloat = lambda x : isinstance(getval(x), float)
 getval = lambda x : x.value if isinstance(x, Node) else x
 
 def unbroadcast(ans, x, fun):
-    if isfloat(x):
-        return lambda g : sum(fun(g))
-    elif isarray(x):
+    if isarray(x):
         shape = x.shape
         def new_fun(g):
             result = fun(g)
@@ -106,9 +104,10 @@ def unbroadcast(ans, x, fun):
                     result = sum(result, axis=axis, keepdims=True)
             assert result.shape == shape
             return result
-        return new_fun
     else:
-        return fun
+        new_fun = lambda g : sum(fun(g))
+    new_fun.__name__ = "unbroadcast_{0}".format(fun.__name__)
+    return new_fun
 
 I = lambda x : x
 ndarray.__dict__['__add__'].defgrad(lambda ans, x, y : unbroadcast(ans, x, I))
@@ -288,6 +287,6 @@ class SparseArrayNode(Node):
     __radd__ = P(SparseArray.__radd__)
 Node.type_mappings[SparseArray] = SparseArrayNode
 
-SparseArrayNode.__dict__['__add__'].defgrad(lambda ans, x, y : unbroadcast(ans, x, I))
-SparseArrayNode.__dict__['__add__'].defgrad(lambda ans, x, y : unbroadcast(ans, y, I), argnum=1)
+SparseArrayNode.__dict__['__add__'].defgrad(lambda ans, x, y : I)
+SparseArrayNode.__dict__['__add__'].defgrad(lambda ans, x, y : I, argnum=1)
 SparseArrayNode.__dict__['__radd__'].grads = swap_args(SparseArrayNode.__dict__['__add__'].grads)
