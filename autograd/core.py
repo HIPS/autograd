@@ -47,24 +47,28 @@ class primitive(object):
 
     def __call__(self, *args, **kwargs):
         argvals = list(args)
-        tape_ops = {}
+        ops = []
         for i, arg in enumerate(args):
             if isinstance(arg, Node):
                 argvals[i] = arg.value
                 for tape in arg.tapes.keys():
                     if tape.active:
-                        tape_ops.setdefault(tape, []).append((i, arg))
+                        ops.append((tape, i, arg))
                     else:
                         del arg.tapes[tape]
 
         result = self.fun(*argvals, **kwargs)
         assert not type(result) == ndarray, self.fun # Check for gaps in numpy wrapping
         if result is NotImplemented: return result
-        if tape_ops:
+        if ops:
             result = new_node(result)
-            for tape, parents in tape_ops.iteritems():
-                gradfuns = {argnum : self.gradmaker(argnum, result, *args, **kwargs) for argnum, _ in parents}
-                tape.add_operations(result, gradfuns, parents)
+            for tape, argnum, parent in ops:
+                if tape not in result.tapes:
+                    rnode = tape.add_node(result)
+                else:
+                    rnode = result.tapes[tape]
+                gradfun = self.gradmaker(argnum, result, *args, **kwargs)
+                rnode.parent_ops.append((gradfun, parent.tapes[tape]))
         return result
 
     def __get__(self, obj, objtype):
@@ -93,11 +97,6 @@ class CalculationTape(object):
     def __init__(self):
         self.op_list = []
         self.active = True
-
-    def add_operations(self, node, gradfuns, args):
-        rnode_ops = self.add_node(node).parent_ops
-        for i, arg in args:
-            rnode_ops.append((gradfuns[i], arg.tapes[self]))
 
     def add_node(self, node):
         new_rnode = ReverseNode()
