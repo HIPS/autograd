@@ -64,5 +64,5 @@ class ndarray(np.ndarray):
 
 # ----- Special treatment of list-input functions -----
 
-concatenate_args = primitive(wrap_outputlambda axis, *args : np.concatenate(args, axis)))
+concatenate_args = primitive(wrap_output(lambda axis, *args : np.concatenate(args, axis)))
 concatenate = lambda arr_list, axis=0 : concatenate_args(axis, *arr_list)
