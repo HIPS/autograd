@@ -13,7 +13,7 @@ def grad(fun, argnum=0):
         tape.add_node(start_node)
         args = args[:argnum] + (start_node,) + args[argnum+1:]
         end_node = fun(*args, **kwargs)
-        tape.active = False
+        tape.complete = True
         if not isinstance(end_node, Node) or tape not in end_node.tapes:
             warnings.warn("Output seems independent of input. Returning zero gradient.")
             return 0 * start_node.value
@@ -25,7 +25,7 @@ def grad(fun, argnum=0):
             while op_list:
                 node = op_list.pop()
                 if node.outgrad is not 0:
-                    for gradfun, parent in node.parent_ops:
+                    for gradfun, parent in node.parent_grad_ops:
                         parent.outgrad = parent.outgrad + gradfun(node.outgrad)
             return node.outgrad
     return gradfun
@@ -39,7 +39,7 @@ class primitive(object):
         try:
             return self.grads[argnum](*args, **kwargs)
         except KeyError:
-            raise NotImplementedError("Gradient of {0} wrt arg {1} not yet implemented".format(self.fun, argnum))
+            raise NotImplementedError("Gradient of {0} w.r.t. arg {1} not yet implemented".format(self.fun, argnum))
 
     def defgrad(self, gradmaker, argnum=0):
         gradmaker.__name__ = "grad_{0}_{1}".format(argnum, self.fun.__name__)
@@ -52,7 +52,7 @@ class primitive(object):
             if isinstance(arg, Node):
                 argvals[i] = arg.value
                 for tape in arg.tapes.keys():
-                    if tape.active:
+                    if not tape.complete:
                         ops.append((tape, i, arg))
                     else:
                         del arg.tapes[tape]
@@ -68,7 +68,7 @@ class primitive(object):
                 else:
                     rnode = result.tapes[tape]
                 gradfun = self.gradmaker(argnum, result, *args, **kwargs)
-                rnode.parent_ops.append((gradfun, parent.tapes[tape]))
+                rnode.parent_grad_ops.append((gradfun, parent.tapes[tape]))
         return result
 
     def __get__(self, obj, objtype):
@@ -88,15 +88,15 @@ class Node(object):
         self.tapes = {}
 
 class ReverseNode(object):
-    __slots__ = ['parent_ops', 'outgrad']
+    __slots__ = ['parent_grad_ops', 'outgrad']
     def __init__(self):
-        self.parent_ops = []
+        self.parent_grad_ops = []
         self.outgrad = 0
 
 class CalculationTape(object):
     def __init__(self):
         self.op_list = []
-        self.active = True
+        self.complete = False
 
     def add_node(self, node):
         new_rnode = ReverseNode()
