@@ -65,6 +65,7 @@ class ndarray(np.ndarray):
     __rmul__ = primitive(np.ndarray.__rmul__)
     __rpow__ = primitive(np.ndarray.__rpow__)
     __rdiv__ = primitive(np.ndarray.__rdiv__)
+    __eq__   = primitive(np.ndarray.__eq__)
 
 # ----- Special treatment of list-input functions -----
 

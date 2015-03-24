@@ -19,6 +19,9 @@ anp.ndarray.__dict__['__div__'].defgrad(lambda ans, x, y : unbroadcast(ans, y, l
 anp.ndarray.__dict__['__pow__'].defgrad(lambda ans, x, y : unbroadcast(ans, x, lambda g : g * y * x ** (y - 1)))
 anp.ndarray.__dict__['__pow__'].defgrad(lambda ans, x, y : unbroadcast(ans, y, lambda g : g * log(x) * x ** y), argnum=1)
 
+anp.ndarray.__dict__['__eq__'].defgrad_is_zero()
+anp.ndarray.__dict__['__eq__'].defgrad_is_zero(argnum=1)
+
 anp.ndarray.__dict__['__radd__'].grads = swap_args(anp.ndarray.__dict__['__add__'].grads)
 anp.ndarray.__dict__['__rmul__'].grads = swap_args(anp.ndarray.__dict__['__mul__'].grads)
 anp.ndarray.__dict__['__rsub__'].grads = swap_args(anp.ndarray.__dict__['__sub__'].grads)
@@ -56,6 +59,7 @@ anp.tanh.defgrad(  lambda ans, x : lambda g : g / anp.cosh(x) **2)
 anp.square.defgrad(lambda ans, x : lambda g : g * 2 * x)
 anp.sqrt.defgrad(  lambda ans, x : lambda g : g * 0.5 * x**-0.5)
 anp.reshape.defgrad( lambda ans, x, shape, order=None : lambda g : anp.reshape(g, x.shape, order=order))
+anp.roll.defgrad(    lambda ans, x, shift, axis=None  : lambda g : anp.roll(g, -shift, axis=axis))
 anp.ravel.defgrad(   lambda ans, x, order=None    : lambda g : anp.reshape(g, x.shape, order=order))
 anp.expand_dims.defgrad(lambda ans, x, axis : lambda g : anp.squeeze(g, axis))
 anp.squeeze.defgrad(    lambda ans, x, axis : lambda g : anp.repeat(g, x.shape[axis], axis))
@@ -71,39 +75,40 @@ anp.full.defgrad(     lambda ans, shape, fill_value : lambda g : anp.sum(g), arg
 isarray = lambda x : isinstance(getval(x), anp.ndarray)
 getval = lambda x : x.value if isinstance(x, Node) else x
 
-def make_grad_np_sum(ans, x, axis=None, keepdims=False):
+def repeat_to_match_shape(x, axis, keepdims):
+    """Returns a function that repeats an array along axis to get a given shape.
+       Also returns the number of repetitions of the array."""
     if not isarray(x):
-        return I
+        return I, 1
     shape = x.shape
     if axis is None:
-        return lambda g : anp.full(shape, g)
+        return lambda g : anp.full(shape, g), anp.prod(shape)
     else:
         if keepdims:
-            return lambda g : anp.repeat(g, shape[axis], axis)
+            return lambda g : anp.repeat(g, shape[axis], axis), shape[axis]
         else:
-            return lambda g : anp.repeat(anp.expand_dims(g, axis), shape[axis], axis)
+            return lambda g : anp.repeat(anp.expand_dims(g, axis),
+                                         shape[axis], axis), shape[axis]
+
+def make_grad_np_sum(ans, x, axis=None, keepdims=False):
+    repeater, _ = repeat_to_match_shape(x, axis, keepdims)
+    return repeater
 anp.sum.defgrad(make_grad_np_sum)
 
 def make_grad_np_mean(ans, x, axis=None, keepdims=False):
-    if not isarray(x):
-        return I
-    shape = x.shape
-    if axis is None:
-        return lambda g : anp.full(shape, g) / anp.prod(shape)
-    else:
-        if keepdims:
-            return lambda g : anp.repeat(g, shape[axis], axis) / shape[axis]
-        else:
-            return lambda g : anp.repeat(anp.expand_dims(g, axis), shape[axis], axis) / shape[axis]
+    repeater, num_reps = repeat_to_match_shape(x, axis, keepdims)
+    return lambda g: repeater(g) / num_reps
 anp.mean.defgrad(make_grad_np_mean)
 
-def make_grad_np_max(ans, x):
-    def gradfun(g):
-        idxs = anp.argmax(getval(x))
-        shape = x.shape
-        return untake(g, anp.unravel_index(idxs, shape), shape)
-    return gradfun
-anp.max.defgrad(make_grad_np_max)
+def make_grad_chooser(ans, x, axis=None, keepdims=None):
+    """Builds gradient of functions that choose a single item, such as min or max."""
+    repeater, _ = repeat_to_match_shape(x, axis, keepdims)
+    argmax_locations = x == repeater(ans)
+    return lambda g: repeater(g) * argmax_locations
+anp.max.defgrad(make_grad_chooser)
+anp.min.defgrad(make_grad_chooser)
+anp.amax.defgrad(make_grad_chooser)
+anp.amin.defgrad(make_grad_chooser)
 
 def make_grad_np_dot_A(ans, A, B):
     def grad_np_dot_A(g):
