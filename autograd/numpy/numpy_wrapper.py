@@ -52,6 +52,7 @@ class ndarray(np.ndarray):
 
     # Wrap binary ops since the other operand could be a Node
     dot = dot
+    __neg__  = primitive(np.ndarray.__neg__)
     __add__  = primitive(np.ndarray.__add__)
     __sub__  = primitive(np.ndarray.__sub__)
     __mul__  = primitive(np.ndarray.__mul__)

@@ -7,6 +7,7 @@ from .numpy_extra import take, untake
 # ----- ndarray binary operators -----
 
 I = lambda x : x
+anp.ndarray.__dict__['__neg__'].defgrad(lambda ans, x: op.neg)
 anp.ndarray.__dict__['__add__'].defgrad(lambda ans, x, y : unbroadcast(ans, x, I))
 anp.ndarray.__dict__['__add__'].defgrad(lambda ans, x, y : unbroadcast(ans, y, I), argnum=1)
 anp.ndarray.__dict__['__mul__'].defgrad(lambda ans, x, y : unbroadcast(ans, x, lambda g : y * g))

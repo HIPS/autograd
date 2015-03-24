@@ -21,34 +21,23 @@ class ArrayNode(Node):
     size  = property(lambda self: self.value.size)
     T = property(lambda self: anp.transpose(self))
 
-    __neg__ = P(op.neg)
-
-    # Binary ops already wrapped by autograd.numpy.ndarray
-    dot = anp.ndarray.dot.__func__
-    __add__  = anp.ndarray.__add__.__func__
-    __sub__  = anp.ndarray.__sub__.__func__
-    __mul__  = anp.ndarray.__mul__.__func__
-    __pow__  = anp.ndarray.__pow__.__func__
-    __div__  = anp.ndarray.__div__.__func__
-    __radd__ = anp.ndarray.__radd__.__func__
-    __rsub__ = anp.ndarray.__rsub__.__func__
-    __rmul__ = anp.ndarray.__rmul__.__func__
-    __rpow__ = anp.ndarray.__rpow__.__func__
-    __rdiv__ = anp.ndarray.__rdiv__.__func__
-
 Node.type_mappings[anp.ndarray] = ArrayNode
-ArrayNode.__dict__['__neg__'].defgrad(lambda ans, x : op.neg)
+# Binary ops already wrapped by autograd.numpy.ndarray
+inherited_methods = ['dot', '__neg__', '__add__',  '__sub__', '__mul__',
+                     '__pow__', '__div__', '__radd__', '__rsub__',
+                     '__rmul__', '__rpow__', '__rdiv__']
+for method_name in inherited_methods:
+    setattr(ArrayNode, method_name, getattr(anp.ndarray, method_name).__func__)
 
 # These numpy.ndarray methods are just refs to an equivalent numpy function
 nondiff_methods = ['all', 'any', 'argmax', 'argmin', 'argpartition',
-                   'argsort', 'max', 'min', 'nonzero', 'searchsorted',
-                   'round', ]
+                   'argsort', 'nonzero', 'searchsorted', 'round']
 diff_methods = ['clip', 'compress', 'cumprod', 'cumsum', 'diagonal',
-                'mean', 'prod', 'ptp', 'ravel', 'repeat',
+                'max', 'mean', 'min', 'prod', 'ptp', 'ravel', 'repeat',
                 'reshape', 'squeeze', 'std', 'sum', 'swapaxes', 'take',
                 'trace', 'transpose', 'var']
-for name in nondiff_methods + diff_methods:
-    setattr(ArrayNode, name, anp.__dict__[name])
+for method_name in nondiff_methods + diff_methods:
+    setattr(ArrayNode, method_name, anp.__dict__[method_name])
 
 # ----- Special sparse array type for efficient grads through indexing -----
 
