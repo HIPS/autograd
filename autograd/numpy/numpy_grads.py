@@ -21,6 +21,16 @@ anp.ndarray.__dict__['__pow__'].defgrad(lambda ans, x, y : unbroadcast(ans, y, l
 
 anp.ndarray.__dict__['__eq__'].defgrad_is_zero()
 anp.ndarray.__dict__['__eq__'].defgrad_is_zero(argnum=1)
+anp.ndarray.__dict__['__lt__'].defgrad_is_zero()
+anp.ndarray.__dict__['__lt__'].defgrad_is_zero(argnum=1)
+anp.ndarray.__dict__['__ge__'].defgrad_is_zero()
+anp.ndarray.__dict__['__ge__'].defgrad_is_zero(argnum=1)
+anp.ndarray.__dict__['__gt__'].defgrad_is_zero()
+anp.ndarray.__dict__['__gt__'].defgrad_is_zero(argnum=1)
+anp.ndarray.__dict__['__le__'].defgrad_is_zero()
+anp.ndarray.__dict__['__le__'].defgrad_is_zero(argnum=1)
+anp.ndarray.__dict__['__ne__'].defgrad_is_zero()
+anp.ndarray.__dict__['__ne__'].defgrad_is_zero(argnum=1)
 
 anp.ndarray.__dict__['__radd__'].grads = swap_args(anp.ndarray.__dict__['__add__'].grads)
 anp.ndarray.__dict__['__rmul__'].grads = swap_args(anp.ndarray.__dict__['__mul__'].grads)

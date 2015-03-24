@@ -22,6 +22,7 @@ def fun(x):
     currterm = x
     ans = currterm
     for i in xrange(1000):
+        print i,
         currterm = - currterm * x ** 2 / ((2 * i + 3) * (2 * i + 2))
         ans = ans + currterm
         if np.abs(currterm) < 0.2: break # (Very generous tolerance!)

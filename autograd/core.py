@@ -63,7 +63,7 @@ class primitive(object):
                         del arg.tapes[tape]
 
         result = self.fun(*argvals, **kwargs)
-        assert not type(result) == ndarray, self.fun # Check for gaps in numpy wrapping
+        # assert not type(result) == ndarray, self.fun # Check for gaps in numpy wrapping
         if result is NotImplemented: return result
         if ops:
             result = new_node(result)
@@ -112,6 +112,12 @@ class CalculationTape(object):
 P = primitive
 class FloatNode(Node):
     __slots__ = []
+    __eq__  = P(float.__eq__)
+    __ne__  = P(float.__ne__)
+    __lt__  = P(float.__lt__)
+    __le__  = P(float.__le__)
+    __gt__  = P(float.__gt__)
+    __ge__  = P(float.__ge__)
     __add__  = P(float.__add__)
     __sub__  = P(float.__sub__)
     __mul__  = P(float.__mul__)
@@ -128,6 +134,19 @@ Node.type_mappings[float64] = FloatNode
 
 I = lambda x : x
 FloatNode.__dict__['__neg__'].defgrad(lambda ans, x : op.neg)
+
+FloatNode.__dict__['__eq__'].defgrad_is_zero()
+FloatNode.__dict__['__eq__'].defgrad_is_zero(argnum=1)
+FloatNode.__dict__['__ne__'].defgrad_is_zero()
+FloatNode.__dict__['__ne__'].defgrad_is_zero(argnum=1)
+FloatNode.__dict__['__gt__'].defgrad_is_zero()
+FloatNode.__dict__['__gt__'].defgrad_is_zero(argnum=1)
+FloatNode.__dict__['__ge__'].defgrad_is_zero()
+FloatNode.__dict__['__ge__'].defgrad_is_zero(argnum=1)
+FloatNode.__dict__['__lt__'].defgrad_is_zero()
+FloatNode.__dict__['__lt__'].defgrad_is_zero(argnum=1)
+FloatNode.__dict__['__le__'].defgrad_is_zero()
+FloatNode.__dict__['__le__'].defgrad_is_zero(argnum=1)
 
 FloatNode.__dict__['__add__'].defgrad(lambda ans, x, y : I)
 FloatNode.__dict__['__add__'].defgrad(lambda ans, x, y : I, argnum=1)

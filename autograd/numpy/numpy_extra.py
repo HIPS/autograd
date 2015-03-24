@@ -1,5 +1,6 @@
+from __future__ import absolute_import
 from copy import copy
-import operator as op
+import numpy as numpy_original
 from autograd.core import Node, primitive as P, swap_args
 from . import numpy_wrapper as anp
 
@@ -15,6 +16,13 @@ untake.defgrad(lambda ans, x, idx, shape : lambda g : take(g, idx))
 class ArrayNode(Node):
     __slots__ = []
     __getitem__ = take
+
+    def __init__(self, value):
+        if type(Node) is numpy_original.ndarray:
+            value = value.view(anp.ndarray)
+        self.value = value
+        self.tapes = {}
+
     # Constants w.r.t float data just pass though
     shape = property(lambda self: self.value.shape)
     ndim  = property(lambda self: self.value.ndim)
@@ -22,6 +30,7 @@ class ArrayNode(Node):
     T = property(lambda self: anp.transpose(self))
 
 Node.type_mappings[anp.ndarray] = ArrayNode
+Node.type_mappings[numpy_original.ndarray] = ArrayNode
 # Binary ops already wrapped by autograd.numpy.ndarray
 inherited_methods = ['dot', '__neg__', '__add__',  '__sub__', '__mul__',
                      '__pow__', '__div__', '__radd__', '__rsub__',

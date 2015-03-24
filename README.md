@@ -1,4 +1,4 @@
-# Autograd (Formerly FunkyYak)
+# Autograd (formerly FunkyYak)
 
 Taking a few lessons from developing and working with Kayak, here is a
 stateless reverse-mode autodiff implementation that also offers
