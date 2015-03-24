@@ -7,13 +7,14 @@ from autograd.core import primitive
 def keep_keepdims(fun, funname):
     # Numpy doesn't support keepdims for subclasses so this is the workaround
     try:
-        if "keepdims" in inspect.getargspec(fun)[0] and hasattr(np.ndarray, funname): 
+        if "keepdims" in inspect.getargspec(fun).args and hasattr(np.ndarray, funname): 
             def new_fun(*args, **kwargs):
                 x = args[0]
                 if isinstance(x, np.ndarray):
                     return getattr(x, funname)(*args[1:], **kwargs) 
                 else:
                     return fun(*args, **kwargs)
+            new_fun.__name__ = fun.__name__
             return new_fun
     except TypeError:
         pass
@@ -26,6 +27,7 @@ def wrap_output(fun):
         if isinstance(ans, np.ndarray):
             ans = ans.view(ndarray)
         return ans
+    wrapped_fun.__name__ = fun.__name__
     return wrapped_fun
 
 def wrap_namespace(old, new):
