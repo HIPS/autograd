@@ -34,6 +34,7 @@ class ArrayNode(Node):
     __neg__ = P(op.neg)
 
     # Binary ops already wrapped by autograd.numpy.ndarray
+    dot = anp.ndarray.dot.__func__
     __add__  = anp.ndarray.__add__.__func__
     __sub__  = anp.ndarray.__sub__.__func__
     __mul__  = anp.ndarray.__mul__.__func__

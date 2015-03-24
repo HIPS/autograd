@@ -18,6 +18,20 @@ def test_dot():
     check_grads(fun, vect1, mat1)
     check_grads(fun, vect2, vect3)
 
+def test_dot_method():
+    def fun(x, y): return to_scalar(x.dot(y))
+
+    mat1 = npr.randn(10, 11)
+    mat2 = npr.randn(10, 11)
+    vect1 = npr.randn(10)
+    vect2 = npr.randn(11)
+    vect3 = npr.randn(11)
+
+    check_grads(fun, mat1, vect2)
+    check_grads(fun, mat1, mat2.T)
+    check_grads(fun, vect1, mat1)
+    check_grads(fun, vect2, vect3)
+
 def test_max():
     def fun(x): return to_scalar(np.max(x))
     d_fun = lambda x : to_scalar(grad(fun)(x))
