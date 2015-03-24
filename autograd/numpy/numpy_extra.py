@@ -16,21 +16,11 @@ class ArrayNode(Node):
     __slots__ = []
     __getitem__ = take
     # Constants w.r.t float data just pass though
-    @property
-    def shape(self): return self.value.shape
-    @property
-    def ndim(self): return self.value.ndim
-    @property
-    def size(self): return self.value.size
+    shape = property(lambda self: self.value.shape)
+    ndim  = property(lambda self: self.value.ndim)
+    size  = property(lambda self: self.value.size)
+    T = property(lambda self: anp.transpose(self))
 
-    # Differentiable unary methods just apply to self
-    squeeze = anp.squeeze
-    ravel   = anp.ravel
-    reshape = anp.reshape
-    sum     = anp.sum
-    mean    = anp.mean
-    @property
-    def T(self): return anp.transpose(self)
     __neg__ = P(op.neg)
 
     # Binary ops already wrapped by autograd.numpy.ndarray
@@ -48,6 +38,19 @@ class ArrayNode(Node):
 
 Node.type_mappings[anp.ndarray] = ArrayNode
 ArrayNode.__dict__['__neg__'].defgrad(lambda ans, x : op.neg)
+
+# These numpy.ndarray methods are just refs to an equivalent numpy function
+nondiff_methods = ['all', 'any', 'argmax', 'argmin', 'argpartition',
+                   'argsort', 'max', 'min', 'nonzero', 'searchsorted',
+                   'round', ]
+diff_methods = ['clip', 'compress', 'cumprod', 'cumsum', 'diagonal',
+                'mean', 'prod', 'ptp', 'ravel', 'repeat',
+                'reshape', 'squeeze', 'std', 'sum', 'swapaxes', 'take',
+                'trace', 'transpose', 'var']
+for name in nondiff_methods + diff_methods:
+    setattr(ArrayNode, name, anp.__dict__[name])
+
+# ----- Special sparse array type for efficient grads through indexing -----
 
 class SparseArray(object):
     __array_priority__ = 150.0
