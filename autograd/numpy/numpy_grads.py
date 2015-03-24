@@ -25,6 +25,23 @@ anp.ndarray.__dict__['__rsub__'].grads = swap_args(anp.ndarray.__dict__['__sub__
 anp.ndarray.__dict__['__rdiv__'].grads = swap_args(anp.ndarray.__dict__['__div__'].grads)
 anp.ndarray.__dict__['__rpow__'].grads = swap_args(anp.ndarray.__dict__['__pow__'].grads)
 
+# ----- Functions that are constant w.r.t. continuous inputs -----
+
+anp.floor.defgrad_is_zero()
+anp.ceil.defgrad_is_zero()
+anp.round.defgrad_is_zero()
+anp.rint.defgrad_is_zero()
+anp.around.defgrad_is_zero()
+anp.all.defgrad_is_zero()
+anp.any.defgrad_is_zero()
+anp.argmax.defgrad_is_zero()
+anp.argmin.defgrad_is_zero()
+anp.argpartition.defgrad_is_zero()
+anp.argsort.defgrad_is_zero()
+anp.nonzero.defgrad_is_zero()
+anp.searchsorted.defgrad_is_zero()
+anp.sign.defgrad_is_zero()
+
 # ----- Simple grads -----
 
 anp.abs.defgrad(   lambda ans, x : lambda g : anp.sign(x) * g)
@@ -38,7 +55,6 @@ anp.cosh.defgrad(  lambda ans, x : lambda g : g * anp.sinh(x))
 anp.tanh.defgrad(  lambda ans, x : lambda g : g / anp.cosh(x) **2)
 anp.square.defgrad(lambda ans, x : lambda g : g * 2 * x)
 anp.sqrt.defgrad(  lambda ans, x : lambda g : g * 0.5 * x**-0.5)
-anp.sign.defgrad(  lambda ans, x : lambda g : 0.0)
 anp.reshape.defgrad( lambda ans, x, shape, order=None : lambda g : anp.reshape(g, x.shape, order=order))
 anp.ravel.defgrad(   lambda ans, x, order=None    : lambda g : anp.reshape(g, x.shape, order=order))
 anp.expand_dims.defgrad(lambda ans, x, axis : lambda g : anp.squeeze(g, axis))

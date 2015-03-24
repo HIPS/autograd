@@ -34,6 +34,7 @@ class primitive(object):
     def __init__(self, fun):
         self.fun = fun
         self.grads = {}
+        self.zero_grads = set()
 
     def gradmaker(self, argnum, *args, **kwargs):
         try:
@@ -45,12 +46,16 @@ class primitive(object):
         gradmaker.__name__ = "grad_{0}_{1}".format(argnum, self.fun.__name__)
         self.grads[argnum] = gradmaker
 
+    def defgrad_is_zero(self, argnum=0):
+        self.zero_grads.add(argnum)
+
     def __call__(self, *args, **kwargs):
         argvals = list(args)
         ops = []
         for i, arg in enumerate(args):
             if isinstance(arg, Node):
                 argvals[i] = arg.value
+                if i in self.zero_grads: continue
                 for tape in arg.tapes.keys():
                     if not tape.complete:
                         ops.append((tape, i, arg))
