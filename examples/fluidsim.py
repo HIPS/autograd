@@ -1,6 +1,8 @@
 import autograd.numpy as np
 from autograd import grad
 
+from scipy.optimize import fmin_cg
+
 import matplotlib.pyplot as plt
 
 # Based on http://www.intpowertechcorp.com/GDC03.pdf
@@ -8,14 +10,14 @@ import matplotlib.pyplot as plt
 rows = 100
 cols = 100
 dt = 3.1
-num_timesteps = 50
+num_timesteps = 25
 num_solver_iters = 5
 
 def plot_matrix(ax, mat):
     plt.cla()
     ax.matshow(mat)
     plt.draw()
-    plt.pause(10.0)
+    plt.pause(0.001)
 
 def project(vx, vy):
     """Project the velocity field to be mass-conserving,
@@ -36,7 +38,7 @@ def project(vx, vy):
 def advect(f, vx, vy):
     """Move field f according to x and y velocities (u and v)
        using an implicit Euler integrator."""
-    cell_xs, cell_ys = np.meshgrid(np.arange(rows), np.arange(cols))
+    cell_ys, cell_xs = np.meshgrid(np.arange(rows), np.arange(cols))
     center_xs = (cell_xs - dt * vx).ravel()
     center_ys = (cell_ys - dt * vy).ravel()
 
@@ -71,17 +73,11 @@ def target_match(smoke):
     target[30:60, 30:60] = 1.0
     return np.sum(target * smoke)
 
-def objective(init_vx_and_vy, init_smoke, num_time_steps):
-    init_vx = init_vx_and_vy[0]
-    init_vy = init_vx_and_vy[1]
-    final_smoke = simulate(init_vx, init_vy, init_smoke, num_time_steps)
-    return target_match(final_smoke)
-
 if __name__ == '__main__':
 
-    init_dx_and_dy = np.zeros((2, rows, cols))
-    #init_dx = np.random.randn(rows, cols)
-    #init_dy = np.random.randn(rows, cols)
+    init_dx_and_dy = np.zeros((2, rows, cols)).ravel()
+    #init_dx = np.random.randn(rows, cols) * 3.
+    #init_dy = np.random.randn(rows, cols) * 3.
     init_smoke = np.zeros((rows, cols))
     init_smoke[10:20:, :] = 1.0
     init_smoke[50:60:, :] = 1.0
@@ -90,7 +86,28 @@ if __name__ == '__main__':
     ax = fig.add_axes([0., 0., 1., 1.], frameon=False)
 
     #simulate(init_dx, init_dy, init_smoke, num_timesteps, ax)
+    def objective(init_vx_and_vy):
+        init_vx = np.reshape(init_vx_and_vy[0:(rows*cols)], (rows, cols))
+        init_vy = np.reshape(init_vx_and_vy[(rows*cols):], (rows, cols))
+        #init_vx = init_vx_and_vy[0, :, :]
+        #init_vy = init_vx_and_vy[1, :, :]
+
+        final_smoke = simulate(init_vx, init_vy, init_smoke, num_timesteps)
+        return target_match(final_smoke)
 
     grad_obj = grad(objective)
-    g = grad_obj(init_dx_and_dy, init_smoke, num_timesteps)
-    plot_matrix(ax, g[0])
+    #g = grad_obj(init_dx_and_dy, init_smoke, num_timesteps)
+    #plot_matrix(ax, g[0])
+
+    def callback(weights):
+        init_vx = np.reshape(weights[0:(rows*cols)], (rows, cols))
+        init_vy = np.reshape(weights[(rows*cols):], (rows, cols))
+        simulate(init_vx, init_vy, init_smoke, num_timesteps, ax)
+
+    weights = fmin_cg(objective, init_dx_and_dy, fprime=grad_obj,
+                      maxiter=100, callback=callback)
+
+    init_vx = np.reshape(weights[0:(rows*cols)], (rows, cols))
+    init_vy = np.reshape(weights[(rows*cols):], (rows, cols))
+    simulate(init_vx, init_vy, init_smoke, num_timesteps, ax)
+
