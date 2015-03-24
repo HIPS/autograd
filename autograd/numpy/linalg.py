@@ -1,12 +1,8 @@
 from __future__ import absolute_import
 import numpy.linalg as npla
-from autograd.core import primitive as P
-from .numpy_wrapper import dot
+from .numpy_wrapper import wrap_namespace, dot
 
-# ----- Gradients -----
-
-inv  = P(npla.inv)
-det  = P(npla.det)
+wrap_namespace(npla.__dict__, globals())
 
 inv.defgrad(lambda ans, x : lambda g : -dot(dot(ans.T, g), ans.T))
 det.defgrad(lambda ans, x : lambda g : g * ans * inv(x).T)

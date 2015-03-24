@@ -1,13 +1,23 @@
 from __future__ import absolute_import
+import types
 import numpy as np
+import inspect
 from autograd.core import primitive
 
 def keep_keepdims(fun, funname):
     # Numpy doesn't support keepdims for subclasses so this is the workaround
-    def new_fun(*args, **kwargs):
-        x = args[0]
-        return getattr(x, funname)(*args[1:], **kwargs) if isinstance(x, np.ndarray) else x
-    return new_fun
+    try:
+        if "keepdims" in inspect.getargspec(fun)[0] and hasattr(np.ndarray, funname): 
+            def new_fun(*args, **kwargs):
+                x = args[0]
+                if isinstance(x, np.ndarray):
+                    return getattr(x, funname)(*args[1:], **kwargs) 
+                else:
+                    return fun(*args, **kwargs)
+            return new_fun
+    except TypeError:
+        pass
+    return fun
 
 def wrap_output(fun):
     # Not all numpy functions preserve the ndarray subclass
@@ -18,28 +28,18 @@ def wrap_output(fun):
         return ans
     return wrapped_fun
 
-grad_only = ['abs', 'exp', 'log', 'sin', 'cos', 'tan', 'sinh', 'cosh', 'tanh',
-             'square', 'sqrt', 'sign', 'reshape', 'max', 'dot', 'prod',
-             'squeeze', 'repeat', 'transpose', 'split', 'trace']
-direct_import = ['float64', 'allclose', 'round', 'argmax', 'unravel_index']
-grad_and_wrap = ['outer', 'full', 'ravel', 'expand_dims', 'diag']
-grad_and_keepdims = ['sum', 'mean']
-wrap_only = ['zeros', 'ones', 'eye']
+def wrap_namespace(old, new):
+    unchanged_types =  set([types.FloatType, types.IntType, types.NoneType, types.TypeType])
+    regular_function_types = set([types.FunctionType, types.BuiltinFunctionType])
+    for name, obj in old.iteritems():
+        if type(obj) in unchanged_types:
+            new[name] = obj
+        elif type(obj) is np.ufunc:
+            new[name] = primitive(obj) # No need to wrap unfuncs
+        elif type(obj) in regular_function_types:
+            new[name] = primitive(wrap_output(keep_keepdims(obj, name)))
 
-for x in grad_only:
-    globals()[x] = primitive(np.__dict__[x])
-
-for x in direct_import:
-    globals()[x] = np.__dict__[x]
-
-for x in grad_and_wrap:
-    globals()[x] = primitive(wrap_output(np.__dict__[x]))
-
-for x in grad_and_keepdims:
-    globals()[x] = primitive(keep_keepdims(np.__dict__[x], x))
-
-for x in wrap_only:
-    globals()[x] = wrap_output(np.__dict__[x])
+wrap_namespace(np.__dict__, globals())
 
 # ----- Slightly modified version of ndarray -----
 
