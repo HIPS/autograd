@@ -35,6 +35,7 @@ Node.type_mappings[numpy_original.ndarray] = ArrayNode
 inherited_methods = ['dot', '__neg__', '__add__',  '__sub__', '__mul__',
                      '__pow__', '__div__', '__radd__', '__rsub__',
                      '__rmul__', '__rpow__', '__rdiv__', '__eq__']
+
 for method_name in inherited_methods:
     setattr(ArrayNode, method_name, getattr(anp.ndarray, method_name).__func__)
 
