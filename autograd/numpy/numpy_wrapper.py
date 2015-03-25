@@ -2,7 +2,7 @@ from __future__ import absolute_import
 import types
 import numpy as np
 import inspect
-from autograd.core import primitive
+from autograd.core import primitive, differentiable_ops, nondifferentiable_ops
 
 def keep_keepdims(fun, funname):
     # Numpy doesn't support keepdims for subclasses so this is the workaround
@@ -51,26 +51,11 @@ class ndarray(np.ndarray):
             return obj[()] # Restoring behavior of regular ndarray
         else:
             return np.ndarray.__array_wrap__(self, obj)
-
-    # Wrap binary ops since the other operand could be a Node
     dot = dot
-    __neg__  = primitive(np.ndarray.__neg__)
-    __add__  = primitive(np.ndarray.__add__)
-    __sub__  = primitive(np.ndarray.__sub__)
-    __mul__  = primitive(np.ndarray.__mul__)
-    __pow__  = primitive(np.ndarray.__pow__)
-    __div__  = primitive(np.ndarray.__div__)
-    __radd__ = primitive(np.ndarray.__radd__)
-    __rsub__ = primitive(np.ndarray.__rsub__)
-    __rmul__ = primitive(np.ndarray.__rmul__)
-    __rpow__ = primitive(np.ndarray.__rpow__)
-    __rdiv__ = primitive(np.ndarray.__rdiv__)
-    __eq__   = primitive(np.ndarray.__eq__)
-    __ne__   = primitive(np.ndarray.__ne__)
-    __lt__   = primitive(np.ndarray.__lt__)
-    __le__   = primitive(np.ndarray.__le__)
-    __ge__   = primitive(np.ndarray.__ge__)
-    __gt__   = primitive(np.ndarray.__gt__)
+
+# Wrap binary ops since the other operand could be a Node
+for ndarray_op in differentiable_ops + nondifferentiable_ops:
+    setattr(ndarray, ndarray_op, primitive(getattr(ndarray, ndarray_op)))
 
 # ----- Special treatment of list-input functions -----
 

@@ -29,7 +29,7 @@ def grad(fun, argnum=0, return_function_value=False):
                         parent.outgrad = parent.outgrad + gradfun(node.outgrad)
             gradval = node.outgrad
         if return_function_value:
-            return end_node.value, gradval
+            return getval(end_node), gradval
         else:
             return gradval
     return gradfun
@@ -96,6 +96,8 @@ class Node(object):
         self.value = value
         self.tapes = {}
 
+getval = lambda x : x.value if isinstance(x, Node) else x
+
 class ReverseNode(object):
     __slots__ = ['parent_grad_ops', 'outgrad']
     def __init__(self):
@@ -113,44 +115,23 @@ class CalculationTape(object):
         node.tapes[self] = new_rnode
         return new_rnode
 
-P = primitive
 class FloatNode(Node):
     __slots__ = []
-    __eq__  = P(float.__eq__)
-    __ne__  = P(float.__ne__)
-    __lt__  = P(float.__lt__)
-    __le__  = P(float.__le__)
-    __gt__  = P(float.__gt__)
-    __ge__  = P(float.__ge__)
-    __add__  = P(float.__add__)
-    __sub__  = P(float.__sub__)
-    __mul__  = P(float.__mul__)
-    __pow__  = P(float.__pow__)
-    __div__  = P(float.__div__)
-    __neg__  = P(float.__neg__)
-    __radd__ = P(float.__radd__)
-    __rsub__ = P(float.__rsub__)
-    __rmul__ = P(float.__rmul__)
-    __rpow__ = P(float.__rpow__)
-    __rdiv__ = P(float.__rdiv__)
 Node.type_mappings[float] = FloatNode
 Node.type_mappings[float64] = FloatNode
+
+differentiable_ops = ['__add__', '__sub__', '__mul__', '__pow__', '__div__',
+                      '__neg__', '__radd__', '__rsub__', '__rmul__', '__rpow__', '__rdiv__']
+nondifferentiable_ops = ['__eq__', '__ne__', '__gt__', '__ge__', '__lt__', '__le__',]
+for float_op in differentiable_ops + nondifferentiable_ops:
+    setattr(FloatNode, float_op, primitive(getattr(float, float_op)))
 
 I = lambda x : x
 FloatNode.__dict__['__neg__'].defgrad(lambda ans, x : op.neg)
 
-FloatNode.__dict__['__eq__'].defgrad_is_zero()
-FloatNode.__dict__['__eq__'].defgrad_is_zero(argnum=1)
-FloatNode.__dict__['__ne__'].defgrad_is_zero()
-FloatNode.__dict__['__ne__'].defgrad_is_zero(argnum=1)
-FloatNode.__dict__['__gt__'].defgrad_is_zero()
-FloatNode.__dict__['__gt__'].defgrad_is_zero(argnum=1)
-FloatNode.__dict__['__ge__'].defgrad_is_zero()
-FloatNode.__dict__['__ge__'].defgrad_is_zero(argnum=1)
-FloatNode.__dict__['__lt__'].defgrad_is_zero()
-FloatNode.__dict__['__lt__'].defgrad_is_zero(argnum=1)
-FloatNode.__dict__['__le__'].defgrad_is_zero()
-FloatNode.__dict__['__le__'].defgrad_is_zero(argnum=1)
+for comp_op in nondifferentiable_ops:
+    FloatNode.__dict__[comp_op].defgrad_is_zero()
+    FloatNode.__dict__[comp_op].defgrad_is_zero(argnum=1)
 
 FloatNode.__dict__['__add__'].defgrad(lambda ans, x, y : I)
 FloatNode.__dict__['__add__'].defgrad(lambda ans, x, y : I, argnum=1)
@@ -174,5 +155,5 @@ FloatNode.__dict__['__rsub__'].grads = swap_args(FloatNode.__dict__['__sub__'].g
 FloatNode.__dict__['__rdiv__'].grads = swap_args(FloatNode.__dict__['__div__'].grads)
 FloatNode.__dict__['__rpow__'].grads = swap_args(FloatNode.__dict__['__pow__'].grads)
 
-log = P(log)
+log = primitive(log)
 log.defgrad(lambda ans, x : lambda g : g / x)
