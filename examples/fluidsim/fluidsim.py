@@ -1,27 +1,11 @@
 import autograd.numpy as np
 from autograd import grad
 
-from scipy.optimize import fmin_cg
+from scipy.optimize import minimize
 from scipy.misc import imread
 
 import matplotlib.pyplot as plt
 import os
-
-rows = 110
-cols = 110
-dt = 3.1
-num_timesteps = 25
-num_solver_iters = 100
-
-def plot_matrix(ax, mat, t, render=False):
-    plt.cla()
-    ax.matshow(mat, vmin=0.0, vmax= 1.0)
-    ax.set_xticks([])
-    ax.set_yticks([])
-    plt.draw()
-    if render:
-        plt.savefig('step{0:03d}.png'.format(t), bbox_inches='tight')
-    plt.pause(0.001)
 
 # Fluid simulation code based on
 # "Real-Time Fluid Dynamics for Games" by Jos Stam
@@ -30,12 +14,12 @@ def plot_matrix(ax, mat, t, render=False):
 def project(vx, vy):
     """Project the velocity field to be mass-conserving,
        again using a few iterations of Gauss-Seidel."""
-    p = np.zeros((rows, cols))
-    h = 1.0/(max(rows,cols));
+    p = np.zeros(vx.shape)
+    h = 1.0/vx.shape[0];
     div = -0.5 * h * (np.roll(vx, -1, axis=0) - np.roll(vx, 1, axis=0)
                     + np.roll(vy, -1, axis=1) - np.roll(vy, 1, axis=1))
 
-    for k in xrange(num_solver_iters):
+    for k in xrange(10):
         p = (div + np.roll(p, 1, axis=0) + np.roll(p, -1, axis=0)
                  + np.roll(p, 1, axis=1) + np.roll(p, -1, axis=1))/4.0
 
@@ -46,9 +30,10 @@ def project(vx, vy):
 def advect(f, vx, vy):
     """Move field f according to x and y velocities (u and v)
        using an implicit Euler integrator."""
+    rows, cols = f.shape
     cell_ys, cell_xs = np.meshgrid(np.arange(rows), np.arange(cols))
-    center_xs = (cell_xs - dt * vx).ravel()
-    center_ys = (cell_ys - dt * vy).ravel()
+    center_xs = (cell_xs - vx).ravel()
+    center_ys = (cell_ys - vy).ravel()
 
     # Compute indices of source cells.
     left_ix = np.floor(center_xs).astype(np.int)
@@ -58,7 +43,7 @@ def advect(f, vx, vy):
     left_ix  = np.mod(left_ix,     rows)  # Wrap around edges of simulation.
     right_ix = np.mod(left_ix + 1, rows)
     top_ix   = np.mod(top_ix,      cols)
-    bot_ix   = np.mod(top_ix + 1,  cols)
+    bot_ix   = np.mod(top_ix  + 1, cols)
 
     # A linearly-weighted sum of the 4 surrounding cells.
     flat_f = (1 - rw) * ((1 - bw)*f[left_ix,  top_ix] + bw*f[left_ix,  bot_ix]) \
@@ -66,7 +51,7 @@ def advect(f, vx, vy):
     return np.reshape(flat_f, (rows, cols))
 
 def simulate(vx, vy, smoke, num_time_steps, ax=None, render=False):
-    """Simulate a fluid for a number of time steps."""
+    print "Running simulation..."
     for t in xrange(num_time_steps):
         vx_updated = advect(vx, vx, vy)
         vy_updated = advect(vy, vx, vy)
@@ -75,60 +60,61 @@ def simulate(vx, vy, smoke, num_time_steps, ax=None, render=False):
         if ax: plot_matrix(ax, smoke, t, render)
     return smoke
 
+def plot_matrix(ax, mat, t, render=False):
+    plt.cla()
+    ax.matshow(mat)
+    ax.set_xticks([])
+    ax.set_yticks([])
+    plt.draw()
+    if render:
+        plt.savefig('step{0:03d}.png'.format(t), bbox_inches='tight')
+    plt.pause(0.001)
+
 
 if __name__ == '__main__':
 
-    np.random.seed(1)
-    #init_dx_and_dy = np.zeros((2, rows, cols)).ravel()
-    init_dx_and_dy = np.random.randn(2, rows, cols) * 0.01
-    #init_dy = np.random.randn(rows, cols)
-    init_smoke = np.zeros((rows, cols))
-    init_smoke[10:20:, :] = 1.0
-    init_smoke[50:60:, :] = 1.0
-    init_smoke[90:100:, :] = 1.0
+    simulation_timesteps = 100
 
+    print "Loading initial and target states..."
+    init_smoke = imread('init_smoke.png')[:,:,0].view(np.ndarray)
     target = imread('peace.png')[::2,::2,3].view(np.ndarray)
+    rows, cols = target.shape
 
-    #fig = plt.figure(figsize=(12,10))
-    #ax = fig.add_axes([0., 0., 1., 1.], frameon=False)
-    #plt.matshow(target)
-    #plt.show()
+    init_dx_and_dy = np.zeros((2, rows, cols)).ravel()
 
-    def target_match(smoke):
-        """Compute distance from target image."""
-        #target = np.zeros((rows, cols))
-        #target[30:60, 30:60] = 1.0
-        return np.sum((target - smoke)**2)
+    def distance_from_target_image(smoke):
+        return np.mean((target - smoke)**2)
 
-    #simulate(init_dx, init_dy, init_smoke, num_timesteps, ax)
-    def objective(init_vx_and_vy):
-        init_vx = np.reshape(init_vx_and_vy[0:(rows*cols)], (rows, cols))
-        init_vy = np.reshape(init_vx_and_vy[(rows*cols):], (rows, cols))
-        #init_vx = init_vx_and_vy[0, :, :]
-        #init_vy = init_vx_and_vy[1, :, :]
+    def convert_param_vector_to_matrices(params):
+        vx = np.reshape(params[:(rows*cols)], (rows, cols))
+        vy = np.reshape(params[(rows*cols):], (rows, cols))
+        return vx, vy
 
-        final_smoke = simulate(init_vx, init_vy, init_smoke, num_timesteps)
-        return target_match(final_smoke)
+    def objective(params):
+        init_vx, init_vy = convert_param_vector_to_matrices(params)
+        final_smoke = simulate(init_vx, init_vy, init_smoke, simulation_timesteps)
+        return distance_from_target_image(final_smoke)
 
-    grad_obj = grad(objective)
-    #g = grad_obj(init_dx_and_dy, init_smoke, num_timesteps)
-    #plot_matrix(ax, g[0])
+    # Specify gradient of objective function using autograd.
+    objective_with_grad = grad(objective, return_function_value=True)
 
-    fig = plt.figure(figsize=(4,4))
-    #ax = fig.add_axes([0., 0., 1., 1.], frameon=False)
+    fig = plt.figure(figsize=(8,8))
     ax = fig.add_subplot(111, frameon=False)
 
     def callback(weights):
         init_vx = np.reshape(weights[0:(rows*cols)], (rows, cols))
         init_vy = np.reshape(weights[(rows*cols):], (rows, cols))
-        simulate(init_vx, init_vy, init_smoke, num_timesteps, ax)
+        simulate(init_vx, init_vy, init_smoke, simulation_timesteps, ax)
 
-    weights = fmin_cg(objective, init_dx_and_dy, fprime=grad_obj,
-                      maxiter=num_solver_iters, callback=callback)
+    print "Optimizing initial conditions..."
+    result = minimize(objective_with_grad, init_dx_and_dy, jac=True, method='CG',
+                      options={'maxiter':25, 'disp':True}, callback=callback)
 
-    init_vx = np.reshape(weights[0:(rows*cols)], (rows, cols))
-    init_vy = np.reshape(weights[(rows*cols):], (rows, cols))
-    simulate(init_vx, init_vy, init_smoke, num_timesteps, ax, render=True)
+    print "Rendering optimized flow..."
+    init_vx, init_vy = convert_param_vector_to_matrices(result.x)
+    simulate(init_vx, init_vy, init_smoke, simulation_timesteps, ax, render=True)
 
-    os.system("convert -delay 10 -loop 100 step*.png animated.gif")  # Convert using imagemagick.
+    print "Converting frames to an animated GIF..."
+    os.system("convert -delay 3 -loop 0 step*.png"
+              " -delay 250 step099.png animated.gif")  # Using imagemagick.
     os.system("rm step*.png")
