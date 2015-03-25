@@ -3,13 +3,13 @@ import autograd.numpy.random as npr
 from test_util import *
 from autograd import grad
 from autograd.core import new_node
-npr.seed(1)
+rs = npr.RandomState(0)
 
 def arg_pairs():
     scalar = 2.0
-    vector = npr.randn(4)
-    mat = npr.randn(3, 4)
-    mat2 = npr.randn(1, 4)
+    vector = rs.randn(4)
+    mat = rs.randn(3, 4)
+    mat2 = rs.randn(1, 4)
     allargs = [scalar, vector, mat, mat2]
     for arg1, arg2 in it.product(allargs, allargs):
         yield arg1, arg2
