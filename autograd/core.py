@@ -29,7 +29,7 @@ def grad(fun, argnum=0, return_function_value=False):
                         parent.outgrad = parent.outgrad + gradfun(node.outgrad)
             gradval = node.outgrad
         if return_function_value:
-            return end_node.value, gradval
+            return getval(end_node), gradval
         else:
             return gradval
     return gradfun
@@ -95,6 +95,8 @@ class Node(object):
     def __init__(self, value):
         self.value = value
         self.tapes = {}
+
+getval = lambda x : x.value if isinstance(x, Node) else x
 
 class ReverseNode(object):
     __slots__ = ['parent_grad_ops', 'outgrad']

@@ -1,4 +1,4 @@
-from autograd.core import primitive as P, Node, log, swap_args
+from autograd.core import primitive as P, Node, log, swap_args, getval
 import numpy as np_original
 import operator as op
 from . import numpy_wrapper as anp
@@ -83,7 +83,6 @@ anp.full.defgrad(     lambda ans, shape, fill_value : lambda g : anp.sum(g), arg
 # ----- Trickier grads -----
 
 isarray = lambda x : isinstance(getval(x), anp.ndarray)
-getval = lambda x : x.value if isinstance(x, Node) else x
 
 def repeat_to_match_shape(x, axis, keepdims):
     """Returns a function that repeats an array along axis to get a given shape.
