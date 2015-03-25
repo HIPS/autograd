@@ -4,7 +4,7 @@ import operator as op
 import types
 from numpy import log, float64, ndarray
 
-def grad(fun, argnum=0):
+def grad(fun, argnum=0, return_function_value=False):
     def gradfun(*args, **kwargs):
         tape = CalculationTape()
         start_node = args[argnum]
@@ -16,7 +16,7 @@ def grad(fun, argnum=0):
         tape.complete = True
         if not isinstance(end_node, Node) or tape not in end_node.tapes:
             warnings.warn("Output seems independent of input. Returning zero gradient.")
-            return 0 * start_node.value
+            gradval = 0 * start_node.value
         elif not isinstance(end_node.value, float):
             raise TypeError("Can only take gradient of scalar-valued functions")
         else:
@@ -27,7 +27,11 @@ def grad(fun, argnum=0):
                 if node.outgrad is not 0:
                     for gradfun, parent in node.parent_grad_ops:
                         parent.outgrad = parent.outgrad + gradfun(node.outgrad)
-            return node.outgrad
+            gradval = node.outgrad
+        if return_function_value:
+            return end_node.value, gradval
+        else:
+            return gradval
     return gradfun
 
 class primitive(object):
