@@ -2,6 +2,7 @@ import autograd.numpy as np
 import autograd.numpy.random as npr
 from test_util import *
 from autograd import grad
+from autograd.core import new_node
 npr.seed(1)
 
 def arg_pairs():
@@ -64,3 +65,37 @@ def test_pow():
         check_grads(fun, arg1, arg2)
         check_grads(d_fun_0, arg1, arg2)
         check_grads(d_fun_1, arg1, arg2)
+
+def test_comparison_grads():
+    compare_funs = [lambda x, y : np.sum(x <  x),
+                    lambda x, y : np.sum(x <= y),
+                    lambda x, y : np.sum(x >  y),
+                    lambda x, y : np.sum(x >= y),
+                    lambda x, y : np.sum(x == y),
+                    lambda x, y : np.sum(x != y)]
+
+    for arg1, arg2 in arg_pairs():
+        zeros = (arg1 + arg2) * 0 # get correct shape
+        for fun in compare_funs:
+            d_fun_0 = lambda x, y : to_scalar(grad(fun, 0)(x, y))
+            d_fun_1 = lambda x, y : to_scalar(grad(fun, 1)(x, y))
+            assert np.all(grad(fun)(arg1, arg2) == zeros)
+            assert np.all(grad(fun, argnum=1)(arg1, arg2) == zeros)
+            assert np.all(grad(d_fun_0)(arg1, arg2) == zeros)
+            assert np.all(grad(d_fun_1, argnum=1)(arg1, arg2) == zeros)
+            assert np.all(grad(d_fun_0)(arg1, arg2) == zeros)
+            assert np.all(grad(d_fun_1, argnum=1)(arg1, arg2) == zeros)
+
+def test_comparison_values():
+    compare_funs = [lambda x, y : np.sum(x <  x),
+                    lambda x, y : np.sum(x <= y),
+                    lambda x, y : np.sum(x >  y),
+                    lambda x, y : np.sum(x >= y),
+                    lambda x, y : np.sum(x == y),
+                    lambda x, y : np.sum(x != y)]
+
+    for arg1, arg2 in arg_pairs():
+        for fun in compare_funs:
+            fun_val = fun(arg1, arg2)
+            fun_val_from_grad, _ = grad(fun, return_function_value=True)(arg1, arg2)
+            assert fun_val == fun_val_from_grad, (fun_val, fun_val_from_grad)

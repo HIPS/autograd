@@ -1,4 +1,5 @@
-from autograd.core import primitive as P, Node, log, swap_args, getval
+from autograd.core import primitive as P, Node, log, swap_args, getval, nondifferentiable_ops
+
 import numpy as np_original
 import operator as op
 from . import numpy_wrapper as anp
@@ -19,18 +20,9 @@ anp.ndarray.__dict__['__div__'].defgrad(lambda ans, x, y : unbroadcast(ans, y, l
 anp.ndarray.__dict__['__pow__'].defgrad(lambda ans, x, y : unbroadcast(ans, x, lambda g : g * y * x ** (y - 1)))
 anp.ndarray.__dict__['__pow__'].defgrad(lambda ans, x, y : unbroadcast(ans, y, lambda g : g * log(x) * x ** y), argnum=1)
 
-anp.ndarray.__dict__['__eq__'].defgrad_is_zero()
-anp.ndarray.__dict__['__eq__'].defgrad_is_zero(argnum=1)
-anp.ndarray.__dict__['__lt__'].defgrad_is_zero()
-anp.ndarray.__dict__['__lt__'].defgrad_is_zero(argnum=1)
-anp.ndarray.__dict__['__ge__'].defgrad_is_zero()
-anp.ndarray.__dict__['__ge__'].defgrad_is_zero(argnum=1)
-anp.ndarray.__dict__['__gt__'].defgrad_is_zero()
-anp.ndarray.__dict__['__gt__'].defgrad_is_zero(argnum=1)
-anp.ndarray.__dict__['__le__'].defgrad_is_zero()
-anp.ndarray.__dict__['__le__'].defgrad_is_zero(argnum=1)
-anp.ndarray.__dict__['__ne__'].defgrad_is_zero()
-anp.ndarray.__dict__['__ne__'].defgrad_is_zero(argnum=1)
+for comp_op in nondifferentiable_ops:
+    anp.ndarray.__dict__[comp_op].defgrad_is_zero()
+    anp.ndarray.__dict__[comp_op].defgrad_is_zero(argnum=1)
 
 anp.ndarray.__dict__['__radd__'].grads = swap_args(anp.ndarray.__dict__['__add__'].grads)
 anp.ndarray.__dict__['__rmul__'].grads = swap_args(anp.ndarray.__dict__['__mul__'].grads)

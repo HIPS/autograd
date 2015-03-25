@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from copy import copy
 import numpy as numpy_original
-from autograd.core import Node, primitive as P, swap_args
+from autograd.core import Node, primitive as P, swap_args, differentiable_ops, nondifferentiable_ops
 from . import numpy_wrapper as anp
 
 take = P(lambda A, idx : A[idx])
@@ -31,11 +31,9 @@ class ArrayNode(Node):
 
 Node.type_mappings[anp.ndarray] = ArrayNode
 Node.type_mappings[numpy_original.ndarray] = ArrayNode
-# Binary ops already wrapped by autograd.numpy.ndarray
-inherited_methods = ['dot', '__neg__', '__add__',  '__sub__', '__mul__',
-                     '__pow__', '__div__', '__radd__', '__rsub__',
-                     '__rmul__', '__rpow__', '__rdiv__', '__eq__']
 
+# Binary ops already wrapped by autograd.numpy.ndarray
+inherited_methods = ['dot'] + differentiable_ops +  nondifferentiable_ops
 for method_name in inherited_methods:
     setattr(ArrayNode, method_name, getattr(anp.ndarray, method_name).__func__)
 
