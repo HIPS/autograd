@@ -1,8 +1,9 @@
-# Autograd (Formerly FunkyYak)
+# Autograd (formerly FunkyYak)
 
-Taking a few lessons from developing and working with Kayak, here is a
-stateless reverse-mode autodiff implementation that also offers
-higher-order derivatives.
+Autograd is an automatic differentiation package for Python, using native Python and Numpy syntax.
+It can handle a large subset of Python's features, including loops, ifs, recursion and even closures.
+It uses reverse-mode differentiation (a.k.a. backpropagation), meaning it can efficiently take gradients of scalar-valued functions with respect to array-valued arguments.
+The main intended application is gradient-based optimization.
 
 Example use:
 
@@ -79,7 +80,14 @@ plt.plot(x, map(tanh, x),
 Simply run
 
 ```bash
-git clone https://github.com/HIPS/autograd.git
+git clone --depth 1 --branch master https://github.com/HIPS/autograd.git
 cd autograd/
 python setup.py install
 ```
+
+## Authors:
+
+[Dougal Maclaurin](mailto:maclaurin@physics.harvard.edu) and [David Duvenaud](http://mlg.eng.cam.ac.uk/duvenaud/)
+
+We thank Matthew Johnson and Jasper Snoek, and the rest of the HIPS group (led by Ryan P. Adams) for helpful contributions.
+We thank Analog Devices International and Samsung Advanced Institute of Technology for their gracious funding.
