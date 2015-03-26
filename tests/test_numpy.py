@@ -270,5 +270,21 @@ def test_roll_no_axis():
     check_grads(fun, mat)
     check_grads(d_fun, mat)
 
+def test_1d_array():
+    def fun(x):
+        return to_scalar(np.array([x, x * 1.0, x + 2.5]))
+    d_fun = lambda x : grad(fun)(x)
+    check_grads(fun, 3.0)
+    check_grads(d_fun, 3.0)
+
+def test_2d_array():
+    def fun(x):
+        return to_scalar(np.array([[x   , x * 1.0, x + 2.5],
+                                   [x**2, x      , x / 2.0]]))
+
+    d_fun = lambda x : grad(fun)(x)
+    check_grads(fun, 3.0)
+    check_grads(d_fun, 3.0)
+
 # TODO:
 # squeeze, getitem

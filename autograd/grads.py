@@ -147,3 +147,22 @@ def concatwrapper(*args, **kwargs):
     args = (kylist(*(args[0])),) + args[1:]
     return unwrapped_np_concatenate(*args, **kwargs)
 np.concatenate = concatwrapper
+
+def make_grad_np_array(ans, arr_list, axis=0):
+    def grad_np_array(g):
+        return g
+    return [grad_np_array]
+np.array = P(np.array, make_grad_np_array)
+
+unwrapped_np_array = np.array
+def array_wrapper(arg):
+    arg = recursive_kylist(*arg)
+    return unwrapped_np_array(arg)
+np.array = array_wrapper
+
+def recursive_kylist(*args):
+    args = list(args)
+    for i, arg in enumerate(args):
+        if isinstance(arg, list):
+            args[i] = recursive_kylist(*arg)
+    return kylist(*args)
