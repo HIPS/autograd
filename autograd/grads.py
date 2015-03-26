@@ -155,9 +155,9 @@ def make_grad_np_array(ans, arr_list, axis=0):
 np.array = P(np.array, make_grad_np_array)
 
 unwrapped_np_array = np.array
-def array_wrapper(arg):
+def array_wrapper(arg, *args, **kwargs):
     arg = recursive_kylist(*arg)
-    return unwrapped_np_array(arg)
+    return unwrapped_np_array(arg, *args, **kwargs)
 np.array = array_wrapper
 
 def recursive_kylist(*args):
