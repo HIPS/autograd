@@ -6,11 +6,54 @@ from scipy.misc import imread
 
 import matplotlib.pyplot as plt
 
-rows, cols = 55, 55
+rows, cols = 40, 60
 
 # Fluid simulation code based on
 # "Real-Time Fluid Dynamics for Games" by Jos Stam
 # http://www.intpowertechcorp.com/GDC03.pdf
+
+def project(vx, vy, b):
+    """Project the velocity field to be approximately mass-conserving,
+       using a few iterations of Gauss-Seidel."""
+    p = np.zeros(vx.shape)
+    div = -0.5 * (np.roll(vx, -1, axis=0) - np.roll(vx, 1, axis=0)
+                + np.roll(vy, -1, axis=1) - np.roll(vy, 1, axis=1))
+    div = make_continuous(div, b)
+
+    for k in xrange(25):
+        p = (div + np.roll(p, 1, axis=0) + np.roll(p, -1, axis=0)
+                 + np.roll(p, 1, axis=1) + np.roll(p, -1, axis=1))/4.0
+        p = make_continuous(p, b)
+
+    vx = vx - 0.5*(np.roll(p, -1, axis=0) - np.roll(p, 1, axis=0))
+    vy = vy - 0.5*(np.roll(p, -1, axis=1) - np.roll(p, 1, axis=1))
+
+    vx = block(vx, b)
+    vy = block(vy, b)
+    return vx, vy
+
+def advect(f, vx, vy):
+    """Move field f according to x and y velocities (u and v)
+       using an implicit Euler integrator."""
+    rows, cols = f.shape
+    cell_ys, cell_xs = np.meshgrid(np.arange(cols), np.arange(rows))
+    center_xs = (cell_xs - vx).ravel()
+    center_ys = (cell_ys - vy).ravel()
+
+    # Compute indices of source cells.
+    left_ix = np.floor(center_xs).astype(np.int)
+    top_ix  = np.floor(center_ys).astype(np.int)
+    rw = center_xs - left_ix              # Relative weight of right-hand cells.
+    bw = center_ys - top_ix               # Relative weight of bottom cells.
+    left_ix  = np.mod(left_ix,     rows)  # Wrap around edges of simulation.
+    right_ix = np.mod(left_ix + 1, rows)
+    top_ix   = np.mod(top_ix,      cols)
+    bot_ix   = np.mod(top_ix  + 1, cols)
+
+    # A linearly-weighted sum of the 4 surrounding cells.
+    flat_f = (1 - rw) * ((1 - bw)*f[left_ix,  top_ix] + bw*f[left_ix,  bot_ix]) \
+                 + rw * ((1 - bw)*f[right_ix, top_ix] + bw*f[right_ix, bot_ix])
+    return np.reshape(flat_f, (rows, cols))
 
 def make_continuous(f, b):
     num = np.roll(f,  1, axis=0) * np.roll(b,  1, axis=0)\
@@ -34,56 +77,11 @@ def reflect(f, b, axis):
 def block(f, b):
     return f * b
 
-def updraft(vy, b):
-    return np.sum(vy * np.roll(b, -1, axis=0) - vy * np.roll(b, 1, axis=0))
+def drag(vx):
+    return np.sum(1 - vx)
 
-def total_speed(vy):
+def lift(vy):
     return np.sum(vy)
-
-def project(vx, vy, b):
-    """Project the velocity field to be approximately mass-conserving,
-       using a few iterations of Gauss-Seidel."""
-    p = np.zeros(vx.shape)
-    h = 1.0 #/vx.shape[0]
-    div = -0.5 * h * (np.roll(vx, -1, axis=0) - np.roll(vx, 1, axis=0)
-                    + np.roll(vy, -1, axis=1) - np.roll(vy, 1, axis=1))
-    div = make_continuous(div, b)
-
-    for k in xrange(20):
-        p = (div + np.roll(p, 1, axis=0) + np.roll(p, -1, axis=0)
-                 + np.roll(p, 1, axis=1) + np.roll(p, -1, axis=1))/4.0
-        p = make_continuous(p, b)
-
-    vx = vx - 0.5*(np.roll(p, -1, axis=0) - np.roll(p, 1, axis=0))/h
-    vy = vy - 0.5*(np.roll(p, -1, axis=1) - np.roll(p, 1, axis=1))/h
-    #vx = reflect(vx, b, 0)
-    #vy = reflect(vy, b, 1)
-    vx = block(vx, b)
-    vy = block(vy, b)
-    return vx, vy
-
-def advect(f, vx, vy):
-    """Move field f according to x and y velocities (u and v)
-       using an implicit Euler integrator."""
-    rows, cols = f.shape
-    cell_ys, cell_xs = np.meshgrid(np.arange(rows), np.arange(cols))
-    center_xs = (cell_xs - vx).ravel()
-    center_ys = (cell_ys - vy).ravel()
-
-    # Compute indices of source cells.
-    left_ix = np.floor(center_xs).astype(np.int)
-    top_ix  = np.floor(center_ys).astype(np.int)
-    rw = center_xs - left_ix              # Relative weight of right-hand cells.
-    bw = center_ys - top_ix               # Relative weight of bottom cells.
-    left_ix  = np.mod(left_ix,     rows)  # Wrap around edges of simulation.
-    right_ix = np.mod(left_ix + 1, rows)
-    top_ix   = np.mod(top_ix,      cols)
-    bot_ix   = np.mod(top_ix  + 1, cols)
-
-    # A linearly-weighted sum of the 4 surrounding cells.
-    flat_f = (1 - rw) * ((1 - bw)*f[left_ix,  top_ix] + bw*f[left_ix,  bot_ix]) \
-                 + rw * ((1 - bw)*f[right_ix, top_ix] + bw*f[right_ix, bot_ix])
-    return np.reshape(flat_f, (rows, cols))
 
 
 def sigmoid(x):
@@ -93,7 +91,7 @@ def simulate(vx, vy, num_time_steps, b, ax=None, render=False):
     b = sigmoid(b)
 
     mask = np.zeros((rows, cols))
-    mask[20:40, 20:40] = 1.0
+    mask[10:30, 10:30] = 1.0
     c = 1 - b
     c = c * mask
     b = 1 - c
@@ -113,7 +111,7 @@ def simulate(vx, vy, num_time_steps, b, ax=None, render=False):
         red_smoke = block(red_smoke, b)
         blue_smoke = advect(blue_smoke, vx, vy)
         blue_smoke = block(blue_smoke, b)
-    return vx
+    return vx, vy
 
 def plot_matrix(ax, r, b, g, t, render=False):
     plt.cla()
@@ -135,13 +133,13 @@ if __name__ == '__main__':
     init_vy = np.ones((rows, cols))
 
     init_b = np.ones((rows, cols))
-    init_b[25:35, 25:35] = 0.0
+    init_b[15:25, 15:25] = 0.0
     init_b = init_b.ravel()
 
     def objective(params):
         cur_b = np.reshape(params, (rows, cols))
-        final_vx = simulate(init_vx, init_vy, simulation_timesteps, cur_b)
-        return total_speed(final_vx) #updraft(final_vx, cur_b)
+        final_vx, final_vy = simulate(init_vx, init_vy, simulation_timesteps, cur_b)
+        return -(lift(final_vx)/ drag(final_vy)) #updraft(final_vx, cur_b)
 
     # Specify gradient of objective function using autograd.
     objective_with_grad = grad(objective, return_function_value=True)
