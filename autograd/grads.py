@@ -158,7 +158,7 @@ unwrapped_np_array = np.array
 def array_wrapper(arg, *args, **kwargs):
     arg = recursive_kylist(*arg)
     return unwrapped_np_array(arg, *args, **kwargs)
-np.array = array_wrapper
+np.wrapped_array = array_wrapper
 
 def recursive_kylist(*args):
     args = list(args)
