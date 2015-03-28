@@ -12,10 +12,10 @@ import os
 # http://www.intpowertechcorp.com/GDC03.pdf
 
 def project(vx, vy):
-    """Project the velocity field to be mass-conserving,
-       again using a few iterations of Gauss-Seidel."""
+    """Project the velocity field to be approximately mass-conserving,
+       using a few iterations of Gauss-Seidel."""
     p = np.zeros(vx.shape)
-    h = 1.0/vx.shape[0];
+    h = 1.0/vx.shape[0]
     div = -0.5 * h * (np.roll(vx, -1, axis=0) - np.roll(vx, 1, axis=0)
                     + np.roll(vy, -1, axis=1) - np.roll(vy, 1, axis=1))
 
@@ -23,8 +23,8 @@ def project(vx, vy):
         p = (div + np.roll(p, 1, axis=0) + np.roll(p, -1, axis=0)
                  + np.roll(p, 1, axis=1) + np.roll(p, -1, axis=1))/4.0
 
-    vx -= 0.5*(np.roll(p, -1, axis=0) - np.roll(p, 1, axis=0))/h;
-    vy -= 0.5*(np.roll(p, -1, axis=1) - np.roll(p, 1, axis=1))/h;
+    vx -= 0.5*(np.roll(p, -1, axis=0) - np.roll(p, 1, axis=0))/h
+    vy -= 0.5*(np.roll(p, -1, axis=1) - np.roll(p, 1, axis=1))/h
     return vx, vy
 
 def advect(f, vx, vy):
@@ -53,11 +53,12 @@ def advect(f, vx, vy):
 def simulate(vx, vy, smoke, num_time_steps, ax=None, render=False):
     print "Running simulation..."
     for t in xrange(num_time_steps):
+        if ax: plot_matrix(ax, smoke, t, render)
         vx_updated = advect(vx, vx, vy)
         vy_updated = advect(vy, vx, vy)
         vx, vy = project(vx_updated, vy_updated)
         smoke = advect(smoke, vx, vy)
-        if ax: plot_matrix(ax, smoke, t, render)
+    if ax: plot_matrix(ax, smoke, num_time_steps, render)
     return smoke
 
 def plot_matrix(ax, mat, t, render=False):
@@ -101,9 +102,8 @@ if __name__ == '__main__':
     fig = plt.figure(figsize=(8,8))
     ax = fig.add_subplot(111, frameon=False)
 
-    def callback(weights):
-        init_vx = np.reshape(weights[0:(rows*cols)], (rows, cols))
-        init_vy = np.reshape(weights[(rows*cols):], (rows, cols))
+    def callback(params):
+        init_vx, init_vy = convert_param_vector_to_matrices(params)
         simulate(init_vx, init_vy, init_smoke, simulation_timesteps, ax)
 
     print "Optimizing initial conditions..."

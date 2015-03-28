@@ -12,41 +12,42 @@ rows, cols = 40, 60
 # "Real-Time Fluid Dynamics for Games" by Jos Stam
 # http://www.intpowertechcorp.com/GDC03.pdf
 
+def occlude(f, occlusion):
+    return f * (1 - occlusion)
+
 def project(vx, vy, occlusion):
     """Project the velocity field to be approximately mass-conserving,
        using a few iterations of Gauss-Seidel."""
     p = np.zeros(vx.shape)
-    div = -0.5 * (np.roll(vx, -1, axis=0) - np.roll(vx, 1, axis=0)
-                + np.roll(vy, -1, axis=1) - np.roll(vy, 1, axis=1))
+    div = -0.5 * (np.roll(vx, -1, axis=1) - np.roll(vx, 1, axis=1)
+                + np.roll(vy, -1, axis=0) - np.roll(vy, 1, axis=0))
     div = make_continuous(div, occlusion)
 
-    for k in xrange(10):
-        p = (div + np.roll(p, 1, axis=0) + np.roll(p, -1, axis=0)
-                 + np.roll(p, 1, axis=1) + np.roll(p, -1, axis=1))/4.0
+    for k in xrange(50):
+        p = (div + np.roll(p, 1, axis=1) + np.roll(p, -1, axis=1)
+                 + np.roll(p, 1, axis=0) + np.roll(p, -1, axis=0))/4.0
         p = make_continuous(p, occlusion)
 
-    vx = vx - 0.5*(np.roll(p, -1, axis=0) - np.roll(p, 1, axis=0))
-    vy = vy - 0.5*(np.roll(p, -1, axis=1) - np.roll(p, 1, axis=1))
+    vx = vx - 0.5*(np.roll(p, -1, axis=1) - np.roll(p, 1, axis=1))
+    vy = vy - 0.5*(np.roll(p, -1, axis=0) - np.roll(p, 1, axis=0))
 
-    vx = block(vx, occlusion)
-    vy = block(vy, occlusion)
-    #vx = reflect(vx, occlusion, 1)
-    #vy = reflect(vy, occlusion, 0)
+    vx = occlude(vx, occlusion)
+    vy = occlude(vy, occlusion)
     return vx, vy
 
 def advect(f, vx, vy):
     """Move field f according to x and y velocities (u and v)
        using an implicit Euler integrator."""
     rows, cols = f.shape
-    cell_ys, cell_xs = np.meshgrid(np.arange(cols), np.arange(rows))
+    cell_xs, cell_ys = np.meshgrid(np.arange(cols), np.arange(rows))
     center_xs = (cell_xs - vx).ravel()
     center_ys = (cell_ys - vy).ravel()
 
     # Compute indices of source cells.
-    left_ix = np.floor(center_xs).astype(np.int)
-    top_ix  = np.floor(center_ys).astype(np.int)
-    rw = center_xs - left_ix              # Relative weight of right-hand cells.
-    bw = center_ys - top_ix               # Relative weight of bottom cells.
+    left_ix = np.floor(center_ys).astype(np.int)
+    top_ix  = np.floor(center_xs).astype(np.int)
+    rw = center_ys - left_ix              # Relative weight of right-hand cells.
+    bw = center_xs - top_ix               # Relative weight of bottom cells.
     left_ix  = np.mod(left_ix,     rows)  # Wrap around edges of simulation.
     right_ix = np.mod(left_ix + 1, rows)
     top_ix   = np.mod(top_ix,      cols)
@@ -68,23 +69,6 @@ def make_continuous(f, occlusion):
         + np.roll(non_occluded,  1, axis=1)\
         + np.roll(non_occluded, -1, axis=1)
     return f * non_occluded + (1 - non_occluded) * num / ( den + 0.001)
-
-def reflect(f, occlusion, axis):
-    non_occluded = 1 - occlusion
-    num = np.roll(f,  1, axis) * np.roll(non_occluded,  1, axis)\
-        + np.roll(f, -1, axis) * np.roll(non_occluded, -1, axis)
-    den = np.roll(non_occluded,  1, axis)\
-        + np.roll(non_occluded, -1, axis)
-    return f * non_occluded - occlusion * num / ( den + 0.001)
-
-def block(f, occlusion):
-    return f * (1 - occlusion)
-
-def drag(vx):
-    return np.sum(1 - vx)
-
-def lift(vy):
-    return np.sum(vy)
 
 def sigmoid(x):
     return 0.5*(np.tanh(x) + 1.0)   # Output ranges from 0 to 1.
@@ -111,18 +95,16 @@ def simulate(vx, vy, num_time_steps, occlusion, ax=None, render=False):
         vy_updated = advect(vy, vx, vy)
         vx, vy = project(vx_updated, vy_updated, occlusion)
         red_smoke = advect(red_smoke, vx, vy)
-        red_smoke = block(red_smoke, occlusion)
+        red_smoke = occlude(red_smoke, occlusion)
         blue_smoke = advect(blue_smoke, vx, vy)
-        blue_smoke = block(blue_smoke, occlusion)
+        blue_smoke = occlude(blue_smoke, occlusion)
     plot_matrix(ax, red_smoke, occlusion, blue_smoke, num_time_steps, render)
     return vx, vy
 
 def plot_matrix(ax, r, g, b, t, render=False):
     if ax:
         plt.cla()
-        ax.imshow(np.concatenate((r[...,np.newaxis],
-                                  g[...,np.newaxis],
-                                  b[...,np.newaxis]), axis=2))
+        ax.imshow(np.concatenate((r[...,np.newaxis], g[...,np.newaxis], b[...,np.newaxis]), axis=2))
         ax.set_xticks([])
         ax.set_yticks([])
         plt.draw()
@@ -133,21 +115,24 @@ def plot_matrix(ax, r, g, b, t, render=False):
 
 if __name__ == '__main__':
 
-    simulation_timesteps = 40
+    simulation_timesteps = 20
 
     print "Loading initial and target states..."
-    init_vx = np.zeros((rows, cols))
-    init_vy = np.ones((rows, cols))
+    init_vx = np.ones((rows, cols))
+    init_vy = np.zeros((rows, cols))
 
     # Initialize the occlusion to be a block.
-    init_occlusion = -1.0 * np.ones((rows, cols))
+    init_occlusion = -np.ones((rows, cols))
     init_occlusion[15:25, 15:25] = 0.0
     init_occlusion = init_occlusion.ravel()
+
+    def drag(vx): return np.mean(init_vx - vx)
+    def lift(vy): return np.mean(vy - init_vy)
 
     def objective(params):
         cur_occlusion = np.reshape(params, (rows, cols))
         final_vx, final_vy = simulate(init_vx, init_vy, simulation_timesteps, cur_occlusion)
-        return -(lift(final_vx)/ drag(final_vy))
+        return -lift(final_vy) / drag(final_vx)
 
     # Specify gradient of objective function using autograd.
     objective_with_grad = grad(objective, return_function_value=True)
@@ -164,7 +149,7 @@ if __name__ == '__main__':
 
     print "Optimizing initial conditions..."
     result = minimize(objective_with_grad, init_occlusion, jac=True, method='CG',
-                      options={'maxiter':25, 'disp':True}, callback=callback)
+                      options={'maxiter':50, 'disp':True}, callback=callback)
 
     print "Rendering optimized flow..."
     final_occlusion = np.reshape(result.x, (rows, cols))
@@ -173,4 +158,4 @@ if __name__ == '__main__':
     print "Converting frames to an animated GIF..."   # Using imagemagick.
     os.system("convert -delay 5 -loop 0 step*.png "
               "-delay 250 step{0:03d}.png wing.gif".format(simulation_timesteps))
-    #os.system("rm step*.png")
+    os.system("rm step*.png")
