@@ -81,10 +81,9 @@ def test_sqrt():
     check_grads(fun, 10.0*npr.rand())
     check_grads(d_fun, 10.0*npr.rand())
 
-def norm_cdf():
-    loc = npr.randn()
-    fun = lambda x,loc,scale : 3.0 * sps.norm.cdf(x, loc=loc, scale=scale)
-    d_fun = grad(fun)
-    check_grads(fun, npr.randn(), loc=npr.randn(), scale=npr.rand())
-    check_grads(d_fun, npr.randn(), loc=npr.randn(), scale=npr.rand())
-    assert False
+#def test_norm_cdf():
+#    x = npr.randn()
+#    fun = lambda x : 3.0 * sps.norm.cdf(x, loc=npr.randn(), scale=npr.rand()**2)
+#    d_fun = grad(fun, x)
+#    check_grads(fun, x)
+#    check_grads(d_fun, x)

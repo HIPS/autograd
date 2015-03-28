@@ -263,10 +263,28 @@ def test_inv():
     check_grads(fun, mat)
     check_grads(d_fun, mat)
 
+def test_solve_arg1():
+    D = 6
+    A = npr.randn(D, D) + 1.0 * np.eye(D)
+    B = npr.randn(D, D - 1)
+    def fun(a): return to_scalar(np.linalg.solve(a, B))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    check_grads(fun, A)
+    check_grads(d_fun, A)
+
+def test_solve_arg2():
+    D = 6
+    A = npr.randn(D, D) + 1.0 * np.eye(D)
+    B = npr.randn(D, D - 1)
+    def fun(b): return to_scalar(np.linalg.solve(A, b))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    check_grads(fun, B)
+    check_grads(d_fun, B)
+
 def test_det():
     def fun(x): return np.linalg.det(x)
     d_fun = lambda x : to_scalar(grad(fun)(x))
-    D = 8
+    D = 6
     mat = npr.randn(D, D)
     print "det: ", np.linalg.det(mat)
     check_grads(fun, mat)
