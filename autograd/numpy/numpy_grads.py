@@ -46,6 +46,7 @@ anp.argsort.defgrad_is_zero()
 anp.nonzero.defgrad_is_zero()
 anp.searchsorted.defgrad_is_zero()
 anp.sign.defgrad_is_zero()
+anp.ndim.defgrad_is_zero()
 
 # ----- Simple grads -----
 
@@ -113,24 +114,37 @@ anp.amin.defgrad(make_grad_chooser)
 
 def make_grad_np_dot_A(ans, A, B):
     def grad_np_dot_A(g):
-        if B.ndim is 2:
+        if anp.ndim(A) is 0:
+            return anp.sum(g * B)
+        elif anp.ndim(B) is 2:
             return anp.dot(g, B.T)
-        elif A.ndim is 2:
-            return anp.outer(g, B)
+        elif anp.ndim(A) is 2:
+            if anp.ndim(B) is 0:
+                return anp.dot(B, g)
+            else:
+                return anp.outer(g, B)
         else:
-            return g * B
+            return B * g
     return grad_np_dot_A
 anp.dot.defgrad(make_grad_np_dot_A)
 def make_grad_np_dot_B(ans, A, B):
     def grad_np_dot_B(g):
-        if A.ndim is 2:
+        if anp.ndim(B) is 0:
+            return anp.sum(g * A)
+        elif anp.ndim(A) is 2:
             return anp.dot(A.T, g)
-        elif B.ndim is 2:
-            return anp.outer(A, g)
+        elif anp.ndim(B) is 2:
+            if anp.ndim(A) is 0:
+                return anp.dot(A, g)
+            else:
+                return anp.outer(A, g)
         else:
-            return g * A
+            return A * g
     return grad_np_dot_B
 anp.dot.defgrad(make_grad_np_dot_B, argnum=1)
+
+anp.outer.defgrad(lambda ans, a, b : lambda g : anp.dot(g, b.T))
+anp.outer.defgrad(lambda ans, a, b : lambda g : anp.dot(a.T, g), argnum=1)
 
 def make_grad_concatenate_args(argnum, ans, axis, *args):
     start = sum([a.shape[axis] for a in args[:argnum-1]])

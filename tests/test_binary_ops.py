@@ -2,7 +2,6 @@ import autograd.numpy as np
 import autograd.numpy.random as npr
 from test_util import *
 from autograd import grad
-from autograd.core import new_node
 rs = npr.RandomState(0)
 
 def arg_pairs():

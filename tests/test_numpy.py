@@ -5,7 +5,8 @@ from autograd import grad
 npr.seed(1)
 
 def test_dot():
-    def fun(x, y): return to_scalar(np.dot(x, y))
+    def fun( x, y): return to_scalar(np.dot(x, y))
+    def dfun(x, y): return to_scalar(grad(fun)(x, y))
 
     mat1 = npr.randn(10, 11)
     mat2 = npr.randn(10, 11)
@@ -17,6 +18,27 @@ def test_dot():
     check_grads(fun, mat1, mat2.T)
     check_grads(fun, vect1, mat1)
     check_grads(fun, vect2, vect3)
+    check_grads(dfun, mat1, vect2)
+    check_grads(dfun, mat1, mat2.T)
+    check_grads(dfun, vect1, mat1)
+    check_grads(dfun, vect2, vect3)
+
+def test_dot_with_floats():
+    def fun( x, y): return to_scalar(np.dot(x, y))
+    def dfun(x, y): return to_scalar(grad(fun)(x, y))
+
+    mat1 = npr.randn(10, 11)
+    vect1 = npr.randn(10)
+    float1 = npr.randn()
+
+    check_grads(fun, mat1, float1)
+    check_grads(fun, float1, mat1)
+    check_grads(fun, vect1, float1)
+    check_grads(fun, float1, vect1)
+    check_grads(dfun, mat1, float1)
+    check_grads(dfun, float1, mat1)
+    check_grads(dfun, vect1, float1)
+    check_grads(dfun, float1, vect1)
 
 def test_dot_method():
     def fun(x, y): return to_scalar(x.dot(y))
@@ -31,6 +53,21 @@ def test_dot_method():
     check_grads(fun, mat1, mat2.T)
     check_grads(fun, vect1, mat1)
     check_grads(fun, vect2, vect3)
+
+def test_outer():
+    def fun( x, y): return to_scalar(np.outer(x, y))
+    def dfun(x, y): return to_scalar(grad(fun)(x, y))
+
+    vect2 = npr.randn(11)
+    vect3 = npr.randn(11)
+
+    check_grads(fun, vect2, vect3)
+    check_grads(fun, vect2.T, vect3)
+    check_grads(fun, vect2.T, vect3.T)
+    check_grads(dfun, vect2, vect3)
+    check_grads(dfun, vect2.T, vect3)
+    check_grads(dfun, vect2.T, vect3.T)
+
 
 def test_max():
     def fun(x): return to_scalar(np.max(x))
@@ -258,14 +295,15 @@ def test_diag():
 def test_inv():
     def fun(x): return to_scalar(np.linalg.inv(x))
     d_fun = lambda x : to_scalar(grad(fun)(x))
-    mat = npr.randn(8, 8)
-    mat = np.dot(mat, mat) + 1.0 * np.eye(8)
+    D = 8
+    mat = npr.randn(D, D)
+    mat = np.dot(mat, mat) + 1.0 * np.eye(D)
     check_grads(fun, mat)
     check_grads(d_fun, mat)
 
 def test_solve_arg1():
-    D = 6
-    A = npr.randn(D, D) + 1.0 * np.eye(D)
+    D = 8
+    A = npr.randn(D, D) + 10.0 * np.eye(D)
     B = npr.randn(D, D - 1)
     def fun(a): return to_scalar(np.linalg.solve(a, B))
     d_fun = lambda x : to_scalar(grad(fun)(x))
@@ -286,7 +324,14 @@ def test_det():
     d_fun = lambda x : to_scalar(grad(fun)(x))
     D = 6
     mat = npr.randn(D, D)
-    print "det: ", np.linalg.det(mat)
+    check_grads(fun, mat)
+    check_grads(d_fun, mat)
+
+def test_frobeneus_norm():
+    def fun(x): return to_scalar(np.linalg.norm(x))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    D = 6
+    mat = npr.randn(D, D-1)
     check_grads(fun, mat)
     check_grads(d_fun, mat)
 
