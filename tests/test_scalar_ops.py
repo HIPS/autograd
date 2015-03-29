@@ -81,6 +81,33 @@ def test_sqrt():
     check_grads(fun, 10.0*npr.rand())
     check_grads(d_fun, 10.0*npr.rand())
 
+def test_power_arg0():
+    y = npr.randn()
+    fun = lambda x : np.power(x, y)
+    d_fun = grad(fun)
+    check_grads(fun, npr.rand())
+    check_grads(d_fun, npr.rand())
+
+def test_power_arg1():
+    x = npr.randn()
+    fun = lambda y : np.power(x, y)
+    d_fun = grad(fun)
+    check_grads(fun, npr.rand())
+    check_grads(d_fun, npr.rand())
+
+def test_mod_arg0():
+    fun = lambda x, y : np.mod(x, y)
+    d_fun = grad(fun)
+    check_grads(fun, npr.rand(), npr.rand())
+    check_grads(d_fun, npr.rand(), npr.rand())
+
+def test_mod_arg1():
+    fun = lambda x, y : np.mod(x, y)
+    d_fun = grad(fun, 1)
+    check_grads(fun, npr.rand(), npr.rand())
+    check_grads(d_fun, npr.rand(), npr.rand())
+
+
 #def test_norm_cdf():
 #    x = npr.randn()
 #    fun = lambda x : 3.0 * sps.norm.cdf(x, loc=npr.randn(), scale=npr.rand()**2)
