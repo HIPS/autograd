@@ -377,5 +377,19 @@ def test_roll_no_axis():
     check_grads(fun, mat)
     check_grads(d_fun, mat)
 
+def test_triu():
+    def fun(x): return to_scalar(np.triu(x, k = 2))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    mat = npr.randn(5, 5)
+    check_grads(fun, mat)
+    check_grads(d_fun, mat)
+
+def test_tril():
+    def fun(x): return to_scalar(np.tril(x, k = 2))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    mat = npr.randn(5, 5)
+    check_grads(fun, mat)
+    check_grads(d_fun, mat)
+
 # TODO:
 # squeeze, getitem

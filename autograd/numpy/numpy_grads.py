@@ -86,6 +86,8 @@ anp.split.defgrad(      lambda ans, x, idxs, axis=0 : lambda g : anp.concatenate
 anp.diag.defgrad(       lambda ans, x               : lambda g : anp.diag(g))
 anp.trace.defgrad(      lambda ans, x               : lambda g : g * anp.eye(x.shape[0]))
 anp.full.defgrad(     lambda ans, shape, fill_value : lambda g : anp.sum(g), argnum=1)
+anp.triu.defgrad(       lambda ans, x, k=0          : lambda g : anp.triu(g, k=k))
+anp.tril.defgrad(       lambda ans, x, k=0          : lambda g : anp.tril(g, k=k))
 
 # ----- Trickier grads -----
 
