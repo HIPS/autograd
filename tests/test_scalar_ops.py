@@ -75,6 +75,24 @@ def test_tanh():
     check_grads(fun, npr.randn())
     check_grads(d_fun, npr.randn())
 
+def test_arccosh():
+    fun = lambda x : 3.0 * np.arccosh(x)
+    d_fun = grad(fun)
+    check_grads(fun, npr.randn()**2 + 1)
+    check_grads(d_fun, npr.randn()**2 + 1)
+
+def test_arcsinh():
+    fun = lambda x : 3.0 * np.arcsinh(x)
+    d_fun = grad(fun)
+    check_grads(fun, npr.randn())
+    check_grads(d_fun, npr.randn())
+
+def test_arctanh():
+    fun = lambda x : 3.0 * np.arctanh(x)
+    d_fun = grad(fun)
+    check_grads(fun, 0.2)
+    check_grads(d_fun, 0.3)
+
 def test_sqrt():
     fun = lambda x : 3.0 * np.sqrt(x)
     d_fun = grad(fun)
@@ -82,18 +100,18 @@ def test_sqrt():
     check_grads(d_fun, 10.0*npr.rand())
 
 def test_power_arg0():
-    y = npr.randn()
+    y = npr.randn()**2
     fun = lambda x : np.power(x, y)
     d_fun = grad(fun)
-    check_grads(fun, npr.rand())
-    check_grads(d_fun, npr.rand())
+    check_grads(fun, npr.rand()**2)
+    check_grads(d_fun, npr.rand()**2)
 
 def test_power_arg1():
-    x = npr.randn()
+    x = npr.randn()**2
     fun = lambda y : np.power(x, y)
     d_fun = grad(fun)
-    check_grads(fun, npr.rand())
-    check_grads(d_fun, npr.rand())
+    check_grads(fun, npr.rand()**2)
+    check_grads(d_fun, npr.rand()**2)
 
 def test_mod_arg0():
     fun = lambda x, y : np.mod(x, y)
