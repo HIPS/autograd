@@ -125,6 +125,17 @@ def test_mod_arg1():
     check_grads(fun, npr.rand(), npr.rand())
     check_grads(d_fun, npr.rand(), npr.rand())
 
+def test_rad2deg():
+    fun = lambda x : 3.0 * np.rad2deg(x)
+    d_fun = grad(fun)
+    check_grads(fun, 10.0*npr.rand())
+    check_grads(d_fun, 10.0*npr.rand())
+
+def test_deg2rad():
+    fun = lambda x : 3.0 * np.deg2rad(x)
+    d_fun = grad(fun)
+    check_grads(fun, 10.0*npr.rand())
+    check_grads(d_fun, 10.0*npr.rand())
 
 #def test_norm_cdf():
 #    x = npr.randn()
