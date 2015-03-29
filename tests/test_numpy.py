@@ -132,6 +132,27 @@ def test_sum_3():
     check_grads(fun, mat)
     check_grads(d_fun, mat)
 
+def test_cumsum():
+    def fun(x): return to_scalar(np.cumsum(x, axis=0))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    mat = npr.randn(10, 11)
+    check_grads(fun, mat)
+    check_grads(d_fun, mat)
+
+def test_cumsum_1d():
+    def fun(x): return to_scalar(np.cumsum(x))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    mat = npr.randn(10)
+    check_grads(fun, mat)
+    check_grads(d_fun, mat)
+
+def test_cumsum_no_axis():
+    def fun(x): return to_scalar(np.cumsum(x))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    mat = npr.randn(10, 11)
+    check_grads(fun, mat)
+    check_grads(d_fun, mat)
+
 def test_non_numpy_sum():
     def fun(x, y):
         return to_scalar(sum([x, y]))

@@ -1,9 +1,8 @@
-from autograd.core import primitive as P, Node, log, swap_args, getval, nondifferentiable_ops
+from autograd.core import log, swap_args, getval, nondifferentiable_ops
 
-import numpy as np_original
 import operator as op
 from . import numpy_wrapper as anp
-from .numpy_extra import take, untake
+from .numpy_extra import take
 
 # ----- ndarray binary operators -----
 
@@ -111,6 +110,19 @@ anp.max.defgrad(make_grad_chooser)
 anp.min.defgrad(make_grad_chooser)
 anp.amax.defgrad(make_grad_chooser)
 anp.amin.defgrad(make_grad_chooser)
+
+def reverse_axis(x, axis):
+    x = x.swapaxes(axis, 0)
+    x = x[::-1,...]
+    return x.swapaxes(0, axis)
+
+def make_grad_np_cumsum(ans, x, axis=None):
+    if axis:
+        return lambda g: reverse_axis(anp.cumsum(reverse_axis(g, axis)), axis)
+    else:
+        shape = x.shape
+        return lambda g: anp.reshape(anp.cumsum(g[::-1], axis)[::-1], shape)
+anp.cumsum.defgrad(make_grad_np_cumsum)
 
 def make_grad_np_dot_A(ans, A, B):
     def grad_np_dot_A(g):
