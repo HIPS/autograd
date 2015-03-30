@@ -391,6 +391,13 @@ def test_tril():
     check_grads(fun, mat)
     check_grads(d_fun, mat)
 
+def test_clip():
+    def fun(x): return to_scalar(np.clip(x, a_min=0.1, a_max=1.1))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    mat = npr.randn(5, 5)
+    check_grads(fun, mat)
+    check_grads(d_fun, mat)
+
 #def test_cross_arg0():
 #    def fun(x, y): return to_scalar(np.cross(x, y))
 #    d_fun = lambda x : to_scalar(grad(fun)(x))
