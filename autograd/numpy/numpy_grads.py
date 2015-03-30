@@ -145,6 +145,11 @@ def make_grad_np_mean(ans, x, axis=None, keepdims=False):
     return lambda g: repeater(g) / num_reps
 anp.mean.defgrad(make_grad_np_mean)
 
+def make_grad_np_prod(ans, x, axis=None, keepdims=False): # TODO: Support tuples of axes.
+    repeater, _ = repeat_to_match_shape(x, axis, keepdims)
+    return lambda g: repeater(g * ans) / x
+anp.prod.defgrad(make_grad_np_prod)
+
 def make_grad_chooser(ans, x, axis=None, keepdims=None):
     """Builds gradient of functions that choose a single item, such as min or max."""
     repeater, _ = repeat_to_match_shape(x, axis, keepdims)
