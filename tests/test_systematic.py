@@ -45,6 +45,12 @@ def test_tanh():    unary_ufunc_check(np.tanh)
 
 def test_add(): binary_ufunc_check(np.add)
 
+def test_op_mul(): binary_ufunc_check(op.mul)
+def test_op_add(): binary_ufunc_check(op.add)
+def test_op_sub(): binary_ufunc_check(op.sub)
+def test_op_div(): binary_ufunc_check(op.div, lims_B=[0.3, 2.0])
+def test_op_pow(): binary_ufunc_check(op.pow, lims_A=[0.3, 2.0])
+
 # Misc tests
 
 def test_dot(): combo_check(np.dot, [0, 1],
