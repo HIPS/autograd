@@ -58,7 +58,7 @@ def test_log1p():
     check_grads(d_fun, abs(npr.randn()))
 
 def test_expm1():
-    fun = lambda x : 3.0 * np.exp2(x)
+    fun = lambda x : 3.0 * np.expm1(x)
     d_fun = grad(fun)
     check_grads(fun, abs(npr.randn()))
     check_grads(d_fun, abs(npr.randn()))
@@ -130,7 +130,7 @@ def test_sqrt():
     check_grads(d_fun, 10.0*npr.rand())
 
 def test_power_arg0():
-    y = npr.randn()**2
+    y = npr.randn()**2 + 1.0
     fun = lambda x : np.power(x, y)
     d_fun = grad(fun)
     check_grads(fun, npr.rand()**2)
@@ -163,6 +163,12 @@ def test_rad2deg():
 
 def test_deg2rad():
     fun = lambda x : 3.0 * np.deg2rad(x)
+    d_fun = grad(fun)
+    check_grads(fun, 10.0*npr.rand())
+    check_grads(d_fun, 10.0*npr.rand())
+
+def test_sinc():
+    fun = lambda x : 3.0 * np.sinc(x)
     d_fun = grad(fun)
     check_grads(fun, 10.0*npr.rand())
     check_grads(d_fun, 10.0*npr.rand())
