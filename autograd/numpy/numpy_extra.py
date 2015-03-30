@@ -21,6 +21,7 @@ untake.defgrad_is_zero(argnums=(1, 2))
 class ArrayNode(Node):
     __slots__ = []
     __getitem__ = take
+    __array_priority__ = 100.0
 
     def __init__(self, value):
         if type(Node) is numpy_original.ndarray:
