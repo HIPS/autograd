@@ -167,8 +167,38 @@ def test_divide_arg1():
     check_grads(fun, npr.rand(), npr.rand())
     check_grads(d_fun, npr.rand(), npr.rand())
 
+def test_multiply_arg0():
+    fun = lambda x, y : np.multiply(x, y)
+    d_fun = grad(fun)
+    check_grads(fun, npr.rand(), npr.rand())
+    check_grads(d_fun, npr.rand(), npr.rand())
+
+def test_multiply_arg1():
+    fun = lambda x, y : np.multiply(x, y)
+    d_fun = grad(fun, 1)
+    check_grads(fun, npr.rand(), npr.rand())
+    check_grads(d_fun, npr.rand(), npr.rand())
+
+def test_true_divide_arg0():
+    fun = lambda x, y : np.true_divide(x, y)
+    d_fun = grad(fun)
+    check_grads(fun, npr.rand(), npr.rand())
+    check_grads(d_fun, npr.rand(), npr.rand())
+
+def test_true_divide_arg1():
+    fun = lambda x, y : np.true_divide(x, y)
+    d_fun = grad(fun, 1)
+    check_grads(fun, npr.rand(), npr.rand())
+    check_grads(d_fun, npr.rand(), npr.rand())
+
 def test_reciprocal():
     fun = lambda x : np.reciprocal(x)
+    d_fun = grad(fun)
+    check_grads(fun, npr.rand())
+    check_grads(d_fun, npr.rand())
+
+def test_negative():
+    fun = lambda x : np.negative(x)
     d_fun = grad(fun)
     check_grads(fun, npr.rand())
     check_grads(d_fun, npr.rand())
