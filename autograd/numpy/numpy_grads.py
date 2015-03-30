@@ -114,6 +114,7 @@ anp.full.defgrad(     lambda ans, shape, fill_value : lambda g : anp.sum(g), arg
 anp.triu.defgrad(       lambda ans, x, k=0          : lambda g : anp.triu(g, k=k))
 anp.tril.defgrad(       lambda ans, x, k=0          : lambda g : anp.tril(g, k=k))
 anp.clip.defgrad(       lambda ans, x, a_min, a_max : lambda g : g * anp.logical_and(ans != a_min, ans != a_max))
+anp.array.defgrad(lambda ans, x : lambda g : g)
 
 # ----- Trickier grads -----
 

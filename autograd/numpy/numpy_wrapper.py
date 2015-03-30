@@ -2,7 +2,9 @@ from __future__ import absolute_import
 import types
 import numpy as np
 import inspect
-from autograd.core import primitive, differentiable_ops, nondifferentiable_ops
+from collections import Iterable
+from autograd.container_types import arg_tuple
+from autograd.core import primitive, Node, differentiable_ops, nondifferentiable_ops
 
 def keep_keepdims(fun, funname):
     # Numpy doesn't support keepdims for subclasses so this is the workaround
@@ -26,6 +28,25 @@ def numpy_wrap(fun):
     wrapped_fun.__name__ = fun.__name__
     return wrapped_fun
 
+class numpy_primitive(primitive):
+    def __call__(self, *args, **kwargs):
+        # Inputs may be "array-like" with Nodes hidden within lists etc.
+        args = [seq_to_array(arg) for arg in args]
+        return super(numpy_primitive, self).__call__(*args, **kwargs)
+
+def seq_to_array(A):
+    if not isinstance(A, (Node, np.ndarray)) and isinstance(A, Iterable):
+        return recursive_arg_tuple(*A)
+    else:
+        return A
+
+def recursive_arg_tuple(*args):
+    args = list(args)
+    for i, arg in enumerate(args):
+        if isinstance(arg, Iterable):
+            args[i] = recursive_arg_tuple(*arg)
+    return arg_tuple(*args)
+
 def wrap_namespace(old, new):
     unchanged_types =  set([types.FloatType, types.IntType, types.NoneType, types.TypeType])
     function_types = set([np.ufunc, types.FunctionType, types.BuiltinFunctionType])
@@ -33,7 +54,7 @@ def wrap_namespace(old, new):
         if type(obj) in function_types:
             if name in keepdims_stats_funs:
                 obj = keep_keepdims(obj, name)
-            new[name] = primitive(numpy_wrap(obj))
+            new[name] = numpy_primitive(numpy_wrap(obj))
         elif type(obj) in unchanged_types:
             new[name] = obj
 
