@@ -16,7 +16,7 @@ def grad(fun, argnum=0, return_function_value=False):
         tape.complete = True
         if not isinstance(end_node, Node) or tape not in end_node.tapes:
             warnings.warn("Output seems independent of input. Returning zero gradient.")
-            gradval = 0 * start_node.value
+            gradval = zeros_like(start_node)
         elif not isinstance(end_node.value, float):
             raise TypeError("Can only take gradient of scalar-valued functions")
         else:
@@ -26,7 +26,7 @@ def grad(fun, argnum=0, return_function_value=False):
                 node = op_list.pop()
                 if node.outgrad is not 0:
                     for gradfun, parent in node.parent_grad_ops:
-                        parent.outgrad = parent.outgrad + gradfun(node.outgrad)
+                        parent.outgrad += gradfun(node.outgrad)
             gradval = node.outgrad
         if return_function_value:
             return getval(end_node), gradval
@@ -90,6 +90,12 @@ def new_node(value):
     except KeyError:
         raise TypeError("Can't differentiate wrt {0}".format(type(value)))
 
+def zeros_like(value):
+    if isinstance(value, Node):
+        return value.zeros_like(value)
+    else:
+        return Node.type_mappings[type(value)].zeros_like(value)
+
 class Node(object):
     __slots__ = ['value', 'tapes']
     type_mappings = {}
@@ -118,6 +124,11 @@ class CalculationTape(object):
 
 class FloatNode(Node):
     __slots__ = []
+
+    @staticmethod
+    def zeros_like(value):
+        return 0.0
+
 Node.type_mappings[float] = FloatNode
 Node.type_mappings[float64] = FloatNode
 

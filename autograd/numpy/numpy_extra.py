@@ -1,17 +1,22 @@
 from __future__ import absolute_import
 from copy import copy
 import numpy as numpy_original
-from autograd.core import Node, primitive as P, swap_args, differentiable_ops, nondifferentiable_ops
+from autograd.core import (Node, primitive, swap_args, zeros_like,
+                           differentiable_ops, nondifferentiable_ops)
 from . import numpy_wrapper as anp
 
-take = P(lambda A, idx : A[idx])
+@primitive
+def take(A, idx):
+    return A[idx]
 def make_grad_take(ans, A, idx):
-    shape = A.shape
-    return lambda g : untake(g, idx, shape)
+    return lambda g : untake(g, idx, A)
 take.defgrad(make_grad_take)
 
-untake = P(lambda x, idx, shape : SparseArray(shape, idx, x))
-untake.defgrad(lambda ans, x, idx, shape : lambda g : take(g, idx))
+@primitive
+def untake(x, idx, template):
+    return SparseContainer(template, idx, x)
+untake.defgrad(lambda ans, x, idx, template : lambda g : take(g, idx))
+untake.defgrad_is_zero(argnums=(1, 2))
 
 class ArrayNode(Node):
     __slots__ = []
@@ -28,6 +33,10 @@ class ArrayNode(Node):
     ndim  = property(lambda self: self.value.ndim)
     size  = property(lambda self: self.value.size)
     T = property(lambda self: anp.transpose(self))
+
+    @staticmethod
+    def zeros_like(value):
+        return anp.zeros(value.shape)
 
 Node.type_mappings[anp.ndarray] = ArrayNode
 Node.type_mappings[numpy_original.ndarray] = ArrayNode
@@ -47,30 +56,26 @@ diff_methods = ['clip', 'compress', 'cumprod', 'cumsum', 'diagonal',
 for method_name in nondiff_methods + diff_methods:
     setattr(ArrayNode, method_name, anp.__dict__[method_name])
 
-# ----- Special sparse array type for efficient grads through indexing -----
+# ----- Special type for efficient grads through indexing -----
 
-class SparseArray(object):
+class SparseContainer(object):
     __array_priority__ = 150.0
-    def __init__(self, shape, idx, val):
-        self.shape = shape
+    def __init__(self, template, idx, val):
+        self.template = template
         self.idx = idx
         self.val = val
 
-    def __add__(self, other):
-        array = anp.zeros(self.shape) if other is 0 else copy(other)
+    def __radd__(self, other):
+        # Assumed only to be called during outgrad addition, as part of x += y
+        array = zeros_like(self.template) if other is 0 else other
         array[self.idx] += self.val
         return array
 
-    def __radd__(self, other):
-        return self.__add__(other)
-
-class SparseArrayNode(Node):
+class SparseContainerNode(Node):
     __slots__ = []
-    __add__  = P(SparseArray.__add__)
-    __radd__ = P(SparseArray.__radd__)
-Node.type_mappings[SparseArray] = SparseArrayNode
+    __radd__ = primitive(SparseContainer.__radd__)
+Node.type_mappings[SparseContainer] = SparseContainerNode
 
 I = lambda x : x
-SparseArrayNode.__dict__['__add__'].defgrad(lambda ans, x, y : I)
-SparseArrayNode.__dict__['__add__'].defgrad(lambda ans, x, y : I, argnum=1)
-SparseArrayNode.__dict__['__radd__'].grads = swap_args(SparseArrayNode.__dict__['__add__'].grads)
+SparseContainerNode.__dict__['__radd__'].defgrad(lambda ans, x, y : I)
+SparseContainerNode.__dict__['__radd__'].defgrad(lambda ans, x, y : I, argnum=1)
