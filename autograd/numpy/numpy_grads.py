@@ -50,6 +50,9 @@ anp.floor_divide.defgrad_is_zero()
 
 # ----- Simple grads -----
 
+anp.add.defgrad(lambda ans, x, y : unbroadcast(ans, x, I))
+anp.add.defgrad(lambda ans, x, y : unbroadcast(ans, y, I), argnum=1)
+
 anp.abs.defgrad(     lambda ans, x : lambda g : anp.sign(x) * g)
 anp.fabs.defgrad(    lambda ans, x : lambda g : anp.sign(x) * g)
 anp.absolute.defgrad(lambda ans, x : lambda g : anp.sign(x) * g)
@@ -178,6 +181,7 @@ def make_grad_np_dot_B(ans, A, B):
             return A * g
     return grad_np_dot_B
 anp.dot.defgrad(make_grad_np_dot_B, argnum=1)
+# TODO: Handle ndim > 2
 
 anp.outer.defgrad(lambda ans, a, b : lambda g : anp.dot(g, b.T))
 anp.outer.defgrad(lambda ans, a, b : lambda g : anp.dot(a.T, g), argnum=1)
