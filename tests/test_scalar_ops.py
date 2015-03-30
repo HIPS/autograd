@@ -39,6 +39,36 @@ def test_log():
     check_grads(fun, abs(npr.randn()))
     check_grads(d_fun, abs(npr.randn()))
 
+def test_log2():
+    fun = lambda x : 3.0 * np.log2(x)
+    d_fun = grad(fun)
+    check_grads(fun, abs(npr.randn()))
+    check_grads(d_fun, abs(npr.randn()))
+
+def test_log10():
+    fun = lambda x : 3.0 * np.log10(x)
+    d_fun = grad(fun)
+    check_grads(fun, abs(npr.randn()))
+    check_grads(d_fun, abs(npr.randn()))
+
+def test_log1p():
+    fun = lambda x : 3.0 * np.log1p(x)
+    d_fun = grad(fun)
+    check_grads(fun, abs(npr.randn()))
+    check_grads(d_fun, abs(npr.randn()))
+
+def test_expm1():
+    fun = lambda x : 3.0 * np.exp2(x)
+    d_fun = grad(fun)
+    check_grads(fun, abs(npr.randn()))
+    check_grads(d_fun, abs(npr.randn()))
+
+def test_exp2():
+    fun = lambda x : 3.0 * np.exp2(x)
+    d_fun = grad(fun)
+    check_grads(fun, abs(npr.randn()))
+    check_grads(d_fun, abs(npr.randn()))
+
 def test_neg():
     fun = lambda x : 3.0 * - x
     d_fun = grad(fun)

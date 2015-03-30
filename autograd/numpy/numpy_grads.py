@@ -46,6 +46,7 @@ anp.nonzero.defgrad_is_zero()
 anp.searchsorted.defgrad_is_zero()
 anp.sign.defgrad_is_zero()
 anp.ndim.defgrad_is_zero()
+anp.floor_divide.defgrad_is_zero()
 
 # ----- Simple grads -----
 
@@ -61,7 +62,12 @@ anp.mod.defgrad(      lambda ans, x, y : lambda g : -g * anp.floor(x/y), argnum=
 anp.fmod.defgrad(     lambda ans, x, y : lambda g : -g * anp.floor(x/y), argnum=1)
 anp.remainder.defgrad(lambda ans, x, y : lambda g : -g * anp.floor(x/y), argnum=1)
 anp.exp.defgrad(   lambda ans, x : lambda g : ans * g)
+anp.exp2.defgrad(  lambda ans, x : lambda g : ans * g)
+anp.expm1.defgrad( lambda ans, x : lambda g : g * anp.exp(x))
 anp.log.defgrad(   lambda ans, x : lambda g : g / x)
+anp.log2.defgrad(  lambda ans, x : lambda g : g / x / anp.log(2))
+anp.log10.defgrad( lambda ans, x : lambda g : g / x / anp.log(10))
+anp.log1p.defgrad( lambda ans, x : lambda g : g / (x + 1))
 anp.sin.defgrad(   lambda ans, x : lambda g : g * anp.cos(x))
 anp.cos.defgrad(   lambda ans, x : lambda g : - g * anp.sin(x))
 anp.tan.defgrad(   lambda ans, x : lambda g : g / anp.cos(x) **2)
