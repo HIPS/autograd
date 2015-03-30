@@ -50,8 +50,9 @@ class primitive(object):
         gradmaker.__name__ = "grad_{0}_{1}".format(argnum, self.fun.__name__)
         self.grads[argnum] = gradmaker
 
-    def defgrad_is_zero(self, argnum=0):
-        self.zero_grads.add(argnum)
+    def defgrad_is_zero(self, argnums=(0,)):
+        for argnum in argnums:
+            self.zero_grads.add(argnum)
 
     def __call__(self, *args, **kwargs):
         argvals = list(args)
@@ -130,8 +131,7 @@ I = lambda x : x
 FloatNode.__dict__['__neg__'].defgrad(lambda ans, x : op.neg)
 
 for comp_op in nondifferentiable_ops:
-    FloatNode.__dict__[comp_op].defgrad_is_zero()
-    FloatNode.__dict__[comp_op].defgrad_is_zero(argnum=1)
+    FloatNode.__dict__[comp_op].defgrad_is_zero(argnums=(0, 1))
 
 FloatNode.__dict__['__add__'].defgrad(lambda ans, x, y : I)
 FloatNode.__dict__['__add__'].defgrad(lambda ans, x, y : I, argnum=1)
