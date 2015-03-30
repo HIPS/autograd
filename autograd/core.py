@@ -26,7 +26,7 @@ def grad(fun, argnum=0, return_function_value=False):
                 node = op_list.pop()
                 if node.outgrad is not 0:
                     for gradfun, parent in node.parent_grad_ops:
-                        parent.outgrad += gradfun(node.outgrad)
+                        parent.outgrad = iadd_any(parent.outgrad, gradfun(node.outgrad))
             gradval = node.outgrad
         if return_function_value:
             return getval(end_node), gradval
@@ -96,12 +96,24 @@ def zeros_like(value):
     else:
         return Node.type_mappings[type(value)].zeros_like(value)
 
+@primitive
+def iadd_any(A, B):
+    return Node.type_mappings[type(B)].iadd_any(A, B)
+I = lambda x : x
+iadd_any.defgrad(lambda ans, x, y : I)
+iadd_any.defgrad(lambda ans, x, y : I, argnum=1)
+
 class Node(object):
     __slots__ = ['value', 'tapes']
     type_mappings = {}
     def __init__(self, value):
         self.value = value
         self.tapes = {}
+
+    @staticmethod
+    def iadd_any(A, B):
+        A += B
+        return A
 
 getval = lambda x : x.value if isinstance(x, Node) else x
 
@@ -138,7 +150,6 @@ nondifferentiable_ops = ['__eq__', '__ne__', '__gt__', '__ge__', '__lt__', '__le
 for float_op in differentiable_ops + nondifferentiable_ops:
     setattr(FloatNode, float_op, primitive(getattr(float, float_op)))
 
-I = lambda x : x
 FloatNode.__dict__['__neg__'].defgrad(lambda ans, x : op.neg)
 
 for comp_op in nondifferentiable_ops:

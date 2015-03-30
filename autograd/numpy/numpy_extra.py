@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from copy import copy
 import numpy as numpy_original
-from autograd.core import (Node, primitive, swap_args, zeros_like,
+from autograd.core import (Node, primitive, zeros_like,
                            differentiable_ops, nondifferentiable_ops)
 from . import numpy_wrapper as anp
 
@@ -14,7 +14,7 @@ take.defgrad(make_grad_take)
 
 @primitive
 def untake(x, idx, template):
-    return SparseContainer(template, idx, x)
+    return SparseArray(template, idx, x)
 untake.defgrad(lambda ans, x, idx, template : lambda g : take(g, idx))
 untake.defgrad_is_zero(argnums=(1, 2))
 
@@ -56,26 +56,20 @@ diff_methods = ['clip', 'compress', 'cumprod', 'cumsum', 'diagonal',
 for method_name in nondiff_methods + diff_methods:
     setattr(ArrayNode, method_name, anp.__dict__[method_name])
 
+
 # ----- Special type for efficient grads through indexing -----
 
-class SparseContainer(object):
+class SparseArray(object):
     __array_priority__ = 150.0
     def __init__(self, template, idx, val):
         self.template = template
         self.idx = idx
         self.val = val
 
-    def __radd__(self, other):
-        # Assumed only to be called during outgrad addition, as part of x += y
+class SparseArrayNode(Node):
+    @staticmethod
+    def iadd_any(other, self):
         array = zeros_like(self.template) if other is 0 else other
         array[self.idx] += self.val
         return array
-
-class SparseContainerNode(Node):
-    __slots__ = []
-    __radd__ = primitive(SparseContainer.__radd__)
-Node.type_mappings[SparseContainer] = SparseContainerNode
-
-I = lambda x : x
-SparseContainerNode.__dict__['__radd__'].defgrad(lambda ans, x, y : I)
-SparseContainerNode.__dict__['__radd__'].defgrad(lambda ans, x, y : I, argnum=1)
+Node.type_mappings[SparseArray] = SparseArrayNode

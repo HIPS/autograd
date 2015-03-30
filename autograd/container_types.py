@@ -1,24 +1,36 @@
 from __future__ import absolute_import
-from autograd.core import primitive, Node, getval
+from autograd.core import primitive, Node, getval, zeros_like
 
-class DictNode(Node):
+class TupleNode(Node):
+    __slots__ = []
     def __getitem__(self, idx):
         return take(self, idx)
-    def __iter__(self):
-        return self.value.__iter__()
-Node.add_subclass(DictNode, [dict])
+    def __len__(self):
+        return len(self.value)
 
-class ListNode(Node):
-    def __getitem__(self, idx):
-        return take(self, idx)
-    def __len__(self): return len(self.value)
-Node.add_subclass(ListNode, [list])
+    @staticmethod
+    def zeros_like(value):
+        return tuple([zeros_like(item) for item in getval(value)])
 
-def take(A, idx): return A[idx]
-take = primitive(take, lambda ans, A, idx : [lambda g : untake(g, idx, lambda : zeros_like_node(A))])
+    @staticmethod
+    def iadd_any(A, B):
+        if A is 0:
+            return B
+        else:
+            return tuple([a + b for a, b in zip(A, B)])
+Node.type_mappings[tuple] = TupleNode
 
-def untake(x, idx, zeros_fun):
-    result = zeros_fun()
+@primitive
+def take(A, idx):
+    return A[idx]
+def make_grad_take(ans, A, idx):
+    return lambda g : untake(g, idx, A)
+take.defgrad(make_grad_take)
+
+@primitive
+def untake(x, idx, template):
+    result = list(zeros_like(template))
     result[idx] = x
-    return result
-untake = primitive(untake, lambda ans, x, idx, zeros_fun : [lambda g : take(g, idx)])
+    return tuple(result)
+untake.defgrad(lambda ans, x, idx, template : lambda g : take(g, idx))
+untake.defgrad_is_zero(argnums=(1, 2))

@@ -15,7 +15,7 @@ def unary_nd(f, x):
             nd_grad[dims] = unary_nd(indexed_function(f, x, dims), x[dims])
         return nd_grad
     elif isinstance(x, tuple):
-        return tuple([unary_nd(indexed_function(f, list(x), i), x[i])
+        return tuple([unary_nd(indexed_function(f, tuple(x), i), x[i])
                       for i in range(len(x))])
     elif isinstance(x, dict):
         return {k : unary_nd(indexed_function(f, x, k), v) for k, v in x.iteritems()}
@@ -25,9 +25,12 @@ def unary_nd(f, x):
         return (f(x + eps/2) - f(x - eps/2)) / eps
 
 def indexed_function(fun, arg, index):
-    local_arg = copy(arg)
     def partial_function(x):
-        local_arg[index] = x
+        local_arg = copy(arg)
+        if isinstance(local_arg, tuple):
+            local_arg = local_arg[:index] + (x,) + local_arg[index+1:]
+        else:
+            local_arg[index] = x
         return fun(local_arg)
     return partial_function
 
