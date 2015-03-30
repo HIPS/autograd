@@ -4,31 +4,6 @@ import operator as op
 from . import numpy_wrapper as anp
 from .numpy_extra import take
 
-# ----- ndarray binary operators -----
-
-I = lambda x : x
-anp.ndarray.__dict__['__neg__'].defgrad(lambda ans, x: op.neg)
-anp.ndarray.__dict__['__add__'].defgrad(lambda ans, x, y : unbroadcast(ans, x, I))
-anp.ndarray.__dict__['__add__'].defgrad(lambda ans, x, y : unbroadcast(ans, y, I), argnum=1)
-anp.ndarray.__dict__['__mul__'].defgrad(lambda ans, x, y : unbroadcast(ans, x, lambda g : y * g))
-anp.ndarray.__dict__['__mul__'].defgrad(lambda ans, x, y : unbroadcast(ans, y, lambda g : x * g), argnum=1)
-anp.ndarray.__dict__['__sub__'].defgrad(lambda ans, x, y : unbroadcast(ans, x, I))
-anp.ndarray.__dict__['__sub__'].defgrad(lambda ans, x, y : unbroadcast(ans, y, op.neg), argnum=1)
-anp.ndarray.__dict__['__div__'].defgrad(lambda ans, x, y : unbroadcast(ans, x, lambda g : g / y))
-anp.ndarray.__dict__['__div__'].defgrad(lambda ans, x, y : unbroadcast(ans, y, lambda g : - g * x / y**2), argnum=1)
-anp.ndarray.__dict__['__pow__'].defgrad(lambda ans, x, y : unbroadcast(ans, x, lambda g : g * y * x ** (y - 1)))
-anp.ndarray.__dict__['__pow__'].defgrad(lambda ans, x, y : unbroadcast(ans, y, lambda g : g * log(x) * x ** y), argnum=1)
-
-for comp_op in nondifferentiable_ops:
-    anp.ndarray.__dict__[comp_op].defgrad_is_zero()
-    anp.ndarray.__dict__[comp_op].defgrad_is_zero(argnum=1)
-
-anp.ndarray.__dict__['__radd__'].grads = swap_args(anp.ndarray.__dict__['__add__'].grads)
-anp.ndarray.__dict__['__rmul__'].grads = swap_args(anp.ndarray.__dict__['__mul__'].grads)
-anp.ndarray.__dict__['__rsub__'].grads = swap_args(anp.ndarray.__dict__['__sub__'].grads)
-anp.ndarray.__dict__['__rdiv__'].grads = swap_args(anp.ndarray.__dict__['__div__'].grads)
-anp.ndarray.__dict__['__rpow__'].grads = swap_args(anp.ndarray.__dict__['__pow__'].grads)
-
 # ----- Functions that are constant w.r.t. continuous inputs -----
 
 anp.floor.defgrad_is_zero()
@@ -81,20 +56,26 @@ anp.less_equal.defgrad_is_zero(argnum=1)
 anp.equal.defgrad_is_zero(argnum=1)
 anp.not_equal.defgrad_is_zero(argnum=1)
 
-# ----- Simple grads -----
+# ----- Binary ufuncs -----
 
+I = lambda x : x
+anp.negative.defgrad(lambda ans, x: op.neg)
 anp.add.defgrad(lambda ans, x, y : unbroadcast(ans, x, I))
 anp.add.defgrad(lambda ans, x, y : unbroadcast(ans, y, I), argnum=1)
+anp.multiply.defgrad(lambda ans, x, y : unbroadcast(ans, x, lambda g : y * g))
+anp.multiply.defgrad(lambda ans, x, y : unbroadcast(ans, y, lambda g : x * g), argnum=1)
+anp.subtract.defgrad(lambda ans, x, y : unbroadcast(ans, x, I))
+anp.subtract.defgrad(lambda ans, x, y : unbroadcast(ans, y, op.neg), argnum=1)
+anp.divide.defgrad(lambda ans, x, y : unbroadcast(ans, x, lambda g : g / y))
+anp.divide.defgrad(lambda ans, x, y : unbroadcast(ans, y, lambda g : - g * x / y**2), argnum=1)
+anp.power.defgrad(lambda ans, x, y : unbroadcast(ans, x, lambda g : g * y * x ** (y - 1)))
+anp.power.defgrad(lambda ans, x, y : unbroadcast(ans, y, lambda g : g * log(x) * x ** y), argnum=1)
+
+# ----- Simple grads -----
 
 anp.abs.defgrad(     lambda ans, x : lambda g : anp.sign(x) * g)
 anp.fabs.defgrad(    lambda ans, x : lambda g : anp.sign(x) * g)
 anp.absolute.defgrad(lambda ans, x : lambda g : anp.sign(x) * g)
-anp.power.defgrad(   lambda ans, x, y : lambda g : g * y * x ** (y - 1))
-anp.power.defgrad(   lambda ans, x, y : lambda g : g * log(x) * x ** y, argnum=1)
-anp.multiply.defgrad(lambda ans, x, y : lambda g : g * y)
-anp.multiply.defgrad(lambda ans, x, y : lambda g : g * x, argnum=1)
-anp.divide.defgrad(  lambda ans, x, y : lambda g : g / y)
-anp.divide.defgrad(  lambda ans, x, y : lambda g : - g * x / y**2, argnum=1)
 anp.true_divide.defgrad(lambda ans, x, y : lambda g : g / y)
 anp.true_divide.defgrad(lambda ans, x, y : lambda g : - g * x / y**2, argnum=1)
 anp.reciprocal.defgrad( lambda ans, x    : lambda g : - g / x**2)

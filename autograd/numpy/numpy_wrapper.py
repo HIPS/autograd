@@ -48,10 +48,23 @@ class ndarray(np.ndarray):
         else:
             return np.ndarray.__array_wrap__(self, obj)
     dot = dot
-
-# Wrap binary ops since the other operand could be a Node
-for ndarray_op in differentiable_ops + nondifferentiable_ops:
-    setattr(ndarray, ndarray_op, primitive(getattr(ndarray, ndarray_op)))
+    def __neg__(self): return negative(self)
+    def __add__(self, other): return add(     self, other)
+    def __sub__(self, other): return subtract(self, other)
+    def __mul__(self, other): return multiply(self, other)
+    def __pow__(self, other): return power   (self, other)
+    def __div__(self, other): return divide(  self, other)
+    def __radd__(self, other): return add(     other, self)
+    def __rsub__(self, other): return subtract(other, self)
+    def __rmul__(self, other): return multiply(other, self)
+    def __rpow__(self, other): return power   (other, self)
+    def __rdiv__(self, other): return divide(  other, self)
+    def __eq__(self, other): return equal(self, other)
+    def __ne__(self, other): return not_equal(self, other)
+    def __gt__(self, other): return greater(self, other)
+    def __ge__(self, other): return greater_equal(self, other)
+    def __lt__(self, other): return less(self, other)
+    def __le__(self, other): return less_equal(self, other)
 
 # ----- Special treatment of list-input functions -----
 
