@@ -155,6 +155,24 @@ def test_mod_arg1():
     check_grads(fun, npr.rand(), npr.rand())
     check_grads(d_fun, npr.rand(), npr.rand())
 
+def test_divide_arg0():
+    fun = lambda x, y : np.divide(x, y)
+    d_fun = grad(fun)
+    check_grads(fun, npr.rand(), npr.rand())
+    check_grads(d_fun, npr.rand(), npr.rand())
+
+def test_divide_arg1():
+    fun = lambda x, y : np.divide(x, y)
+    d_fun = grad(fun, 1)
+    check_grads(fun, npr.rand(), npr.rand())
+    check_grads(d_fun, npr.rand(), npr.rand())
+
+def test_reciprocal():
+    fun = lambda x : np.reciprocal(x)
+    d_fun = grad(fun)
+    check_grads(fun, npr.rand())
+    check_grads(d_fun, npr.rand())
+
 def test_rad2deg():
     fun = lambda x : 3.0 * np.rad2deg(x)
     d_fun = grad(fun)
@@ -163,6 +181,18 @@ def test_rad2deg():
 
 def test_deg2rad():
     fun = lambda x : 3.0 * np.deg2rad(x)
+    d_fun = grad(fun)
+    check_grads(fun, 10.0*npr.rand())
+    check_grads(d_fun, 10.0*npr.rand())
+
+def test_radians():
+    fun = lambda x : 3.0 * np.radians(x)
+    d_fun = grad(fun)
+    check_grads(fun, 10.0*npr.rand())
+    check_grads(d_fun, 10.0*npr.rand())
+
+def test_degrees():
+    fun = lambda x : 3.0 * np.degrees(x)
     d_fun = grad(fun)
     check_grads(fun, 10.0*npr.rand())
     check_grads(d_fun, 10.0*npr.rand())

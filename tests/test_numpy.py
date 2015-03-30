@@ -391,5 +391,21 @@ def test_tril():
     check_grads(fun, mat)
     check_grads(d_fun, mat)
 
+#def test_cross_arg0():
+#    def fun(x, y): return to_scalar(np.cross(x, y))
+#    d_fun = lambda x : to_scalar(grad(fun)(x))
+#    x = npr.randn(5, 3)
+#    y = npr.randn(5, 3)
+#    check_grads(fun, x, y)
+#    check_grads(d_fun, x, y)
+
+#def test_cross_arg1():
+#    def fun(x, y): return to_scalar(np.cross(x, y))
+#    d_fun = lambda x : to_scalar(grad(fun, 1)(x))
+#    x = npr.randn(5, 3)
+#    y = npr.randn(5, 3)
+#    check_grads(fun, x, y)
+#    check_grads(d_fun, x, y)
+
 # TODO:
 # squeeze, getitem
