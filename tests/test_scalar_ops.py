@@ -105,6 +105,24 @@ def test_tanh():
     check_grads(fun, npr.randn())
     check_grads(d_fun, npr.randn())
 
+def test_arccos():
+    fun = lambda x : 3.0 * np.arccos(x)
+    d_fun = grad(fun)
+    check_grads(fun, 0.1)
+    check_grads(d_fun, 0.2)
+
+def test_arcsin():
+    fun = lambda x : 3.0 * np.arcsin(x)
+    d_fun = grad(fun)
+    check_grads(fun, 0.1)
+    check_grads(d_fun, 0.2)
+
+def test_arctan():
+    fun = lambda x : 3.0 * np.arctan(x)
+    d_fun = grad(fun)
+    check_grads(fun, 0.2)
+    check_grads(d_fun, 0.3)
+
 def test_arccosh():
     fun = lambda x : 3.0 * np.arccosh(x)
     d_fun = grad(fun)
