@@ -68,7 +68,6 @@ anp.absolute.defgrad(lambda ans, x : lambda g : anp.sign(x) * g)
 anp.true_divide.defgrad(lambda ans, x, y : lambda g : g / y)
 anp.true_divide.defgrad(lambda ans, x, y : lambda g : - g * x / y**2, argnum=1)
 anp.reciprocal.defgrad( lambda ans, x    : lambda g : - g / x**2)
-anp.negative.defgrad(   lambda ans, x    : lambda g : - g)
 anp.mod.defgrad(      lambda ans, x, y : lambda g : g)
 anp.fmod.defgrad(     lambda ans, x, y : lambda g : g)
 anp.remainder.defgrad(lambda ans, x, y : lambda g : g)
@@ -185,7 +184,7 @@ def make_grad_np_dot_A(ans, A, B):
             else:
                 return anp.outer(g, B)
         else:
-            return B * g
+            return g * B
     return grad_np_dot_A
 anp.dot.defgrad(make_grad_np_dot_A)
 def make_grad_np_dot_B(ans, A, B):
@@ -200,7 +199,7 @@ def make_grad_np_dot_B(ans, A, B):
             else:
                 return anp.outer(A, g)
         else:
-            return A * g
+            return g * A
     return grad_np_dot_B
 anp.dot.defgrad(make_grad_np_dot_B, argnum=1)
 # TODO: Handle ndim > 2

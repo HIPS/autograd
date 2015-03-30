@@ -11,6 +11,7 @@ def test_max():  stat_check(np.max)
 def test_mean(): stat_check(np.mean)
 def test_min():  stat_check(np.min)
 def test_sum():  stat_check(np.sum)
+def test_prod(): stat_check(np.prod)
 
 # Unary ufunc tests
 
