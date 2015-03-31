@@ -68,7 +68,7 @@ class primitive(object):
                         del arg.tapes[tape]
 
         result = self.fun(*argvals, **kwargs)
-        # assert not type(result) == ndarray, self.fun # Check for gaps in numpy wrapping
+        assert not type(result) == ndarray, self.fun # Check for gaps in numpy wrapping
         if result is NotImplemented: return result
         if ops:
             result = new_node(result)

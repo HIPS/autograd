@@ -21,12 +21,17 @@ keepdims_stats_funs = ['all', 'any', 'max', 'mean', 'min', 'prod', 'std', 'sum',
 def numpy_wrap(fun):
     # Not all numpy functions preserve the ndarray subclass
     def wrapped_fun(*args, **kwargs):
-        ans = fun(*args, **kwargs)
-        if type(ans) is np.ndarray:
-            ans = ans.view(ndarray)
-        return ans
+        return safe_type(fun(*args, **kwargs))
     wrapped_fun.__name__ = fun.__name__
     return wrapped_fun
+
+def safe_type(x):
+    if type(x) is np.ndarray:
+        return x.view(ndarray)
+    elif type(x) is tuple:
+        return tuple([safe_type(a) for a in x])
+    else:
+        return x
 
 def recursive_arg_tuple(*args):
     args = list(args)
