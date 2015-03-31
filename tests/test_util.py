@@ -51,6 +51,8 @@ def check_equivalent(A, B):
         assert np.allclose(A, B, rtol=1e-4, atol=1e-6), "Diffs are: {0}".format(A - B)
 
 def check_grads(fun, *args):
+    if not args:
+        raise Exception("No args given")
     A = nd(fun, *args)
     B = tuple([grad(fun, i)(*args) for i in range(len(args))])
     check_equivalent(A, B)
