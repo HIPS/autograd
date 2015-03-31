@@ -23,6 +23,7 @@ anp.nonzero.defgrad_is_zero()
 anp.searchsorted.defgrad_is_zero()
 anp.sign.defgrad_is_zero()
 anp.ndim.defgrad_is_zero()
+anp.shape.defgrad_is_zero()
 anp.floor_divide.defgrad_is_zero(argnums=(0, 1))
 anp.nan_to_num.defgrad_is_zero()
 anp.logical_and.defgrad_is_zero(argnums=(0, 1))
@@ -207,6 +208,32 @@ def make_grad_np_dot_B(ans, A, B):
     return grad_np_dot_B
 anp.dot.defgrad(make_grad_np_dot_B, argnum=1)
 # TODO: Handle ndim > 2
+
+def make_grad_tensordot(argnum, ans, A, B, axes=2):
+    if type(axes) is int:
+        axes = (range(anp.ndim(A))[-axes:],
+                range(anp.ndim(B))[:axes])
+
+    def gradfun(g):
+        N_axes_summed = len(axes[0])
+        if argnum == 0:
+            X, Y = A, B
+            X_axes_summed, Y_axes_summed = axes
+            g_axes_from_Y = range(anp.ndim(g))[(anp.ndim(X) - N_axes_summed):]
+        else:
+            X, Y = B, A
+            X_axes_summed, Y_axes_summed = axes[::-1]
+            g_axes_from_Y = range(anp.ndim(g))[:(anp.ndim(Y) - N_axes_summed)]
+
+        Y_axes_ignored = [i for i in range(anp.ndim(Y)) if i not in Y_axes_summed]
+        result = anp.tensordot(g, Y, axes=[g_axes_from_Y, Y_axes_ignored])
+        sorted_axes_pairs = sorted(zip(X_axes_summed, Y_axes_summed), key = lambda x : x[1])
+        forward_permutation = ([i for i in range(anp.ndim(X)) if i not in X_axes_summed]
+                             + [i for i, _ in sorted_axes_pairs])
+        reverse_permutation = list(anp.argsort(forward_permutation))
+        return anp.transpose(result, axes=reverse_permutation)
+    return gradfun
+anp.tensordot.gradmaker = make_grad_tensordot
 
 anp.outer.defgrad(lambda ans, a, b : lambda g : anp.dot(g, b.T))
 anp.outer.defgrad(lambda ans, a, b : lambda g : anp.dot(a.T, g), argnum=1)

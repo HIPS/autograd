@@ -61,6 +61,25 @@ def test_transpose(): combo_check(np.transpose, [0],
                                                 [2, 0, 1], [2, 1, 0],
                                                 [1, 0, 2], [1, 2, 0]])
 
+R = npr.randn
 def test_dot(): combo_check(np.dot, [0, 1],
-                           [1.5, npr.randn(1, 3), npr.randn(2, 3)],
-                           [0.3, npr.randn(3, 1), npr.randn(3, 4)])
+                            [1.5, R(3), R(2, 3)],
+                            [0.3, R(3), R(3, 4)])
+
+
+def test_tensordot_1(): combo_check(np.tensordot, [0, 1],
+                                    [R(1, 3), R(2, 3, 2)],
+                                    [R(3),    R(3, 1),    R(3, 4, 2)],
+                                    axes=[ [(1,), (0,)] ])
+def test_tensordot_2(): combo_check(np.tensordot, [0, 1],
+                                    [R(3),    R(3, 1),    R(3, 4, 2)],
+                                    [R(1, 3), R(2, 3, 2)],
+                                    axes=[ [(0,), (1,)] ])
+def test_tensordot_3(): combo_check(np.tensordot, [0, 1],
+                                    [R(2, 3),    R(2, 3, 4)],
+                                    [R(1, 2, 3), R(2, 2, 3, 4)],
+                                    axes=[ [(0, 1), (1, 2)] ,  [(1, 0), (2, 1)] ])
+def test_tensordot_4(): combo_check(np.tensordot, [0, 1],
+                                    [R(2, 2), R(4, 2, 2)],
+                                    [R(2, 2), R(2, 2, 4)],
+                                    axes=[1, 2])
