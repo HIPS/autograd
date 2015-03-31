@@ -177,37 +177,49 @@ def make_grad_np_cumsum(ans, x, axis=None):
         return lambda g: anp.reshape(anp.cumsum(g[::-1], axis)[::-1], shape)
 anp.cumsum.defgrad(make_grad_np_cumsum)
 
-def make_grad_np_dot_A(ans, A, B):
-    def grad_np_dot_A(g):
-        if anp.ndim(A) is 0:
-            return anp.sum(g * B)
-        elif anp.ndim(B) is 2:
-            return anp.dot(g, B.T)
-        elif anp.ndim(A) is 2:
-            if anp.ndim(B) is 0:
-                return anp.dot(B, g)
-            else:
-                return anp.outer(g, B)
-        else:
-            return g * B
-    return grad_np_dot_A
-anp.dot.defgrad(make_grad_np_dot_A)
-def make_grad_np_dot_B(ans, A, B):
-    def grad_np_dot_B(g):
-        if anp.ndim(B) is 0:
-            return anp.sum(g * A)
-        elif anp.ndim(A) is 2:
-            return anp.dot(A.T, g)
-        elif anp.ndim(B) is 2:
-            if anp.ndim(A) is 0:
-                return anp.dot(A, g)
-            else:
-                return anp.outer(A, g)
-        else:
-            return g * A
-    return grad_np_dot_B
-anp.dot.defgrad(make_grad_np_dot_B, argnum=1)
+# def make_grad_np_dot_A(ans, A, B):
+#     def grad_np_dot_A(g):
+#         if anp.ndim(A) is 0:
+#             return anp.sum(g * B)
+#         elif anp.ndim(B) is 2:
+#             return anp.dot(g, B.T)
+#         elif anp.ndim(A) is 2:
+#             if anp.ndim(B) is 0:
+#                 return anp.dot(B, g)
+#             else:
+#                 return anp.outer(g, B)
+#         else:
+#             return g * B
+#     return grad_np_dot_A
+# anp.dot.defgrad(make_grad_np_dot_A)
+
+
+# def make_grad_np_dot_B(ans, A, B):
+#     def grad_np_dot_B(g):
+#         if anp.ndim(B) is 0:
+#             return anp.sum(g * A)
+#         elif anp.ndim(A) is 2:
+#             return anp.dot(A.T, g)
+#         elif anp.ndim(B) is 2:
+#             if anp.ndim(A) is 0:
+#                 return anp.dot(A, g)
+#             else:
+#                 return anp.outer(A, g)
+#         else:
+#             return g * A
+#     return grad_np_dot_B
+# anp.dot.defgrad(make_grad_np_dot_B, argnum=1)
 # TODO: Handle ndim > 2
+
+def make_grad_dot(argnum, ans, A, B):
+    if anp.ndim(A) == 0 or anp.ndim(B) == 0:
+        axes = ([], [])
+    elif B.ndim == 1:
+        axes = ([A.ndim - 1], [0])
+    else:
+        axes = ([A.ndim - 1], [B.ndim -2])
+    return make_grad_tensordot(argnum, ans, A, B, axes=axes)
+anp.dot.gradmaker = make_grad_dot
 
 def make_grad_tensordot(argnum, ans, A, B, axes=2):
     if type(axes) is int:
