@@ -55,6 +55,12 @@ def test_op_pow(): binary_ufunc_check(op.pow, lims_A=[0.5, 2.0])
 
 # Misc tests
 
+def test_transpose(): combo_check(np.transpose, [0],
+                                  [npr.randn(2, 3, 4)],
+                                  axes = [None, [0, 1, 2], [0, 2, 1],
+                                                [2, 0, 1], [2, 1, 0],
+                                                [1, 0, 2], [1, 2, 0]])
+
 def test_dot(): combo_check(np.dot, [0, 1],
                            [1.5, npr.randn(1, 3), npr.randn(2, 3)],
                            [0.3, npr.randn(3, 1), npr.randn(3, 4)])

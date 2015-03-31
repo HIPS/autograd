@@ -106,7 +106,6 @@ anp.ravel.defgrad(   lambda ans, x, order=None    : lambda g : anp.reshape(g, x.
 anp.expand_dims.defgrad(lambda ans, x, axis : lambda g : anp.squeeze(g, axis))
 anp.squeeze.defgrad(    lambda ans, x, axis : lambda g : anp.repeat(g, x.shape[axis], axis))
 anp.repeat.defgrad(     lambda ans, x, shape, axis  : lambda g : anp.sum(g, axis, keepdims=True))
-anp.transpose.defgrad(  lambda ans, x               : lambda g : anp.transpose(g))
 anp.split.defgrad(      lambda ans, x, idxs, axis=0 : lambda g : anp.concatenate(g, axis=axis))
 anp.diag.defgrad(       lambda ans, x               : lambda g : anp.diag(g))
 anp.trace.defgrad(      lambda ans, x               : lambda g : g * anp.eye(x.shape[0]))
@@ -118,6 +117,11 @@ anp.clip.defgrad(       lambda ans, x, a_min, a_max : lambda g : g * anp.logical
 # ----- Trickier grads -----
 
 isarray = lambda x : isinstance(getval(x), anp.ndarray)
+def make_grad_transpose(ans, x, axes=None):
+    if axes is not None:
+        axes = anp.argsort(axes)
+    return lambda g : anp.transpose(g, axes)
+anp.transpose.defgrad(make_grad_transpose)
 
 def repeat_to_match_shape(x, axis, keepdims):
     """Returns a function that repeats an array along axis to get a given shape.
