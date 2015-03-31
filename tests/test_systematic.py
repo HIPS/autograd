@@ -2,6 +2,7 @@ import autograd.numpy.random as npr
 import autograd.numpy as np
 import operator as op
 from numpy_utils import combo_check, stat_check, unary_ufunc_check, binary_ufunc_check
+npr.seed(0)
 
 # Array statistics functions
 def test_max():  stat_check(np.max)
@@ -33,7 +34,7 @@ def test_log():     unary_ufunc_check(np.log,   lims=[0.2, 2.0])
 def test_log10():   unary_ufunc_check(np.log10, lims=[0.2, 2.0])
 def test_log1p():   unary_ufunc_check(np.log1p, lims=[0.2, 2.0])
 def test_log2():    unary_ufunc_check(np.log2,  lims=[0.2, 2.0])
-def test_rad2deg(): unary_ufunc_check(np.rad2deg)
+def test_rad2deg(): unary_ufunc_check(lambda x : np.rad2deg(x)/50.0)
 def test_sign():    unary_ufunc_check(np.sign)
 def test_sin():     unary_ufunc_check(np.sin)
 def test_sinh():    unary_ufunc_check(np.sinh)
@@ -50,7 +51,7 @@ def test_op_mul(): binary_ufunc_check(op.mul)
 def test_op_add(): binary_ufunc_check(op.add)
 def test_op_sub(): binary_ufunc_check(op.sub)
 def test_op_div(): binary_ufunc_check(op.div, lims_B=[0.3, 2.0])
-def test_op_pow(): binary_ufunc_check(op.pow, lims_A=[0.3, 2.0])
+def test_op_pow(): binary_ufunc_check(op.pow, lims_A=[0.5, 2.0])
 
 # Misc tests
 
