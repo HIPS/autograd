@@ -46,3 +46,25 @@ def test_frobeneus_norm():
     mat = npr.randn(D, D-1)
     check_grads(fun, mat)
     check_grads(d_fun, mat)
+
+def test_eigvalh_lower():
+    def fun(x):
+        w, v = np.linalg.eigh(x)
+        return to_scalar(w) + to_scalar(v)
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    D = 6
+    mat = npr.randn(D, D-1)
+    hmat = np.dot(mat.T, mat)
+    check_grads(fun, hmat)
+    check_grads(d_fun, hmat)
+
+def test_eigvalh_upper():
+    def fun(x):
+        w, v = np.linalg.eigh(x, 'U')
+        return to_scalar(w) + to_scalar(v)
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    D = 6
+    mat = npr.randn(D, D-1)
+    hmat = np.dot(mat.T, mat)
+    check_grads(fun, hmat)
+    check_grads(d_fun, hmat)
