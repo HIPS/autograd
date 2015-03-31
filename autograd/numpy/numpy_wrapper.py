@@ -28,18 +28,6 @@ def numpy_wrap(fun):
     wrapped_fun.__name__ = fun.__name__
     return wrapped_fun
 
-class numpy_primitive(primitive):
-    def __call__(self, *args, **kwargs):
-        # Inputs may be "array-like" with Nodes hidden within lists etc.
-        args = [seq_to_array(arg) for arg in args]
-        return super(numpy_primitive, self).__call__(*args, **kwargs)
-
-def seq_to_array(A):
-    if not isinstance(A, (Node, np.ndarray)) and isinstance(A, Iterable):
-        return recursive_arg_tuple(*A)
-    else:
-        return A
-
 def recursive_arg_tuple(*args):
     args = list(args)
     for i, arg in enumerate(args):
@@ -54,7 +42,7 @@ def wrap_namespace(old, new):
         if type(obj) in function_types:
             if name in keepdims_stats_funs:
                 obj = keep_keepdims(obj, name)
-            new[name] = numpy_primitive(numpy_wrap(obj))
+            new[name] = primitive(numpy_wrap(obj))
         elif type(obj) in unchanged_types:
             new[name] = obj
 
@@ -89,5 +77,17 @@ class ndarray(np.ndarray):
 
 # ----- Special treatment of list-input functions -----
 
-concatenate_args = primitive(numpy_wrap(lambda axis, *args : np.concatenate(args, axis)))
+@primitive
+def concatenate_args(axis, *args):
+    return np.concatenate(args, axis).view(ndarray)
 concatenate = lambda arr_list, axis=0 : concatenate_args(axis, *arr_list)
+
+@primitive
+def array_primitive(A):
+    return np.array(A).view(ndarray)
+array_primitive.defgrad(lambda ans, A : lambda g : g)
+
+def array(A):
+    if not isinstance(A, (Node, np.ndarray)) and isinstance(A, Iterable):
+        A = recursive_arg_tuple(*A)
+    return array_primitive(A)

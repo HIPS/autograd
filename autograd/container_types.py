@@ -35,11 +35,7 @@ def untake(x, idx, template):
 untake.defgrad(lambda ans, x, idx, template : lambda g : take(g, idx))
 untake.defgrad_is_zero(argnums=(1, 2))
 
-class arg_tuple_grads(object):
-    def __getitem__(self, argnum):
-        return lambda ans, *args : lambda g : g[argnum]
-
 @primitive
 def arg_tuple(*args):
     return tuple(args)
-arg_tuple.grads = arg_tuple_grads()
+arg_tuple.gradmaker = lambda argnum, ans, *args : lambda g : g[argnum]
