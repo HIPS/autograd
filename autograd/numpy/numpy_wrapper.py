@@ -26,7 +26,9 @@ def numpy_wrap(fun):
     return wrapped_fun
 
 def safe_type(x):
-    if type(x) is np.ndarray:
+    if type(x) is ndarray and x.shape == ():
+        return x[()] # Restoring behavior of regular ndarray
+    elif type(x) is np.ndarray:
         return x.view(ndarray)
     elif type(x) is tuple:
         return tuple([safe_type(a) for a in x])
@@ -56,11 +58,6 @@ wrap_namespace(np.__dict__, globals())
 # ----- Slightly modified version of ndarray -----
 
 class ndarray(np.ndarray):
-    def __array_wrap__(self, obj):
-        if obj.shape == ():
-            return obj[()] # Restoring behavior of regular ndarray
-        else:
-            return np.ndarray.__array_wrap__(self, obj)
     dot = dot
     def __neg__(self): return negative(self)
     def __add__(self, other): return add(     self, other)
