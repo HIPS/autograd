@@ -180,10 +180,8 @@ anp.cumsum.defgrad(make_grad_np_cumsum)
 def make_grad_dot(argnum, ans, A, B):
     if anp.ndim(A) == 0 or anp.ndim(B) == 0:
         axes = ([], [])
-    elif B.ndim == 1:
-        axes = ([A.ndim - 1], [0])
     else:
-        axes = ([A.ndim - 1], [B.ndim -2])
+        axes = ([A.ndim - 1], [max(0, B.ndim - 2)])
     return make_grad_tensordot(argnum, ans, A, B, axes=axes)
 anp.dot.gradmaker = make_grad_dot
 
