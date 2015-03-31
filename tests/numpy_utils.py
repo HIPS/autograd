@@ -9,11 +9,13 @@ def combo_check(fun, argnums, *args, **kwargs):
     kwarg_key_vals = [[(key, val) for val in kwargs[key]] for key in kwargs]
     num_args = len(args)
     for args_and_kwargs in it.product(*(args + kwarg_key_vals)):
+        print ".",
         cur_args = args_and_kwargs[:num_args]
         cur_kwargs = dict(args_and_kwargs[num_args:])
         check_fun_and_grads(fun, cur_args, cur_kwargs, argnums=argnums)
 
 def check_fun_and_grads(fun, args, kwargs, argnums):
+    wrt_args = [args[i] for i in argnums]
     try:
         if isinstance(fun, primitive):
             check_equivalent(fun(*args, **kwargs),
@@ -28,7 +30,6 @@ def check_fun_and_grads(fun, args, kwargs, argnums):
             for i, argnum in enumerate(argnums):
                 full_args[argnum] = new_args[i]
             return to_scalar(fun(*full_args, **kwargs))
-        wrt_args = [args[i] for i in argnums]
         check_grads(scalar_fun, *wrt_args)
     except:
         print "First derivative test failed! Args were", args, kwargs
@@ -36,7 +37,9 @@ def check_fun_and_grads(fun, args, kwargs, argnums):
 
     try:
         for i in range(len(argnums)):
-            check_grads(grad(scalar_fun, argnum=i))
+            def d_scalar_fun(*args):
+                return to_scalar(grad(scalar_fun, argnum=i)(*args))
+            check_grads(d_scalar_fun, *wrt_args)
     except:
         print "Second derivative test failed! Args were", args, kwargs
         raise
