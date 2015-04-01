@@ -79,7 +79,6 @@ class primitive(object):
                 gradfun = self.gradmaker(argnum, result, *args, **kwargs)
                 rnode = result.tapes[tape]
                 rnode.parent_grad_ops.append((gradfun, parent.tapes[tape]))
-            print "Tapes output:", id(result), len(result.tapes)
         return result
 
     def __get__(self, obj, objtype):
