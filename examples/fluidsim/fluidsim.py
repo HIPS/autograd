@@ -77,8 +77,8 @@ if __name__ == '__main__':
     simulation_timesteps = 100
 
     print "Loading initial and target states..."
-    init_smoke = imread('init_smoke.png')[:,:,0].view(np.ndarray)
-    target = imread('skull.png')[::2,::2].view(np.ndarray)
+    init_smoke = imread('init_smoke.png')[:,:,0]
+    target = imread('skull.png')[::2,::2]
     rows, cols = target.shape
 
     init_dx_and_dy = np.zeros((2, rows, cols)).ravel()
