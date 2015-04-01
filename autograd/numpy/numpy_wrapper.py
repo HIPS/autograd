@@ -85,11 +85,11 @@ def concatenate_args(axis, *args):
 concatenate = lambda arr_list, axis=0 : concatenate_args(axis, *arr_list)
 
 @primitive
-def array_primitive(A):
-    return np.array(A).view(ndarray)
+def array_primitive(A, *args, **kwargs):
+    return np.array(A, *args, **kwargs).view(ndarray)
 array_primitive.defgrad(lambda ans, A : lambda g : g)
 
-def array(A):
+def array(A, *args, **kwargs):
     if not isinstance(A, (Node, np.ndarray)) and isinstance(A, Iterable):
         A = recursive_arg_tuple(*A)
-    return array_primitive(A)
+    return array_primitive(A, *args, **kwargs)
