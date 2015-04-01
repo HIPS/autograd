@@ -1,6 +1,4 @@
 from __future__ import absolute_import
-from copy import copy
-import numpy as numpy_original
 from autograd.core import (Node, FloatNode, primitive, zeros_like,
                            differentiable_ops, nondifferentiable_ops)
 from . import numpy_wrapper as anp
@@ -19,12 +17,6 @@ untake.defgrad(lambda ans, x, idx, template : lambda g : take(g, idx))
 untake.defgrad_is_zero(argnums=(1, 2))
 
 Node.__array_priority__ = 90.0
-
-
-
-
-
-
 
 class ArrayNode(Node):
     __slots__ = []
