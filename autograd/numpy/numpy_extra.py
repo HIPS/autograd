@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from copy import copy
 import numpy as numpy_original
-from autograd.core import (Node, primitive, zeros_like,
+from autograd.core import (Node, FloatNode, primitive, zeros_like,
                            differentiable_ops, nondifferentiable_ops)
 from . import numpy_wrapper as anp
 
@@ -18,6 +18,14 @@ def untake(x, idx, template):
 untake.defgrad(lambda ans, x, idx, template : lambda g : take(g, idx))
 untake.defgrad_is_zero(argnums=(1, 2))
 
+Node.__array_priority__ = 90.0
+
+
+
+
+
+
+
 class ArrayNode(Node):
     __slots__ = []
     __getitem__ = take
@@ -33,13 +41,25 @@ class ArrayNode(Node):
     def zeros_like(value):
         return anp.zeros(value.shape)
 
-Node.type_mappings[anp.ndarray] = ArrayNode
-Node.type_mappings[numpy_original.ndarray] = ArrayNode
+    def __neg__(self): return anp.negative(self)
+    def __add__(self, other): return anp.add(     self, other)
+    def __sub__(self, other): return anp.subtract(self, other)
+    def __mul__(self, other): return anp.multiply(self, other)
+    def __pow__(self, other): return anp.power   (self, other)
+    def __div__(self, other): return anp.divide(  self, other)
+    def __radd__(self, other): return anp.add(     other, self)
+    def __rsub__(self, other): return anp.subtract(other, self)
+    def __rmul__(self, other): return anp.multiply(other, self)
+    def __rpow__(self, other): return anp.power   (other, self)
+    def __rdiv__(self, other): return anp.divide(  other, self)
+    def __eq__(self, other): return anp.equal(self, other)
+    def __ne__(self, other): return anp.not_equal(self, other)
+    def __gt__(self, other): return anp.greater(self, other)
+    def __ge__(self, other): return anp.greater_equal(self, other)
+    def __lt__(self, other): return anp.less(self, other)
+    def __le__(self, other): return anp.less_equal(self, other)
 
-# Binary ops already wrapped by autograd.numpy.ndarray
-inherited_methods = ['dot'] + differentiable_ops +  nondifferentiable_ops
-for method_name in inherited_methods:
-    setattr(ArrayNode, method_name, getattr(anp.ndarray, method_name).__func__)
+Node.type_mappings[anp.ndarray] = ArrayNode
 
 # These numpy.ndarray methods are just refs to an equivalent numpy function
 nondiff_methods = ['all', 'any', 'argmax', 'argmin', 'argpartition',
@@ -51,6 +71,9 @@ diff_methods = ['clip', 'compress', 'cumprod', 'cumsum', 'diagonal',
 for method_name in nondiff_methods + diff_methods:
     setattr(ArrayNode, method_name, anp.__dict__[method_name])
 
+# Replace FloatNode operators with broadcastable versions
+for method_name in differentiable_ops + nondifferentiable_ops:
+    setattr(FloatNode, method_name, ArrayNode.__dict__[method_name])
 
 # ----- Special type for efficient grads through indexing -----
 

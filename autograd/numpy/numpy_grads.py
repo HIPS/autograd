@@ -235,7 +235,9 @@ def unbroadcast(ans, x, fun):
                     result = anp.sum(result, axis=axis, keepdims=True)
             assert result.shape == shape
             return result
-    else:
+    elif isarray(ans):
         new_fun = lambda g : anp.sum(fun(g))
+    else:
+        return fun
     new_fun.__name__ = "unbroadcast_{0}".format(fun.__name__)
     return new_fun

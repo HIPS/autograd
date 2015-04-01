@@ -40,19 +40,20 @@ def test_dot_with_floats():
     check_grads(dfun, vect1, float1)
     check_grads(dfun, float1, vect1)
 
-def test_dot_method():
-    def fun(x, y): return to_scalar(x.dot(y))
+# No longer supporting this
+# def test_dot_method():
+#     def fun(x, y): return to_scalar(x.dot(y))
 
-    mat1 = npr.randn(10, 11)
-    mat2 = npr.randn(10, 11)
-    vect1 = npr.randn(10)
-    vect2 = npr.randn(11)
-    vect3 = npr.randn(11)
+#     mat1 = npr.randn(10, 11)
+#     mat2 = npr.randn(10, 11)
+#     vect1 = npr.randn(10)
+#     vect2 = npr.randn(11)
+#     vect3 = npr.randn(11)
 
-    check_grads(fun, mat1, vect2)
-    check_grads(fun, mat1, mat2.T)
-    check_grads(fun, vect1, mat1)
-    check_grads(fun, vect2, vect3)
+#     check_grads(fun, mat1, vect2)
+#     check_grads(fun, mat1, mat2.T)
+#     check_grads(fun, vect1, mat1)
+#     check_grads(fun, vect2, vect3)
 
 def test_outer():
     def fun( x, y): return to_scalar(np.outer(x, y))
