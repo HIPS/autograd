@@ -23,12 +23,6 @@ class ArrayNode(Node):
     __getitem__ = take
     __array_priority__ = 100.0
 
-    def __init__(self, value):
-        if type(Node) is numpy_original.ndarray:
-            value = value.view(anp.ndarray)
-        self.value = value
-        self.tapes = {}
-
     # Constants w.r.t float data just pass though
     shape = property(lambda self: self.value.shape)
     ndim  = property(lambda self: self.value.ndim)
