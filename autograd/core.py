@@ -74,11 +74,12 @@ class primitive(object):
             result = new_node(result)
             for tape, argnum, parent in ops:
                 if tape not in result.tapes:
-                    rnode = tape.add_node(result)
-                else:
-                    rnode = result.tapes[tape]
+                    tape.add_node(result)
+            for tape, argnum, parent in ops:
                 gradfun = self.gradmaker(argnum, result, *args, **kwargs)
+                rnode = result.tapes[tape]
                 rnode.parent_grad_ops.append((gradfun, parent.tapes[tape]))
+            print "Tapes output:", id(result), len(result.tapes)
         return result
 
     def __get__(self, obj, objtype):
