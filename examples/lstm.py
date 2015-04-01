@@ -1,7 +1,7 @@
 import autograd.numpy as np
 import autograd.numpy.random as npr
 from autograd import grad
-from scipy.optimize import fmin_cg
+from scipy.optimize import minimize
 
 class WeightsParser(object):
     """A helper class to index into a parameter vector."""
@@ -89,11 +89,11 @@ def string_to_one_hot(string, maxchar):
 def one_hot_to_string(one_hot_matrix):
     return "".join([chr(np.argmax(c)) for c in one_hot_matrix])
 
-def build_dataset(filename, sequence_length, alphabet_size, lines = -1, pad=""):
+def build_dataset(filename, sequence_length, alphabet_size, num_lines = -1, pad=""):
     """Loads a text file, and turns each line into an encoded sequence."""
     with open(filename) as f:
         content = f.readlines()
-    content = content[:lines]
+    content = content[:num_lines]
     content = [line for line in content if len(line) > 2]   # Remove blank lines
     seqs = np.zeros((sequence_length, len(content), alphabet_size))
     for ix, line in enumerate(content):
@@ -109,17 +109,10 @@ if __name__ == '__main__':
     param_scale = 0.01
     train_iters = 100
 
-    train_inputs   = build_dataset('lstm.py', seq_length, input_size, lines = 60, pad = " ")
-    train_targets  = build_dataset('lstm.py', seq_length, input_size, lines = 60)
+    train_inputs   = build_dataset('lstm.py', seq_length, input_size, num_lines = 60, pad = " ")
+    train_targets  = build_dataset('lstm.py', seq_length, input_size, num_lines = 60)
 
     pred_fun, loss_fun, frac_err, num_weights = build_lstm(input_size, state_size, output_size)
-
-    loss_grad = grad(loss_fun)   # Specify gradient of loss function using autograd.
-
-    def training_grad(weights):
-        return loss_grad(weights, train_inputs, train_targets)
-    def training_loss(weights):
-        return loss_fun( weights, train_inputs, train_targets)
 
     def print_training_prediction(weights, train_inputs, train_targets):
         print "Training text                         Predicted text"
@@ -130,13 +123,21 @@ if __name__ == '__main__':
             print training_text.replace('\n', ' ') + "| " + predicted_text.replace('\n', ' ')
 
     def callback(weights):
-        print "\nTrain loss:", loss_fun(weights, train_inputs, train_targets)
+        print "Train loss:", loss_fun(weights, train_inputs, train_targets)
         print_training_prediction(weights, train_inputs, train_targets)
 
-    print "Training LSTM model..."
-    weights = npr.randn(num_weights) * param_scale
-    weights = fmin_cg(training_loss, weights, fprime=training_grad,
-                      maxiter=train_iters, callback=callback)
+   # Build gradient of loss function using autograd.
+    loss_and_grad = grad(loss_fun, return_function_value=True)
+
+    # Wrap function to only have one argument, for scipy.minimize.
+    def training_loss_and_grad(weights):
+        return loss_and_grad(weights, train_inputs, train_targets)
+
+    print "Training LSTM..."
+    init_weights = npr.randn(num_weights) * param_scale
+    result = minimize(training_loss_and_grad, init_weights, jac=True, method='CG',
+                      options={'maxiter':train_iters}, callback=callback)
+    trained_weights = result.x
 
     print "\nGenerating text from LSTM model..."
     num_letters = 30
@@ -144,6 +145,6 @@ if __name__ == '__main__':
         text = " "
         for i in xrange(num_letters):
             seqs = string_to_one_hot(text, output_size)[:, np.newaxis, :]
-            logprobs = pred_fun(weights, seqs)[-1].ravel()
+            logprobs = pred_fun(trained_weights, seqs)[-1].ravel()
             text += chr(npr.choice(len(logprobs), p=np.exp(logprobs)))
         print text
