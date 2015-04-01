@@ -1,5 +1,5 @@
-import numpy as np
-import numpy.random as npr
+import autograd.numpy as np
+import autograd.numpy.random as npr
 from autograd import grad
 
 class WeightsParser(object):
@@ -93,6 +93,7 @@ if __name__ == '__main__':
     # Initialize weights
     rs = npr.RandomState()
     W = rs.randn(N_weights) * param_scale
+    W = W.view(np.ndarray)
 
     print "    Epoch      |    Train err  |   Test error  "
     def print_perf(epoch, W):

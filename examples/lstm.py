@@ -1,7 +1,7 @@
-import numpy as np
-import numpy.random as npr
-from scipy.optimize import fmin_cg
+import autograd.numpy as np
+import autograd.numpy.random as npr
 from autograd import grad
+from scipy.optimize import fmin_cg
 
 class WeightsParser(object):
     """A helper class to index into a parameter vector."""

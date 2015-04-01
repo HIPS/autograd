@@ -1,11 +1,12 @@
-import numpy as np
-import numpy.random as npr
+import autograd.numpy as np
+import autograd.numpy.random as npr
 from test_util import *
 from autograd import grad
 npr.seed(1)
 
 def test_dot():
-    def fun(x, y): return to_scalar(np.dot(x, y))
+    def fun( x, y): return to_scalar(np.dot(x, y))
+    def dfun(x, y): return to_scalar(grad(fun)(x, y))
 
     mat1 = npr.randn(10, 11)
     mat2 = npr.randn(10, 11)
@@ -17,6 +18,57 @@ def test_dot():
     check_grads(fun, mat1, mat2.T)
     check_grads(fun, vect1, mat1)
     check_grads(fun, vect2, vect3)
+    check_grads(dfun, mat1, vect2)
+    check_grads(dfun, mat1, mat2.T)
+    check_grads(dfun, vect1, mat1)
+    check_grads(dfun, vect2, vect3)
+
+def test_dot_with_floats():
+    def fun( x, y): return to_scalar(np.dot(x, y))
+    def dfun(x, y): return to_scalar(grad(fun)(x, y))
+
+    mat1 = npr.randn(10, 11)
+    vect1 = npr.randn(10)
+    float1 = npr.randn()
+
+    check_grads(fun, mat1, float1)
+    check_grads(fun, float1, mat1)
+    check_grads(fun, vect1, float1)
+    check_grads(fun, float1, vect1)
+    check_grads(dfun, mat1, float1)
+    check_grads(dfun, float1, mat1)
+    check_grads(dfun, vect1, float1)
+    check_grads(dfun, float1, vect1)
+
+# No longer supporting this
+# def test_dot_method():
+#     def fun(x, y): return to_scalar(x.dot(y))
+
+#     mat1 = npr.randn(10, 11)
+#     mat2 = npr.randn(10, 11)
+#     vect1 = npr.randn(10)
+#     vect2 = npr.randn(11)
+#     vect3 = npr.randn(11)
+
+#     check_grads(fun, mat1, vect2)
+#     check_grads(fun, mat1, mat2.T)
+#     check_grads(fun, vect1, mat1)
+#     check_grads(fun, vect2, vect3)
+
+def test_outer():
+    def fun( x, y): return to_scalar(np.outer(x, y))
+    def dfun(x, y): return to_scalar(grad(fun)(x, y))
+
+    vect2 = npr.randn(11)
+    vect3 = npr.randn(11)
+
+    check_grads(fun, vect2, vect3)
+    check_grads(fun, vect2.T, vect3)
+    check_grads(fun, vect2.T, vect3.T)
+    check_grads(dfun, vect2, vect3)
+    check_grads(dfun, vect2.T, vect3)
+    check_grads(dfun, vect2.T, vect3.T)
+
 
 def test_max():
     def fun(x): return to_scalar(np.max(x))
@@ -76,6 +128,27 @@ def test_sum_2():
 
 def test_sum_3():
     def fun(x): return to_scalar(np.sum(x, axis=0, keepdims=True))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    mat = npr.randn(10, 11)
+    check_grads(fun, mat)
+    check_grads(d_fun, mat)
+
+def test_cumsum():
+    def fun(x): return to_scalar(np.cumsum(x, axis=0))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    mat = npr.randn(10, 11)
+    check_grads(fun, mat)
+    check_grads(d_fun, mat)
+
+def test_cumsum_1d():
+    def fun(x): return to_scalar(np.cumsum(x))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    mat = npr.randn(10)
+    check_grads(fun, mat)
+    check_grads(d_fun, mat)
+
+def test_cumsum_no_axis():
+    def fun(x): return to_scalar(np.cumsum(x))
     d_fun = lambda x : to_scalar(grad(fun)(x))
     mat = npr.randn(10, 11)
     check_grads(fun, mat)
@@ -194,6 +267,14 @@ def test_ravel_call():
     check_grads(fun, A)
     check_grads(d_fun, A)
 
+def test_simple_concatenate():
+    A = npr.randn(5, 6, 4)
+    B = npr.randn(4, 6, 4)
+    def fun(x): return to_scalar(np.concatenate((A, x)))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    check_grads(fun, B)
+    check_grads(d_fun, B)
+
 def test_concatenate_axis_0():
     A = npr.randn(5, 6, 4)
     B = npr.randn(5, 6, 4)
@@ -233,22 +314,6 @@ def test_diag():
     check_grads(fun, mat)
     check_grads(d_fun, mat)
 
-def test_inv():
-    def fun(x): return to_scalar(np.linalg.inv(x))
-    d_fun = lambda x : to_scalar(grad(fun)(x))
-    mat = npr.randn(8, 8)
-    check_grads(fun, mat)
-    check_grads(d_fun, mat)
-
-def test_det():
-    def fun(x): return np.linalg.det(x)
-    d_fun = lambda x : to_scalar(grad(fun)(x))
-    D = 8
-    mat = npr.randn(D, D)
-    print "det: ", np.linalg.det(mat)
-    check_grads(fun, mat)
-    check_grads(d_fun, mat)
-
 def test_transpose():
     def fun(x): return to_scalar(x.T)
     d_fun = lambda x : to_scalar(grad(fun)(x))
@@ -270,21 +335,87 @@ def test_roll_no_axis():
     check_grads(fun, mat)
     check_grads(d_fun, mat)
 
+def test_triu():
+    def fun(x): return to_scalar(np.triu(x, k = 2))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    mat = npr.randn(5, 5)
+    check_grads(fun, mat)
+    check_grads(d_fun, mat)
+
+def test_tril():
+    def fun(x): return to_scalar(np.tril(x, k = 2))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    mat = npr.randn(5, 5)
+    check_grads(fun, mat)
+    check_grads(d_fun, mat)
+
+def test_clip():
+    def fun(x): return to_scalar(np.clip(x, a_min=0.1, a_max=1.1))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    mat = npr.randn(5, 5)
+    check_grads(fun, mat)
+    check_grads(d_fun, mat)
+
+def test_prod_1():
+    def fun(x): return to_scalar(np.prod(x))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    mat = npr.randn(2, 3)**2 + 0.1  # Gradient unstable when zeros are present.
+    check_grads(fun, mat)
+    check_grads(d_fun, mat)
+
+def test_prod_2():
+    def fun(x): return to_scalar(np.prod(x, axis=0))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    mat = npr.randn(2, 3)**2 + 0.1
+    check_grads(fun, mat)
+    check_grads(d_fun, mat)
+
+def test_prod_3():
+    def fun(x): return to_scalar(np.prod(x, axis=0, keepdims=True))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    mat = npr.randn(2, 3)**2 + 0.1
+    check_grads(fun, mat)
+    check_grads(d_fun, mat)
+
+def test_prod_4():
+    def fun(x): return to_scalar(np.prod(x))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    mat = npr.randn(7)**2 + 0.1  # Gradient unstable when zeros are present.
+    print mat
+    check_grads(fun, mat)
+    check_grads(d_fun, mat)
+
 def test_1d_array():
     def fun(x):
-        return to_scalar(np.wrapped_array([x, x * 1.0, x + 2.5]))
+        return to_scalar(np.array([x, x * 1.0, x + 2.5]))
     d_fun = lambda x : grad(fun)(x)
     check_grads(fun, 3.0)
     check_grads(d_fun, 3.0)
 
 def test_2d_array():
     def fun(x):
-        return to_scalar(np.wrapped_array([[x   , x * 1.0, x + 2.5],
+        return to_scalar(np.array([[x   , x * 1.0, x + 2.5],
                                    [x**2, x      , x / 2.0]]))
 
     d_fun = lambda x : grad(fun)(x)
     check_grads(fun, 3.0)
     check_grads(d_fun, 3.0)
+
+#def test_cross_arg0():
+#    def fun(x, y): return to_scalar(np.cross(x, y))
+#    d_fun = lambda x : to_scalar(grad(fun)(x))
+#    x = npr.randn(5, 3)
+#    y = npr.randn(5, 3)
+#    check_grads(fun, x, y)
+#    check_grads(d_fun, x, y)
+
+#def test_cross_arg1():
+#    def fun(x, y): return to_scalar(np.cross(x, y))
+#    d_fun = lambda x : to_scalar(grad(fun, 1)(x))
+#    x = npr.randn(5, 3)
+#    y = npr.randn(5, 3)
+#    check_grads(fun, x, y)
+#    check_grads(d_fun, x, y)
 
 # TODO:
 # squeeze, getitem

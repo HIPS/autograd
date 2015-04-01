@@ -1,7 +1,8 @@
-import numpy as np
-import numpy.random as npr
+import autograd.numpy as np
+import autograd.numpy.random as npr
 from test_util import *
 from autograd import grad
+import warnings
 npr.seed(1)
 
 def test_grad_fanout():
@@ -12,8 +13,10 @@ def test_grad_fanout():
 
 def test_grad_const():
     fun = lambda x : 1
-    df = grad(fun)
-    assert np.allclose(df(2.0), 0.0)
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("ignore")
+        df = grad(fun)
+        assert np.allclose(df(2.0), 0.0)
 
 def test_grad_identity():
     fun = lambda x : x

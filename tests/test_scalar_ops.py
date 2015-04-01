@@ -1,5 +1,5 @@
-import numpy as np
-import numpy.random as npr
+import autograd.numpy as np
+import autograd.numpy.random as npr
 import scipy.stats as sps
 from test_util import *
 from autograd import grad
@@ -35,6 +35,36 @@ def test_exp():
 
 def test_log():
     fun = lambda x : 3.0 * np.log(x)
+    d_fun = grad(fun)
+    check_grads(fun, abs(npr.randn()))
+    check_grads(d_fun, abs(npr.randn()))
+
+def test_log2():
+    fun = lambda x : 3.0 * np.log2(x)
+    d_fun = grad(fun)
+    check_grads(fun, abs(npr.randn()))
+    check_grads(d_fun, abs(npr.randn()))
+
+def test_log10():
+    fun = lambda x : 3.0 * np.log10(x)
+    d_fun = grad(fun)
+    check_grads(fun, abs(npr.randn()))
+    check_grads(d_fun, abs(npr.randn()))
+
+def test_log1p():
+    fun = lambda x : 3.0 * np.log1p(x)
+    d_fun = grad(fun)
+    check_grads(fun, abs(npr.randn()))
+    check_grads(d_fun, abs(npr.randn()))
+
+def test_expm1():
+    fun = lambda x : 3.0 * np.expm1(x)
+    d_fun = grad(fun)
+    check_grads(fun, abs(npr.randn()))
+    check_grads(d_fun, abs(npr.randn()))
+
+def test_exp2():
+    fun = lambda x : 3.0 * np.exp2(x)
     d_fun = grad(fun)
     check_grads(fun, abs(npr.randn()))
     check_grads(d_fun, abs(npr.randn()))
@@ -75,15 +105,155 @@ def test_tanh():
     check_grads(fun, npr.randn())
     check_grads(d_fun, npr.randn())
 
+def test_arccos():
+    fun = lambda x : 3.0 * np.arccos(x)
+    d_fun = grad(fun)
+    check_grads(fun, 0.1)
+    check_grads(d_fun, 0.2)
+
+def test_arcsin():
+    fun = lambda x : 3.0 * np.arcsin(x)
+    d_fun = grad(fun)
+    check_grads(fun, 0.1)
+    check_grads(d_fun, 0.2)
+
+def test_arctan():
+    fun = lambda x : 3.0 * np.arctan(x)
+    d_fun = grad(fun)
+    check_grads(fun, 0.2)
+    check_grads(d_fun, 0.3)
+
+def test_arccosh():
+    fun = lambda x : 3.0 * np.arccosh(x)
+    d_fun = grad(fun)
+    check_grads(fun, npr.randn()**2 + 1)
+    check_grads(d_fun, npr.randn()**2 + 1)
+
+def test_arcsinh():
+    fun = lambda x : 3.0 * np.arcsinh(x)
+    d_fun = grad(fun)
+    check_grads(fun, npr.randn())
+    check_grads(d_fun, npr.randn())
+
+def test_arctanh():
+    fun = lambda x : 3.0 * np.arctanh(x)
+    d_fun = grad(fun)
+    check_grads(fun, 0.2)
+    check_grads(d_fun, 0.3)
+
 def test_sqrt():
     fun = lambda x : 3.0 * np.sqrt(x)
     d_fun = grad(fun)
     check_grads(fun, 10.0*npr.rand())
     check_grads(d_fun, 10.0*npr.rand())
 
-def norm_cdf():
-    loc = npr.randn()
-    fun = lambda x,loc,scale : 3.0 * sps.norm.cdf(x, loc=loc, scale=scale)
+def test_power_arg0():
+    y = npr.randn()**2 + 1.0
+    fun = lambda x : np.power(x, y)
     d_fun = grad(fun)
-    check_grads(fun, npr.randn(), loc=npr.randn(), scale=npr.rand())
-    check_grads(d_fun, npr.randn(), loc=npr.randn(), scale=npr.rand())
+    check_grads(fun, npr.rand()**2)
+    check_grads(d_fun, npr.rand()**2)
+
+def test_power_arg1():
+    x = npr.randn()**2
+    fun = lambda y : np.power(x, y)
+    d_fun = grad(fun)
+    check_grads(fun, npr.rand()**2)
+    check_grads(d_fun, npr.rand()**2)
+
+def test_mod_arg0():
+    fun = lambda x, y : np.mod(x, y)
+    d_fun = grad(fun)
+    check_grads(fun, npr.rand(), npr.rand())
+    check_grads(d_fun, npr.rand(), npr.rand())
+
+def test_mod_arg1():
+    fun = lambda x, y : np.mod(x, y)
+    d_fun = grad(fun, 1)
+    check_grads(fun, npr.rand(), npr.rand())
+    check_grads(d_fun, npr.rand(), npr.rand())
+
+def test_divide_arg0():
+    fun = lambda x, y : np.divide(x, y)
+    d_fun = grad(fun)
+    check_grads(fun, npr.rand(), npr.rand())
+    check_grads(d_fun, npr.rand(), npr.rand())
+
+def test_divide_arg1():
+    fun = lambda x, y : np.divide(x, y)
+    d_fun = grad(fun, 1)
+    check_grads(fun, npr.rand(), npr.rand())
+    check_grads(d_fun, npr.rand(), npr.rand())
+
+def test_multiply_arg0():
+    fun = lambda x, y : np.multiply(x, y)
+    d_fun = grad(fun)
+    check_grads(fun, npr.rand(), npr.rand())
+    check_grads(d_fun, npr.rand(), npr.rand())
+
+def test_multiply_arg1():
+    fun = lambda x, y : np.multiply(x, y)
+    d_fun = grad(fun, 1)
+    check_grads(fun, npr.rand(), npr.rand())
+    check_grads(d_fun, npr.rand(), npr.rand())
+
+def test_true_divide_arg0():
+    fun = lambda x, y : np.true_divide(x, y)
+    d_fun = grad(fun)
+    check_grads(fun, npr.rand(), npr.rand())
+    check_grads(d_fun, npr.rand(), npr.rand())
+
+def test_true_divide_arg1():
+    fun = lambda x, y : np.true_divide(x, y)
+    d_fun = grad(fun, 1)
+    check_grads(fun, npr.rand(), npr.rand())
+    check_grads(d_fun, npr.rand(), npr.rand())
+
+def test_reciprocal():
+    fun = lambda x : np.reciprocal(x)
+    d_fun = grad(fun)
+    check_grads(fun, npr.rand())
+    check_grads(d_fun, npr.rand())
+
+def test_negative():
+    fun = lambda x : np.negative(x)
+    d_fun = grad(fun)
+    check_grads(fun, npr.rand())
+    check_grads(d_fun, npr.rand())
+
+def test_rad2deg():
+    fun = lambda x : 3.0 * np.rad2deg(x)
+    d_fun = grad(fun)
+    check_grads(fun, 10.0*npr.rand())
+    check_grads(d_fun, 10.0*npr.rand())
+
+def test_deg2rad():
+    fun = lambda x : 3.0 * np.deg2rad(x)
+    d_fun = grad(fun)
+    check_grads(fun, 10.0*npr.rand())
+    check_grads(d_fun, 10.0*npr.rand())
+
+def test_radians():
+    fun = lambda x : 3.0 * np.radians(x)
+    d_fun = grad(fun)
+    check_grads(fun, 10.0*npr.rand())
+    check_grads(d_fun, 10.0*npr.rand())
+
+def test_degrees():
+    fun = lambda x : 3.0 * np.degrees(x)
+    d_fun = grad(fun)
+    check_grads(fun, 10.0*npr.rand())
+    check_grads(d_fun, 10.0*npr.rand())
+
+def test_sinc():
+    fun = lambda x : 3.0 * np.sinc(x)
+    d_fun = grad(fun)
+    check_grads(fun, 10.0*npr.rand())
+    check_grads(d_fun, 10.0*npr.rand())
+
+#def test_norm_cdf():
+#    x = npr.randn()
+#    fun = lambda x : 3.0 * sps.norm.cdf(x, loc=npr.randn(), scale=npr.rand()**2)
+#    d_fun = grad(fun, x)
+#    check_grads(fun, x)
+#    check_grads(d_fun, x)
