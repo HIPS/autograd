@@ -40,6 +40,8 @@ class primitive(object):
         self.fun = fun
         self.grads = {}
         self.zero_grads = set()
+        self.__name__ = fun.__name__
+        self.__doc__ = fun.__doc__
 
     def gradmaker(self, argnum, *args, **kwargs):
         try:
