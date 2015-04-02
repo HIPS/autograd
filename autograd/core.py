@@ -2,13 +2,14 @@ from __future__ import absolute_import
 import warnings
 import operator as op
 import types
-from numpy import log, float64, ndarray
+import numpy as np
 
 def grad(fun, argnum=0, return_function_value=False):
     def gradfun(*args, **kwargs):
         tape = CalculationTape()
         start_node = args[argnum]
         if not isinstance(start_node, Node):
+            start_node = safe_type(start_node)
             start_node = new_node(start_node)
         tape.add_node(start_node)
         args = args[:argnum] + (start_node,) + args[argnum+1:]
@@ -135,13 +136,20 @@ class CalculationTape(object):
 
 class FloatNode(Node):
     __slots__ = []
-
     @staticmethod
     def zeros_like(value):
         return 0.0
 
-Node.type_mappings[float] = FloatNode
-Node.type_mappings[float64] = FloatNode
+float_types = [float, np.float64, np.float32, np.float16]
+for ft in float_types:
+    Node.type_mappings[ft] = FloatNode
+
+def safe_type(value):
+    if isinstance(value, int):
+        warnings.warn("Casting int to float to handle differentiation.")
+        return float(value)
+    else:
+        return value
 
 differentiable_ops = ['__add__', '__sub__', '__mul__', '__pow__', '__div__',
                       '__neg__', '__radd__', '__rsub__', '__rmul__', '__rpow__', '__rdiv__']
@@ -176,5 +184,5 @@ FloatNode.__dict__['__rsub__'].grads = swap_args(FloatNode.__dict__['__sub__'].g
 FloatNode.__dict__['__rdiv__'].grads = swap_args(FloatNode.__dict__['__div__'].grads)
 FloatNode.__dict__['__rpow__'].grads = swap_args(FloatNode.__dict__['__pow__'].grads)
 
-log = primitive(log)
+log = primitive(np.log)
 log.defgrad(lambda ans, x : lambda g : g / x)
