@@ -1,6 +1,6 @@
 import autograd.numpy as np
 import autograd.numpy.random as npr
-from autograd import grad
+from autograd import grad, quick_grad_check
 from scipy.optimize import minimize
 
 class WeightsParser(object):
@@ -133,8 +133,11 @@ if __name__ == '__main__':
     def training_loss_and_grad(weights):
         return loss_and_grad(weights, train_inputs, train_targets)
 
-    print "Training LSTM..."
     init_weights = npr.randn(num_weights) * param_scale
+    # Check the gradients numerically, just to be safe
+    quick_grad_check(loss_fun, init_weights, (train_inputs, train_targets))
+
+    print "Training LSTM..."
     result = minimize(training_loss_and_grad, init_weights, jac=True, method='CG',
                       options={'maxiter':train_iters}, callback=callback)
     trained_weights = result.x

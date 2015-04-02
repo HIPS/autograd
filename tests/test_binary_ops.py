@@ -1,6 +1,6 @@
 import autograd.numpy as np
 import autograd.numpy.random as npr
-from test_util import *
+from autograd.util import *
 from autograd import grad
 rs = npr.RandomState(0)
 

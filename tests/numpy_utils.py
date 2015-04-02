@@ -1,7 +1,7 @@
 import itertools as it
 import autograd.numpy.random as npr
 from autograd import grad, primitive
-from test_util import check_equivalent, check_grads, to_scalar
+from autograd.util import check_equivalent, check_grads, to_scalar
 
 def combo_check(fun, argnums, *args, **kwargs):
     # Tests all combinations of args given.

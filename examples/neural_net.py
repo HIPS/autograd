@@ -1,6 +1,6 @@
 import autograd.numpy as np
 import autograd.numpy.random as npr
-from autograd import grad
+from autograd import grad, quick_grad_check
 
 class WeightsParser(object):
     """A helper class to index into a parameter vector."""
@@ -93,7 +93,9 @@ if __name__ == '__main__':
     # Initialize weights
     rs = npr.RandomState()
     W = rs.randn(N_weights) * param_scale
-    W = W.view(np.ndarray)
+
+    # Check the gradients numerically, just to be safe
+    quick_grad_check(loss_fun, W, (train_images, train_labels))
 
     print "    Epoch      |    Train err  |   Test error  "
     def print_perf(epoch, W):
@@ -104,6 +106,7 @@ if __name__ == '__main__':
     # Train with sgd
     batch_idxs = make_batches(N_data, batch_size)
     cur_dir = np.zeros(N_weights)
+
     for epoch in range(num_epochs):
         print_perf(epoch, W)
         for idxs in batch_idxs:
