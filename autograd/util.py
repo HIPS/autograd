@@ -80,5 +80,5 @@ def quick_grad_check(fun, arg0, extra_args=(), kwargs={}, verbose=True,
         "Check failed! nd={0}, ad={1}".format(numeric_grad, analytic_grad)
 
     if verbose:
-        print "Gradients OK (numeric grad: {0}, analytic grad: {1})".format(
+        print "Gradient projection OK (numeric grad: {0}, analytic grad: {1})".format(
             numeric_grad, analytic_grad)
