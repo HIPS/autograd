@@ -1,4 +1,4 @@
-from autograd.core import log, getval
+from autograd.core import getval
 
 import operator as op
 from . import numpy_wrapper as anp
@@ -59,11 +59,14 @@ anp.subtract.defgrad(lambda ans, x, y : unbroadcast(ans, y, op.neg), argnum=1)
 anp.divide.defgrad(lambda ans, x, y : unbroadcast(ans, x, lambda g : g / y))
 anp.divide.defgrad(lambda ans, x, y : unbroadcast(ans, y, lambda g : - g * x / y**2), argnum=1)
 anp.power.defgrad(lambda ans, x, y : unbroadcast(ans, x, lambda g : g * y * x ** (y - 1)))
-anp.power.defgrad(lambda ans, x, y : unbroadcast(ans, y, lambda g : g * log(x) * x ** y), argnum=1)
+anp.power.defgrad(lambda ans, x, y : unbroadcast(ans, y, lambda g : g * anp.log(x) * x ** y), argnum=1)
 anp.maximum.defgrad(lambda ans, x, y : unbroadcast(ans, x, lambda g : g * (x == ans)))
 anp.maximum.defgrad(lambda ans, x, y : unbroadcast(ans, y, lambda g : g * (y == ans)), argnum=1)
 anp.minimum.defgrad(lambda ans, x, y : unbroadcast(ans, x, lambda g : g * (x == ans)))
 anp.minimum.defgrad(lambda ans, x, y : unbroadcast(ans, y, lambda g : g * (y == ans)), argnum=1)
+anp.logaddexp.defgrad(lambda ans, x, y : unbroadcast(ans, x, lambda g : g * anp.exp(x-ans)))
+anp.logaddexp.defgrad(lambda ans, x, y : unbroadcast(ans, y, lambda g : g * anp.exp(y-ans)), argnum=1)
+
 
 # ----- Simple grads -----
 

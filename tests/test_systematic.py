@@ -46,8 +46,7 @@ def test_tanh():    unary_ufunc_check(np.tanh)
 # Binary ufunc tests
 
 def test_add(): binary_ufunc_check(np.add)
-def test_minimum(): binary_ufunc_check(np.minimum)
-def test_maximum(): binary_ufunc_check(np.maximum)
+def test_logaddexp(): binary_ufunc_check(np.logaddexp)
 
 def test_op_mul(): binary_ufunc_check(op.mul)
 def test_op_add(): binary_ufunc_check(op.add)
@@ -85,3 +84,12 @@ def test_tensordot_4(): combo_check(np.tensordot, [0, 1],
                                     [R(2, 2), R(4, 2, 2)],
                                     [R(2, 2), R(2, 2, 4)],
                                     axes=[1, 2])
+
+# Need custom tests because gradient is undefined when arguments are identical.
+def test_maximum(): combo_check(np.maximum, [0, 1],
+                               [R(1), R(1,4), R(3, 4)],
+                               [R(1), R(1,4), R(3, 4)])
+
+def test_minimum(): combo_check(np.minimum, [0, 1],
+                               [R(1), R(1,4), R(3, 4)],
+                               [R(1), R(1,4), R(3, 4)])
