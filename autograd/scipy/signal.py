@@ -25,14 +25,12 @@ convolve.defgrad(make_grad_convolve_0, argnum=0)
 
 def make_grad_convolve_1(ans, in0, in1, mode='full'):
     if mode == 'full':
-        return lambda g: flipud(convolve(flipud(g), in0, mode='valid'))
+        return lambda g: convolve(g, flipud(in0), mode='valid')
     elif mode == 'same':
-        def grad_fun(g):
-            idxs = get_same_slice(in0.shape[0], in1.shape[0])
-            return  flipud(convolve(in0, flipud(g), mode='full'))[idxs]
-        return grad_fun
+        idxs = get_same_slice(in0.shape[0], in1.shape[0])
+        return lambda g : convolve(g, flipud(in0), mode='full')[idxs]
     elif mode == 'valid':
-        return lambda g: flipud(convolve(in0, flipud(g), mode='valid'))
+        return lambda g: convolve(flipud(in0), g, mode='valid')
     else:
         raise Exception("Unrecognized mode {0}".format(mode))
 
@@ -55,13 +53,11 @@ convolve2d.defgrad(make_grad_convolve2d_0, argnum=0)
 
 def make_grad_convolve2d_1(ans, in0, in1, mode='full'):
     if mode == 'full':
-        return lambda g: flip2d(convolve2d(flip2d(g), in0, mode='valid'))
+        return lambda g: convolve2d(g, flip2d(in0), mode='valid')
     elif mode == 'same':
-        def grad_fun(g):
-            idxs_0 = get_same_slice(in0.shape[0], in1.shape[0])
-            idxs_1 = get_same_slice(in0.shape[1], in1.shape[1])
-            return  flip2d(convolve(in0, flip2d(g), mode='full'))[idxs_0, idxs_1]
-        return grad_fun
+        idxs_0 = get_same_slice(in0.shape[0], in1.shape[0])
+        idxs_1 = get_same_slice(in0.shape[1], in1.shape[1])
+        return lambda g : convolve2d(g, flip2d(in0), mode='full')[idxs_0, idxs_1]
     elif mode == 'valid':
         return lambda g: flip2d(convolve2d(in0, flip2d(g), mode='valid'))
     else:
