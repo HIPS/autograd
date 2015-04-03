@@ -1,4 +1,4 @@
-from autograd.core import log, swap_args, getval, nondifferentiable_ops
+from autograd.core import log, getval
 
 import operator as op
 from . import numpy_wrapper as anp
@@ -60,6 +60,10 @@ anp.divide.defgrad(lambda ans, x, y : unbroadcast(ans, x, lambda g : g / y))
 anp.divide.defgrad(lambda ans, x, y : unbroadcast(ans, y, lambda g : - g * x / y**2), argnum=1)
 anp.power.defgrad(lambda ans, x, y : unbroadcast(ans, x, lambda g : g * y * x ** (y - 1)))
 anp.power.defgrad(lambda ans, x, y : unbroadcast(ans, y, lambda g : g * log(x) * x ** y), argnum=1)
+anp.maximum.defgrad(lambda ans, x, y : unbroadcast(ans, x, lambda g : g * (x == ans)))
+anp.maximum.defgrad(lambda ans, x, y : unbroadcast(ans, y, lambda g : g * (y == ans)), argnum=1)
+anp.minimum.defgrad(lambda ans, x, y : unbroadcast(ans, x, lambda g : g * (x == ans)))
+anp.minimum.defgrad(lambda ans, x, y : unbroadcast(ans, y, lambda g : g * (y == ans)), argnum=1)
 
 # ----- Simple grads -----
 
@@ -109,9 +113,9 @@ anp.squeeze.defgrad(    lambda ans, x, axis : lambda g : anp.repeat(g, x.shape[a
 anp.repeat.defgrad(     lambda ans, x, shape, axis  : lambda g : anp.sum(g, axis, keepdims=True))
 anp.split.defgrad(      lambda ans, x, idxs, axis=0 : lambda g : anp.concatenate(g, axis=axis))
 anp.diag.defgrad(       lambda ans, x               : lambda g : anp.diag(g))
-anp.flipud.defgrad(     lambda ans, x,               : lambda g : anp.flipud(g))
-anp.fliplr.defgrad(     lambda ans, x,               : lambda g : anp.fliplr(g))
-anp.rot90.defgrad(      lambda ans, x, k=1           : lambda g : anp.rot90(g, -k))
+anp.flipud.defgrad(     lambda ans, x,              : lambda g : anp.flipud(g))
+anp.fliplr.defgrad(     lambda ans, x,              : lambda g : anp.fliplr(g))
+anp.rot90.defgrad(      lambda ans, x, k=1          : lambda g : anp.rot90(g, -k))
 anp.trace.defgrad(      lambda ans, x               : lambda g : g * anp.eye(x.shape[0]))
 anp.full.defgrad(     lambda ans, shape, fill_value : lambda g : anp.sum(g), argnum=1)
 anp.triu.defgrad(       lambda ans, x, k=0          : lambda g : anp.triu(g, k=k))

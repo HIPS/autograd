@@ -46,6 +46,8 @@ def test_tanh():    unary_ufunc_check(np.tanh)
 # Binary ufunc tests
 
 def test_add(): binary_ufunc_check(np.add)
+def test_minimum(): binary_ufunc_check(np.minimum)
+def test_maximum(): binary_ufunc_check(np.maximum)
 
 def test_op_mul(): binary_ufunc_check(op.mul)
 def test_op_add(): binary_ufunc_check(op.add)
