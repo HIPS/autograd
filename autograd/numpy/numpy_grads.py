@@ -219,6 +219,8 @@ def make_grad_tensordot(argnum, ans, A, B, axes=2):
         forward_permutation = ([i for i in range(anp.ndim(X)) if i not in X_axes_summed]
                              + [i for i, _ in sorted_axes_pairs])
         reverse_permutation = list(anp.argsort(forward_permutation))
+        if result.ndim == 0:
+            result = result[()]
         return anp.transpose(result, axes=reverse_permutation)
     return gradfun
 anp.tensordot.gradmaker = make_grad_tensordot

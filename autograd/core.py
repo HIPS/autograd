@@ -114,8 +114,11 @@ class Node(object):
 
     @staticmethod
     def iadd_any(A, B):
-        A += B
-        return A
+        if A is 0:
+            return B
+        else:
+            A += B
+            return A
 
 getval = lambda x : x.value if isinstance(x, Node) else x
 
