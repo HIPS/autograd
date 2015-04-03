@@ -47,6 +47,7 @@ def test_tanh():    unary_ufunc_check(np.tanh)
 
 def test_add(): binary_ufunc_check(np.add)
 def test_logaddexp(): binary_ufunc_check(np.logaddexp)
+def test_logaddexp2(): binary_ufunc_check(np.logaddexp2)
 
 def test_op_mul(): binary_ufunc_check(op.mul)
 def test_op_add(): binary_ufunc_check(op.add)

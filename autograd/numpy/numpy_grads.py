@@ -66,6 +66,8 @@ anp.minimum.defgrad(lambda ans, x, y : unbroadcast(ans, x, lambda g : g * (x == 
 anp.minimum.defgrad(lambda ans, x, y : unbroadcast(ans, y, lambda g : g * (y == ans)), argnum=1)
 anp.logaddexp.defgrad(lambda ans, x, y : unbroadcast(ans, x, lambda g : g * anp.exp(x-ans)))
 anp.logaddexp.defgrad(lambda ans, x, y : unbroadcast(ans, y, lambda g : g * anp.exp(y-ans)), argnum=1)
+anp.logaddexp2.defgrad(lambda ans, x, y : unbroadcast(ans, x, lambda g : g * 2**(x-ans)))
+anp.logaddexp2.defgrad(lambda ans, x, y : unbroadcast(ans, y, lambda g : g * 2**(y-ans)), argnum=1)
 
 
 # ----- Simple grads -----
