@@ -51,6 +51,28 @@ def test_enclosing_scope_ref_2():
         return x * grad(inner_fun)(2.0)
     check_grads(fun, 1.0)
 
+def test_mutating_outgrad():
+    def fun(a):
+        b = a + 1.0
+        c = b + 1.5
+        d = a + b
+        e = d + c
+        return to_scalar(e)
+
+    A = npr.randn(5)
+    check_grads(fun, A)
+
+def test_mutating_outgrad_from_indexing():
+    def fun(a):
+        b = a + 1.0
+        c = b[0] + 1.5
+        d = a + b
+        e = d + c
+        return to_scalar(e)
+
+    A = npr.randn(5)
+    check_grads(fun, A)
+
 # TODO:
 # Grad three or more, wrt different args
 # Diamond patterns
