@@ -7,8 +7,8 @@ npr.seed(1)
 
 R = npr.randn
 def test_convolve(): combo_check(autograd.scipy.signal.convolve, [0,1],
-                                    [R(4), R(5)],#[R(4, 5), R(3, 5)],
-                                    [R(3), R(4)],#[R(4, 5), R(3, 5)],
+                                    [R(4), R(5), R(6)],
+                                    [R(2), R(3), R(4)],
                                     mode=['full', 'valid', 'same'])
 
 test_convolve()

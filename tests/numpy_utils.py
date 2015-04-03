@@ -9,10 +9,10 @@ def combo_check(fun, argnums, *args, **kwargs):
     kwarg_key_vals = [[(key, val) for val in kwargs[key]] for key in kwargs]
     num_args = len(args)
     for args_and_kwargs in it.product(*(args + kwarg_key_vals)):
-        print ".",
         cur_args = args_and_kwargs[:num_args]
         cur_kwargs = dict(args_and_kwargs[num_args:])
         check_fun_and_grads(fun, cur_args, cur_kwargs, argnums=argnums)
+        print ".",
 
 def check_fun_and_grads(fun, args, kwargs, argnums):
     wrt_args = [args[i] for i in argnums]

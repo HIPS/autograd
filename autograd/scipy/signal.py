@@ -2,26 +2,35 @@ from __future__ import absolute_import
 import scipy.signal
 
 from autograd.core import getval, primitive
+from autograd.numpy import flipud
 
 convolve = primitive(scipy.signal.convolve)
 
-
-def make_grad_convolve_0(ans, in1, in2, mode='full'):
+def make_grad_convolve_0(ans, in0, in1, mode='full'):
     if mode == 'full':
-        return lambda g: convolve(g, in2[::-1], mode='valid')
+        return lambda g: convolve(g, flipud(in1), mode='valid')
     elif mode == 'same':
-        return lambda g: convolve(g[::-1], in2, mode='same')[::-1]
+        return lambda g: flipud(convolve(flipud(g), in1, mode='same'))
     elif mode == 'valid':
-        return lambda g: convolve(g, in2[::-1], mode='full')
-
-def make_grad_convolve_1(ans, in1, in2, mode='full'):
-    if mode == 'full':
-        return lambda g: convolve(g[::-1], in1, mode='valid')[::-1]
-    elif mode == 'same':
-        return lambda g: convolve(in1, g[::-1], mode='same')[::-1]
-    elif mode == 'valid':
-        return lambda g: convolve(g[::-1], in1, mode='full')[::-1]
+        return lambda g: convolve(g, flipud(in1), mode='full')
+    else:
+        raise Exception("Unrecognized mode {0}".format(mode))
 
 convolve.defgrad(make_grad_convolve_0, argnum=0)
-convolve.defgrad(make_grad_convolve_1, argnum=1)
 
+def make_grad_convolve_1(ans, in0, in1, mode='full'):
+    if mode == 'full':
+        return lambda g: flipud(convolve(flipud(g), in0, mode='valid'))
+    elif mode == 'same':
+        def grad_fun(g):
+            L_in0, L_in1 = in0.shape[0], in1.shape[0]
+            left_pad = L_in0 - (L_in1 + 1) / 2
+            idxs = slice(left_pad, left_pad + L_in1)
+            return flipud(convolve(in0, flipud(g), mode='full'))[idxs]
+        return grad_fun
+    elif mode == 'valid':
+        return lambda g: flipud(convolve(in0, flipud(g), mode='valid'))
+    else:
+        raise Exception("Unrecognized mode {0}".format(mode))
+
+convolve.defgrad(make_grad_convolve_1, argnum=1)
