@@ -117,8 +117,7 @@ class Node(object):
         if A is 0:
             return B
         else:
-            A += B
-            return A
+            return A + B
 
 getval = lambda x : x.value if isinstance(x, Node) else x
 

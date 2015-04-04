@@ -2,6 +2,7 @@ from __future__ import absolute_import
 from autograd.core import (Node, FloatNode, primitive, zeros_like,
                            differentiable_ops, nondifferentiable_ops)
 from . import numpy_wrapper as anp
+from copy import copy
 
 @primitive
 def take(A, idx):
@@ -79,7 +80,7 @@ class SparseArray(object):
 class SparseArrayNode(Node):
     @staticmethod
     def iadd_any(other, self):
-        array = zeros_like(self.template) if other is 0 else other
+        array = zeros_like(self.template) if other is 0 else copy(other)
         array[self.idx] += self.val
         return array
 Node.type_mappings[SparseArray] = SparseArrayNode
