@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 import scipy.signal
 
-from autograd.core import getval, primitive
+from autograd.core import primitive
 from autograd.numpy import flipud
 
 convolve = primitive(scipy.signal.convolve)
