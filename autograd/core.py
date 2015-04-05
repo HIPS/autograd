@@ -118,7 +118,7 @@ class Node(object):
 
     @staticmethod
     def sum_outgrads(outgrads):
-        return sum(outgrads)
+        return sum(outgrads[1:], outgrads[0])
 
 getval = lambda x : x.value if isinstance(x, Node) else x
 
