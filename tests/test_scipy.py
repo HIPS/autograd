@@ -5,22 +5,35 @@ import autograd.scipy.signal
 import autograd.scipy.stats
 
 from autograd import grad
-from numpy_utils import combo_check, unary_ufunc_check, check_grads
+from numpy_utils import combo_check, check_grads
 npr.seed(1)
 
-
-def test_norm_pdf2():
+def test_norm_pdf():
     x = npr.randn()
-    fun = lambda l : autograd.scipy.stats.norm.pdf(x=npr.randn(), loc=l, scale=npr.rand()**2)
-    d_fun = grad(fun, x)
-    check_grads(fun, x)
-    check_grads(d_fun, x)
-test_norm_pdf2()
+    l = npr.randn()
+    scale=npr.rand()**2 + 1.1
+    fun = autograd.scipy.stats.norm.pdf
+    d_fun = grad(fun)
+    check_grads(fun, x, l, scale)
+    check_grads(d_fun, x, l, scale)
 
-def test_norm_pdf(): unary_ufunc_check(autograd.scipy.stats.norm.pdf, loc=[1.1], scale=[0.4])
-#def test_norm_pdf(): unary_ufunc_check(lambda l: autograd.scipy.stats.norm.pdf(x = 0.1, loc=l, scale = 1.1))
-def test_norm_cdf(): unary_ufunc_check(autograd.scipy.stats.norm.cdf, loc=[1.1], scale=[0.4])
+def test_norm_cdf():
+    x = npr.randn()
+    l = npr.randn()
+    scale=npr.rand()**2 + 1.1
+    fun = autograd.scipy.stats.norm.cdf
+    d_fun = grad(fun)
+    check_grads(fun, x, l, scale)
+    check_grads(d_fun, x, l, scale)
 
+def test_norm_logpdf():
+    x = npr.randn()
+    l = npr.randn()
+    scale=npr.rand()**2 + 1.1
+    fun = autograd.scipy.stats.norm.logpdf
+    d_fun = grad(fun)
+    check_grads(fun, x, l, scale)
+    check_grads(d_fun, x, l, scale)
 
 R = npr.randn
 def test_logsumexp1(): combo_check(autograd.scipy.misc.logsumexp, [0],
