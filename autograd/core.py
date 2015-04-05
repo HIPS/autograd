@@ -21,14 +21,15 @@ def grad(fun, argnum=0, return_function_value=False):
         elif not isinstance(end_node.value, float):
             raise TypeError("Can only take gradient of scalar-valued functions")
         else:
-            end_node.tapes[tape].outgrad = 1.0
+            end_node.tapes[tape].outgrads = [1.0]
             op_list = tape.op_list
             while op_list:
                 node = op_list.pop()
-                if node.outgrad is not 0:
+                if node.outgrads:
+                    cur_outgrad = node.sum_outgrads()
                     for gradfun, parent in node.parent_grad_ops:
-                        parent.outgrad = iadd_any(parent.outgrad, gradfun(node.outgrad))
-            gradval = node.outgrad
+                        parent.outgrads.append(gradfun(cur_outgrad))
+            gradval = cur_outgrad
         if return_function_value:
             return getval(end_node), gradval
         else:
@@ -98,12 +99,15 @@ def zeros_like(value):
     else:
         return Node.type_mappings[type(value)].zeros_like(value)
 
-@primitive
-def iadd_any(A, B):
-    return Node.type_mappings[type(B)].iadd_any(A, B)
-I = lambda x : x
-iadd_any.defgrad(lambda ans, x, y : I)
-iadd_any.defgrad(lambda ans, x, y : I, argnum=1)
+class ReverseNode(object):
+    __slots__ = ['parent_grad_ops', 'outgrads', 'node_type']
+    def __init__(self, node_type):
+        self.parent_grad_ops = []
+        self.outgrads = []
+        self.node_type = node_type
+
+    def sum_outgrads(self):
+        return self.node_type.sum_outgrads(self.outgrads)
 
 class Node(object):
     __slots__ = ['value', 'tapes']
@@ -113,19 +117,10 @@ class Node(object):
         self.tapes = {}
 
     @staticmethod
-    def iadd_any(A, B):
-        if A is 0:
-            return B
-        else:
-            return A + B
+    def sum_outgrads(outgrads):
+        return sum(outgrads)
 
 getval = lambda x : x.value if isinstance(x, Node) else x
-
-class ReverseNode(object):
-    __slots__ = ['parent_grad_ops', 'outgrad']
-    def __init__(self):
-        self.parent_grad_ops = []
-        self.outgrad = 0
 
 class CalculationTape(object):
     def __init__(self):
@@ -133,7 +128,7 @@ class CalculationTape(object):
         self.complete = False
 
     def add_node(self, node):
-        new_rnode = ReverseNode()
+        new_rnode = ReverseNode(type(node))
         self.op_list.append(new_rnode)
         node.tapes[self] = new_rnode
         return new_rnode

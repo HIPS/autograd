@@ -13,12 +13,18 @@ class TupleNode(Node):
         return tuple([zeros_like(item) for item in getval(value)])
 
     @staticmethod
-    def iadd_any(A, B):
-        if A is 0:
-            return B
+    def sum_outgrads(outgrads):
+        if len(outgrads) is 0:
+            return outgrads[0]
         else:
-            return tuple([a + b for a, b in zip(A, B)])
+            return primitive_sum_tuples(*outgrads)
+
 Node.type_mappings[tuple] = TupleNode
+
+@primitive
+def primitive_sum_tuples(*tuples):
+    return tuple([sum(elements[1:], elements[0]) for elements in zip(*tuples)])
+primitive_sum_tuples.gradmaker = lambda *args : lambda g : g
 
 @primitive
 def take(A, idx):

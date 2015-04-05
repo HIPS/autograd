@@ -1,6 +1,6 @@
 from __future__ import absolute_import
-from autograd.core import (Node, FloatNode, primitive, zeros_like,
-                           differentiable_ops, nondifferentiable_ops)
+from autograd.core import (Node, FloatNode, primitive, zeros_like, ReverseNode,
+                           differentiable_ops, nondifferentiable_ops, getval)
 from . import numpy_wrapper as anp
 from copy import copy
 
@@ -34,6 +34,13 @@ class ArrayNode(Node):
     def zeros_like(value):
         return anp.zeros(value.shape)
 
+    @staticmethod
+    def sum_outgrads(outgrads):
+        if len(outgrads) is 1 and not isinstance(getval(outgrads[0]), SparseArray):
+            return outgrads[0]
+        else:
+            return primitive_sum_arrays(*outgrads)
+
     def __neg__(self): return anp.negative(self)
     def __add__(self, other): return anp.add(     self, other)
     def __sub__(self, other): return anp.subtract(self, other)
@@ -54,6 +61,17 @@ class ArrayNode(Node):
 
 Node.type_mappings[anp.ndarray] = ArrayNode
 
+@primitive
+def primitive_sum_arrays(*arrays):
+    new_array = anp.zeros(arrays[0].shape)
+    for array in arrays:
+        if isinstance(array, SparseArray):
+            new_array[array.idx] += array.val
+        else:
+            new_array += array
+    return new_array
+primitive_sum_arrays.gradmaker = lambda *args : lambda g : g
+
 # These numpy.ndarray methods are just refs to an equivalent numpy function
 nondiff_methods = ['all', 'any', 'argmax', 'argmin', 'argpartition',
                    'argsort', 'nonzero', 'searchsorted', 'round']
@@ -73,14 +91,7 @@ for method_name in differentiable_ops + nondifferentiable_ops:
 class SparseArray(object):
     __array_priority__ = 150.0
     def __init__(self, template, idx, val):
-        self.template = template
+        self.shape = template.shape
         self.idx = idx
         self.val = val
-
-class SparseArrayNode(Node):
-    @staticmethod
-    def iadd_any(other, self):
-        array = zeros_like(self.template) if other is 0 else copy(other)
-        array[self.idx] += self.val
-        return array
-Node.type_mappings[SparseArray] = SparseArrayNode
+Node.type_mappings[SparseArray] = ArrayNode
