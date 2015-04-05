@@ -107,6 +107,9 @@ class ReverseNode(object):
         self.node_type = node_type
 
     def sum_outgrads(self):
+        for g in self.outgrads:
+            assert Node.type_mappings[type(getval(g))] is self.node_type, \
+                "Gradient type {0} doesn't match node type {1}".format(type(getval(g)), self.node_type, )
         return self.node_type.sum_outgrads(self.outgrads)
 
 class Node(object):
