@@ -28,11 +28,7 @@ def grad(fun, argnum=0, return_function_value=False):
                 if node.outgrads:
                     cur_outgrad = node.sum_outgrads()
                     for gradfun, parent in node.parent_grad_ops:
-                        new_outgrad = gradfun(cur_outgrad)
-                        assert Node.type_mappings[type(getval(new_outgrad))] is parent.node_type, \
-                            "Result of {0} has type {1} which doesn't match arg type {2}".format(
-                                gradfun.__name__, type(getval(new_outgrad)), parent.node_type)
-                        parent.outgrads.append(new_outgrad)
+                        parent.outgrads.append(gradfun(cur_outgrad))
             gradval = cur_outgrad
         if return_function_value:
             return getval(end_node), gradval
@@ -83,7 +79,6 @@ class primitive(object):
                     tape.add_node(result)
             for tape, argnum, parent in ops:
                 gradfun = self.gradmaker(argnum, result, *args, **kwargs)
-                gradfun.__name__ = "grad_{1}_wrt_{0}".format(argnum, self.fun.__name__)
                 rnode = result.tapes[tape]
                 rnode.parent_grad_ops.append((gradfun, parent.tapes[tape]))
         return result
