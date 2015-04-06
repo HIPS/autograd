@@ -250,10 +250,3 @@ def test_sinc():
     d_fun = grad(fun)
     check_grads(fun, 10.0*npr.rand())
     check_grads(d_fun, 10.0*npr.rand())
-
-#def test_norm_cdf():
-#    x = npr.randn()
-#    fun = lambda x : 3.0 * sps.norm.cdf(x, loc=npr.randn(), scale=npr.rand()**2)
-#    d_fun = grad(fun, x)
-#    check_grads(fun, x)
-#    check_grads(d_fun, x)
