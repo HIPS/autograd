@@ -14,10 +14,7 @@ class TupleNode(Node):
 
     @staticmethod
     def sum_outgrads(outgrads):
-        if len(outgrads) is 0:
-            return outgrads[0]
-        else:
-            return primitive_sum_tuples(*outgrads)
+        return primitive_sum_tuples(*outgrads)
 
 Node.type_mappings[tuple] = TupleNode
 
@@ -40,8 +37,3 @@ def untake(x, idx, template):
     return tuple(result)
 untake.defgrad(lambda ans, x, idx, template : lambda g : take(g, idx))
 untake.defgrad_is_zero(argnums=(1, 2))
-
-@primitive
-def arg_tuple(*args):
-    return tuple(args)
-arg_tuple.gradmaker = lambda argnum, ans, *args : lambda g : g[argnum]

@@ -110,10 +110,10 @@ anp.radians.defgrad(lambda ans, x : lambda g : g * anp.pi / 180.0)
 anp.square.defgrad(lambda ans, x : lambda g : g * 2 * x)
 anp.sqrt.defgrad(  lambda ans, x : lambda g : g * 0.5 * x**-0.5)
 anp.sinc.defgrad(  lambda ans, x : lambda g : g * (anp.cos(anp.pi*x)*anp.pi*x - anp.sin(anp.pi*x))/(anp.pi*x**2))
-anp.reshape.defgrad( lambda ans, x, shape, order=None : lambda g : anp.reshape(g, x.shape, order=order))
+anp.reshape.defgrad(lambda ans, x, shape, order=None : lambda g : anp.reshape(g, anp.shape(x), order=order))
 anp.roll.defgrad(    lambda ans, x, shift, axis=None  : lambda g : anp.roll(g, -shift, axis=axis))
-anp.ravel.defgrad(   lambda ans, x, order=None    : lambda g : anp.reshape(g, x.shape, order=order))
-anp.expand_dims.defgrad(lambda ans, x, axis : lambda g : anp.squeeze(g, axis))
+anp.ravel.defgrad(lambda ans, x, order=None    : lambda g : anp.reshape(g, anp.shape(x), order=order))
+anp.expand_dims.defgrad(lambda ans, x, axis : lambda g : anp.squeeze(g, axis)[()])
 anp.squeeze.defgrad(    lambda ans, x, axis : lambda g : anp.repeat(g, x.shape[axis], axis))
 anp.repeat.defgrad(     lambda ans, x, shape, axis  : lambda g : anp.sum(g, axis, keepdims=True))
 anp.split.defgrad(      lambda ans, x, idxs, axis=0 : lambda g : anp.concatenate(g, axis=axis))
@@ -143,7 +143,10 @@ def repeat_to_match_shape(x, axis, keepdims):
         return I, 1
     shape = x.shape
     if axis is None:
-        return lambda g : anp.full(shape, g), anp.prod(shape)
+        if keepdims:
+            return lambda g : anp.full(shape, anp.sum(g)), anp.prod(shape)
+        else:
+            return lambda g : anp.full(shape, g), anp.prod(shape)
     else:
         if keepdims:
             return lambda g : anp.repeat(g, shape[axis], axis), shape[axis]
