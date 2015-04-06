@@ -2,15 +2,7 @@ from __future__ import absolute_import
 import types
 import numpy as np
 from collections import Iterable
-from autograd.container_types import arg_tuple
 from autograd.core import primitive, Node
-
-def recursive_arg_tuple(*args):
-    args = list(args)
-    for i, arg in enumerate(args):
-        if isinstance(arg, Iterable):
-            args[i] = recursive_arg_tuple(*arg)
-    return arg_tuple(*args)
 
 def wrap_namespace(old, new):
     unchanged_types =  set([types.FloatType, types.IntType, types.NoneType, types.TypeType])
@@ -30,12 +22,22 @@ def concatenate_args(axis, *args):
     return np.concatenate(args, axis).view(ndarray)
 concatenate = lambda arr_list, axis=0 : concatenate_args(axis, *arr_list)
 
-@primitive
-def array_primitive(A, *args, **kwargs):
-    return np.array(A, *args, **kwargs).view(ndarray)
-array_primitive.defgrad(lambda ans, A : lambda g : g)
-
 def array(A, *args, **kwargs):
-    if not isinstance(A, (Node, np.ndarray)) and isinstance(A, Iterable):
-        A = recursive_arg_tuple(*A)
-    return array_primitive(A, *args, **kwargs)
+    if isinstance(A, np.ndarray):
+        return np.array(A, *args, **kwargs)
+    else:
+        raw_array = np.array(A, *args, **kwargs)
+        if raw_array.dtype is np.dtype('O'):
+            return array_from_args(raw_array.shape, *raw_array.ravel())
+        else:
+            return raw_array
+
+@primitive
+def array_from_args(front_shape, *args):
+    new_array = np.array(args)
+    return new_array.reshape(front_shape + new_array.shape[1:])
+
+def array_from_args_gradmaker(argnum, ans, front_shape, *args):
+    new_shape = (np.prod(front_shape),) + ans.shape[len(front_shape):]
+    return lambda g : reshape(g, new_shape)[argnum - 1]
+array_from_args.gradmaker = array_from_args_gradmaker
