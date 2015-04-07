@@ -421,6 +421,50 @@ def test_2d_array():
     check_grads(fun, 3.0)
     check_grads(d_fun, 3.0)
 
+def test_1d_array_fanout():
+    def fun(x):
+        A = to_scalar(np.array([x, x * 1.0, x + 2.5]))
+        return to_scalar(A + A)
+    d_fun = lambda x : grad(fun)(x)
+    check_grads(fun, 3.0)
+    check_grads(d_fun, 3.0)
+
+def test_2d_array_fanout():
+    def fun(x):
+        A = np.array([[x   , x * 1.0, x + 2.5],
+                      [x**2, x      , x / 2.0]])
+        return to_scalar(A + A)
+
+    d_fun = lambda x : grad(fun)(x)
+    check_grads(fun, 3.0)
+    check_grads(d_fun, 3.0)
+
+def test_array_from_scalar():
+    def fun(x):
+        return to_scalar(np.array(x))
+
+    d_fun = lambda x : grad(fun)(x)
+    check_grads(fun, 3.0)
+    check_grads(d_fun, 3.0)
+
+def test_array_from_arrays():
+    def fun(x):
+        return to_scalar(np.array([x, x]))
+
+    A = npr.randn(3, 2)
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    check_grads(fun, A)
+    check_grads(d_fun, A)
+
+def test_array_from_arrays_2():
+    def fun(x):
+        return to_scalar(np.array([[2*x, x + 1],
+                                   [x  ,     x]]))
+    A = npr.randn(3, 2)
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    check_grads(fun, A)
+    check_grads(d_fun, A)
+
 #def test_cross_arg0():
 #    def fun(x, y): return to_scalar(np.cross(x, y))
 #    d_fun = lambda x : to_scalar(grad(fun)(x))
