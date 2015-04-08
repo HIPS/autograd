@@ -52,8 +52,9 @@ def check_equivalent(A, B, rtol=1e-4, atol=1e-6):
 def check_grads(fun, *args):
     if not args:
         raise Exception("No args given")
-    A = nd(fun, *args)
     B = tuple([grad(fun, i)(*args) for i in range(len(args))])
+    A = nd(fun, *args)
+
     check_equivalent(A, B)
 
 def to_scalar(x):
