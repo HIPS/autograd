@@ -1,66 +1,116 @@
 from __future__ import absolute_import
 import scipy.signal
-
 from autograd.core import primitive
-from autograd.numpy import flipud
+import autograd.numpy as np
+import numpy as npo # original numpy
+import itertools as it
 
-convolve = primitive(scipy.signal.convolve)
-convolve2d = primitive(scipy.signal.convolve2d)
+prod = lambda x : npo.prod(x, dtype=int)
 
-def get_same_slice(L_in0, L_in1):
-    left_pad = L_in0 - (L_in1 + 1) / 2
-    return slice(left_pad, left_pad + L_in1)
+def either_order(convolve_fun):
+    # scipy.signal.convolve requires A to be bigger than B for mode 'valid'. Not
+    # quite sure why.
+    def new_convolve(A, B, mode):
+        if A.shape and A.shape[0] >= B.shape[0]:
+            return convolve_fun(A, B, mode)
+        else:
+            return convolve_fun(B, A, mode)
+    return new_convolve
 
-def make_grad_convolve_0(ans, in0, in1, mode='full'):
-    if mode == 'full':
-        return lambda g: convolve(g, flipud(in1), mode='valid')
-    elif mode == 'same':
-        return lambda g: flipud(convolve(flipud(g), in1, mode='same'))
-    elif mode == 'valid':
-        return lambda g: convolve(g, flipud(in1), mode='full')
+@primitive
+def convolve(A, B, axes=None, dot_axes=[(),()], mode='full'):
+    """Generalization of scipy's convolve, which convolves over arbitrary axes,
+    `axes`, and also allows a tensor dot over other axes, `dot_axes`."""
+    # TODO: write (or borrow) a faster implementation. This is really just a placeholder.
+    A_axes, B_axes, out_axes = parse_axes(A.ndim, B.ndim, axes, dot_axes)
+    if len(A_axes['conv']) == 2:
+        convolve_fun = either_order(scipy.signal.convolve2d)
     else:
-        raise Exception("Unrecognized mode {0}".format(mode))
+        convolve_fun = either_order(scipy.signal.convolve)
 
-convolve.defgrad(make_grad_convolve_0, argnum=0)
+    A_ignore_shape = [A.shape[i] for i in A_axes['ignore']]
+    B_ignore_shape = [B.shape[i] for i in B_axes['ignore']]
+    dot_shape      = [A.shape[i] for i in A_axes['dot']]
+    conv_shape = [compute_conv_size(A.shape[i], B.shape[j], mode)
+                  for i, j in zip(A_axes['conv'], B_axes['conv'])]
+    out = npo.zeros([prod(A_ignore_shape), prod(B_ignore_shape)] + conv_shape)
+    A = collect_axes(A, A_axes)
+    B = collect_axes(B, B_axes)
+    for i_A, i_B, i_dot in it.product(xrange(prod(A_ignore_shape)), 
+                                      xrange(prod(B_ignore_shape)),
+                                      xrange(prod(dot_shape))):
+        out[i_A, i_B] += convolve_fun(A[i_A, i_dot], B[i_B, i_dot], mode)
 
-def make_grad_convolve_1(ans, in0, in1, mode='full'):
+    out = npo.reshape(out, A_ignore_shape + B_ignore_shape + conv_shape)
+    return out
+
+def compute_conv_size(A_size, B_size, mode):
     if mode == 'full':
-        return lambda g: convolve(g, flipud(in0), mode='valid')
+        return A_size + B_size - 1
     elif mode == 'same':
-        idxs = get_same_slice(in0.shape[0], in1.shape[0])
-        return lambda g : convolve(g, flipud(in0), mode='full')[idxs]
+        return A_size
     elif mode == 'valid':
-        return lambda g: convolve(flipud(in0), g, mode='valid')
+        return abs(A_size - B_size) + 1
     else:
-        raise Exception("Unrecognized mode {0}".format(mode))
+        raise Exception("Mode {0} not recognized".format(mode))
 
-convolve.defgrad(make_grad_convolve_1, argnum=1)
+def parse_axes(A_ndim, B_ndim, axes, dot_axes):
+    if axes is None:
+        axes = [range(A_ndim), range(A_ndim)]
+    A_axes = {'conv' : list(axes[0]),
+              'dot'  : list(dot_axes[0]),
+              'ignore' : [i for i in range(A_ndim)
+                          if i not in axes[0] and i not in dot_axes[0]]}
+    B_axes = {'conv' : list(axes[1]),
+              'dot'  : list(dot_axes[1]),
+              'ignore' : [i for i in range(B_ndim)
+                          if i not in axes[1] and i not in dot_axes[1]]}
+    assert len(A_axes['dot'])  == len(B_axes['dot'])
+    assert len(A_axes['conv']) == len(B_axes['conv'])
+    i1 = len(A_axes['ignore'])
+    i2 = i1 + len(B_axes['ignore'])
+    i3 = i2 + len(A_axes['conv'])
+    out_axes = {'ignore_A' : range(i1),
+                'ignore_B' : range(i1, i2),
+                'conv'     : range(i2, i3)}
+    return A_axes, B_axes, out_axes
 
-def flip2d(x):
-    return x[::-1, ::-1]
+def collect_axes(X, axes):
+    result = npo.transpose(X, axes['ignore'] + axes['dot'] + axes['conv'])
+    axes_shape = lambda name : [X.shape[s] for s in axes[name]]
+    return npo.reshape(result, [prod(axes_shape('ignore')), prod(axes_shape('dot'))] + axes_shape('conv'))
 
-def make_grad_convolve2d_0(ans, in0, in1, mode='full'):
-    if mode == 'full':
-        return lambda g: convolve2d(g, flip2d(in1), mode='valid')
-    elif mode == 'same':
-        return lambda g: flip2d(convolve2d(flip2d(g), in1, mode='same'))
-    elif mode == 'valid':
-        return lambda g: convolve2d(g, flip2d(in1), mode='full')
+def flipped_idxs(ndim, axes):
+    new_idxs = [slice(None)] * ndim
+    for ax in axes:
+        new_idxs[ax] = slice(None, None, -1)
+    return new_idxs
+
+def make_grad_convolve(argnum, ans, A, B, axes=None, dot_axes=[(),()], mode='full'):
+    assert mode in ['valid', 'full'], "Grad for mode {0} not yet implemented".format(mode)
+    A_axes, B_axes, out_axes = parse_axes(A.ndim, B.ndim, axes, dot_axes)
+    if argnum == 0:
+        X, Y = A, B
+        X_axes, Y_axes = A_axes, B_axes
+        out_axes_ignore_Y = out_axes['ignore_B']
+    elif argnum == 1:
+        X, Y = B, A
+        X_axes, Y_axes =  B_axes, A_axes
+        out_axes_ignore_Y = out_axes['ignore_A']
     else:
-        raise Exception("Unrecognized mode {0}".format(mode))
+        raise NotImplementedError("Can't take grad of convolve w.r.t. arg {0}".format(argnum))
 
-convolve2d.defgrad(make_grad_convolve2d_0, argnum=0)
-
-def make_grad_convolve2d_1(ans, in0, in1, mode='full'):
-    if mode == 'full':
-        return lambda g: convolve2d(g, flip2d(in0), mode='valid')
-    elif mode == 'same':
-        idxs_0 = get_same_slice(in0.shape[0], in1.shape[0])
-        idxs_1 = get_same_slice(in0.shape[1], in1.shape[1])
-        return lambda g : convolve2d(g, flip2d(in0), mode='full')[idxs_0, idxs_1]
-    elif mode == 'valid':
-        return lambda g: flip2d(convolve2d(in0, flip2d(g), mode='valid'))
+    if mode == 'full' or X.shape[X_axes['conv'][0]] < Y.shape[Y_axes['conv'][0]]:
+        new_mode = 'valid'
     else:
-        raise Exception("Unrecognized mode {0}".format(mode))
+        new_mode = 'full'
 
-convolve2d.defgrad(make_grad_convolve2d_1, argnum=1)
+    def grad_fun(g):
+        result = convolve(g, Y[flipped_idxs(Y.ndim, Y_axes['conv'])],
+                          axes     = [out_axes['conv'],  Y_axes['conv']],
+                          dot_axes = [out_axes_ignore_Y, Y_axes['ignore']],
+                          mode     = new_mode)
+        new_order = npo.argsort(X_axes['ignore'] + X_axes['dot'] + X_axes['conv'])
+        return np.transpose(result, new_order)
+    return grad_fun
+convolve.gradmaker = make_grad_convolve
