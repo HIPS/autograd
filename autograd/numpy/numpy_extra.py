@@ -1,8 +1,11 @@
 from __future__ import absolute_import
-from autograd.core import (Node, FloatNode, primitive, zeros_like, ReverseNode,
+from autograd.core import (Node, FloatNode, primitive,
                            differentiable_ops, nondifferentiable_ops, getval)
 from . import numpy_wrapper as anp
-from copy import copy
+
+np_float_types = [anp.float64, anp.float32, anp.float16]
+for ft in np_float_types:
+    Node.type_mappings[ft] = FloatNode
 
 @primitive
 def take(A, idx):

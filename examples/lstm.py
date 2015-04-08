@@ -1,6 +1,7 @@
 import autograd.numpy as np
 import autograd.numpy.random as npr
-from autograd import grad, quick_grad_check
+from autograd import grad
+from autograd.util import quick_grad_check
 from scipy.optimize import minimize
 
 class WeightsParser(object):
