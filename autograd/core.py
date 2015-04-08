@@ -2,7 +2,7 @@ from __future__ import absolute_import
 import warnings
 import operator as op
 import types
-import numpy as np
+import math
 
 def grad(fun, argnum=0, return_function_value=False):
     def gradfun(*args, **kwargs):
@@ -138,9 +138,7 @@ class FloatNode(Node):
     def zeros_like(value):
         return 0.0
 
-float_types = [float, np.float64, np.float32, np.float16]
-for ft in float_types:
-    Node.type_mappings[ft] = FloatNode
+Node.type_mappings[float] = FloatNode
 
 def safe_type(value):
     if isinstance(value, int):
@@ -160,6 +158,9 @@ FloatNode.__dict__['__neg__'].defgrad(lambda ans, x : op.neg)
 for comp_op in nondifferentiable_ops:
     FloatNode.__dict__[comp_op].defgrad_is_zero(argnums=(0, 1))
 
+# These functions will get clobbered when autograd.numpy is imported.
+# They're here to allow the use of autograd without numpy.
+I = lambda g: g
 FloatNode.__dict__['__add__'].defgrad(lambda ans, x, y : I)
 FloatNode.__dict__['__add__'].defgrad(lambda ans, x, y : I, argnum=1)
 FloatNode.__dict__['__mul__'].defgrad(lambda ans, x, y : lambda g : y * g)
@@ -182,5 +183,5 @@ FloatNode.__dict__['__rsub__'].grads = swap_args(FloatNode.__dict__['__sub__'].g
 FloatNode.__dict__['__rdiv__'].grads = swap_args(FloatNode.__dict__['__div__'].grads)
 FloatNode.__dict__['__rpow__'].grads = swap_args(FloatNode.__dict__['__pow__'].grads)
 
-log = primitive(np.log)
+log = primitive(math.log)
 log.defgrad(lambda ans, x : lambda g : g / x)

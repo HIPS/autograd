@@ -5,4 +5,4 @@ examples/data
 .DS_Store
 build/
 examples/fluidsim/surprise.gif
-
+data/

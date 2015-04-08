@@ -1,8 +1,7 @@
 from __future__ import absolute_import
 import types
 import numpy as np
-from collections import Iterable
-from autograd.core import primitive, Node
+from autograd.core import primitive
 
 def wrap_namespace(old, new):
     unchanged_types =  set([types.FloatType, types.IntType, types.NoneType, types.TypeType])
