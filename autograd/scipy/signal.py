@@ -11,7 +11,7 @@ def either_order(convolve_fun):
     # scipy.signal.convolve requires A to be bigger than B for mode 'valid'. Not
     # quite sure why.
     def new_convolve(A, B, mode):
-        if A.shape[0] >= B.shape[0]:
+        if A.shape and A.shape[0] >= B.shape[0]:
             return convolve_fun(A, B, mode)
         else:
             return convolve_fun(B, A, mode)
@@ -41,7 +41,7 @@ def convolve(A, B, axes=None, dot_axes=[(),()], mode='full'):
                                       xrange(prod(dot_shape))):
         out[i_A, i_B] += convolve_fun(A[i_A, i_dot], B[i_B, i_dot], mode)
 
-    out = npo.reshape(out, A_ignore_shape + conv_shape + B_ignore_shape)
+    out = npo.reshape(out, A_ignore_shape + B_ignore_shape + conv_shape)
     return out
 
 def compute_conv_size(A_size, B_size, mode):
