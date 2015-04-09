@@ -4,39 +4,51 @@ from autograd.core import primitive
 import autograd.numpy as np
 import numpy as npo # original numpy
 import itertools as it
+from numpy.lib.stride_tricks import as_strided
 
 def prod(x):
     return npo.prod(x, dtype=int)
 
 @primitive
 def convolve(A, B, axes=None, dot_axes=[(),()], mode='full'):
-    """Generalization of scipy's convolve, which convolves over arbitrary axes,
-    `axes`, and also allows a tensor dot over other axes, `dot_axes`."""
-    # TODO: write (or borrow) a faster implementation. This is really just a placeholder.
-    axes, shapes = parse_axes(A.shape, B.shape, axes, dot_axes, mode)
-    if len(axes['A']['conv']) == 2:
-        sp_convolve = scipy.signal.convolve2d
-    else:
-        sp_convolve = scipy.signal.convolve
-    so = shapes['out']
-    out = npo.zeros([prod(so['ignore_A']), prod(so['ignore_B'])] + so['conv'] )
-    A = collect_axes(A, axes['A'], shapes['A'])
-    B = collect_axes(B, axes['B'], shapes['B'])
-    iterator = it.product(*[xrange(prod(s)) for s in
-        [shapes['A']['ignore'], shapes['B']['ignore'], shapes['A']['dot']]])
-    if any([a_size > b_size for a_size, b_size in zip(A.shape[2:], B.shape[2:])]):
-        for i_A, i_B, i_dot in iterator:
-            out[i_A, i_B] += sp_convolve(A[i_A, i_dot], B[i_B, i_dot], mode)
-    else:
-        for i_A, i_B, i_dot in iterator:
-            out[i_A, i_B] += sp_convolve(B[i_B, i_dot], A[i_A, i_dot], mode)
+    assert mode in ['valid', 'full'], "Mode {0} not yet implemented".format(mode)
+    if axes is None:
+        axes = [range(A.ndim), range(A.ndim)]
+    wrong_order = any([B.shape[ax_B] < A.shape[ax_A] for ax_A, ax_B in zip(*axes)])
+    if wrong_order:
+        if mode=='valid' and not all([B.shape[ax_B] <= A.shape[ax_A] for ax_A, ax_B in zip(*axes)]):
+                raise Exception("One array must be larger than the other along all convolved dimensions")
+        elif mode != 'full' or B.size <= A.size: # Tie breaker
+            i1 =      B.ndim - len(dot_axes[1]) - len(axes[1]) # B ignore
+            i2 = i1 + A.ndim - len(dot_axes[0]) - len(axes[0]) # A ignore
+            i3 = i2 + len(axes[0])
+            ignore_B = range(i1)
+            ignore_A = range(i1, i2)
+            conv     = range(i2, i3)
+            return convolve(B, A, axes=axes[::-1], dot_axes=dot_axes[::-1], mode=mode).transpose(ignore_A + ignore_B + conv)
 
-    return out.reshape(so['ignore_A'] + so['ignore_B'] + so['conv'])
+    if mode == 'full':
+        B = pad_to_full(B, A, axes[::-1])
+    B_view_shape = list(B.shape)
+    B_view_strides = list(B.strides)
+    flipped_idxs = [slice(None)] * A.ndim
+    for ax_A, ax_B in zip(*axes):
+        B_view_shape.append(abs(B.shape[ax_B] - A.shape[ax_A]) + 1)
+        B_view_strides.append(B.strides[ax_B])
+        B_view_shape[ax_B] = A.shape[ax_A]
+        flipped_idxs[ax_A] = slice(None, None, -1)
 
-def collect_axes(X, axes, shapes):
-    new_order = axes['ignore'] + axes['dot'] + axes['conv']
-    new_shape = [prod(shapes['ignore']), prod(shapes['dot'])] + shapes['conv']
-    return X.transpose(new_order).reshape(new_shape)
+    B_view = as_strided(B, B_view_shape, B_view_strides)
+    A_view = A[flipped_idxs]
+    all_axes = [list(axes[i]) + list(dot_axes[i]) for i in [0, 1]]
+    print A_view.shape, B_view.shape, axes
+    return npo.tensordot(A_view, B_view, axes=all_axes)
+
+def pad_to_full(A, B, axes):
+    A_pad = [(0, 0)] * A.ndim
+    for ax_A, ax_B in zip(*axes):
+        A_pad[ax_A] = (B.shape[ax_B] - 1,) * 2
+    return npo.pad(A, A_pad, mode='constant')
 
 def parse_axes(A_shape, B_shape, conv_axes, dot_axes, mode):
     A_ndim, B_ndim = len(A_shape), len(B_shape)
