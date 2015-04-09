@@ -24,7 +24,7 @@ def convolve(A, B, axes=None, dot_axes=[(),()], mode='full'):
     B = collect_axes(B, axes['B'], shapes['B'])
     iterator = it.product(*[xrange(prod(s)) for s in
         [shapes['A']['ignore'], shapes['B']['ignore'], shapes['A']['dot']]])
-    if axes['A']['conv'] and A.shape[2] >= B.shape[2]:
+    if any([a_size > b_size for a_size, b_size in zip(A.shape[2:], B.shape[2:])]):
         for i_A, i_B, i_dot in iterator:
             out[i_A, i_B] += sp_convolve(A[i_A, i_dot], B[i_B, i_dot], mode)
     else:
@@ -97,10 +97,13 @@ def make_grad_convolve(argnum, ans, A, B, axes=None, dot_axes=[(),()], mode='ful
     else:
         raise NotImplementedError("Can't take grad of convolve w.r.t. arg {0}".format(argnum))
 
-    if mode == 'full' or shapes[_X_]['conv'][0] < shapes[_Y_]['conv'][0]:
+    if mode == 'full':
         new_mode = 'valid'
     else:
-        new_mode = 'full'
+        if any([x_size > y_size for x_size, y_size in zip(shapes[_X_]['conv'], shapes[_Y_]['conv'])]):
+            new_mode = 'full'
+        else:
+            new_mode = 'valid'
 
     def grad_fun(g):
         result = convolve(g, Y[flipped_idxs(Y.ndim, axes[_Y_]['conv'])],

@@ -88,8 +88,8 @@ def test_convolve(): combo_check(autograd.scipy.signal.convolve, [0,1],
                                  mode=['full', 'valid'])
 
 def test_convolve_2d(): combo_check(autograd.scipy.signal.convolve, [0, 1],
-                                   [R(4, 3), R(5, 4), R(6, 7)],
-                                   [R(2, 2), R(3, 2), R(4, 3)],
+                                    [R(4, 3), R(5, 4), R(6, 7)],
+                                    [R(2, 2), R(3, 2), R(4, 2), R(4, 1)],
                                    mode=['full', 'valid'])
 
 def test_convolve_ignore(): combo_check(autograd.scipy.signal.convolve, [0, 1],
