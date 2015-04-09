@@ -27,7 +27,6 @@ def convolve(A, B, axes=None, dot_axes=[(),()], mode='full'):
             conv     = range(i2, i3)
             return convolve(B, A, axes=axes[::-1], dot_axes=dot_axes[::-1], mode=mode).transpose(ignore_A + ignore_B + conv)
 
-    print "B shape", B.shape, B.size
     if mode == 'full':
         B = pad_to_full(B, A, axes[::-1])
     B_view_shape = list(B.shape)
@@ -42,10 +41,9 @@ def convolve(A, B, axes=None, dot_axes=[(),()], mode='full'):
     B_view = as_strided(B, B_view_shape, B_view_strides)
     A_view = A[flipped_idxs]
     all_axes = [list(axes[i]) + list(dot_axes[i]) for i in [0, 1]]
-    print A_view.shape, B_view.shape, B_view.size, all_axes
-    return einsum_tensordot(A_view, B_view, axes=all_axes)
+    return einsum_tensordot(A_view, B_view, all_axes)
 
-def einsum_tensordot(A, B, axes):
+def einsum_tensordot(A, B, axes, reverse=False):
     # Does tensor dot product using einsum, which shouldn't require a copy.
     A_axnums = range(A.ndim)
     B_axnums = range(A.ndim, A.ndim + B.ndim)
@@ -54,7 +52,7 @@ def einsum_tensordot(A, B, axes):
         A_axnums[i_A] = sum_axnum + i_sum
         B_axnums[i_B] = sum_axnum + i_sum
     return npo.einsum(A, A_axnums, B, B_axnums)
-    
+
 def pad_to_full(A, B, axes):
     A_pad = [(0, 0)] * A.ndim
     for ax_A, ax_B in zip(*axes):
