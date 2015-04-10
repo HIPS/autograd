@@ -12,6 +12,8 @@ from autograd import grad
 from numpy_utils import combo_check, check_grads, unary_ufunc_check, to_scalar
 npr.seed(1)
 
+npo.seterr(all='raise')
+
 ### Stats ###
 
 def test_norm_pdf():
@@ -112,14 +114,14 @@ def test_polygamma():
     check_grads(fun, x)
     check_grads(d_fun, x)
 
-def test_psi():     unary_ufunc_check(autograd.scipy.special.psi,     lims=[0.3, 2.0])
-def test_digamma(): unary_ufunc_check(autograd.scipy.special.digamma, lims=[0.3, 2.0])
-def test_gamma():   unary_ufunc_check(autograd.scipy.special.gamma,   lims=[0.3, 2.0])
+def test_psi():     unary_ufunc_check(autograd.scipy.special.psi,     lims=[0.3, 2.0], complex=False)
+def test_digamma(): unary_ufunc_check(autograd.scipy.special.digamma, lims=[0.3, 2.0], complex=False)
+def test_gamma():   unary_ufunc_check(autograd.scipy.special.gamma,   lims=[0.3, 2.0], complex=False)
 
-def test_j0(): unary_ufunc_check(autograd.scipy.special.j0, lims=[0.2, 20.0])
-def test_j1(): unary_ufunc_check(autograd.scipy.special.j1, lims=[0.2, 20.0])
-def test_y0(): unary_ufunc_check(autograd.scipy.special.y0, lims=[0.2, 20.0])
-def test_y1(): unary_ufunc_check(autograd.scipy.special.y1, lims=[0.2, 20.0])
+def test_j0(): unary_ufunc_check(autograd.scipy.special.j0, lims=[0.2, 20.0], complex=False)
+def test_j1(): unary_ufunc_check(autograd.scipy.special.j1, lims=[0.2, 20.0], complex=False)
+def test_y0(): unary_ufunc_check(autograd.scipy.special.y0, lims=[0.2, 20.0], complex=False)
+def test_y1(): unary_ufunc_check(autograd.scipy.special.y1, lims=[0.2, 20.0], complex=False)
 
 def test_jn():
     x = npr.randn()**2 + 0.3

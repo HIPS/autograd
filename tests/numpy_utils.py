@@ -55,15 +55,19 @@ def stat_check(fun):
     combo_check(fun, (0,), [B, C, D], axis=[None, 0], keepdims=[True, False])
     combo_check(fun, (0,), [C, D], axis=[None, 0, 1], keepdims=[True, False])
 
-def unary_ufunc_check(fun, lims=[-2, 2], **kwargs):
+def unary_ufunc_check(fun, lims=[-2, 2], complex=True):
     scalar_int = transform(lims, 1)
     scalar = transform(lims, 0.4)
     vector = transform(lims, npr.rand(2))
     mat    = transform(lims, npr.rand(3, 2))
     mat2   = transform(lims, npr.rand(1, 2))
-    combo_check(fun, (0,), [scalar_int, scalar, vector, mat, mat2], **kwargs)
+    combo_check(fun, (0,), [scalar_int, scalar, vector, mat, mat2])
+    if complex:
+        comp = transform(lims, 0.4) + 1j * transform(lims, 0.3)
+        matc = transform(lims, npr.rand(3, 2)) + 1j * npr.rand(3, 2)
+        combo_check(fun, (0,), [comp, matc])
 
-def binary_ufunc_check(fun, lims_A=[-2, 2], lims_B=[-2, 2]):
+def binary_ufunc_check(fun, lims_A=[-2, 2], lims_B=[-2, 2], complex=True):
     T_A = lambda x : transform(lims_A, x)
     T_B = lambda x : transform(lims_B, x)
     scalar_int = 1
@@ -71,8 +75,19 @@ def binary_ufunc_check(fun, lims_A=[-2, 2], lims_B=[-2, 2]):
     vector = npr.rand(2)
     mat    = npr.rand(3, 2)
     mat2   = npr.rand(1, 2)
-    combo_check(fun, (0, 1), [T_A(scalar), T_A(scalar_int), T_A(vector), T_A(mat), T_A(mat2)],
-                             [T_B(scalar), T_B(scalar_int), T_B(vector), T_B(mat), T_B(mat2)])
+    #combo_check(fun, (0, 1), [T_A(scalar), T_A(scalar_int), T_A(vector), T_A(mat), T_A(mat2)],
+    #                         [T_B(scalar), T_B(scalar_int), T_B(vector), T_B(mat), T_B(mat2)])
+    #if complex:
+    #    comp = 0.6 + 0.3j
+    #    matc = npr.rand(3, 2) + 1j * npr.rand(3, 2)
+    #    combo_check(fun, (0, 1), [T_A(scalar), T_A(comp), T_A(vector), T_A(matc),  T_A(mat2)],
+    #                             [T_B(scalar), T_B(comp), T_B(vector), T_B(matc), T_B(mat2)])
+    if complex:
+        comp = 0.6 + 0.3j
+        matc = npr.rand(3, 2) + 1j * npr.rand(3, 2)
+        combo_check(fun, (0, 1), [T_A(scalar), T_A(matc)],
+                                 [T_B(scalar), T_B(matc)])
+
 
 def transform(lims, x):
     return x * (lims[1] - lims[0]) + lims[0]

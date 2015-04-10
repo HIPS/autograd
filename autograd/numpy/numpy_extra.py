@@ -3,7 +3,7 @@ from autograd.core import (Node, FloatNode, primitive,
                            differentiable_ops, nondifferentiable_ops, getval)
 from . import numpy_wrapper as anp
 
-np_float_types = [anp.float64, anp.float32, anp.float16]
+np_float_types = [anp.float64, anp.float32, anp.float16, anp.complex, anp.complex64, anp.complex128]
 for ft in np_float_types:
     Node.type_mappings[ft] = FloatNode
 
@@ -35,6 +35,8 @@ class ArrayNode(Node):
 
     @staticmethod
     def zeros_like(value):
+        #if anp.iscomplexobj(value):
+        #    return anp.zeros(value.shape).astype(complex)
         return anp.zeros(value.shape)
 
     @staticmethod
@@ -70,6 +72,9 @@ def primitive_sum_arrays(*arrays):
     for array in arrays:
         if isinstance(array, SparseArray):
             new_array[array.idx] += array.val
+        elif anp.iscomplexobj(array):
+            new_array = new_array.astype(complex)
+            new_array += array
         else:
             new_array += array
     return new_array
