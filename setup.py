@@ -1,9 +1,16 @@
 from distutils.core import setup
-
 setup(name='autograd',
-      version='1.0',
-      description='Autograd: Computes derivatives of complicated numpy code.',
+      version='1.0.1',
+      description='Efficiently computes derivatives of numpy code.',
       author='Dougal Maclaurin and David Duvenaud',
       author_email = "maclaurin@physics.harvard.edu, dduvenaud@seas.harvard.edu",
       packages=['autograd', 'autograd.numpy', 'autograd.scipy', 'autograd.scipy.stats'],
-      long_description="Stateless reverse-mode autodiff implementation that also offers higher-order derivatives.")
+      keywords=['Automatic differentiation', 'backpropagation', 'gradients',
+                'machine learning', 'optimization', 'neural networks',
+                'Python', 'Numpy', 'Scipy'],
+      url='https://github.com/HIPS/autograd',
+      download_url='https://github.com/HIPS/autograd/tarball/1.0.1',
+      license='MIT',
+      classifiers=['Development Status :: 4 - Beta',
+                   'License :: OSI Approved :: MIT License',
+                   'Programming Language :: Python :: 2.7'])
