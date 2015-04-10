@@ -5,6 +5,12 @@ import types
 import math
 
 def grad(fun, argnum=0, return_function_value=False):
+    """
+    Returns a function which computes the gradient of `fun` with respect to
+    positional argument number `argnum`. The returned function takes the same
+    arguments as `fun`, but returns the gradient instead. The gradient has
+    the same type as the argument. If `return_function_value=True`, then both
+    the function value and the gradient are returned."""
     def gradfun(*args, **kwargs):
         tape = CalculationTape()
         start_node = args[argnum]
@@ -34,9 +40,19 @@ def grad(fun, argnum=0, return_function_value=False):
             return getval(end_node), gradval
         else:
             return gradval
+    try:
+        gradfun.__name__ = "grad_{fun}_wrt_argnum_{argnum}".format(fun=fun.__name__, argnum=argnum)
+        gradfun.__doc__ = "Gradient of function {fun} with respect to argument number {argnum}. " \
+                          "Has the same arguments as {fun} but the return value has type of" \
+                          "argument {argnum}".format(fun=fun.__name__, argnum=argnum)
+    except:
+        pass
     return gradfun
 
 class primitive(object):
+    """
+    Wraps a function so that its gradient can be specified and its invocation
+    can be recorded. For examples, see the docs."""
     def __init__(self, fun):
         self.fun = fun
         self.grads = {}
