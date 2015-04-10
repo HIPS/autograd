@@ -9,7 +9,7 @@ def nd(f, *args):
 
 def unary_nd(f, x, eps=1e-4):
     if isinstance(x, np.ndarray):
-        nd_grad = np.zeros(x.shape)
+        nd_grad = np.zeros(x.shape) + 0j
         for dims in it.product(*map(range, x.shape)):
             nd_grad[dims] = unary_nd(indexed_function(f, x, dims), x[dims])
         return nd_grad
