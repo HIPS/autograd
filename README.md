@@ -83,13 +83,7 @@ plt.plot(x, map(tanh, x),
 
 ## How to install:
 
-Simply run
-
-```bash
-git clone --depth 1 --branch master https://github.com/HIPS/autograd.git
-cd autograd/
-python setup.py install
-```
+Just run `pip install autograd`.
 
 ## Authors:
 
