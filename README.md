@@ -1,9 +1,6 @@
 # Autograd
 
-Autograd is an automatic differentiation package for Python, using native Python and Numpy syntax.
-It can handle a large subset of Python's features, including loops, ifs, recursion and even closures.
-It uses reverse-mode differentiation (a.k.a. backpropagation), meaning it can efficiently take gradients of scalar-valued functions with respect to array-valued arguments.
-The main intended application is gradient-based optimization.
+Autograd can automatically differentiate native Python and Numpy code. It can handle a large subset of Python's features, including loops, ifs, recursion and closures, and it can even take derivatives of derivatives of derivatives. It uses reverse-mode differentiation (a.k.a. backpropagation), which means it can efficiently take gradients of scalar-valued functions with respect to array-valued arguments. The main intended application is gradient-based optimization.
 
 Example use:
 
@@ -98,5 +95,6 @@ python setup.py install
 
 [Dougal Maclaurin](mailto:maclaurin@physics.harvard.edu) and [David Duvenaud](http://mlg.eng.cam.ac.uk/duvenaud/)
 
-We thank Matthew Johnson, Jasper Snoek, and the rest of the HIPS group (led by Ryan P. Adams) for helpful contributions.
-We thank Analog Devices International and Samsung Advanced Institute of Technology for their support.
+We thank Matthew Johnson, Jasper Snoek, and the rest of the HIPS group (led by Ryan P. Adams) for helpful contributions and advice.
+We thank Barak Pearlmutter for foundational work on autodiff and for guidance on our implementation.
+We thank Analog Devices International and Samsung Advanced Institute of Technology for their generous support.
