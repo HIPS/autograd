@@ -83,7 +83,7 @@ plt.plot(x, map(tanh, x),
 
 ## How to install:
 
-Just run `pip install autograd`.
+Just run `pip install autograd`
 
 ## Authors:
 
