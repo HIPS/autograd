@@ -42,15 +42,13 @@ def test_sign():    unary_ufunc_check(np.sign)
 def test_sin():     unary_ufunc_check(np.sin)
 def test_sinh():    unary_ufunc_check(np.sinh)
 def test_sqrt():    unary_ufunc_check(np.sqrt, lims=[1.0, 3.0])
-def test_square():  unary_ufunc_check(np.square)
+def test_square():  unary_ufunc_check(np.square, complex=False)
 def test_tan():     unary_ufunc_check(np.tan, lims=[-1.1, 1.1])
 def test_tanh():    unary_ufunc_check(np.tanh)
 
 # Binary ufunc tests
 
 def test_add(): binary_ufunc_check(np.add)
-#np.seterr(all='raise')
-#test_square()
 def test_logaddexp(): binary_ufunc_check(np.logaddexp, complex=False)
 def test_logaddexp2(): binary_ufunc_check(np.logaddexp2, complex=False)
 
