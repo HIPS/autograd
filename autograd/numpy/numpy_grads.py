@@ -45,6 +45,7 @@ anp.less.defgrad_is_zero(argnums=(0, 1))
 anp.less_equal.defgrad_is_zero(argnums=(0, 1))
 anp.equal.defgrad_is_zero(argnums=(0, 1))
 anp.not_equal.defgrad_is_zero(argnums=(0, 1))
+anp.iscomplexobj.defgrad_is_zero()
 
 # ----- Binary ufuncs -----
 
@@ -122,7 +123,7 @@ anp.flipud.defgrad(     lambda ans, x,              : lambda g : anp.flipud(g))
 anp.fliplr.defgrad(     lambda ans, x,              : lambda g : anp.fliplr(g))
 anp.rot90.defgrad(      lambda ans, x, k=1          : lambda g : anp.rot90(g, -k))
 anp.trace.defgrad(      lambda ans, x               : lambda g : g * anp.eye(x.shape[0]))
-anp.full.defgrad(     lambda ans, shape, fill_value : lambda g : anp.sum(g), argnum=1)
+anp.full.defgrad(       lambda ans, shape, fill_value, dtype=None : lambda g : anp.sum(g), argnum=1)
 anp.triu.defgrad(       lambda ans, x, k=0          : lambda g : anp.triu(g, k=k))
 anp.tril.defgrad(       lambda ans, x, k=0          : lambda g : anp.tril(g, k=k))
 anp.clip.defgrad(       lambda ans, x, a_min, a_max : lambda g : g * anp.logical_and(ans != a_min, ans != a_max))
@@ -143,10 +144,13 @@ def repeat_to_match_shape(x, axis, keepdims):
         return I, 1
     shape = x.shape
     if axis is None:
+        dtype=None
+        if anp.iscomplexobj(x):
+            dtype = getval(anp.array(x)).dtype   # np.full() has a bug for complex numbers
         if keepdims:
-            return lambda g : anp.full(shape, anp.sum(g)), anp.prod(shape)
+            return lambda g : anp.full(shape, anp.sum(g), dtype=dtype), anp.prod(shape)
         else:
-            return lambda g : anp.full(shape, g), anp.prod(shape)
+            return lambda g : anp.full(shape, g, dtype=dtype), anp.prod(shape)
     else:
         if keepdims:
             return lambda g : anp.repeat(g, shape[axis], axis), shape[axis]

@@ -44,7 +44,7 @@ def check_fun_and_grads(fun, args, kwargs, argnums):
         print "Second derivative test failed! Args were", args, kwargs
         raise
 
-def stat_check(fun):
+def stat_check(fun, complex=True):
     # Tests functions that compute statistics, like sum, mean, etc
     x = 3.5
     A = npr.randn()
@@ -54,6 +54,12 @@ def stat_check(fun):
     combo_check(fun, (0,), [x, A])
     combo_check(fun, (0,), [B, C, D], axis=[None, 0], keepdims=[True, False])
     combo_check(fun, (0,), [C, D], axis=[None, 0, 1], keepdims=[True, False])
+    if complex:
+        c = npr.randn() + 1j*npr.randn()
+        E = npr.randn(2,3) + 1j*npr.randn(2,3)
+        combo_check(fun, (0,), [x, c, A])
+        combo_check(fun, (0,), [B, C, D, E], axis=[None, 0],
+                    keepdims=[True, False])
 
 def unary_ufunc_check(fun, lims=[-2, 2], complex=True):
     scalar_int = transform(lims, 1)
