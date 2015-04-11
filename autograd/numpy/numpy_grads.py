@@ -131,7 +131,7 @@ anp.real.defgrad(       lambda ans, x               : lambda g : 1.0 * anp.real(
 anp.real_if_close.defgrad(lambda ans, x             : lambda g : 1.0 * anp.real_if_close(g))
 anp.imag.defgrad(       lambda ans, x               : lambda g : 1.0 * anp.imag(g))
 anp.conj.defgrad(       lambda ans, x               : lambda g : 1.0 * anp.conj(g))
-anp.angle.defgrad(      lambda ans, x : lambda g: g * (-anp.imag(x) + 1j*anp.real(x))/(anp.real(x)**2 + anp.imag(x)**2))
+#anp.angle.defgrad(      lambda ans, x : lambda g : g * (-anp.imag(x) + 1.0j*anp.real(x))/(anp.real(x)**2 + anp.imag(x)**2))
 
 # ----- Trickier grads -----
 
