@@ -52,10 +52,10 @@ def check_equivalent(A, B, rtol=1e-4, atol=1e-6):
 def check_grads(fun, *args):
     if not args:
         raise Exception("No args given")
-    B = tuple([grad(fun, i)(*args) for i in range(len(args))])
-    A = nd(fun, *args)
+    exact = tuple([grad(fun, i)(*args) for i in range(len(args))])
+    numeric = nd(fun, *args)
 
-    check_equivalent(A, B)
+    check_equivalent(exact, numeric)
 
 def to_scalar(x):
     return np.sum(np.sin(x))
