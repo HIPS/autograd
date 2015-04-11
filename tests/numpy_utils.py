@@ -55,8 +55,8 @@ def stat_check(fun, complex=True):
     combo_check(fun, (0,), [B, C, D], axis=[None, 0], keepdims=[True, False])
     combo_check(fun, (0,), [C, D], axis=[None, 0, 1], keepdims=[True, False])
     if complex:
-        c = npr.randn() + 0.1j*npr.randn()
-        E = npr.randn(2,3) + 0.1j*npr.randn(2,3)
+        c = npr.randn() + 0.01j*npr.randn()
+        E = npr.randn(2,3) + 0.01j*npr.randn(2,3)
         combo_check(fun, (0,), [x, c, A])
         combo_check(fun, (0,), [B, C, D, E], axis=[None, 0],
                     keepdims=[True, False])
@@ -69,8 +69,8 @@ def unary_ufunc_check(fun, lims=[-2, 2], complex=True):
     mat2   = transform(lims, npr.rand(1, 2))
     combo_check(fun, (0,), [scalar_int, scalar, vector, mat, mat2])
     if complex:
-        comp = transform(lims, 0.4) + 0.1j * transform(lims, 0.3)
-        matc = transform(lims, npr.rand(3, 2)) + 0.1j * npr.rand(3, 2)
+        comp = transform(lims, 0.4) + 0.01j * transform(lims, 0.3)
+        matc = transform(lims, npr.rand(3, 2)) + 0.01j * npr.rand(3, 2)
         combo_check(fun, (0,), [comp, matc])
 
 def binary_ufunc_check(fun, lims_A=[-2, 2], lims_B=[-2, 2], complex=True):
@@ -84,8 +84,8 @@ def binary_ufunc_check(fun, lims_A=[-2, 2], lims_B=[-2, 2], complex=True):
     combo_check(fun, (0, 1), [T_A(scalar), T_A(scalar_int), T_A(vector), T_A(mat), T_A(mat2)],
                              [T_B(scalar), T_B(scalar_int), T_B(vector), T_B(mat), T_B(mat2)])
     if complex:
-        comp = 0.6 + 0.3j
-        matc = npr.rand(3, 2) + 0.1j * npr.rand(3, 2)
+        comp = 0.6 + 0.03j
+        matc = npr.rand(3, 2) + 0.01j * npr.rand(3, 2)
         combo_check(fun, (0, 1), [T_A(scalar), T_A(comp), T_A(vector), T_A(matc),  T_A(mat2)],
                                  [T_B(scalar), T_B(comp), T_B(vector), T_B(matc), T_B(mat2)])
 

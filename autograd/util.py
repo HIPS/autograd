@@ -34,7 +34,9 @@ def indexed_function(fun, arg, index):
     return partial_function
 
 def eq_class(dtype):
-    return float if dtype == np.float64 or dtype == np.complex128 else dtype
+    return float if dtype == np.float64 \
+                 or dtype == np.complex \
+                 or dtype == np.complex128 else dtype
 
 def check_equivalent(A, B, rtol=1e-4, atol=1e-6):
     assert eq_class(type(A)) == eq_class(type(B)),\

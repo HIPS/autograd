@@ -127,6 +127,11 @@ anp.full.defgrad(       lambda ans, shape, fill_value, dtype=None : lambda g : a
 anp.triu.defgrad(       lambda ans, x, k=0          : lambda g : anp.triu(g, k=k))
 anp.tril.defgrad(       lambda ans, x, k=0          : lambda g : anp.tril(g, k=k))
 anp.clip.defgrad(       lambda ans, x, a_min, a_max : lambda g : g * anp.logical_and(ans != a_min, ans != a_max))
+anp.real.defgrad(       lambda ans, x               : lambda g : 1.0 * anp.real(g))
+anp.real_if_close.defgrad(lambda ans, x             : lambda g : 1.0 * anp.real_if_close(g))
+anp.imag.defgrad(       lambda ans, x               : lambda g : 1.0 * anp.imag(g))
+anp.conj.defgrad(       lambda ans, x               : lambda g : 1.0 * anp.conj(g))
+anp.angle.defgrad(      lambda ans, x : lambda g: g * (-anp.imag(x) + 1j*anp.real(x))/(anp.real(x)**2 + anp.imag(x)**2))
 
 # ----- Trickier grads -----
 

@@ -45,6 +45,11 @@ def test_sqrt():    unary_ufunc_check(np.sqrt, lims=[1.0, 3.0])
 def test_square():  unary_ufunc_check(np.square, complex=False)
 def test_tan():     unary_ufunc_check(np.tan, lims=[-1.1, 1.1])
 def test_tanh():    unary_ufunc_check(np.tanh)
+def test_real():    unary_ufunc_check(np.real)
+def test_real_ic(): unary_ufunc_check(np.real_if_close)
+def test_imag():    unary_ufunc_check(np.imag)
+#def test_angle():    unary_ufunc_check(np.angle)
+#def test_conj():    unary_ufunc_check(np.conj)
 
 # Binary ufunc tests
 

@@ -73,6 +73,17 @@ def test_mutating_outgrad_from_indexing():
     A = npr.randn(5)
     check_grads(fun, A)
 
+def test_complex_mutating_outgrad_from_indexing():
+    def fun(a):
+        b = a + 1.0j
+        c = b[0] + 1.5
+        d = a + b
+        e = d + c
+        return to_scalar(e)
+
+    A = npr.randn(5)
+    check_grads(fun, A)
+
 # TODO:
 # Grad three or more, wrt different args
 # Diamond patterns
