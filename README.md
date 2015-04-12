@@ -16,6 +16,7 @@ Example use:
 0.39322386648296376
 >>> (tanh(1.0001) - tanh(0.9999)) / 0.0002  # Compare to finite differences
 0.39322386636453377
+```
 
 We can continue to differentiate as many times as we like:
 
