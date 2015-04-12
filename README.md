@@ -2,28 +2,31 @@
 
 Autograd can automatically differentiate native Python and Numpy code. It can handle a large subset of Python's features, including loops, ifs, recursion and closures, and it can even take derivatives of derivatives of derivatives. It uses reverse-mode differentiation (a.k.a. backpropagation), which means it can efficiently take gradients of scalar-valued functions with respect to array-valued arguments. The main intended application is gradient-based optimization.
 
-# Example use
+Example use:
 
 ```python
->>> import autograd.numpy as np             # Thinly-wrapped numpy
->>> from autograd import grad               # The only autograd function you may ever need
->>> def tanh(x):                            # Define a function
+>>> import autograd.numpy as np  # Thinly-wrapped numpy
+>>> from autograd import grad    # The only autograd function you may ever need
+>>>
+>>> def tanh(x):                 # Define a function
 ...     return (1.0 - np.exp(-x))  / ( 1.0 + np.exp(-x))
 ... 
->>> grad_tanh = grad(tanh)                  # Obtain its gradient function
->>> grad_tanh(1.0)                          # Evaluate the gradient at x = 1.0
+>>> grad_tanh = grad(tanh)       # Obtain its gradient function
+>>> grad_tanh(1.0)               # Evaluate the gradient at x = 1.0
 0.39322386648296376
 >>> (tanh(1.0001) - tanh(0.9999)) / 0.0002  # Compare to finite differences
 0.39322386636453377
->>>
->>> # We can differentiate as many times as we like
-... grad_tanh_2 = grad(grad_tanh)           # 2nd derivative
+
+We can continue to differentiate as many times as we like:
+
+```python
+>>> grad_tanh_2 = grad(grad_tanh)           # 2nd derivative
 >>> grad_tanh_3 = grad(grad_tanh_2)         # 3rd derivative
 >>> grad_tanh_4 = grad(grad_tanh_3)         # etc.
 >>> grad_tanh_5 = grad(grad_tanh_4)
 >>> grad_tanh_6 = grad(grad_tanh_5)
 >>>
->>> import matplotlib.pyplot as plt         # Plot the results, just for fun
+>>> import matplotlib.pyplot as plt
 >>> x = np.linspace(-7, 7, 200)
 >>> plt.plot(x, map(tanh, x),
 ...          x, map(grad_tanh, x),
