@@ -13,3 +13,6 @@ fftn.defgrad(   lambda ans, x, s=None, axes=None     : lambda g : fftn(g, s, axe
 ifftn.defgrad(  lambda ans, x, s=None, axes=None     : lambda g : ifftn(g, s, axes))
 
 #TODO: Support n and s arguments for all the above methods.
+
+fftshift.defgrad( lambda ans, x, axes=None : lambda g : ifftshift( g, axes))
+ifftshift.defgrad(lambda ans, x, axes=None : lambda g : fftshift(g, axes))

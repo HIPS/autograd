@@ -75,3 +75,51 @@ def test_ifftn():
     mat = npr.randn(D, D)
     check_grads(fun, mat)
     check_grads(d_fun, mat)
+
+def test_fftshift():
+    def fun(x): return to_scalar(np.fft.fftshift(x))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    D = 5
+    mat = npr.randn(D, D) / 10.0
+    check_grads(fun, mat)
+    check_grads(d_fun, mat)
+
+def test_fftshift_even():
+    def fun(x): return to_scalar(np.fft.fftshift(x))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    D = 4
+    mat = npr.randn(D, D) / 10.0
+    check_grads(fun, mat)
+    check_grads(d_fun, mat)
+
+def test_fftshift_axes():
+    def fun(x): return to_scalar(np.fft.fftshift(x, axes=1))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    D = 5
+    mat = npr.randn(D, D) / 10.0
+    check_grads(fun, mat)
+    check_grads(d_fun, mat)
+
+def test_ifftshift():
+    def fun(x): return to_scalar(np.fft.ifftshift(x))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    D = 5
+    mat = npr.randn(D, D)
+    check_grads(fun, mat)
+    check_grads(d_fun, mat)
+
+def test_ifftshift_even():
+    def fun(x): return to_scalar(np.fft.ifftshift(x))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    D = 4
+    mat = npr.randn(D, D)
+    check_grads(fun, mat)
+    check_grads(d_fun, mat)
+
+def test_ifftshift_axes():
+    def fun(x): return to_scalar(np.fft.ifftshift(x, axes=1))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    D = 5
+    mat = npr.randn(D, D)
+    check_grads(fun, mat)
+    check_grads(d_fun, mat)
