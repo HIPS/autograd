@@ -51,12 +51,13 @@ We can continue to differentiate as many times as we like:
 
 ## End-to-end examples
 
-* [Neural net](https://github.com/HIPS/autograd/blob/master/examples/neural_net.py)
-* [RNN](https://github.com/HIPS/autograd/blob/master/examples/rnn.py)
-* [LSTM](https://github.com/HIPS/autograd/blob/master/examples/lstm.py)
-* [Backpropagating through a fluid simulation](https://github.com/HIPS/autograd/blob/master/examples/fluidsim/fluidsim.py)
+* [Simple neural net](examples/neural_net.py)
+* [Convolutional neural net](examples/convnet.py)
+* [Recurrent neural net](examples/rnn.py)
+* [LSTM](examples/lstm.py)
+* [Backpropagating through a fluid simulation](examples/fluidsim/fluidsim.py)
 
-<img src="https://github.com/HIPS/autograd/blob/master/examples/fluidsim/animated.gif" width="400">
+<img src="examples/fluidsim/animated.gif" width="400">
 
 ## How to install
 
