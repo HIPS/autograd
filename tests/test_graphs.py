@@ -84,8 +84,47 @@ def test_complex_mutating_outgrad_from_indexing():
     A = npr.randn(5)
     check_grads(fun, A)
 
+def test_complex_separate_real_and_imaginary():
+    def fun(a):
+        r, i = np.real(a), np.imag(a)
+        a = np.abs(r)**1.4 + np.abs(i)**1.3
+        return to_scalar(a)
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    A = npr.randn(5, 3) + 0.1j*npr.randn(5, 3)
+    check_grads(fun, A)
+    check_grads(d_fun, A)
+
+def test_third_derivative():
+    fun = lambda x : np.sin(np.sin(x) + np.sin(x))
+    df = grad(fun)
+    ddf = grad(fun)
+    dddf = grad(fun)
+    check_grads(fun, npr.randn())
+    check_grads(df, npr.rand())
+    check_grads(ddf, npr.rand())
+    check_grads(dddf, npr.rand())
+
+def test_third_derivative_other_args():
+    fun = lambda x, y : np.sin(np.sin(x) + np.sin(y))
+    df = grad(fun)
+    ddf = grad(fun, 1)
+    dddf = grad(fun)
+    check_grads(fun, npr.randn(), npr.randn())
+    check_grads(df, npr.randn(), npr.randn())
+    check_grads(ddf, npr.randn(), npr.randn())
+    check_grads(dddf, npr.randn(), npr.randn())
+
+def test_third_derivative_other_args2():
+    fun = lambda x, y : np.sin(np.sin(x) + np.sin(y))
+    df = grad(fun, 1)
+    ddf = grad(fun)
+    dddf = grad(fun, 1)
+    check_grads(fun, npr.randn(), npr.randn())
+    check_grads(df, npr.randn(), npr.randn())
+    check_grads(ddf, npr.randn(), npr.randn())
+    check_grads(dddf, npr.randn(), npr.randn())
+
 # TODO:
-# Grad three or more, wrt different args
 # Diamond patterns
 # Taking grad again after returning const
 # Empty functions

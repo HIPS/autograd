@@ -46,6 +46,7 @@ anp.less_equal.defgrad_is_zero(argnums=(0, 1))
 anp.equal.defgrad_is_zero(argnums=(0, 1))
 anp.not_equal.defgrad_is_zero(argnums=(0, 1))
 anp.iscomplexobj.defgrad_is_zero()
+anp.nan_to_num.defgrad_is_zero()
 
 # ----- Binary ufuncs -----
 
@@ -130,8 +131,7 @@ anp.clip.defgrad(       lambda ans, x, a_min, a_max : lambda g : g * anp.logical
 anp.real.defgrad(       lambda ans, x               : lambda g : 1.0 * anp.real(g))
 anp.real_if_close.defgrad(lambda ans, x             : lambda g : 1.0 * anp.real_if_close(g))
 anp.imag.defgrad(       lambda ans, x               : lambda g : 1.0 * anp.imag(g))
-anp.conj.defgrad(       lambda ans, x               : lambda g : 1.0 * anp.conj(g))
-#anp.angle.defgrad(      lambda ans, x : lambda g : g * (-anp.imag(x) + 1.0j*anp.real(x))/(anp.real(x)**2 + anp.imag(x)**2))
+anp.angle.defgrad(      lambda ans, x               : lambda g : g * -anp.imag(x)/(anp.real(x)**2 + anp.imag(x)**2))
 
 # ----- Trickier grads -----
 

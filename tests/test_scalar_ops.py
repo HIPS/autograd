@@ -251,26 +251,14 @@ def test_sinc():
     check_grads(fun, 10.0*npr.rand())
     check_grads(d_fun, 10.0*npr.rand())
 
-#def test_angle_real():
-#    fun = lambda x : 3.0 * np.angle(x)
-#    d_fun = grad(fun)
-#    check_grads(fun, 10.0*npr.rand())
-#    check_grads(d_fun, 10.0*npr.rand())
-
-#def test_angle_complex():
-#    fun = lambda x : 3.0 * np.angle(x)
-#    d_fun = grad(fun)
-#    check_grads(fun, npr.rand() + 1j*npr.rand())
-#    check_grads(d_fun, npr.rand() + 1j*npr.rand())
-
-def test_conj_real():
-    fun = lambda x : 3.0 * np.conj(x)
+def test_angle_real():
+    fun = lambda x : 3.0 * np.angle(x)
     d_fun = grad(fun)
     check_grads(fun, 10.0*npr.rand() + 0j)
     check_grads(d_fun, 10.0*npr.rand() + 0j)
 
-def test_conj_complex():
-    fun = lambda x : 3.0 * np.conj(x)
+def test_angle_complex():
+    fun = lambda x : 3.0 * np.angle(x)
     d_fun = grad(fun)
     check_grads(fun, npr.rand() + 1j*npr.rand())
     check_grads(d_fun, npr.rand() + 1j*npr.rand())
