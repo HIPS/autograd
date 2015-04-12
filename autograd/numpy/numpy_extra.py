@@ -35,8 +35,6 @@ class ArrayNode(Node):
 
     @staticmethod
     def zeros_like(value):
-        #if anp.iscomplexobj(value):
-        #    return anp.zeros(value.shape).astype(complex)
         return anp.zeros(value.shape)
 
     @staticmethod

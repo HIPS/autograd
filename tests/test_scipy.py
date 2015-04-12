@@ -12,8 +12,6 @@ from autograd import grad
 from numpy_utils import combo_check, check_grads, unary_ufunc_check, to_scalar
 npr.seed(1)
 
-npo.seterr(all='raise')
-
 ### Stats ###
 
 def test_norm_pdf():

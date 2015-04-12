@@ -74,7 +74,6 @@ R = npr.randn
 def test_dot(): combo_check(np.dot, [0, 1],
                             [1.5, R(3), R(2, 3)],
                             [0.3, R(3), R(3, 4)])
-
 def test_tensordot_1(): combo_check(np.tensordot, [0, 1],
                                     [R(1, 3), R(2, 3, 2)],
                                     [R(3),    R(3, 1),    R(3, 4, 2)],
