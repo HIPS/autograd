@@ -63,8 +63,6 @@ We can continue to differentiate as many times as we like:
 
 Just run `pip install autograd`
 
-## Contact us!
-
 ## Authors
 
 Autograd was written by [Dougal Maclaurin](mailto:maclaurin@physics.harvard.edu)
