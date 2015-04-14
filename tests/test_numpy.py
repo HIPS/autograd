@@ -274,6 +274,16 @@ def test_reshape_call():
     check_grads(fun, A)
     check_grads(d_fun, A)
 
+def test_reshape_method_nolist():
+    # The reshape can be called in two different ways:
+    # like A.reshape((5,4)) or A.reshape(5,4).
+    # This test checks that we support the second way.
+    A = npr.randn(5, 6, 4)
+    def fun(x): return to_scalar(x.reshape(5 * 4, 6))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    check_grads(fun, A)
+    check_grads(d_fun, A)
+
 def test_ravel_method():
     A = npr.randn(5, 6, 4)
     def fun(x): return to_scalar(x.ravel())
@@ -387,7 +397,7 @@ def test_clip():
 def test_prod_1():
     def fun(x): return to_scalar(np.prod(x))
     d_fun = lambda x : to_scalar(grad(fun)(x))
-    mat = npr.randn(2, 3)**2 + 0.1  # Gradient unstable when zeros are present.
+    mat = npr.randn(2, 3)**2 / 10.0 + 0.1  # Gradient unstable when zeros are present.
     check_grads(fun, mat)
     check_grads(d_fun, mat)
 

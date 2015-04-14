@@ -2,7 +2,7 @@ from autograd.core import getval
 
 import operator as op
 from . import numpy_wrapper as anp
-from .numpy_extra import take
+from .numpy_extra import take, ArrayNode
 
 # ----- Functions that are constant w.r.t. continuous inputs -----
 
@@ -235,6 +235,16 @@ def make_grad_concatenate_args(argnum, ans, axis, *args):
     idxs[axis] = slice(start, start + args[argnum-1].shape[axis])
     return lambda g : take(g, idxs)
 anp.concatenate_args.gradmaker = make_grad_concatenate_args
+
+def wrapped_reshape(x, *args, **kwargs):
+    # The reshape method can be called like A.reshape((5,4)) or A.reshape(5,4).
+    # The reshape function doesn't support both ways, so we have to wrap it.
+    if isinstance(args[0], int):
+        return anp.reshape(x, args, **kwargs)
+    else:
+        return anp.reshape(x, *args, **kwargs)
+setattr(ArrayNode, 'reshape', wrapped_reshape)
+
 
 # ----- Handle broadcasting -----
 
