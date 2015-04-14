@@ -1,6 +1,13 @@
 # Autograd
 
-Autograd can automatically differentiate native Python and Numpy code. It can handle a large subset of Python's features, including loops, ifs, recursion and closures, and it can even take derivatives of derivatives of derivatives. It uses reverse-mode differentiation (a.k.a. backpropagation), which means it can efficiently take gradients of scalar-valued functions with respect to array-valued arguments. The main intended application is gradient-based optimization.
+Autograd can automatically differentiate native Python and Numpy code. It can
+handle a large subset of Python's features, including loops, ifs, recursion and
+closures, and it can even take derivatives of derivatives of derivatives. It
+uses reverse-mode differentiation (a.k.a. backpropagation), which means it can
+efficiently take gradients of scalar-valued functions with respect to
+array-valued arguments. The main intended application is gradient-based
+optimization. For more information, check out the [tutorial](docs/tutorial.md)
+and the [examples directory](examples/).
 
 Example use:
 
@@ -41,13 +48,6 @@ We can continue to differentiate as many times as we like:
 ```
 
 <img src="examples/tanh.png" width="600">
-
-## Docs
-
-* [Tutorial](docs/tutorial.md)
-* [How it works](docs/implementation_explanation.md)
-* [FAQ](docs/faq.md)
-* [Features and gotchas](docs/features_and_gotchas.md)
 
 ## End-to-end examples
 
