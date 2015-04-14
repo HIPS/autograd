@@ -85,6 +85,9 @@ diff_methods = ['clip', 'compress', 'cumprod', 'cumsum', 'diagonal',
 for method_name in nondiff_methods + diff_methods:
     setattr(ArrayNode, method_name, anp.__dict__[method_name])
 
+# Flatten, bizarrely, has no function, only a method.
+setattr(ArrayNode, 'flatten', anp.__dict__['ravel'])
+
 # Replace FloatNode operators with broadcastable versions
 for method_name in differentiable_ops + nondifferentiable_ops:
     setattr(FloatNode, method_name, ArrayNode.__dict__[method_name])
