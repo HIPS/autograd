@@ -36,8 +36,8 @@ def grad(fun, argnum=0, return_function_value=False):
                     assert type(getval(cur_outgrad)) is node.value_type, \
                         "Mismatched types of function evaluation and outgrad: {1} and {0}"\
                         .format(type(getval(cur_outgrad)), node.value_type)
-                    for gradfun, parent in node.parent_grad_ops:
-                        parent.outgrads.append(gradfun(cur_outgrad))
+                    for gfun, parent in node.parent_grad_ops:
+                        parent.outgrads.append(gfun(cur_outgrad))
             gradval = cur_outgrad
         if return_function_value:
             return getval(end_node), gradval

@@ -20,6 +20,9 @@ def unary_nd(f, x, eps=1e-4):
         return {k : unary_nd(indexed_function(f, x, k), v) for k, v in x.iteritems()}
     elif isinstance(x, list):
         return [unary_nd(indexed_function(f, x, i), v) for i, v in enumerate(x)]
+    elif np.iscomplex(x):
+        return      (f(x +    eps/2) - f(x -    eps/2)) / eps \
+               + 1j*(f(x + 1j*eps/2) - f(x - 1j*eps/2)) / eps
     else:
         return type(safe_type(x))((f(x + eps/2) - f(x - eps/2)) / eps)
 
@@ -44,7 +47,8 @@ def check_equivalent(A, B, rtol=1e-4, atol=1e-6):
     else:
         if isinstance(A, np.ndarray):
             assert A.shape == B.shape, "Shapes are {0} and {1}".format(A.shape, B.shape)
-        assert np.allclose(A, B, rtol=rtol, atol=atol), "Diffs are: {0}".format(A - B)
+        assert np.allclose(A, B, rtol=rtol, atol=atol), \
+            "Diffs are:\n{0}.\nA is:\n{A}.\nB is:\n{B}.".format(A - B, A=A, B=B)
 
 def check_grads(fun, *args):
     if not args:
@@ -55,7 +59,7 @@ def check_grads(fun, *args):
     check_equivalent(exact, numeric)
 
 def to_scalar(x):
-    return np.sum(np.sin(x))
+    return np.sum(np.real(np.sin(x)))
 
 def quick_grad_check(fun, arg0, extra_args=(), kwargs={}, verbose=True,
                      eps=1e-4, rtol=1e-4, atol=1e-6, rs=None):
