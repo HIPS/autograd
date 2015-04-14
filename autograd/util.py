@@ -9,7 +9,10 @@ def nd(f, *args):
 
 def unary_nd(f, x, eps=1e-4):
     if isinstance(x, np.ndarray):
-        nd_grad = np.zeros(x.shape)
+        if np.iscomplexobj(x):
+            nd_grad = np.zeros(x.shape) + 0j
+        else:
+            nd_grad = np.zeros(x.shape)
         for dims in it.product(*map(range, x.shape)):
             nd_grad[dims] = unary_nd(indexed_function(f, x, dims), x[dims])
         return nd_grad
@@ -21,8 +24,9 @@ def unary_nd(f, x, eps=1e-4):
     elif isinstance(x, list):
         return [unary_nd(indexed_function(f, x, i), v) for i, v in enumerate(x)]
     elif np.iscomplex(x):
-        return      (f(x +    eps/2) - f(x -    eps/2)) / eps \
-               + 1j*(f(x + 1j*eps/2) - f(x - 1j*eps/2)) / eps
+        result = (f(x +    eps/2) - f(x -    eps/2)) / eps \
+            + 1j*(f(x + 1j*eps/2) - f(x - 1j*eps/2)) / eps
+        return type(safe_type(x))(result)
     else:
         return type(safe_type(x))((f(x + eps/2) - f(x - eps/2)) / eps)
 

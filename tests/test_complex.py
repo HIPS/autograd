@@ -7,20 +7,20 @@ npr.seed(1)
 def test_real_type():
     fun = lambda x: np.sum(np.real(x))
     df = grad(fun)
-    assert type(df(1.0)) == np.float64
-    assert type(df(1.0j)) == np.complex
+    assert type(df(1.0)) == float
+    assert type(df(1.0j)) == complex
 
 def test_real_if_close_type():
     fun = lambda x: np.sum(np.real(x))
     df = grad(fun)
-    assert type(df(1.0)) == np.float64
-    assert type(df(1.0j)) == np.complex
+    assert type(df(1.0)) == float
+    assert type(df(1.0j)) == complex
 
 def test_imag_type():
     fun = lambda x: np.sum(np.imag(x))
     df = grad(fun)
-    assert type(df(1.0)) == np.float64
-    assert type(df(1.0j)) == np.complex
+    assert type(df(1.0)) == float
+    assert type(df(1.0j)) == complex
 
 # TODO: real times imag
 
@@ -35,7 +35,6 @@ def test_angle_complex():
     d_fun = lambda x: to_scalar(grad(fun)(x))
     check_grads(fun, npr.rand() + 1j*npr.rand())
     check_grads(d_fun, npr.rand() + 1j*npr.rand())
-test_angle_complex()
 
 def test_abs_real():
     fun = lambda x : to_scalar(np.abs(x))
