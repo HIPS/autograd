@@ -1,6 +1,6 @@
 import autograd.numpy as np
 import itertools as it
-from autograd import grad
+from autograd.core import grad, safe_type
 from copy import copy
 
 def nd(f, *args):
@@ -21,7 +21,7 @@ def unary_nd(f, x, eps=1e-4):
     elif isinstance(x, list):
         return [unary_nd(indexed_function(f, x, i), v) for i, v in enumerate(x)]
     else:
-        return (f(x + eps/2) - f(x - eps/2)) / eps
+        return type(safe_type(x))((f(x + eps/2) - f(x - eps/2)) / eps)
 
 def indexed_function(fun, arg, index):
     def partial_function(x):
@@ -33,12 +33,9 @@ def indexed_function(fun, arg, index):
         return fun(local_arg)
     return partial_function
 
-def eq_class(dtype):
-    return float if dtype == np.float64 else dtype
-
 def check_equivalent(A, B, rtol=1e-4, atol=1e-6):
-    assert eq_class(type(A)) == eq_class(type(B)),\
-        "Types are: {0} and {1}".format(eq_class(type(A)), eq_class(type(B)))
+    assert type(A) is type(B),\
+        "Types are: {0} and {1}".format(type(A), type(B))
     if isinstance(A, (tuple, list)):
         for a, b in zip(A, B): check_equivalent(a, b)
     elif isinstance(A, dict):

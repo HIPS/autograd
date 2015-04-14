@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-from autograd.core import (Node, FloatNode, primitive,
+from autograd.core import (Node, FloatNode, primitive, cast,
                            differentiable_ops, nondifferentiable_ops, getval)
 from . import numpy_wrapper as anp
 
@@ -38,11 +38,11 @@ class ArrayNode(Node):
         return anp.zeros(value.shape)
 
     @staticmethod
-    def sum_outgrads(outgrads):
+    def sum_outgrads(outgrads, selftype):
         if len(outgrads) is 1 and not isinstance(getval(outgrads[0]), SparseArray):
-            return outgrads[0]
+            return cast(outgrads[0], anp.array)
         else:
-            return primitive_sum_arrays(*outgrads)
+            return cast(primitive_sum_arrays(*outgrads), anp.array)
 
     def __neg__(self): return anp.negative(self)
     def __add__(self, other): return anp.add(     self, other)

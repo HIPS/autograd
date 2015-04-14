@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-from autograd.core import primitive, Node, getval, zeros_like
+from autograd.core import primitive, Node, getval, zeros_like, cast
 
 class TupleNode(Node):
     __slots__ = []
@@ -13,7 +13,7 @@ class TupleNode(Node):
         return tuple([zeros_like(item) for item in getval(value)])
 
     @staticmethod
-    def sum_outgrads(outgrads):
+    def sum_outgrads(outgrads, selftype):
         return primitive_sum_tuples(*outgrads)
 
 Node.type_mappings[tuple] = TupleNode

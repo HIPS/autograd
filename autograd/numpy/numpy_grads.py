@@ -45,6 +45,7 @@ anp.less.defgrad_is_zero(argnums=(0, 1))
 anp.less_equal.defgrad_is_zero(argnums=(0, 1))
 anp.equal.defgrad_is_zero(argnums=(0, 1))
 anp.not_equal.defgrad_is_zero(argnums=(0, 1))
+anp.nan_to_num.defgrad_is_zero()
 
 # ----- Binary ufuncs -----
 
