@@ -9,7 +9,7 @@ def nd(f, *args):
 
 def unary_nd(f, x, eps=1e-4):
     if isinstance(x, np.ndarray):
-        nd_grad = np.zeros(x.shape) + 0j
+        nd_grad = np.zeros(x.shape)
         for dims in it.product(*map(range, x.shape)):
             nd_grad[dims] = unary_nd(indexed_function(f, x, dims), x[dims])
         return nd_grad
@@ -20,6 +20,9 @@ def unary_nd(f, x, eps=1e-4):
         return {k : unary_nd(indexed_function(f, x, k), v) for k, v in x.iteritems()}
     elif isinstance(x, list):
         return [unary_nd(indexed_function(f, x, i), v) for i, v in enumerate(x)]
+    elif np.iscomplex(x):
+        return      (f(x +    eps/2) - f(x -    eps/2)) / eps \
+               + 1j*(f(x + 1j*eps/2) - f(x - 1j*eps/2)) / eps
     else:
         return (f(x + eps/2) - f(x - eps/2)) / eps
 
@@ -33,10 +36,13 @@ def indexed_function(fun, arg, index):
         return fun(local_arg)
     return partial_function
 
+equiv_classes = {np.float64 : float,
+                 np.complex128: complex}
 def eq_class(dtype):
-    return float if dtype == np.float64 \
-                 or dtype == np.complex \
-                 or dtype == np.complex128 else dtype
+    try:
+        return equiv_classes[dtype]
+    except KeyError:
+        return dtype
 
 def check_equivalent(A, B, rtol=1e-4, atol=1e-6):
     assert eq_class(type(A)) == eq_class(type(B)),\
@@ -61,7 +67,7 @@ def check_grads(fun, *args):
     check_equivalent(exact, numeric)
 
 def to_scalar(x):
-    return np.sum(np.sin(x))
+    return np.sum(np.real(np.sin(x)))
 
 def quick_grad_check(fun, arg0, extra_args=(), kwargs={}, verbose=True,
                      eps=1e-4, rtol=1e-4, atol=1e-6, rs=None):

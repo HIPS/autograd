@@ -24,7 +24,7 @@ def grad(fun, argnum=0, return_function_value=False):
         if not isinstance(end_node, Node) or tape not in end_node.tapes:
             warnings.warn("Output seems independent of input. Returning zero gradient.")
             gradval = zeros_like(start_node)
-        elif not isinstance(end_node.value, (float, complex)):
+        elif not isinstance(end_node.value, float):
             raise TypeError("Can only take gradient of scalar-valued functions")
         else:
             end_node.tapes[tape].outgrads = [1.0]

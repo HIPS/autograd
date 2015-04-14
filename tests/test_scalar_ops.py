@@ -1,6 +1,5 @@
 import autograd.numpy as np
 import autograd.numpy.random as npr
-import scipy.stats as sps
 from autograd.util import *
 from autograd import grad
 npr.seed(1)
@@ -250,15 +249,3 @@ def test_sinc():
     d_fun = grad(fun)
     check_grads(fun, 10.0*npr.rand())
     check_grads(d_fun, 10.0*npr.rand())
-
-def test_angle_real():
-    fun = lambda x : 3.0 * np.angle(x)
-    d_fun = grad(fun)
-    check_grads(fun, 10.0*npr.rand() + 0j)
-    check_grads(d_fun, 10.0*npr.rand() + 0j)
-
-def test_angle_complex():
-    fun = lambda x : 3.0 * np.angle(x)
-    d_fun = grad(fun)
-    check_grads(fun, npr.rand() + 1j*npr.rand())
-    check_grads(d_fun, npr.rand() + 1j*npr.rand())

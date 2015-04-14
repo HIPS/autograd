@@ -17,8 +17,8 @@ def test_prod(): stat_check(np.prod)
 # Unary ufunc tests
 
 def test_sin():     unary_ufunc_check(np.sin) 
-def test_abs():     unary_ufunc_check(np.abs, complex=False)
-def test_absolute():unary_ufunc_check(np.absolute, complex=False)
+def test_abs():     unary_ufunc_check(np.abs, lims=[0.1, 4.0])
+def test_absolute():unary_ufunc_check(np.absolute, lims=[0.1, 4.0])
 def test_arccosh(): unary_ufunc_check(np.arccosh, lims=[1.1, 4.0])
 def test_arcsinh(): unary_ufunc_check(np.arcsinh, lims=[-0.9, 0.9])
 def test_arctanh(): unary_ufunc_check(np.arctanh, lims=[-0.9, 0.9])
@@ -48,12 +48,16 @@ def test_tanh():    unary_ufunc_check(np.tanh)
 def test_real():    unary_ufunc_check(np.real)
 def test_real_ic(): unary_ufunc_check(np.real_if_close)
 def test_imag():    unary_ufunc_check(np.imag)
+def test_conj():    unary_ufunc_check(np.conj)
 def test_angle():   unary_ufunc_check(np.angle)
 
 # Binary ufunc tests
 
-def test_add(): binary_ufunc_check(np.add)
-def test_logaddexp(): binary_ufunc_check(np.logaddexp, complex=False)
+def test_add():        binary_ufunc_check(np.add)
+def test_mod():        binary_ufunc_check(np.mod, complex=False)
+def test_fmod():       binary_ufunc_check(np.fmod, complex=False)
+def test_remainder():  binary_ufunc_check(np.remainder, complex=False)
+def test_logaddexp():  binary_ufunc_check(np.logaddexp, complex=False)
 def test_logaddexp2(): binary_ufunc_check(np.logaddexp2, complex=False)
 
 def test_op_mul(): binary_ufunc_check(op.mul)
