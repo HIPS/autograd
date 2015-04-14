@@ -49,7 +49,6 @@ anp.not_equal.defgrad_is_zero(argnums=(0, 1))
 # ----- Binary ufuncs -----
 
 I = lambda x : x
-anp.negative.defgrad(lambda ans, x: op.neg)
 anp.add.defgrad(lambda ans, x, y : unbroadcast(ans, x, I))
 anp.add.defgrad(lambda ans, x, y : unbroadcast(ans, y, I), argnum=1)
 anp.multiply.defgrad(lambda ans, x, y : unbroadcast(ans, x, lambda g : y * g))
@@ -68,22 +67,21 @@ anp.logaddexp.defgrad(lambda ans, x, y : unbroadcast(ans, x, lambda g : g * anp.
 anp.logaddexp.defgrad(lambda ans, x, y : unbroadcast(ans, y, lambda g : g * anp.exp(y-ans)), argnum=1)
 anp.logaddexp2.defgrad(lambda ans, x, y : unbroadcast(ans, x, lambda g : g * 2**(x-ans)))
 anp.logaddexp2.defgrad(lambda ans, x, y : unbroadcast(ans, y, lambda g : g * 2**(y-ans)), argnum=1)
+anp.true_divide.defgrad(lambda ans, x, y : unbroadcast(ans, x, lambda g : g / y))
+anp.true_divide.defgrad(lambda ans, x, y : unbroadcast(ans, y, lambda g : - g * x / y**2), argnum=1)
+anp.mod.defgrad(      lambda ans, x, y : unbroadcast(ans, x, I))
+anp.remainder.defgrad(lambda ans, x, y : unbroadcast(ans, x, I))
+anp.mod.defgrad(      lambda ans, x, y : unbroadcast(ans, y, lambda g : -g * anp.floor(x/y)), argnum=1)
+anp.remainder.defgrad(lambda ans, x, y : unbroadcast(ans, y, lambda g : -g * anp.floor(x/y)), argnum=1)
 
 
 # ----- Simple grads -----
 
+anp.negative.defgrad(lambda ans, x: op.neg)
 anp.abs.defgrad(     lambda ans, x : lambda g : anp.sign(x) * g)
 anp.fabs.defgrad(    lambda ans, x : lambda g : anp.sign(x) * g)
 anp.absolute.defgrad(lambda ans, x : lambda g : anp.sign(x) * g)
-anp.true_divide.defgrad(lambda ans, x, y : lambda g : g / y)
-anp.true_divide.defgrad(lambda ans, x, y : lambda g : - g * x / y**2, argnum=1)
-anp.reciprocal.defgrad( lambda ans, x    : lambda g : - g / x**2)
-anp.mod.defgrad(      lambda ans, x, y : lambda g : g)
-anp.fmod.defgrad(     lambda ans, x, y : lambda g : g)
-anp.remainder.defgrad(lambda ans, x, y : lambda g : g)
-anp.mod.defgrad(      lambda ans, x, y : lambda g : -g * anp.floor(x/y), argnum=1)
-anp.fmod.defgrad(     lambda ans, x, y : lambda g : -g * anp.floor(x/y), argnum=1)
-anp.remainder.defgrad(lambda ans, x, y : lambda g : -g * anp.floor(x/y), argnum=1)
+anp.reciprocal.defgrad(lambda ans, x : lambda g : - g / x**2)
 anp.exp.defgrad(   lambda ans, x : lambda g : ans * g)
 anp.exp2.defgrad(  lambda ans, x : lambda g : ans * g * anp.log(2))
 anp.expm1.defgrad( lambda ans, x : lambda g : (ans + 1) * g)

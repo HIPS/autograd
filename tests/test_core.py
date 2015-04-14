@@ -24,6 +24,7 @@ def test_sub(): check_binary_func(lambda x, y: x - y)
 def test_div(): check_binary_func(lambda x, y: x / y)
 def test_mul(): check_binary_func(lambda x, y: x * y)
 def test_pow(): check_binary_func(lambda x, y: x ** y)
+def test_mod(): check_binary_func(lambda x, y: x % y)
 
 def test_eq(): check_binary_func(lambda  x, y: x == y)
 def test_neq(): check_binary_func(lambda x, y: x != y)

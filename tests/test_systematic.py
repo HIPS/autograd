@@ -1,7 +1,8 @@
 import autograd.numpy.random as npr
 import autograd.numpy as np
 import operator as op
-from numpy_utils import combo_check, stat_check, unary_ufunc_check, binary_ufunc_check
+from numpy_utils import (combo_check, stat_check, unary_ufunc_check,
+                         binary_ufunc_check, binary_ufunc_check_no_same_args)
 npr.seed(0)
 
 # Array statistics functions
@@ -48,12 +49,21 @@ def test_tanh():    unary_ufunc_check(np.tanh)
 def test_add(): binary_ufunc_check(np.add)
 def test_logaddexp(): binary_ufunc_check(np.logaddexp)
 def test_logaddexp2(): binary_ufunc_check(np.logaddexp2)
+def test_remainder(): binary_ufunc_check_no_same_args(np.remainder)
+def test_true_divide(): binary_ufunc_check(np.true_divide, lims_B=[0.3, 2.0])
+def test_mod(): binary_ufunc_check_no_same_args(np.mod,    lims_B=[0.3, 2.0])
+def test_true_divide_neg(): binary_ufunc_check(np.true_divide, lims_B=[-0.3, -2.0])
+def test_mod_neg(): binary_ufunc_check_no_same_args(np.mod,    lims_B=[-0.3, -2.0])
 
 def test_op_mul(): binary_ufunc_check(op.mul)
 def test_op_add(): binary_ufunc_check(op.add)
 def test_op_sub(): binary_ufunc_check(op.sub)
+def test_op_mod(): binary_ufunc_check_no_same_args(op.mod, lims_B=[0.3, 2.0])
+def test_op_mod_neg(): binary_ufunc_check_no_same_args(op.mod, lims_B=[-0.3, -2.0])
 def test_op_div(): binary_ufunc_check(op.div, lims_B=[0.3, 2.0])
 def test_op_pow(): binary_ufunc_check(op.pow, lims_A=[0.5, 2.0])
+
+
 
 # Misc tests
 

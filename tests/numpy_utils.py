@@ -74,5 +74,17 @@ def binary_ufunc_check(fun, lims_A=[-2, 2], lims_B=[-2, 2]):
     combo_check(fun, (0, 1), [T_A(scalar), T_A(scalar_int), T_A(vector), T_A(mat), T_A(mat2)],
                              [T_B(scalar), T_B(scalar_int), T_B(vector), T_B(mat), T_B(mat2)])
 
+def binary_ufunc_check_no_same_args(fun, lims_A=[-2, 2], lims_B=[-2, 2]):
+    T_A = lambda x : transform(lims_A, x)
+    T_B = lambda x : transform(lims_B, x)
+    scalar_int1 = 2; scalar_int2 = 3
+    scalar1 = 0.6;   scalar2 = 0.7
+    vector1 = npr.rand(2);  vector2 = npr.rand(2)
+    mat11   = npr.rand(3, 2); mat12 = npr.rand(3, 2)
+    mat21   = npr.rand(1, 2); mat22 = npr.rand(1, 2)
+    combo_check(fun, (0, 1),
+                [T_A(scalar1), T_A(scalar_int1), T_A(vector1), T_A(mat11), T_A(mat21)],
+                [T_B(scalar2), T_B(scalar_int2), T_B(vector2), T_B(mat12), T_B(mat22)])
+
 def transform(lims, x):
     return x * (lims[1] - lims[0]) + lims[0]
