@@ -47,7 +47,7 @@ We can continue to differentiate as many times as we like:
 * [Tutorial](docs/tutorial.md)
 * [How it works](docs/implementation_explanation.md)
 * [FAQ](docs/faq.md)
-* [Features and limitations](docs/features_and_limitations.md)
+* [Features and gotchas](docs/features_and_gotchas.md)
 
 ## End-to-end examples
 
