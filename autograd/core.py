@@ -3,6 +3,7 @@ import warnings
 import operator as op
 import types
 import math
+import numpy as np
 
 def grad(fun, argnum=0, return_function_value=False):
     """
@@ -34,9 +35,9 @@ def grad(fun, argnum=0, return_function_value=False):
                 node = op_list.pop()
                 if node.outgrads:
                     cur_outgrad = node.sum_outgrads()
-                    assert type(getval(cur_outgrad)) is node.value_type, \
-                        "Mismatched types of function evaluation and outgrad: {1} and {0}"\
-                        .format(type(getval(cur_outgrad)), node.value_type)
+                    # assert type(getval(cur_outgrad)) is type(node.value), \
+                    #     "Wrong outgrad type {0}. Should be {1}"\
+                    #     .format(type(getval(cur_outgrad)), type(node.value))
                     for gfun, parent in node.parent_grad_ops:
                         parent.outgrads.append(gfun(cur_outgrad))
             gradval = cur_outgrad
@@ -119,15 +120,15 @@ def zeros_like(value):
         return Node.type_mappings[type(value)].zeros_like(value)
 
 class ReverseNode(object):
-    __slots__ = ['parent_grad_ops', 'outgrads', 'node_type', 'value_type']
-    def __init__(self, node_type, value_type):
+    __slots__ = ['parent_grad_ops', 'outgrads', 'node_type', 'value']
+    def __init__(self, node_type, value):
         self.parent_grad_ops = []
         self.outgrads = []
         self.node_type = node_type
-        self.value_type = value_type
+        self.value = value
 
     def sum_outgrads(self):
-        return self.node_type.sum_outgrads(self.outgrads, self.value_type)
+        return self.node_type.sum_outgrads(self.outgrads, self.value)
 
 class Node(object):
     __slots__ = ['value', 'tapes']
@@ -141,8 +142,13 @@ class Node(object):
         return cast(sum(outgrads[1:], outgrads[0]), selftype)
 
 @primitive
-def cast(x, typecaster):
-    return typecaster(x)
+def cast(x, value):
+    if isinstance(x, np.ndarray):
+        x = x[()]
+    if np.iscomplexobj(x) and not np.iscomplexobj(value):
+        x = np.real(x)
+    return type(value)(x)
+
 cast.defgrad(lambda ans, x, typecaster: I)
 
 getval = lambda x : x.value if isinstance(x, Node) else x
@@ -153,7 +159,7 @@ class CalculationTape(object):
         self.complete = False
 
     def add_node(self, node):
-        new_rnode = ReverseNode(type(node), type(node.value))
+        new_rnode = ReverseNode(type(node), node.value)
         self.op_list.append(new_rnode)
         node.tapes[self] = new_rnode
         return new_rnode
@@ -162,7 +168,11 @@ class FloatNode(Node):
     __slots__ = []
     @staticmethod
     def zeros_like(value):
-        return 0.0
+        if np.iscomplexobj(getval(value)):
+            print "got here"
+            return 0.0 + 0.0j
+        else:
+            return 0.0
 
 Node.type_mappings[float] = FloatNode
 

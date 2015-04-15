@@ -36,14 +36,17 @@ class ArrayNode(Node):
 
     @staticmethod
     def zeros_like(value):
-        return anp.zeros(value.shape)
+        if anp.iscomplexobj(getval(value)):
+            return anp.zeros(value.shape) + 0.0j
+        else:
+            return anp.zeros(value.shape)
 
     @staticmethod
-    def sum_outgrads(outgrads, selftype):
+    def sum_outgrads(outgrads, selfval):
         if len(outgrads) is 1 and not isinstance(getval(outgrads[0]), SparseArray):
-            return cast(outgrads[0], anp.array)
+            return arraycast(outgrads[0], selfval)
         else:
-            return cast(primitive_sum_arrays(*outgrads), anp.array)
+            return arraycast(primitive_sum_arrays(*outgrads), selfval)
 
     def __neg__(self): return anp.negative(self)
     def __add__(self, other): return anp.add(     self, other)
@@ -66,6 +69,21 @@ class ArrayNode(Node):
     def __le__(self, other): return anp.less_equal(self, other)
 
 Node.type_mappings[anp.ndarray] = ArrayNode
+
+@primitive
+def arraycast(x, val):
+    if type(x) is SparseArray:
+        return x
+    elif not isinstance(x, anp.ndarray):
+        return anp.array(cast(x, val.ravel()[0]))
+    else:
+        if anp.iscomplexobj(val) and not anp.iscomplexobj(x):
+            return anp.array(x, dtype=anp.complex)
+        elif not anp.iscomplexobj(val) and anp.iscomplexobj(x):
+            return anp.real(anp.array(x))
+        else:
+            return x
+arraycast.defgrad(lambda ans, x, val: lambda g : g)
 
 @primitive
 def primitive_sum_arrays(*arrays):
