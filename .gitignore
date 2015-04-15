@@ -6,3 +6,5 @@ examples/data
 build/
 examples/fluidsim/surprise.gif
 data/
+MANIFEST
+dist/

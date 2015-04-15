@@ -1,6 +1,7 @@
 import autograd.numpy as np
 import itertools as it
 from autograd import grad
+from autograd.core import getval
 from copy import copy
 
 def nd(f, *args):
@@ -83,3 +84,31 @@ def quick_grad_check(fun, arg0, extra_args=(), kwargs={}, verbose=True,
     if verbose:
         print "Gradient projection OK (numeric grad: {0}, analytic grad: {1})".format(
             numeric_grad, analytic_grad)
+
+def elementwise_grad(fun, argnum=0):
+    """Like `jacobian`, but produces a function which computes just the diagonal
+    of the Jacobian, and does the computation in one pass rather than in a loop.
+    Note: this is only valid if the Jacobian is diagonal. Only arrays are
+    currently supported."""
+    return grad(lambda x : np.sum(fun(x)), argnum=argnum)
+
+def jacobian(fun, argnum=0):
+    """Returns a function that computes the Jacobian of `fun`. If the input to
+    `fun` has shape (in1, in2, ...) and the output has shape (out1, out2, ...)
+    then the Jacobian has shape (in1, in2, ..., out1, out2, ...).  Only arrays
+    are currently supported."""
+    # TODO: consider adding this to `autograd.grad`. We could avoid repeating
+    # the forward pass every time.
+    def jac_fun(*args, **kwargs):
+        all_grads = []
+        arg_in = args[argnum]
+        output = fun(*args, **kwargs)
+        assert isinstance(getval(arg_in), np.ndarray), "Must have array input"
+        assert isinstance(getval(output), np.ndarray), "Must have array output"
+        jac = np.zeros(arg_in.shape + output.shape)
+        input_slice = (slice(None),) * len(arg_in.shape)
+        for idxs in it.product(*map(range, output.shape)):
+            scalar_fun = lambda *args, **kwargs : fun(*args, **kwargs)[idxs]
+            jac[input_slice + idxs] = grad(scalar_fun, argnum=argnum)(*args, **kwargs)
+        return jac
+    return jac_fun
