@@ -2,15 +2,16 @@
 
 ## Motivation
 
-Here's a common situation in machine learning research. You want to test out a
-new model for your data. This means coming up with some loss function to capture
-how well your model fits the data, and optimizing that loss with respect to the
-model parameters. If there are many model parameters (neural nets can have
-millions) then you need gradients. You then have two options: derive and code up
-them up yourself, or implemented your model using the syntactic and semantic
-constraints of a system like Theano. We want to provide a third way: just write
-down the loss function using a standard numerical library like numpy, and have
-autograd take the gradients for you.
+Imagine you want to test out a new machine learning model for your data. This
+usually means coming up with some loss function to capture how well your model
+fits the data and optimizing that loss with respect to the model parameters. If
+there are many model parameters (neural nets can have millions) then you need
+gradients. You then have two options: derive and code them up yourself, or
+implement your model using the syntactic and semantic constraints of a system
+like Theano.
+
+We want to provide a third way: just write down the loss function using a
+standard numerical library like numpy, and autograd will give you its gradient.
 
 ## What is reverse mode differentiation?
 * Also known as backpropagation.
@@ -25,6 +26,7 @@ autograd take the gradients for you.
 * Must have scalar output
 
 ## Complete example: logistic regression
+* Vector inputs is where the action is
 * Do a grad check
 * For more, see our examples
 
@@ -56,17 +58,13 @@ autograd take the gradients for you.
 
 #### Don't use
 * Assignment to arrays `A[0,0] = x`
-* Implicit casting to arrays `A = np.exp([x, y])`
+* Implicit casting to arrays `A = np.sum([x, y])`
 * `A.dot(B)` notation (use `np.dot(A, B)` instead)
 
 ## Extend Autograd by defining your own primitives
 * Simple example
 * What if we have an unknown number of args
 
-## Features and gotchas
-
-### TL;DR
-
-### Planned features
+## Planned features
 * GPU support
 * In-place array operations and assignment to arrays
