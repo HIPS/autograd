@@ -1,6 +1,6 @@
 """This file doesn't import the numpy wrapper, to check if core works
    on basic operations even without numpy."""
-from autograd import grad
+from autograd import grad, value_and_grad
 
 # Non-numpy gradient checking functions.
 def nd(f, x, eps=1e-4):
@@ -37,7 +37,7 @@ def test_gt(): check_binary_func(lambda  x, y: x > y)
 def test_return_both():
     fun = lambda x : 3.0 * x**3.2
     d_fun = grad(fun)
-    f_and_d_fun = grad(fun, return_function_value=True)
+    f_and_d_fun = value_and_grad(fun)
 
     test_x = 1.7
     f, d = f_and_d_fun(test_x)

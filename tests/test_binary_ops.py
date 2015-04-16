@@ -1,7 +1,7 @@
 import autograd.numpy as np
 import autograd.numpy.random as npr
 from autograd.util import *
-from autograd import grad
+from autograd import grad, value_and_grad
 rs = npr.RandomState(0)
 
 def arg_pairs():
@@ -109,5 +109,5 @@ def test_comparison_values():
     for arg1, arg2 in arg_pairs():
         for fun in compare_funs:
             fun_val = fun(arg1, arg2)
-            fun_val_from_grad, _ = grad(fun, return_function_value=True)(arg1, arg2)
+            fun_val_from_grad, _ = value_and_grad(fun)(arg1, arg2)
             assert fun_val == fun_val_from_grad, (fun_val, fun_val_from_grad)
