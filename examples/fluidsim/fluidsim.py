@@ -4,6 +4,7 @@ from autograd import grad
 from scipy.optimize import minimize
 from scipy.misc import imread
 
+import matplotlib
 import matplotlib.pyplot as plt
 import os
 
@@ -68,7 +69,7 @@ def plot_matrix(ax, mat, t, render=False):
     ax.set_yticks([])
     plt.draw()
     if render:
-        plt.savefig('step{0:03d}.png'.format(t), bbox_inches='tight')
+        matplotlib.image.imsave('step{0:03d}.png'.format(t), mat)
     plt.pause(0.001)
 
 
@@ -78,7 +79,7 @@ if __name__ == '__main__':
 
     print "Loading initial and target states..."
     init_smoke = imread('init_smoke.png')[:,:,0]
-    target = imread('skull.png')[::2,::2]
+    target = imread('peace.png')[::2,::2,3]
     rows, cols = target.shape
 
     init_dx_and_dy = np.zeros((2, rows, cols)).ravel()
@@ -116,5 +117,5 @@ if __name__ == '__main__':
 
     print "Converting frames to an animated GIF..."
     os.system("convert -delay 5 -loop 0 step*.png"
-              " -delay 250 step099.png surprise.gif")  # Using imagemagick.
+              " -delay 250 step099.png animated.gif")  # Using imagemagick.
     os.system("rm step*.png")
