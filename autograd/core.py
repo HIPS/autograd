@@ -164,7 +164,6 @@ class FloatNode(Node):
     @staticmethod
     def zeros_like(value):
         if np.iscomplexobj(getval(value)):
-            print "got here"
             return 0.0 + 0.0j
         else:
             return 0.0
