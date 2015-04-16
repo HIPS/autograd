@@ -117,5 +117,5 @@ if __name__ == '__main__':
 
     print "Converting frames to an animated GIF..."
     os.system("convert -delay 5 -loop 0 step*.png"
-              " -delay 250 step099.png animated.gif")  # Using imagemagick.
+              " -delay 250 step100.png animated.gif")  # Using imagemagick.
     os.system("rm step*.png")
