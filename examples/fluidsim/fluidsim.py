@@ -1,5 +1,5 @@
 import autograd.numpy as np
-from autograd import grad, value_and_grad
+from autograd import value_and_grad
 
 from scipy.optimize import minimize
 from scipy.misc import imread

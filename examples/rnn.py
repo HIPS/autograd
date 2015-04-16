@@ -1,6 +1,6 @@
 import autograd.numpy as np
 import autograd.numpy.random as npr
-from autograd import grad, value_and_grad
+from autograd import value_and_grad
 from autograd.util import quick_grad_check
 from scipy.optimize import minimize
 

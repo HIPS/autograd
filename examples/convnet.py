@@ -6,7 +6,6 @@ import autograd.numpy.random as npr
 import autograd.scipy.signal
 from autograd import grad
 from autograd.util import quick_grad_check
-from collections import namedtuple
 
 convolve = autograd.scipy.signal.convolve
 
