@@ -1,6 +1,6 @@
 import autograd.numpy as np
 import autograd.numpy.random as npr
-from autograd import grad
+from autograd import grad, value_and_grad
 from autograd.util import quick_grad_check
 from scipy.optimize import minimize
 
@@ -128,7 +128,7 @@ if __name__ == '__main__':
         print_training_prediction(weights, train_inputs, train_targets)
 
    # Build gradient of loss function using autograd.
-    loss_and_grad = grad(loss_fun, return_function_value=True)
+    loss_and_grad = value_and_grad(loss_fun)
 
     # Wrap function to only have one argument, for scipy.minimize.
     def training_loss_and_grad(weights):

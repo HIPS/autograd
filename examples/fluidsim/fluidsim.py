@@ -1,5 +1,5 @@
 import autograd.numpy as np
-from autograd import grad
+from autograd import grad, value_and_grad
 
 from scipy.optimize import minimize
 from scipy.misc import imread
@@ -97,7 +97,7 @@ if __name__ == '__main__':
         return distance_from_target_image(final_smoke)
 
     # Specify gradient of objective function using autograd.
-    objective_with_grad = grad(objective, return_function_value=True)
+    objective_with_grad = value_and_grad(objective)
 
     fig = plt.figure(figsize=(8,8))
     ax = fig.add_subplot(111, frameon=False)
