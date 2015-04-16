@@ -49,6 +49,10 @@ We can continue to differentiate as many times as we like:
 
 <img src="examples/tanh.png" width="600">
 
+## Documentation
+
+You can find a tutorial [here.](docs/tutorial.md)
+
 ## End-to-end examples
 
 * [Simple neural net](examples/neural_net.py)

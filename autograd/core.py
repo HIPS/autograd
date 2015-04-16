@@ -4,13 +4,12 @@ import operator as op
 import types
 import math
 
-def grad(fun, argnum=0, return_function_value=False):
+def grad(fun, argnum=0):
     """
     Returns a function which computes the gradient of `fun` with respect to
     positional argument number `argnum`. The returned function takes the same
     arguments as `fun`, but returns the gradient instead. The gradient has
-    the same type as the argument. If `return_function_value=True`, then both
-    the function value and the gradient are returned."""
+    the same type as the argument."""
     def gradfun(*args, **kwargs):
         tape = CalculationTape()
         start_node = args[argnum]
@@ -23,7 +22,7 @@ def grad(fun, argnum=0, return_function_value=False):
         tape.complete = True
         if not isinstance(end_node, Node) or tape not in end_node.tapes:
             warnings.warn("Output seems independent of input. Returning zero gradient.")
-            gradval = zeros_like(start_node)
+            return zeros_like(start_node)
         elif not isinstance(end_node.value, float):
             raise TypeError("Can only take gradient of scalar-valued functions")
         else:
@@ -35,11 +34,7 @@ def grad(fun, argnum=0, return_function_value=False):
                     cur_outgrad = node.sum_outgrads()
                     for gradfun, parent in node.parent_grad_ops:
                         parent.outgrads.append(gradfun(cur_outgrad))
-            gradval = cur_outgrad
-        if return_function_value:
-            return getval(end_node), gradval
-        else:
-            return gradval
+            return cur_outgrad
     try:
         gradfun.__name__ = "grad_{fun}_wrt_argnum_{argnum}".format(fun=fun.__name__, argnum=argnum)
         gradfun.__doc__ = "Gradient of function {fun} with respect to argument number {argnum}. " \
