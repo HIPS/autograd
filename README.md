@@ -1,94 +1,78 @@
 # Autograd
 
-Autograd can automatically differentiate native Python and Numpy code. It can handle a large subset of Python's features, including loops, ifs, recursion and closures, and it can even take derivatives of derivatives of derivatives. It uses reverse-mode differentiation (a.k.a. backpropagation), which means it can efficiently take gradients of scalar-valued functions with respect to array-valued arguments. The main intended application is gradient-based optimization.
+Autograd can automatically differentiate native Python and Numpy code. It can
+handle a large subset of Python's features, including loops, ifs, recursion and
+closures, and it can even take derivatives of derivatives of derivatives. It
+uses reverse-mode differentiation (a.k.a. backpropagation), which means it can
+efficiently take gradients of scalar-valued functions with respect to
+array-valued arguments. The main intended application is gradient-based
+optimization. For more information, check out the [tutorial](docs/tutorial.md)
+and the [examples directory](examples/).
 
 Example use:
 
 ```python
-import autograd.numpy as np
-import matplotlib.pyplot as plt
-from autograd import grad
-
-def fun(x):
-    return np.sin(x)
-
-d_fun = grad(fun)    # First derivative
-dd_fun = grad(d_fun) # Second derivative
-
-x = np.linspace(-10, 10, 100)
-plt.plot(x, map(fun, x), x, map(d_fun, x), x, map(dd_fun, x))
+>>> import autograd.numpy as np  # Thinly-wrapped numpy
+>>> from autograd import grad    # The only autograd function you may ever need
+>>>
+>>> def tanh(x):                 # Define a function
+...     y = np.exp(-x)
+...     return (1.0 - y)  / ( 1.0 + y)
+... 
+>>> grad_tanh = grad(tanh)       # Obtain its gradient function
+>>> grad_tanh(1.0)               # Evaluate the gradient at x = 1.0
+0.39322386648296376
+>>> (tanh(1.0001) - tanh(0.9999)) / 0.0002  # Compare to finite differences
+0.39322386636453377
 ```
-<img src="https://github.com/HIPS/autograd/blob/master/examples/sinusoid.png" width="600">
 
-The function can even have control flow, which raises the prospect
-of differentiating through an iterative routine like an
-optimization. Here's a simple example.
+We can continue to differentiate as many times as we like:
 
 ```python
-# Taylor approximation to sin function
-def fun(x):
-    currterm = x
-    ans = currterm
-    for i in xrange(1000):
-        currterm = - currterm * x ** 2 / ((2 * i + 3) * (2 * i + 2))
-        ans = ans + currterm
-        if np.abs(currterm) < 0.2: break # (Very generous tolerance!)
-
-    return ans
-
-d_fun = grad(fun)
-dd_fun = grad(d_fun)
-
-x = np.linspace(-10, 10, 100)
-plt.plot(x, map(fun, x), x, map(d_fun, x), x, map(dd_fun, x))
+>>> grad_tanh_2 = grad(grad_tanh)           # 2nd derivative
+>>> grad_tanh_3 = grad(grad_tanh_2)         # 3rd derivative
+>>> grad_tanh_4 = grad(grad_tanh_3)         # etc.
+>>> grad_tanh_5 = grad(grad_tanh_4)
+>>> grad_tanh_6 = grad(grad_tanh_5)
+>>>
+>>> import matplotlib.pyplot as plt
+>>> x = np.linspace(-7, 7, 200)
+>>> plt.plot(x, map(tanh, x),
+...          x, map(grad_tanh, x),
+...          x, map(grad_tanh_2, x),
+...          x, map(grad_tanh_3, x),
+...          x, map(grad_tanh_4, x),
+...          x, map(grad_tanh_5, x),
+...          x, map(grad_tanh_6, x))
+>>> plt.show()
 ```
 
-<img src="https://github.com/HIPS/autograd/blob/master/examples/sinusoid_taylor.png" width="600">
+<img src="examples/tanh.png" width="600">
 
+## End-to-end examples
 
-We can take the derivative of the derivative automatically as well, as many times as we like:
+* [Simple neural net](examples/neural_net.py)
+* [Convolutional neural net](examples/convnet.py)
+* [Recurrent neural net](examples/rnn.py)
+* [LSTM](examples/lstm.py)
+* [Backpropagating through a fluid simulation](examples/fluidsim/fluidsim.py)
 
-```python
-# Define the tanh function
-def tanh(x):
-    return (1.0 - np.exp(-x))  / ( 1.0 + np.exp(-x))
+<img src="examples/fluidsim/animated.gif" width="400">
 
-d_fun = grad(tanh)           # First derivative
-dd_fun = grad(d_fun)         # Second derivative
-ddd_fun = grad(dd_fun)       # Third derivative
-dddd_fun = grad(ddd_fun)     # Fourth derivative
-ddddd_fun = grad(dddd_fun)   # Fifth derivative
-dddddd_fun = grad(ddddd_fun) # Sixth derivative
-
-x = np.linspace(-7, 7, 200)
-plt.plot(x, map(tanh, x),
-         x, map(d_fun, x),
-         x, map(dd_fun, x),
-         x, map(ddd_fun, x),
-         x, map(dddd_fun, x),
-         x, map(ddddd_fun, x),
-         x, map(dddddd_fun, x))
-```
-
-<img src="https://github.com/HIPS/autograd/blob/master/examples/tanh.png" width="600">
-
-## Examples:
-
-* [Neural net](https://github.com/HIPS/autograd/blob/master/examples/neural_net.py)
-* [RNN](https://github.com/HIPS/autograd/blob/master/examples/rnn.py)
-* [LSTM](https://github.com/HIPS/autograd/blob/master/examples/lstm.py)
-* [Backpropagating through a fluid simulation](https://github.com/HIPS/autograd/blob/master/examples/fluidsim/fluidsim.py)
-
-<img src="https://github.com/HIPS/autograd/blob/master/examples/fluidsim/animated.gif" width="400">
-
-## How to install:
+## How to install
 
 Just run `pip install autograd`
 
-## Authors:
+## Authors
 
-[Dougal Maclaurin](mailto:maclaurin@physics.harvard.edu) and [David Duvenaud](http://mlg.eng.cam.ac.uk/duvenaud/)
+Autograd was written by [Dougal Maclaurin](mailto:maclaurin@physics.harvard.edu)
+and [David Duvenaud](http://mlg.eng.cam.ac.uk/duvenaud/) and we're actively
+developing it. Please feel free to submit any bugs or feature requests.
+We'd also love to hear about your experiences with autograd in general.
+Drop us an email!
 
-We thank Matthew Johnson, Jasper Snoek, and the rest of the HIPS group (led by Ryan P. Adams) for helpful contributions and advice.
-We thank Barak Pearlmutter for foundational work on autodiff and for guidance on our implementation.
-We thank Analog Devices International and Samsung Advanced Institute of Technology for their generous support.
+We want to thank Matthew Johnson, Jasper Snoek, and the rest of the HIPS group
+(led by Prof. Ryan P. Adams) for helpful contributions and advice; Barak Pearlmutter
+for foundational work on automatic differentiation and for guidance on our
+implementation; and Analog Devices International and Samsung Advanced Institute
+of Technology for their generous support.
