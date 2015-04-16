@@ -1,7 +1,6 @@
 import autograd.numpy as np
 import itertools as it
-from autograd import grad
-from autograd.core import getval
+from autograd.core import grad, safe_type
 from copy import copy
 
 def nd(f, *args):
@@ -10,7 +9,10 @@ def nd(f, *args):
 
 def unary_nd(f, x, eps=1e-4):
     if isinstance(x, np.ndarray):
-        nd_grad = np.zeros(x.shape)
+        if np.iscomplexobj(x):
+            nd_grad = np.zeros(x.shape) + 0j
+        else:
+            nd_grad = np.zeros(x.shape)
         for dims in it.product(*map(range, x.shape)):
             nd_grad[dims] = unary_nd(indexed_function(f, x, dims), x[dims])
         return nd_grad
@@ -21,8 +23,12 @@ def unary_nd(f, x, eps=1e-4):
         return {k : unary_nd(indexed_function(f, x, k), v) for k, v in x.iteritems()}
     elif isinstance(x, list):
         return [unary_nd(indexed_function(f, x, i), v) for i, v in enumerate(x)]
+    elif np.iscomplex(x):
+        result = (f(x +    eps/2) - f(x -    eps/2)) / eps \
+            - 1j*(f(x + 1j*eps/2) - f(x - 1j*eps/2)) / eps
+        return type(safe_type(x))(result)
     else:
-        return (f(x + eps/2) - f(x - eps/2)) / eps
+        return type(safe_type(x))((f(x + eps/2) - f(x - eps/2)) / eps)
 
 def indexed_function(fun, arg, index):
     def partial_function(x):
@@ -34,12 +40,9 @@ def indexed_function(fun, arg, index):
         return fun(local_arg)
     return partial_function
 
-def eq_class(dtype):
-    return float if dtype == np.float64 else dtype
-
 def check_equivalent(A, B, rtol=1e-4, atol=1e-6):
-    assert eq_class(type(A)) == eq_class(type(B)),\
-        "Types are: {0} and {1}".format(eq_class(type(A)), eq_class(type(B)))
+    assert type(A) is type(B),\
+        "Types are: {0} and {1}".format(type(A), type(B))
     if isinstance(A, (tuple, list)):
         for a, b in zip(A, B): check_equivalent(a, b)
     elif isinstance(A, dict):
@@ -48,7 +51,8 @@ def check_equivalent(A, B, rtol=1e-4, atol=1e-6):
     else:
         if isinstance(A, np.ndarray):
             assert A.shape == B.shape, "Shapes are {0} and {1}".format(A.shape, B.shape)
-        assert np.allclose(A, B, rtol=rtol, atol=atol), "Diffs are: {0}".format(A - B)
+        assert np.allclose(A, B, rtol=rtol, atol=atol), \
+            "Diffs are:\n{0}.\nA is:\n{A}.\nB is:\n{B}.".format(A - B, A=A, B=B)
 
 def check_grads(fun, *args):
     if not args:
@@ -59,7 +63,7 @@ def check_grads(fun, *args):
     check_equivalent(exact, numeric)
 
 def to_scalar(x):
-    return np.sum(np.sin(x))
+    return np.sum(np.real(np.sin(x)))
 
 def quick_grad_check(fun, arg0, extra_args=(), kwargs={}, verbose=True,
                      eps=1e-4, rtol=1e-4, atol=1e-6, rs=None):

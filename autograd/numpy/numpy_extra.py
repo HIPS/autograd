@@ -1,9 +1,10 @@
 from __future__ import absolute_import
-from autograd.core import (Node, FloatNode, primitive,
+from autograd.core import (Node, FloatNode, primitive, cast,
                            differentiable_ops, nondifferentiable_ops, getval)
 from . import numpy_wrapper as anp
 
-np_float_types = [anp.float64, anp.float32, anp.float16]
+np_float_types = [anp.float64, anp.float32, anp.float16,
+                  anp.complex, anp.complex64, anp.complex128]
 for ft in np_float_types:
     Node.type_mappings[ft] = FloatNode
 
@@ -35,14 +36,17 @@ class ArrayNode(Node):
 
     @staticmethod
     def zeros_like(value):
-        return anp.zeros(value.shape)
+        if anp.iscomplexobj(getval(value)):
+            return anp.zeros(value.shape) + 0.0j
+        else:
+            return anp.zeros(value.shape)
 
     @staticmethod
-    def sum_outgrads(outgrads):
+    def sum_outgrads(outgrads, selfval):
         if len(outgrads) is 1 and not isinstance(getval(outgrads[0]), SparseArray):
-            return outgrads[0]
+            return arraycast(outgrads[0], selfval)
         else:
-            return primitive_sum_arrays(*outgrads)
+            return arraycast(primitive_sum_arrays(*outgrads), selfval)
 
     def __neg__(self): return anp.negative(self)
     def __add__(self, other): return anp.add(     self, other)
@@ -67,11 +71,29 @@ class ArrayNode(Node):
 Node.type_mappings[anp.ndarray] = ArrayNode
 
 @primitive
+def arraycast(x, val):
+    if type(x) is SparseArray:
+        return x
+    elif not isinstance(x, anp.ndarray):
+        return anp.array(cast(x, val.ravel()[0]))
+    else:
+        if anp.iscomplexobj(val) and not anp.iscomplexobj(x):
+            return anp.array(x, dtype=anp.complex)
+        elif not anp.iscomplexobj(val) and anp.iscomplexobj(x):
+            return anp.real(anp.array(x))
+        else:
+            return x
+arraycast.defgrad(lambda ans, x, val: lambda g : g)
+
+@primitive
 def primitive_sum_arrays(*arrays):
     new_array = anp.zeros(arrays[0].shape)
     for array in arrays:
         if isinstance(array, SparseArray):
             new_array[array.idx] += array.val
+        elif anp.iscomplexobj(array):
+            new_array = new_array.astype(complex)
+            new_array += array
         else:
             new_array += array
     return new_array
