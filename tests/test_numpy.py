@@ -482,6 +482,125 @@ def test_array_from_arrays_2():
     check_grads(fun, A)
     check_grads(d_fun, A)
 
+def test_len():
+    def fun(x):
+        assert len(x) == 3
+        return len(x)
+    A = npr.randn(3, 2)
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    check_grads(fun, A)
+    check_grads(d_fun, A)
+
+def test_r_basic():
+    def fun(x):
+        c = npr.randn(3, 2)
+        b = np.r_[x]
+        return to_scalar(b)
+    A = npr.randn(3, 2)
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    check_grads(fun, A)
+    check_grads(d_fun, A)
+
+def test_r_double():
+    def fun(x):
+        c = npr.randn(3, 2)
+        b = np.r_[x, x]
+        return to_scalar(b)
+    A = npr.randn(3, 2)
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    check_grads(fun, A)
+    check_grads(d_fun, A)
+
+def test_no_relation():
+    c = npr.randn(3, 2)
+    def fun(x):
+        return to_scalar(c)
+    A = npr.randn(3, 2)
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    check_grads(fun, A)
+    check_grads(d_fun, A)
+
+def test_r_no_relation():
+    c = npr.randn(3, 2)
+    def fun(x):
+        b = np.r_[c]
+        return to_scalar(b)
+    A = npr.randn(3, 2)
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    check_grads(fun, A)
+    check_grads(d_fun, A)
+
+def test_r_node_and_const():
+    c = npr.randn(3, 2)
+    def fun(x):
+        b = np.r_[x, c]
+        return to_scalar(b)
+    A = npr.randn(3, 2)
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    check_grads(fun, A)
+    check_grads(d_fun, A)
+
+def test_r_mixed():
+    c = npr.randn(3, 2)
+    def fun(x):
+        b = np.r_[x, c, x]
+        return to_scalar(b)
+    A = npr.randn(3, 2)
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    check_grads(fun, A)
+    check_grads(d_fun, A)
+
+def test_r_slicing():
+    c = npr.randn(10)
+    def fun(x):
+        b = np.r_[x, c, 1:10]
+        return to_scalar(b)
+    A = npr.randn(10)
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    check_grads(fun, A)
+    check_grads(d_fun, A)
+
+def test_c_():
+    c = npr.randn(3, 2)
+    def fun(x):
+        b = np.c_[x, c, x]
+        return to_scalar(b)
+    A = npr.randn(3, 2)
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    check_grads(fun, A)
+    check_grads(d_fun, A)
+
+def test_c_mixed():
+    c = npr.randn(3, 2)
+    def fun(x):
+        b = np.c_[x, c, x]
+        return to_scalar(b)
+    A = npr.randn(3, 2)
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    check_grads(fun, A)
+    check_grads(d_fun, A)
+test_c_mixed()
+
+#def test_index_exp_slicing():
+#    def fun(x):
+#        b = np.index_exp[x, x]
+#        return to_scalar(b)
+#    A = npr.randn(10, 1)
+#    d_fun = lambda x : to_scalar(grad(fun)(x))
+#    check_grads(fun, A)
+#    check_grads(d_fun, A)
+#test_index_exp_slicing()
+
+#def test_s_slicing():
+#    def fun(x):
+#        b = np.s_[x, x]
+#        return to_scalar(b)
+#    A = npr.randn(10, 1)
+#    d_fun = lambda x : to_scalar(grad(fun)(x))
+#    check_grads(fun, A)
+#    check_grads(d_fun, A)
+#test_s_slicing()
+
 #def test_cross_arg0():
 #    def fun(x, y): return to_scalar(np.cross(x, y))
 #    d_fun = lambda x : to_scalar(grad(fun)(x))

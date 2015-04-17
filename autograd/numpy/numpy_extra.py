@@ -34,6 +34,9 @@ class ArrayNode(Node):
     size  = property(lambda self: self.value.size)
     T = property(lambda self: anp.transpose(self))
 
+    def __len__(self):
+        return len(self.value)
+
     @staticmethod
     def zeros_like(value):
         if anp.iscomplexobj(getval(value)):
@@ -109,7 +112,7 @@ diff_methods = ['clip', 'compress', 'cumprod', 'cumsum', 'diagonal',
 for method_name in nondiff_methods + diff_methods:
     setattr(ArrayNode, method_name, anp.__dict__[method_name])
 
-# Flatten, bizarrely, has no function, only a method.
+# Flatten has no function, only a method.
 setattr(ArrayNode, 'flatten', anp.__dict__['ravel'])
 
 # Replace FloatNode operators with broadcastable versions
