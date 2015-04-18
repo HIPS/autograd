@@ -33,7 +33,7 @@ def wrap_if_nodes_inside(raw_array, slow_op_name=None):
     if raw_array.dtype is np.dtype('O'):
         if slow_op_name:
             warnings.warn("{0} is slow for array inputs. "
-                          "Concatenate() is faster.".format(slow_op_name))
+                          "np.concatenate() is faster.".format(slow_op_name))
         return array_from_args(raw_array.shape, *raw_array.ravel())
     else:
         return raw_array
@@ -61,4 +61,3 @@ class c_class():
         raw_array = np.c_[args]
         return wrap_if_nodes_inside(raw_array, slow_op_name = "c_")
 c_ = c_class()
-

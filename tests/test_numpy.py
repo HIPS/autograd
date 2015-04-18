@@ -2,6 +2,7 @@ import autograd.numpy as np
 import autograd.numpy.random as npr
 from autograd.util import *
 from autograd import grad
+from numpy_utils import combo_check
 npr.seed(1)
 
 def test_dot():
@@ -579,7 +580,20 @@ def test_c_mixed():
     d_fun = lambda x : to_scalar(grad(fun)(x))
     check_grads(fun, A)
     check_grads(d_fun, A)
-test_c_mixed()
+
+def test_var_ddof():
+    B = npr.randn(3)
+    C = npr.randn(3, 4)
+    D = npr.randn(1, 3)
+    combo_check(np.var, (0,), [B, C, D], axis=[None], keepdims=[True, False], ddof=[0, 1])
+    combo_check(np.var, (0,), [C, D], axis=[None, 1], keepdims=[True, False], ddof=[2])
+
+def test_std_ddof():
+    B = npr.randn(3)
+    C = npr.randn(3, 4)
+    D = npr.randn(1, 3)
+    combo_check(np.std, (0,), [B, C, D], axis=[None], keepdims=[True, False], ddof=[0, 1])
+    combo_check(np.std, (0,), [C, D], axis=[None, 1], keepdims=[True, False], ddof=[2])
 
 #def test_index_exp_slicing():
 #    def fun(x):
@@ -589,7 +603,6 @@ test_c_mixed()
 #    d_fun = lambda x : to_scalar(grad(fun)(x))
 #    check_grads(fun, A)
 #    check_grads(d_fun, A)
-#test_index_exp_slicing()
 
 #def test_s_slicing():
 #    def fun(x):
@@ -599,7 +612,6 @@ test_c_mixed()
 #    d_fun = lambda x : to_scalar(grad(fun)(x))
 #    check_grads(fun, A)
 #    check_grads(d_fun, A)
-#test_s_slicing()
 
 #def test_cross_arg0():
 #    def fun(x, y): return to_scalar(np.cross(x, y))

@@ -14,6 +14,8 @@ def test_mean(): stat_check(np.mean)
 def test_min():  stat_check(np.min)
 def test_sum():  stat_check(np.sum)
 def test_prod(): stat_check(np.prod)
+def test_var():  stat_check(np.var)
+def test_std():  stat_check(np.std)
 
 # Unary ufunc tests
 
@@ -59,7 +61,7 @@ def test_logaddexp(): binary_ufunc_check(np.logaddexp, test_complex=False)
 def test_logaddexp2(): binary_ufunc_check(np.logaddexp2, test_complex=False)
 def test_remainder(): binary_ufunc_check_no_same_args(np.remainder, lims_A=[-0.9, 0.9], lims_B=[0.7, 1.9], test_complex=False)
 def test_true_divide(): binary_ufunc_check(np.true_divide, lims_B=[0.3, 2.0], test_complex=False)
-def test_mod(): binary_ufunc_check_no_same_args(np.mod,    lims_B=[0.3, 2.0], test_complex=False)
+def test_mod(): binary_ufunc_check_no_same_args(np.mod,    lims_B=[0.8, 2.1], test_complex=False)
 def test_true_divide_neg(): binary_ufunc_check(np.true_divide, lims_B=[-0.3, -2.0], test_complex=False)
 def test_mod_neg(): binary_ufunc_check_no_same_args(np.mod,    lims_B=[-0.3, -2.0], test_complex=False)
 

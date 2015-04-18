@@ -177,6 +177,21 @@ def make_grad_np_prod(ans, x, axis=None, keepdims=False): # TODO: Support tuples
     return lambda g: repeater(g * ans) / x
 anp.prod.defgrad(make_grad_np_prod)
 
+def make_grad_np_var(ans, x, axis=None, ddof=0, keepdims=False):
+    repeater, num_reps = repeat_to_match_shape(x, axis, keepdims)
+    x_minus_mean = anp.conj(x - anp.mean(x, axis=axis, keepdims=True))
+    return lambda g: 2.0 * repeater(g) * x_minus_mean / (num_reps - ddof)
+anp.var.defgrad(make_grad_np_var)
+
+def make_grad_np_std(ans, x, axis=None, ddof=0, keepdims=False):
+    repeater, num_reps = repeat_to_match_shape(x, axis, keepdims)
+    if num_reps <= 1:
+        return lambda g: repeater(0.0 * g)  # Avoid division by zero.
+    else:
+        x_minus_mean = anp.conj(x - anp.mean(x, axis=axis, keepdims=True))
+        return lambda g: repeater(g / ans) * x_minus_mean / (num_reps - ddof)
+anp.std.defgrad(make_grad_np_std)
+
 def make_grad_chooser(ans, x, axis=None, keepdims=None):
     """Builds gradient of functions that choose a single item, such as min or max."""
     repeater, _ = repeat_to_match_shape(x, axis, keepdims)
