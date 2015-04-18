@@ -1,8 +1,8 @@
-from autograd.core import getval, primitive
-
 import operator as op
+
+from autograd.core import getval
 from . import numpy_wrapper as anp
-from .numpy_extra import take, ArrayNode
+from .numpy_extra import ArrayNode, take
 
 # ----- Functions that are constant w.r.t. continuous inputs -----
 
@@ -48,6 +48,7 @@ anp.not_equal.defgrad_is_zero(argnums=(0, 1))
 anp.iscomplexobj.defgrad_is_zero()
 anp.iscomplex.defgrad_is_zero()
 anp.nan_to_num.defgrad_is_zero()
+anp.size.defgrad_is_zero()
 
 # ----- Binary ufuncs -----
 
@@ -270,6 +271,28 @@ def wrapped_reshape(x, *args, **kwargs):
         return anp.reshape(x, *args, **kwargs)
 setattr(ArrayNode, 'reshape', wrapped_reshape)
 
+def make_grad_sort(ans, x, axis=-1, kind='quicksort', order=None):
+    #TODO: Cast input with np.asanyarray()
+    if len(x.shape) > 1:
+        raise NotImplementedError(
+            "Gradient of sort not implemented for multi-dimensional arrays.")
+    sort_perm = anp.argsort(x, axis, kind, order)
+    return unpermuter(sort_perm)
+anp.sort.defgrad(make_grad_sort)
+
+def make_grad_partition(ans, x, kth, axis=-1, kind='introselect', order=None):
+    #TODO: Cast input with np.asanyarray()
+    if len(x.shape) > 1:
+        raise NotImplementedError(
+            "Gradient of partition not implemented for multi-dimensional arrays.")
+    partition_perm = anp.argpartition(x, kth, axis, kind, order)
+    return unpermuter(partition_perm)
+anp.partition.defgrad(make_grad_partition)
+
+def unpermuter(permutation):
+    unsort = anp.zeros(len(permutation), dtype=int)
+    unsort[permutation] = range(len(permutation))
+    return lambda g: g[unsort]
 
 # ----- Handle broadcasting -----
 
