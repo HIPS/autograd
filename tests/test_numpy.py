@@ -595,6 +595,17 @@ def test_std_ddof():
     combo_check(np.std, (0,), [B, C, D], axis=[None], keepdims=[True, False], ddof=[0, 1])
     combo_check(np.std, (0,), [C, D], axis=[None, 1], keepdims=[True, False], ddof=[2])
 
+def test_where():
+    def fun(c, x, y):
+        b = np.where(c, x, y)
+        return to_scalar(b)
+    C = npr.randn(4, 5) > 0
+    A = npr.randn(4, 5)
+    B = npr.randn(4, 5)
+    d_fun = lambda c, a, b : to_scalar(grad(fun)(c, a, b))
+    check_grads(fun, C, A, B)
+    check_grads(d_fun, C, A, B)
+
 #def test_index_exp_slicing():
 #    def fun(x):
 #        b = np.index_exp[x, x]

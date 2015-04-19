@@ -113,6 +113,7 @@ def test_minimum(): combo_check(np.minimum, [0, 1],
                                [R(1), R(1,4), R(3, 4)],
                                [R(1), R(1,4), R(3, 4)])
 
-def test_sort():      combo_check(np.sort, [0], [R(1), R(7)])
+def test_sort():       combo_check(np.sort, [0], [R(1), R(7)])
+def test_msort():     combo_check(np.msort, [0], [R(1), R(7)])
 def test_partition(): combo_check(np.partition, [0],
                                   [R(7), R(14)], kth=[0, 3, 6])

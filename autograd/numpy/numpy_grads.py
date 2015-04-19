@@ -19,7 +19,10 @@ anp.argmax.defgrad_is_zero()
 anp.argmin.defgrad_is_zero()
 anp.argpartition.defgrad_is_zero()
 anp.argsort.defgrad_is_zero()
+anp.argwhere.defgrad_is_zero()
 anp.nonzero.defgrad_is_zero()
+anp.flatnonzero.defgrad_is_zero()
+anp.count_nonzero.defgrad_is_zero()
 anp.searchsorted.defgrad_is_zero()
 anp.sign.defgrad_is_zero()
 anp.ndim.defgrad_is_zero()
@@ -49,6 +52,7 @@ anp.iscomplexobj.defgrad_is_zero()
 anp.iscomplex.defgrad_is_zero()
 anp.nan_to_num.defgrad_is_zero()
 anp.size.defgrad_is_zero()
+anp.where.defgrad_is_zero(argnums=(0,))
 
 # ----- Binary ufuncs -----
 
@@ -132,6 +136,8 @@ anp.real.defgrad(  lambda ans, x   : lambda g : g)
 anp.imag.defgrad(  lambda ans, x   : lambda g : -1j * g)
 anp.conj.defgrad(  lambda ans, x   : lambda g : anp.conj(g))
 anp.angle.defgrad( lambda ans, x   : lambda g : g * anp.conj(x * 1j) / anp.abs(x)**2)
+anp.where.defgrad( lambda ans, c, x=None, y=None : lambda g : anp.where(c, g, anp.zeros(g.shape)), argnum=1)
+anp.where.defgrad( lambda ans, c, x=None, y=None : lambda g : anp.where(c, anp.zeros(g.shape), g), argnum=2)
 
 # ----- Trickier grads -----
 
@@ -279,6 +285,7 @@ def make_grad_sort(ans, x, axis=-1, kind='quicksort', order=None):
     sort_perm = anp.argsort(x, axis, kind, order)
     return unpermuter(sort_perm)
 anp.sort.defgrad(make_grad_sort)
+anp.msort.defgrad(make_grad_sort)  # Until multi-D is allowed, these are the same.
 
 def make_grad_partition(ans, x, kth, axis=-1, kind='introselect', order=None):
     #TODO: Cast input with np.asanyarray()
