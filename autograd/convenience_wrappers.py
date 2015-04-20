@@ -1,4 +1,7 @@
 """Convenience functions built on top of `grad`."""
+import itertools as it
+
+import autograd.numpy as np
 from autograd.core import grad, getval
 
 def grad_and_aux(fun, argnum=0):
