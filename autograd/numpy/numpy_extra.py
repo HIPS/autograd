@@ -4,7 +4,7 @@ from autograd.core import (Node, FloatNode, primitive, cast,
 from . import numpy_wrapper as anp
 
 np_float_types = [anp.float64, anp.float32, anp.float16,
-                  anp.complex, anp.complex64, anp.complex128]
+                  complex, anp.complex64, anp.complex128]
 for ft in np_float_types:
     Node.type_mappings[ft] = FloatNode
 

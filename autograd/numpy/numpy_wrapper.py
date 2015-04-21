@@ -1,6 +1,13 @@
 from __future__ import absolute_import
 import types
-import numpy as np
+import os
+
+if 'AUTOGRAD_USE_GPU_NUMPY' in os.environ:
+    print "Using GPU-supporing numpy wrapper"
+    import gpu_numpy as np
+else:
+    import numpy as np
+
 import warnings
 from autograd.core import primitive
 
