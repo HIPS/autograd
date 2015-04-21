@@ -606,6 +606,35 @@ def test_where():
     check_grads(fun, C, A, B)
     check_grads(d_fun, C, A, B)
 
+def test_squeeze_func():
+    A = npr.randn(5, 1, 4)
+    def fun(x): return to_scalar(np.squeeze(x))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    check_grads(fun, A)
+    check_grads(d_fun, A)
+
+def test_squeeze_method():
+    A = npr.randn(5, 1, 4)
+    def fun(x): return to_scalar(x.squeeze())
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    check_grads(fun, A)
+    check_grads(d_fun, A)
+
+
+def test_repeat():
+    A = npr.randn(5, 1, 4)
+    def fun(x): return to_scalar(np.repeat(x, 2, axis=1))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    check_grads(fun, A)
+    check_grads(d_fun, A)
+
+def test_expand_dims():
+    A = npr.randn(5, 1, 4)
+    def fun(x): return to_scalar(np.expand_dims(x, 2))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    check_grads(fun, A)
+    check_grads(d_fun, A)
+
 #def test_index_exp_slicing():
 #    def fun(x):
 #        b = np.index_exp[x, x]
@@ -641,4 +670,4 @@ def test_where():
 #    check_grads(d_fun, x, y)
 
 # TODO:
-# squeeze, getitem
+# getitem
