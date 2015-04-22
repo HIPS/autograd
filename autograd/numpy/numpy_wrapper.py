@@ -1,9 +1,8 @@
 from __future__ import absolute_import
 import types
-import os
+from .use_gpu_numpy import use_gpu_numpy
 
-use_gpu_numpy = os.environ.get('AUTOGRAD_USE_GPU_NUMPY', 'no')
-if use_gpu_numpy == 'yes':
+if use_gpu_numpy():
     print "Using GPU-supporting numpy wrapper"
     import gpu_numpy as np
 else:
