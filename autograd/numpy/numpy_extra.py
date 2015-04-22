@@ -59,12 +59,14 @@ class ArrayNode(Node):
     def __pow__(self, other): return anp.power   (self, other)
     def __div__(self, other): return anp.divide(  self, other)
     def __mod__(self, other): return anp.mod(     self, other)
+    def __truediv__(self, other): return anp.true_divide(self, other)
     def __radd__(self, other): return anp.add(     other, self)
     def __rsub__(self, other): return anp.subtract(other, self)
     def __rmul__(self, other): return anp.multiply(other, self)
     def __rpow__(self, other): return anp.power(   other, self)
     def __rdiv__(self, other): return anp.divide(  other, self)
     def __rmod__(self, other): return anp.mod(     other, self)
+    def __rtruediv__(self, other): return anp.true_divide(other, self)
     def __eq__(self, other): return anp.equal(self, other)
     def __ne__(self, other): return anp.not_equal(self, other)
     def __gt__(self, other): return anp.greater(self, other)
@@ -132,7 +134,7 @@ for method_name in nondiff_methods + diff_methods:
 setattr(ArrayNode, 'flatten', anp.__dict__['ravel'])
 
 # Replace FloatNode operators with broadcastable versions
-for method_name in differentiable_ops + nondifferentiable_ops:
+for method_name in differentiable_ops + nondifferentiable_ops + ['__truediv__', '__rtruediv__']:
     setattr(FloatNode, method_name, ArrayNode.__dict__[method_name])
 
 # ----- Special type for efficient grads through indexing -----
