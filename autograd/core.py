@@ -4,6 +4,7 @@ import operator as op
 import types
 import math
 import numpy as np
+from weakref import WeakKeyDictionary
 
 def grad(fun, argnum=0):
     """
@@ -20,7 +21,6 @@ def grad(fun, argnum=0):
         tape.add_node(start_node)
         args = args[:argnum] + (start_node,) + args[argnum+1:]
         end_node = fun(*args, **kwargs)
-        tape.complete = True
         if not isinstance(end_node, Node) or tape not in end_node.tapes:
             warnings.warn("Output seems independent of input. Returning zero gradient.")
             return zeros_like(start_node)
@@ -30,6 +30,7 @@ def grad(fun, argnum=0):
         else:
             end_node.tapes[tape].outgrads = [1.0]
             op_list = tape.op_list
+            del tape
             while op_list:
                 node = op_list.pop()
                 if node.outgrads:
@@ -81,10 +82,7 @@ class primitive(object):
                 argvals[i] = arg.value
                 if i in self.zero_grads: continue
                 for tape in arg.tapes.keys():
-                    if not tape.complete:
-                        ops.append((tape, i, arg))
-                    else:
-                        del arg.tapes[tape]
+                    ops.append((tape, i, arg))
 
         result = self.fun(*argvals, **kwargs)
         if result is NotImplemented: return result
@@ -130,7 +128,7 @@ class Node(object):
     type_mappings = {}
     def __init__(self, value):
         self.value = value
-        self.tapes = {}
+        self.tapes = WeakKeyDictionary()
 
     @staticmethod
     def sum_outgrads(outgrads, selftype):
@@ -151,7 +149,6 @@ getval = lambda x : x.value if isinstance(x, Node) else x
 class CalculationTape(object):
     def __init__(self):
         self.op_list = []
-        self.complete = False
 
     def add_node(self, node):
         new_rnode = ReverseNode(type(node), node.value)
