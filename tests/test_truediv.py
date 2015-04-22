@@ -2,12 +2,9 @@
 from __future__ import division
 
 import autograd.numpy as np
-import autograd.numpy.random as npr
 from autograd.util import *
 from autograd import grad
 from test_binary_ops import arg_pairs
-
-rs = npr.RandomState(0)
 
 def test_div():
     fun = lambda x, y : to_scalar(x / y)
