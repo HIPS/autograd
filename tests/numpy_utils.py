@@ -3,6 +3,7 @@ import autograd.numpy.random as npr
 from autograd import grad, primitive
 from autograd.util import check_equivalent, check_grads, to_scalar
 
+
 def combo_check(fun, argnums, *args, **kwargs):
     # Tests all combinations of args given.
     args = list(args)

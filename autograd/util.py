@@ -2,15 +2,27 @@ import autograd.numpy as np
 import itertools as it
 from autograd.core import grad, safe_type
 from copy import copy
+from autograd.numpy.use_gpu_numpy import use_gpu_numpy
+
+if use_gpu_numpy():
+    garray_obj = np.garray
+    array_types = (np.ndarray, garray_obj)
+    EPS, RTOL, ATOL = 1e-4, 1e-2, 1e-2
+else:
+    garray_obj = None
+    array_types = (np.ndarray,)
+    EPS, RTOL, ATOL = 1e-3, 1e-4, 1e-6
 
 def nd(f, *args):
     unary_f = lambda x : f(*x)
     return unary_nd(unary_f, args)
 
-def unary_nd(f, x, eps=1e-4):
-    if isinstance(x, np.ndarray):
+def unary_nd(f, x, eps=EPS):
+    if isinstance(x, array_types):
         if np.iscomplexobj(x):
             nd_grad = np.zeros(x.shape) + 0j
+        elif isinstance(x, garray_obj):
+            nd_grad = np.array(np.zeros(x.shape), dtype=np.gpu_float32)
         else:
             nd_grad = np.zeros(x.shape)
         for dims in it.product(*map(range, x.shape)):
@@ -23,7 +35,7 @@ def unary_nd(f, x, eps=1e-4):
         return {k : unary_nd(indexed_function(f, x, k), v) for k, v in x.iteritems()}
     elif isinstance(x, list):
         return [unary_nd(indexed_function(f, x, i), v) for i, v in enumerate(x)]
-    elif np.iscomplex(x):
+    elif np.iscomplexobj(x):
         result = (f(x +    eps/2) - f(x -    eps/2)) / eps \
             - 1j*(f(x + 1j*eps/2) - f(x - 1j*eps/2)) / eps
         return type(safe_type(x))(result)
@@ -40,7 +52,7 @@ def indexed_function(fun, arg, index):
         return fun(local_arg)
     return partial_function
 
-def check_equivalent(A, B, rtol=1e-4, atol=1e-6):
+def check_equivalent(A, B, rtol=RTOL, atol=ATOL):
     assert base_class(type(A)) is base_class(type(B)),\
         "Types are: {0} and {1}".format(type(A), type(B))
     if isinstance(A, (tuple, list)):
@@ -50,24 +62,26 @@ def check_equivalent(A, B, rtol=1e-4, atol=1e-6):
         for k in A: check_equivalent(A[k], B[k])
     else:
         if isinstance(A, np.ndarray):
-            assert A.shape == B.shape, "Shapes are {0} and {1}".format(A.shape, B.shape)
-            assert A.dtype == B.dtype, "Types are {0} and {1}".format(A.dtype, B.dtype)
+            assert A.shape == B.shape, "Shapes are analytic: {0} and numeric: {1}".format(
+                A.shape, B.shape)
+            assert A.dtype == B.dtype, "Types are  analytic: {0} and numeric: {1}".format(
+                A.dtype, B.dtype)
+
         assert np.allclose(A, B, rtol=rtol, atol=atol), \
-            "Diffs are:\n{0}.\nA is:\n{A}.\nB is:\n{B}.".format(A - B, A=A, B=B)
+            "Diffs are:\n{0}.\nanalytic is:\n{A}.\nnumeric is:\n{B}.".format(A - B, A=A, B=B)
 
 def check_grads(fun, *args):
     if not args:
         raise Exception("No args given")
     exact = tuple([grad(fun, i)(*args) for i in range(len(args))])
     numeric = nd(fun, *args)
-
     check_equivalent(exact, numeric)
 
 def to_scalar(x):
     return np.sum(np.real(np.sin(x)))
 
 def quick_grad_check(fun, arg0, extra_args=(), kwargs={}, verbose=True,
-                     eps=1e-4, rtol=1e-4, atol=1e-6, rs=None):
+                     eps=EPS, rtol=RTOL, atol=ATOL, rs=None):
     """Checks the gradient of a function (w.r.t. to its first arg) in a random direction"""
 
     if verbose:

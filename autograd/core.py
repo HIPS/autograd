@@ -33,7 +33,9 @@ def grad(fun, argnum=0):
                 node = op_list.pop()
                 if node.outgrads:
                     cur_outgrad = node.sum_outgrads()
-                    assert type(new_node(getval(cur_outgrad))) == node.node_type
+                    assert type(new_node(getval(cur_outgrad))) == node.node_type, \
+                        "Types are {0} and {1}".format(type(new_node(getval(cur_outgrad))),
+                                                       node.node_type)
                     for gradfun, parent in node.parent_grad_ops:
                         og = cast_to_node_type(gradfun(cur_outgrad), parent.node_type)
                         parent.outgrads.append(og)
