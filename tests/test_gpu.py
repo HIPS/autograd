@@ -1,10 +1,15 @@
 import autograd.numpy.random as npr
 import autograd.numpy as np
 import operator as op
+from autograd.numpy.use_gpu_numpy import use_gpu_numpy
 from numpy_utils import (combo_check, stat_check, unary_ufunc_check,
                          binary_ufunc_check, binary_ufunc_check_no_same_args)
 
 npr.seed(0)
+
+if not use_gpu_numpy():
+    print "Can't test GPU support without flag set"
+    assert False
 
 def R(*shape):
     arr = npr.randn(*shape)
