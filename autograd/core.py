@@ -114,12 +114,11 @@ def zeros_like(value):
         return new_node(value, []).zeros_like(value)
 
 class ReverseNode(object):
-    __slots__ = ['parent_grad_ops', 'outgrads', 'value', 'node_type']
-    def __init__(self, node_type, value):
+    __slots__ = ['parent_grad_ops', 'outgrads', 'node_type']
+    def __init__(self, node_type):
         self.parent_grad_ops = []
         self.outgrads = []
         self.node_type = node_type
-        self.value = value
 
     def sum_outgrads(self):
         summed_outgrads = self.node_type.sum_outgrads(self.outgrads)
@@ -134,7 +133,7 @@ class Node(object):
         self.value = value
         self.tapes = WeakKeyDictionary()
         for tape in tapes:
-            new_rnode = ReverseNode(type(self), value)
+            new_rnode = ReverseNode(type(self))
             tape.append(new_rnode)
             self.tapes[tape] = new_rnode
 
