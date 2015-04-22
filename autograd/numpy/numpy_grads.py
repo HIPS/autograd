@@ -309,12 +309,12 @@ def unbroadcast(ans, x, gradfun):
         shape = x.shape
         def new_fun(g):
             result = gradfun(g)
-            while result.ndim > len(shape):
+            while anp.ndim(result) > len(shape):
                 result = anp.sum(result, axis=0)
             for axis, size in enumerate(shape):
                 if size is 1:
                     result = anp.sum(result, axis=axis, keepdims=True)
-            assert result.shape == shape
+            assert anp.shape(result) == shape
             return result
     elif isarray(ans):
         new_fun = lambda g : anp.sum(gradfun(g))
