@@ -15,10 +15,10 @@ def grad(fun, argnum=0):
     def gradfun(*args, **kwargs):
         tape = CalculationTape()
         start_node = args[argnum]
-        if not isinstance(start_node, Node):
-            start_node = safe_type(start_node)
-            start_node = new_node(start_node)
-        tape.add_node(start_node)
+        if isinstance(start_node, Node):
+            start_node.add_tape(tape)
+        else:
+            start_node = new_node(safe_type(start_node), [tape])
         args = args[:argnum] + (start_node,) + args[argnum+1:]
         end_node = fun(*args, **kwargs)
         if not isinstance(end_node, Node) or tape not in end_node.tapes:
@@ -29,7 +29,7 @@ def grad(fun, argnum=0):
                 "You asked for the gradient of a {0}.".format(type(end_node.value)))
         else:
             end_node.tapes[tape].outgrads = [1.0]
-            op_list = tape.op_list
+            op_list = list(tape)
             del tape
             while op_list:
                 node = op_list.pop()
@@ -77,20 +77,19 @@ class primitive(object):
     def __call__(self, *args, **kwargs):
         argvals = list(args)
         ops = []
+        tapes = set()
         for i, arg in enumerate(args):
             if isinstance(arg, Node):
                 argvals[i] = arg.value
                 if i in self.zero_grads: continue
                 for tape in arg.tapes.keys():
                     ops.append((tape, i, arg))
+                    tapes.add(tape)
 
         result = self.fun(*argvals, **kwargs)
         if result is NotImplemented: return result
         if ops:
-            result = new_node(result)
-            for tape, argnum, parent in ops:
-                if tape not in result.tapes:
-                    tape.add_node(result)
+            result = new_node(result, tapes)
             for tape, argnum, parent in ops:
                 gradfun = self.gradmaker(argnum, result, *args, **kwargs)
                 rnode = result.tapes[tape]
@@ -100,9 +99,9 @@ class primitive(object):
     def __get__(self, obj, objtype):
         return types.MethodType(self, obj, objtype)
 
-def new_node(value):
+def new_node(value, tapes=[]):
     try:
-        return Node.type_mappings[type(value)](value)
+        return Node.type_mappings[type(value)](value, tapes)
     except KeyError:
         raise TypeError("Can't differentiate wrt {0}".format(type(value)))
 
@@ -126,9 +125,16 @@ class ReverseNode(object):
 class Node(object):
     __slots__ = ['value', 'tapes']
     type_mappings = {}
-    def __init__(self, value):
+    def __init__(self, value, tapes):
         self.value = value
         self.tapes = WeakKeyDictionary()
+        for tape in tapes:
+            self.add_tape(tape)
+
+    def add_tape(self, tape):
+        new_rnode = ReverseNode(type(self), self.value)
+        tape.append(new_rnode)
+        self.tapes[tape] = new_rnode
 
     @staticmethod
     def sum_outgrads(outgrads, selftype):
@@ -146,15 +152,9 @@ cast.defgrad(lambda ans, x, typecaster: I)
 
 getval = lambda x : x.value if isinstance(x, Node) else x
 
-class CalculationTape(object):
-    def __init__(self):
-        self.op_list = []
-
-    def add_node(self, node):
-        new_rnode = ReverseNode(type(node), node.value)
-        self.op_list.append(new_rnode)
-        node.tapes[self] = new_rnode
-        return new_rnode
+class CalculationTape(list):
+    def __hash__(self):
+        return id(self)
 
 class FloatNode(Node):
     __slots__ = []
