@@ -95,7 +95,7 @@ arraycast.defgrad(lambda ans, val: lambda g : g)
 
 @primitive
 def primitive_sum_arrays(*arrays):
-    new_array = anp.zeros(arrays[0].shape)
+    new_array = type(new_array_node(arrays[0], [])).zeros_like(arrays[0]) # TODO: simplify this
     for array in arrays:
         if isinstance(array, SparseArray):
             new_array[array.idx] += array.val
@@ -129,4 +129,5 @@ class SparseArray(object):
         self.shape = template.shape
         self.idx = idx
         self.val = val
+        self.dtype = template.dtype
 Node.type_mappings[SparseArray] = ArrayNode
