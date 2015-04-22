@@ -14,12 +14,10 @@ def grad(fun, argnum=0):
     the same type as the argument."""
     def gradfun(*args, **kwargs):
         tape = CalculationTape()
-        start_node = args[argnum]
-        if isinstance(start_node, Node):
-            start_node.add_tape(tape)
-        else:
-            start_node = new_node(safe_type(start_node), [tape])
-        args = args[:argnum] + (start_node,) + args[argnum+1:]
+        arg_wrt = args[argnum]
+        start_node = new_node(safe_type(getval(arg_wrt)), [tape])
+        args = list(args)
+        args[argnum] = merge_tapes(start_node, arg_wrt)
         end_node = fun(*args, **kwargs)
         if not isinstance(end_node, Node) or tape not in end_node.tapes:
             warnings.warn("Output seems independent of input. Returning zero gradient.")
@@ -99,6 +97,11 @@ class primitive(object):
     def __get__(self, obj, objtype):
         return types.MethodType(self, obj, objtype)
 
+@primitive
+def merge_tapes(x, y): return x
+merge_tapes.defgrad(lambda ans, x, y : lambda g : g)
+merge_tapes.defgrad(lambda ans, x, y : lambda g : g, argnum=1)
+
 def new_node(value, tapes=[]):
     try:
         return Node.type_mappings[type(value)](value, tapes)
@@ -129,12 +132,9 @@ class Node(object):
         self.value = value
         self.tapes = WeakKeyDictionary()
         for tape in tapes:
-            self.add_tape(tape)
-
-    def add_tape(self, tape):
-        new_rnode = ReverseNode(type(self), self.value)
-        tape.append(new_rnode)
-        self.tapes[tape] = new_rnode
+            new_rnode = ReverseNode(type(self), value)
+            tape.append(new_rnode)
+            self.tapes[tape] = new_rnode
 
     @staticmethod
     def sum_outgrads(outgrads, selftype):
@@ -164,7 +164,6 @@ class FloatNode(Node):
             return 0.0 + 0.0j
         else:
             return 0.0
-
 Node.type_mappings[float] = FloatNode
 
 def safe_type(value):
