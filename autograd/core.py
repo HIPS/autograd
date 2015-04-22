@@ -33,12 +33,11 @@ def grad(fun, argnum=0):
                 node = op_list.pop()
                 if node.outgrads:
                     cur_outgrad = node.sum_outgrads()
-                    # assert type(getval(cur_outgrad)) is type(node.value), \
-                    #     "Wrong outgrad type {0}. Should be {1}"\
-                    #     .format(type(getval(cur_outgrad)), type(node.value))
+                    assert type(new_node(getval(cur_outgrad))) == node.node_type
                     for gradfun, parent in node.parent_grad_ops:
                         parent.outgrads.append(gradfun(cur_outgrad))
-            return cur_outgrad
+        return cur_outgrad
+
     try:
         gradfun.__name__ = "grad_{fun}_wrt_argnum_{argnum}".format(fun=fun.__name__, argnum=argnum)
         gradfun.__doc__ = "Gradient of function {fun} with respect to argument number {argnum}. " \
@@ -112,10 +111,10 @@ def zeros_like(value):
     if isinstance(value, Node):
         return value.zeros_like(value)
     else:
-        return Node.type_mappings[type(value)].zeros_like(value)
+        return new_node(value, []).zeros_like(value)
 
 class ReverseNode(object):
-    __slots__ = ['parent_grad_ops', 'outgrads', 'node_type', 'value']
+    __slots__ = ['parent_grad_ops', 'outgrads', 'value', 'node_type']
     def __init__(self, node_type, value):
         self.parent_grad_ops = []
         self.outgrads = []
@@ -123,7 +122,10 @@ class ReverseNode(object):
         self.value = value
 
     def sum_outgrads(self):
-        return self.node_type.sum_outgrads(self.outgrads, self.value)
+        summed_outgrads = self.node_type.sum_outgrads(self.outgrads)
+        if type(new_node(getval(summed_outgrads))) is not self.node_type:
+            summed_outgrads = self.node_type.cast(summed_outgrads)
+        return summed_outgrads
 
 class Node(object):
     __slots__ = ['value', 'tapes']
@@ -137,18 +139,13 @@ class Node(object):
             self.tapes[tape] = new_rnode
 
     @staticmethod
-    def sum_outgrads(outgrads, selftype):
-        return cast(sum(outgrads[1:], outgrads[0]), selftype)
+    def sum_outgrads(outgrads):
+        return sum(outgrads[1:], outgrads[0])
 
 @primitive
-def cast(x, value):
-    if isinstance(x, np.ndarray):
-        x = x[()]
-    if np.iscomplexobj(x) and not np.iscomplexobj(value):
-        x = np.real(x)
-    return type(value)(x)
-
-cast.defgrad(lambda ans, x, typecaster: I)
+def cast(value, caster):
+    return caster(value)
+cast.defgrad(lambda *args: I)
 
 getval = lambda x : x.value if isinstance(x, Node) else x
 
@@ -160,11 +157,29 @@ class FloatNode(Node):
     __slots__ = []
     @staticmethod
     def zeros_like(value):
-        if np.iscomplexobj(getval(value)):
-            return 0.0 + 0.0j
-        else:
-            return 0.0
+        return 0.0
+    @staticmethod
+    def cast(value):
+        return cast(value, cast_to_float)
+
 Node.type_mappings[float] = FloatNode
+
+def cast_to_float(x):
+    if np.iscomplexobj(x):
+        x = np.real(x)
+    return float(x)
+
+class ComplexNode(FloatNode):
+    @staticmethod
+    def zeros_like(value):
+        return 0.0 + 0.0j
+    @staticmethod
+    def cast(value):
+        return cast(value, cast_to_complex)
+
+def cast_to_complex(value):
+    return complex(value)
+Node.type_mappings[complex] = ComplexNode
 
 def safe_type(value):
     if isinstance(value, int):

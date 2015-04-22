@@ -19,8 +19,8 @@ def test_real_if_close_type():
 def test_imag_type():
     fun = lambda x: np.sum(np.imag(x))
     df = grad(fun)
-    assert type(df(1.0)) == float
-    assert type(df(1.0j)) == complex
+    assert base_class(type(df(1.0 ))) == float
+    assert base_class(type(df(1.0j))) == complex
 
 # TODO: real times imag
 

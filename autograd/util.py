@@ -41,7 +41,7 @@ def indexed_function(fun, arg, index):
     return partial_function
 
 def check_equivalent(A, B, rtol=1e-4, atol=1e-6):
-    assert type(A) is type(B),\
+    assert base_class(type(A)) is base_class(type(B)),\
         "Types are: {0} and {1}".format(type(A), type(B))
     if isinstance(A, (tuple, list)):
         for a, b in zip(A, B): check_equivalent(a, b)
@@ -88,3 +88,15 @@ def quick_grad_check(fun, arg0, extra_args=(), kwargs={}, verbose=True,
     if verbose:
         print "Gradient projection OK (numeric grad: {0}, analytic grad: {1})".format(
             numeric_grad, analytic_grad)
+
+equivalence_class = {}
+for float_type in [np.float64, np.float32, np.float16]:
+    equivalence_class[float_type] = float
+for complex_type in [np.complex64, np.complex128]:
+    equivalence_class[complex_type] = complex
+
+def base_class(t):
+    if t in equivalence_class:
+        return equivalence_class[t]
+    else:
+        return t

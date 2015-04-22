@@ -1,12 +1,12 @@
 from __future__ import absolute_import
-from autograd.core import (Node, FloatNode, primitive, cast,
+from autograd.core import (Node, FloatNode, ComplexNode, primitive, cast,
                            differentiable_ops, nondifferentiable_ops, getval)
 from . import numpy_wrapper as anp
 
-np_float_types = [anp.float64, anp.float32, anp.float16,
-                  complex, anp.complex64, anp.complex128]
-for ft in np_float_types:
-    Node.type_mappings[ft] = FloatNode
+for float_type in [anp.float64, anp.float32, anp.float16]:
+    Node.type_mappings[float_type] = FloatNode
+for complex_type in [anp.complex64, anp.complex128]:
+    Node.type_mappings[complex_type] = ComplexNode
 
 @primitive
 def take(A, idx):
@@ -39,17 +39,18 @@ class ArrayNode(Node):
 
     @staticmethod
     def zeros_like(value):
-        if anp.iscomplexobj(getval(value)):
-            return anp.zeros(value.shape) + 0.0j
-        else:
-            return anp.zeros(value.shape)
+        return anp.zeros(value.shape)
 
     @staticmethod
-    def sum_outgrads(outgrads, selfval):
+    def sum_outgrads(outgrads):
         if len(outgrads) is 1 and not isinstance(getval(outgrads[0]), SparseArray):
-            return arraycast(outgrads[0], selfval)
+            return outgrads[0]
         else:
-            return arraycast(primitive_sum_arrays(*outgrads), selfval)
+            return primitive_sum_arrays(*outgrads)
+
+    @staticmethod
+    def cast(value):
+        return arraycast(value)
 
     def __neg__(self): return anp.negative(self)
     def __add__(self, other): return anp.add(     self, other)
@@ -71,22 +72,44 @@ class ArrayNode(Node):
     def __lt__(self, other): return anp.less(self, other)
     def __le__(self, other): return anp.less_equal(self, other)
 
-Node.type_mappings[anp.ndarray] = ArrayNode
+class ComplexArrayNode(ArrayNode):
+    @staticmethod
+    def zeros_like(value):
+        return anp.zeros(value.shape) + 0.0j
+
+    @staticmethod
+    def sum_outgrads(outgrads):
+        if len(outgrads) is 1 and not isinstance(getval(outgrads[0]), SparseArray):
+            return outgrads[0]
+        else:
+            return primitive_sum_arrays_complex(*outgrads)
+
+    @staticmethod
+    def cast(value):
+        return complex_arraycast(value)
+
+def new_array_node(value, tapes):
+    if anp.iscomplexobj(value):
+        return ComplexArrayNode(value, tapes)
+    else:
+        return ArrayNode(value, tapes)
+
+Node.type_mappings[anp.ndarray] = new_array_node
 
 @primitive
-def arraycast(x, val):
-    if type(x) is SparseArray:
-        return x
-    elif not isinstance(x, anp.ndarray):
-        return anp.array(cast(x, val.ravel()[0]))
+def arraycast(val):
+    if isinstance(val, float):
+        return anp.array(val)
+    elif anp.iscomplexobj(val):
+        return anp.array(anp.real(val))
     else:
-        if anp.iscomplexobj(val) and not anp.iscomplexobj(x):
-            return anp.array(x, dtype=anp.complex)
-        elif not anp.iscomplexobj(val) and anp.iscomplexobj(x):
-            return anp.real(anp.array(x))
-        else:
-            return x
-arraycast.defgrad(lambda ans, x, val: lambda g : g)
+        raise TypeError("Can't cast type {0} to array".format(type(val)))
+arraycast.defgrad(lambda ans, val: lambda g : g)
+
+@primitive
+def complex_arraycast(val):
+    return anp.array(val, dtype=complex)
+complex_arraycast.defgrad(lambda ans, val: lambda g : g)
 
 @primitive
 def primitive_sum_arrays(*arrays):
@@ -94,13 +117,21 @@ def primitive_sum_arrays(*arrays):
     for array in arrays:
         if isinstance(array, SparseArray):
             new_array[array.idx] += array.val
-        elif anp.iscomplexobj(array):
-            new_array = new_array.astype(complex)
-            new_array += array
         else:
             new_array += array
     return new_array
 primitive_sum_arrays.gradmaker = lambda *args : lambda g : g
+
+@primitive
+def primitive_sum_arrays_complex(*arrays):
+    new_array = anp.zeros(arrays[0].shape).astype(complex)
+    for array in arrays:
+        if isinstance(array, SparseArray):
+            new_array[array.idx] += array.val
+        else:
+            new_array += array
+    return new_array
+primitive_sum_arrays_complex.gradmaker = lambda *args : lambda g : g
 
 # These numpy.ndarray methods are just refs to an equivalent numpy function
 nondiff_methods = ['all', 'any', 'argmax', 'argmin', 'argpartition',
@@ -128,3 +159,7 @@ class SparseArray(object):
         self.idx = idx
         self.val = val
 Node.type_mappings[SparseArray] = ArrayNode
+
+class ComplexSparseArray(SparseArray):
+    pass
+Node.type_mappings[ComplexSparseArray] = ComplexArrayNode

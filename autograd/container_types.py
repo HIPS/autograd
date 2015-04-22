@@ -13,7 +13,7 @@ class TupleNode(Node):
         return tuple([zeros_like(item) for item in getval(value)])
 
     @staticmethod
-    def sum_outgrads(outgrads, selftype):
+    def sum_outgrads(outgrads):
         return primitive_sum_tuples(*outgrads)
 
 Node.type_mappings[tuple] = TupleNode
