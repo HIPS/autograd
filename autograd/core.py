@@ -80,8 +80,8 @@ class primitive(object):
             if isinstance(arg, Node):
                 argvals[i] = arg.value
                 if i in self.zero_grads: continue
-                for tape in arg.tapes.keys():
-                    ops.append((tape, i, arg))
+                for tape, parent_rnode in arg.tapes.iteritems():
+                    ops.append((tape, i, parent_rnode))
                     tapes.add(tape)
 
         result = self.fun(*argvals, **kwargs)
@@ -91,7 +91,7 @@ class primitive(object):
             for tape, argnum, parent in ops:
                 gradfun = self.gradmaker(argnum, result, *args, **kwargs)
                 rnode = result.tapes[tape]
-                rnode.parent_grad_ops.append((gradfun, parent.tapes[tape]))
+                rnode.parent_grad_ops.append((gradfun, parent))
         return result
 
     def __get__(self, obj, objtype):
