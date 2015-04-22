@@ -178,7 +178,10 @@ class ComplexNode(FloatNode):
         return cast(value, cast_to_complex)
 
 def cast_to_complex(value):
-    return complex(value)
+    if isinstance(value, np.ndarray):
+        return complex(value[()])
+    else:
+        return complex(value)
 Node.type_mappings[complex] = ComplexNode
 
 def safe_type(value):
