@@ -35,7 +35,8 @@ def grad(fun, argnum=0):
                     cur_outgrad = node.sum_outgrads()
                     assert type(new_node(getval(cur_outgrad))) == node.node_type
                     for gradfun, parent in node.parent_grad_ops:
-                        parent.outgrads.append(gradfun(cur_outgrad))
+                        og = cast_to_node_type(gradfun(cur_outgrad), parent.node_type)
+                        parent.outgrads.append(og)
         return cur_outgrad
 
     try:
@@ -46,6 +47,12 @@ def grad(fun, argnum=0):
     except:
         pass
     return gradfun
+
+def cast_to_node_type(x, node_type):
+    if type(new_node(getval(x))) is not node_type:
+        return node_type.cast(x)
+    else:
+        return x
 
 class primitive(object):
     """
@@ -121,10 +128,7 @@ class ReverseNode(object):
         self.node_type = node_type
 
     def sum_outgrads(self):
-        summed_outgrads = self.node_type.sum_outgrads(self.outgrads)
-        if type(new_node(getval(summed_outgrads))) is not self.node_type:
-            summed_outgrads = self.node_type.cast(summed_outgrads)
-        return summed_outgrads
+        return self.node_type.sum_outgrads(self.outgrads)
 
 class Node(object):
     __slots__ = ['value', 'tapes']

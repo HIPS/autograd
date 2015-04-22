@@ -17,7 +17,7 @@ take.defgrad(make_grad_take)
 
 @primitive
 def untake(x, idx, template):
-    return SparseArray(template, idx, x)
+    return new_sparse_array(template, idx, x)
 untake.defgrad(lambda ans, x, idx, template : lambda g : take(g, idx))
 untake.defgrad_is_zero(argnums=(1, 2))
 
@@ -163,3 +163,9 @@ Node.type_mappings[SparseArray] = ArrayNode
 class ComplexSparseArray(SparseArray):
     pass
 Node.type_mappings[ComplexSparseArray] = ComplexArrayNode
+
+def new_sparse_array(template, idx, val):
+    if anp.iscomplexobj(template):
+        return ComplexSparseArray(template, idx, val)
+    else:
+        return SparseArray(template, idx, val)
