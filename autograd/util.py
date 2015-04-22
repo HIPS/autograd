@@ -51,6 +51,7 @@ def check_equivalent(A, B, rtol=1e-4, atol=1e-6):
     else:
         if isinstance(A, np.ndarray):
             assert A.shape == B.shape, "Shapes are {0} and {1}".format(A.shape, B.shape)
+            assert A.dtype == B.dtype, "Types are {0} and {1}".format(A.dtype, B.dtype)
         assert np.allclose(A, B, rtol=rtol, atol=atol), \
             "Diffs are:\n{0}.\nA is:\n{A}.\nB is:\n{B}.".format(A - B, A=A, B=B)
 
