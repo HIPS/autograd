@@ -4,7 +4,6 @@ import operator as op
 import types
 import math
 import numpy as np
-from weakref import WeakKeyDictionary
 
 def grad(fun, argnum=0):
     """
@@ -27,10 +26,9 @@ def grad(fun, argnum=0):
                 "You asked for the gradient of a {0}.".format(type(end_node.value)))
         else:
             end_node.tapes[tape].outgrads = [1.0]
-            op_list = list(tape)
-            del tape
-            while op_list:
-                node = op_list.pop()
+            tape.complete = True
+            while tape:
+                node = tape.pop()
                 if node.outgrads:
                     cur_outgrad = node.sum_outgrads()
                     assert type(new_node(getval(cur_outgrad))) == node.node_type, \
@@ -89,8 +87,9 @@ class primitive(object):
                 argvals[i] = arg.value
                 if i in self.zero_grads: continue
                 for tape, parent_rnode in arg.tapes.iteritems():
-                    ops.append((tape, i, parent_rnode))
-                    tapes.add(tape)
+                    if not tape.complete:
+                        ops.append((tape, i, parent_rnode))
+                        tapes.add(tape)
 
         result = self.fun(*argvals, **kwargs)
         if result is NotImplemented: return result
@@ -137,7 +136,7 @@ class Node(object):
     type_mappings = {}
     def __init__(self, value, tapes):
         self.value = value
-        self.tapes = WeakKeyDictionary()
+        self.tapes = {}
         for tape in tapes:
             new_rnode = ReverseNode(type(self))
             tape.append(new_rnode)
@@ -155,6 +154,9 @@ cast.defgrad(lambda *args: I)
 getval = lambda x : x.value if isinstance(x, Node) else x
 
 class CalculationTape(list):
+    def __init__(self):
+        self.complete = False
+
     def __hash__(self):
         return id(self)
 
