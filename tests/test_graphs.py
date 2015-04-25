@@ -126,6 +126,10 @@ def test_third_derivative_other_args2():
     check_grads(ddf, npr.randn(), npr.randn())
     check_grads(dddf, npr.randn(), npr.randn())
 
+def test_singleton_array_output():
+    fun = lambda x : np.sum(np.sin(x), keepdims=True)
+    check_grads(fun, npr.randn(3, 3))
+
 # TODO:
 # Diamond patterns
 # Taking grad again after returning const

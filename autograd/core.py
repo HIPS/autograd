@@ -21,22 +21,24 @@ def grad(fun, argnum=0):
         if not isinstance(end_node, Node) or tape not in end_node.tapes:
             warnings.warn("Output seems independent of input. Returning zero gradient.")
             return zeros_like(start_node)
-        elif not isinstance(end_node.value, float):
-            raise TypeError("Can only take gradient of scalar-valued functions. "\
-                "You asked for the gradient of a {0}.".format(type(end_node.value)))
-        else:
-            end_node.tapes[tape].outgrads = [1.0]
-            tape.complete = True
-            while tape:
-                node = tape.pop()
-                if node.outgrads:
-                    cur_outgrad = node.sum_outgrads()
-                    assert type(new_node(getval(cur_outgrad))) == node.node_type, \
-                        "Types are {0} and {1}".format(type(new_node(getval(cur_outgrad))),
-                                                       node.node_type)
-                    for gradfun, parent in node.parent_grad_ops:
-                        og = cast_to_node_type(gradfun(cur_outgrad), parent.node_type)
-                        parent.outgrads.append(og)
+        if not type(end_node) is FloatNode:
+            try:
+                end_node = FloatNode.cast(end_node)
+            except TypeError:
+                raise TypeError("Output type {0} can't be cast to float. ".format(type(end_node.value)) +
+                                "Function grad requires a scalar-valued function. Try jacobian or elementwise_grad.")
+        end_node.tapes[tape].outgrads = [1.0]
+        tape.complete = True
+        while tape:
+            node = tape.pop()
+            if node.outgrads:
+                cur_outgrad = node.sum_outgrads()
+                assert type(new_node(getval(cur_outgrad))) == node.node_type, \
+                    "Types are {0} and {1}".format(type(new_node(getval(cur_outgrad))),
+                                                   node.node_type)
+                for gradfun, parent in node.parent_grad_ops:
+                    og = cast_to_node_type(gradfun(cur_outgrad), parent.node_type)
+                    parent.outgrads.append(og)
         return cur_outgrad
 
     try:
