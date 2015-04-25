@@ -153,6 +153,6 @@ def test_cross():    combo_check(np.cross, [0, 1], [R(3,3)], [R(3,3)],
 #def test_vsplit(): combo_check(np.vsplit, [0], [1.2, R(1), R(7), R(1,4), R(2,4), R(2, 4, 5),
 #                                                        R(2, 4, 3, 5)])
 
-def test_split1d(): combo_check(np.split, [0], [1.2, R(1), R(7)], [1], [None, 0])
-def test_split2d(): combo_check(np.split, [0], [R(7, 7)], [4, [3, 5]], [None, 0, 1])
-def test_split3d(): combo_check(np.split, [0], [R(7, 7, 7)], [4, [3, 5]], [None, 0, 1, 2])
+def test_split1d(): combo_check(np.split, [0], [R(1), R(7)], [1], axis=[0])
+def test_split2d(): combo_check(np.split, [0], [R(7, 7)], [4, [3, 5]], axis=[0, 1])
+def test_split3d(): combo_check(np.split, [0], [R(7, 7, 7)], [4, [3, 5]], axis=[0, 1, 2])
