@@ -9,14 +9,14 @@ npr.seed(0)
 
 if not use_gpu_numpy():
     print "Can't test GPU support without flag set"
-    assert False
+else:
 
-def R(*shape):
-    arr = npr.randn(*shape)
-    return np.array(arr, dtype=np.gpu_float32)
+    def R(*shape):
+        arr = npr.randn(*shape)
+        return np.array(arr, dtype=np.gpu_float32)
 
-def test_dot(): combo_check(np.dot, [0, 1],
-                            [R(2, 3)],
-                            [R(3, 4)])
-                            # [1.5, R(3), R(2, 3)],
-                            # [0.3, R(3), R(3, 4)])
+    def test_dot(): combo_check(np.dot, [0, 1],
+                                [R(2, 3)],
+                                [R(3, 4)])
+                                # [1.5, R(3), R(2, 3)],
+                                # [0.3, R(3), R(3, 4)])
