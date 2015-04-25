@@ -22,6 +22,17 @@ def test_solve_arg1():
     check_grads(fun, A)
     check_grads(d_fun, A)
 
+def test_solve_arg1_1d():
+    D = 8
+    A = npr.randn(D, D) + 10.0 * np.eye(D)
+    B = npr.randn(D)
+    def fun(a): return to_scalar(np.linalg.solve(a, B))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    check_grads(fun, A)
+    check_grads(d_fun, A)
+
+#return np.dot(b,np.dot(np.linalg.inv(A),b))
+
 def test_solve_arg2():
     D = 6
     A = npr.randn(D, D) + 1.0 * np.eye(D)
