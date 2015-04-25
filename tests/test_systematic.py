@@ -117,3 +117,8 @@ def test_sort():       combo_check(np.sort, [0], [R(1), R(7)])
 def test_msort():     combo_check(np.msort, [0], [R(1), R(7)])
 def test_partition(): combo_check(np.partition, [0],
                                   [R(7), R(14)], kth=[0, 3, 6])
+
+def test_atleast_1d(): combo_check(np.atleast_1d, [0], [1.2, R(1), R(7), R(1,4), R(2,4), R(2, 4, 5)])
+def test_atleast_2d(): combo_check(np.atleast_2d, [0], [1.2, R(1), R(7), R(1,4), R(2,4), R(2, 4, 5)])
+def test_atleast_3d(): combo_check(np.atleast_3d, [0], [1.2, R(1), R(7), R(1,4), R(2,4), R(2, 4, 5),
+                                                        R(2, 4, 3, 5)])

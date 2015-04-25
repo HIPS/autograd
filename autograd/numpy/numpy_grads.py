@@ -301,6 +301,15 @@ def unpermuter(permutation):
     unsort[permutation] = range(len(permutation))
     return lambda g: g[unsort]
 
+def make_grad_reshape_list(ans, *arys):
+    if len(arys) > 1:
+        raise NotImplementedError("Can't handle multiple arguments yet.")
+    shape = anp.shape(arys[0])
+    return lambda g : anp.reshape(g, shape)
+anp.atleast_1d.defgrad(make_grad_reshape_list)
+anp.atleast_2d.defgrad(make_grad_reshape_list)
+anp.atleast_3d.defgrad(make_grad_reshape_list)
+
 # ----- Handle broadcasting -----
 
 def unbroadcast(ans, x, gradfun):
