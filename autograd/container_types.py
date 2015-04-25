@@ -24,6 +24,36 @@ def primitive_sum_tuples(*tuples):
     return tuple([sum(elements[1:], elements[0]) for elements in zip(*tuples)])
 primitive_sum_tuples.gradmaker = lambda *args : lambda g : g
 
+class ListNode(Node):
+    __slots__ = []
+    def __getitem__(self, idx):
+        return take(self, idx)
+    def __len__(self):
+        return len(self.value)
+
+    @staticmethod
+    def zeros_like(value):
+        return tuple([zeros_like(item) for item in getval(value)])
+
+    @staticmethod
+    def sum_outgrads(outgrads):
+        return primitive_sum_tuples(*outgrads)
+
+    @staticmethod
+    def cast(value):
+        return cast(value, cast_to_list)
+
+def cast_to_list(x):
+    print "casting:", x
+    return list(x)
+
+Node.type_mappings[list] = ListNode
+
+@primitive
+def primitive_sum_tuples(*tuples):
+    return tuple([sum(elements[1:], elements[0]) for elements in zip(*tuples)])
+primitive_sum_tuples.gradmaker = lambda *args : lambda g : g
+
 @primitive
 def take(A, idx):
     return A[idx]

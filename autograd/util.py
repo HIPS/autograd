@@ -53,6 +53,8 @@ def indexed_function(fun, arg, index):
         local_arg = copy(arg)
         if isinstance(local_arg, tuple):
             local_arg = local_arg[:index] + (x,) + local_arg[index+1:]
+        elif isinstance(local_arg, list):
+            local_arg = local_arg[:index] + [x] + local_arg[index+1:]
         else:
             local_arg[index] = x
         return fun(local_arg)
@@ -115,6 +117,7 @@ for float_type in [np.float64, np.float32, np.float16]:
     equivalence_class[float_type] = float
 for complex_type in [np.complex64, np.complex128]:
     equivalence_class[complex_type] = complex
+equivalence_class[list] = tuple
 
 def base_class(t):
     if t in equivalence_class:
