@@ -1,3 +1,5 @@
+import warnings
+
 import autograd.numpy as np
 import autograd.numpy.random as npr
 from autograd.util import *
@@ -493,93 +495,102 @@ def test_len():
     check_grads(d_fun, A)
 
 def test_r_basic():
-    def fun(x):
-        c = npr.randn(3, 2)
-        b = np.r_[x]
-        return to_scalar(b)
-    A = npr.randn(3, 2)
-    d_fun = lambda x : to_scalar(grad(fun)(x))
-    check_grads(fun, A)
-    check_grads(d_fun, A)
+    with warnings.catch_warnings(True) as w:
+        def fun(x):
+            c = npr.randn(3, 2)
+            b = np.r_[x]
+            return to_scalar(b)
+        A = npr.randn(3, 2)
+        d_fun = lambda x : to_scalar(grad(fun)(x))
+        check_grads(fun, A)
+        check_grads(d_fun, A)
 
 def test_r_double():
-    def fun(x):
-        c = npr.randn(3, 2)
-        b = np.r_[x, x]
-        return to_scalar(b)
-    A = npr.randn(3, 2)
-    d_fun = lambda x : to_scalar(grad(fun)(x))
-    check_grads(fun, A)
-    check_grads(d_fun, A)
+    with warnings.catch_warnings(True) as w:
+        def fun(x):
+            c = npr.randn(3, 2)
+            b = np.r_[x, x]
+            return to_scalar(b)
+        A = npr.randn(3, 2)
+        d_fun = lambda x : to_scalar(grad(fun)(x))
+        check_grads(fun, A)
+        check_grads(d_fun, A)
 
 def test_no_relation():
-    c = npr.randn(3, 2)
-    def fun(x):
-        return to_scalar(c)
-    A = npr.randn(3, 2)
-    d_fun = lambda x : to_scalar(grad(fun)(x))
-    check_grads(fun, A)
-    check_grads(d_fun, A)
+    with warnings.catch_warnings(True) as w:
+        c = npr.randn(3, 2)
+        def fun(x):
+            return to_scalar(c)
+        A = npr.randn(3, 2)
+        d_fun = lambda x : to_scalar(grad(fun)(x))
+        check_grads(fun, A)
+        check_grads(d_fun, A)
 
 def test_r_no_relation():
-    c = npr.randn(3, 2)
-    def fun(x):
-        b = np.r_[c]
-        return to_scalar(b)
-    A = npr.randn(3, 2)
-    d_fun = lambda x : to_scalar(grad(fun)(x))
-    check_grads(fun, A)
-    check_grads(d_fun, A)
+    with warnings.catch_warnings(True) as w:
+        c = npr.randn(3, 2)
+        def fun(x):
+            b = np.r_[c]
+            return to_scalar(b)
+        A = npr.randn(3, 2)
+        d_fun = lambda x : to_scalar(grad(fun)(x))
+        check_grads(fun, A)
+        check_grads(d_fun, A)
 
 def test_r_node_and_const():
-    c = npr.randn(3, 2)
-    def fun(x):
-        b = np.r_[x, c]
-        return to_scalar(b)
-    A = npr.randn(3, 2)
-    d_fun = lambda x : to_scalar(grad(fun)(x))
-    check_grads(fun, A)
-    check_grads(d_fun, A)
+    with warnings.catch_warnings(True) as w:
+        c = npr.randn(3, 2)
+        def fun(x):
+            b = np.r_[x, c]
+            return to_scalar(b)
+        A = npr.randn(3, 2)
+        d_fun = lambda x : to_scalar(grad(fun)(x))
+        check_grads(fun, A)
+        check_grads(d_fun, A)
 
 def test_r_mixed():
-    c = npr.randn(3, 2)
-    def fun(x):
-        b = np.r_[x, c, x]
-        return to_scalar(b)
-    A = npr.randn(3, 2)
-    d_fun = lambda x : to_scalar(grad(fun)(x))
-    check_grads(fun, A)
-    check_grads(d_fun, A)
+    with warnings.catch_warnings(True) as w:
+        c = npr.randn(3, 2)
+        def fun(x):
+            b = np.r_[x, c, x]
+            return to_scalar(b)
+        A = npr.randn(3, 2)
+        d_fun = lambda x : to_scalar(grad(fun)(x))
+        check_grads(fun, A)
+        check_grads(d_fun, A)
 
 def test_r_slicing():
-    c = npr.randn(10)
-    def fun(x):
-        b = np.r_[x, c, 1:10]
-        return to_scalar(b)
-    A = npr.randn(10)
-    d_fun = lambda x : to_scalar(grad(fun)(x))
-    check_grads(fun, A)
-    check_grads(d_fun, A)
+    with warnings.catch_warnings(True) as w:
+        c = npr.randn(10)
+        def fun(x):
+            b = np.r_[x, c, 1:10]
+            return to_scalar(b)
+        A = npr.randn(10)
+        d_fun = lambda x : to_scalar(grad(fun)(x))
+        check_grads(fun, A)
+        check_grads(d_fun, A)
 
 def test_c_():
-    c = npr.randn(3, 2)
-    def fun(x):
-        b = np.c_[x, c, x]
-        return to_scalar(b)
-    A = npr.randn(3, 2)
-    d_fun = lambda x : to_scalar(grad(fun)(x))
-    check_grads(fun, A)
-    check_grads(d_fun, A)
+    with warnings.catch_warnings(True) as w:
+        c = npr.randn(3, 2)
+        def fun(x):
+            b = np.c_[x, c, x]
+            return to_scalar(b)
+        A = npr.randn(3, 2)
+        d_fun = lambda x : to_scalar(grad(fun)(x))
+        check_grads(fun, A)
+        check_grads(d_fun, A)
 
 def test_c_mixed():
-    c = npr.randn(3, 2)
-    def fun(x):
-        b = np.c_[x, c, x]
-        return to_scalar(b)
-    A = npr.randn(3, 2)
-    d_fun = lambda x : to_scalar(grad(fun)(x))
-    check_grads(fun, A)
-    check_grads(d_fun, A)
+    with warnings.catch_warnings(True) as w:
+        c = npr.randn(3, 2)
+        def fun(x):
+            b = np.c_[x, c, x]
+            return to_scalar(b)
+        A = npr.randn(3, 2)
+        d_fun = lambda x : to_scalar(grad(fun)(x))
+        check_grads(fun, A)
+        check_grads(d_fun, A)
 
 def test_var_ddof():
     B = npr.randn(3)
