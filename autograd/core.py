@@ -5,7 +5,7 @@ import types
 import math
 import numpy as np
 
-def grad(fun,argnum=0):
+def grad(fun, argnum=0):
     """
     Returns a function which computes the gradient of `fun` with respect to
     positional argument number `argnum`. The returned function takes the same
@@ -24,7 +24,7 @@ def grad(fun,argnum=0):
 
     return gradfun
 
-def forward_pass(fun,args,kwargs,argnum=0):
+def forward_pass(fun, args, kwargs, argnum=0):
         tape = CalculationTape()
         arg_wrt = args[argnum]
         start_node = new_node(safe_type(getval(arg_wrt)), [tape])
