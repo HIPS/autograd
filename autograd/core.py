@@ -41,8 +41,9 @@ def backward_pass(start_node, end_node, tape):
         try:
             end_node = FloatNode.cast(end_node)
         except TypeError:
-            raise TypeError("Output type {0} can't be cast to float. ".format(type(end_node.value)) +
-                            "Function grad requires a scalar-valued function. Try jacobian or elementwise_grad.")
+            raise TypeError("Output type {0} can't be cast to float. ".format(type(end_node.value))
+                            + "Function grad requires a scalar-valued function. "
+                              "Try jacobian or elementwise_grad.")
     end_node.tapes[tape].outgrads = [1.0]
     tape.complete = True
     while tape:
@@ -50,8 +51,7 @@ def backward_pass(start_node, end_node, tape):
         if node.outgrads:
             cur_outgrad = node.sum_outgrads()
             assert type(new_node(getval(cur_outgrad))) == node.node_type, \
-                "Types are {0} and {1}".format(type(new_node(getval(cur_outgrad))),
-                                                node.node_type)
+                "Types are {0} and {1}".format(type(new_node(getval(cur_outgrad))), node.node_type)
             for gradfun, parent in node.parent_grad_ops:
                 og = cast_to_node_type(gradfun(cur_outgrad), parent.node_type)
                 parent.outgrads.append(og)
@@ -78,7 +78,11 @@ class primitive(object):
         try:
             return self.grads[argnum](*args, **kwargs)
         except KeyError:
-            raise NotImplementedError("Gradient of {0} w.r.t. arg number {1} not yet implemented".format(self.fun, argnum))
+            if self.grads == {}:
+                raise NotImplementedError("Gradient of {0} not yet implemented."
+                                          .format(self.fun, argnum))
+            raise NotImplementedError("Gradient of {0} w.r.t. arg number {1} not yet implemented."
+                                      .format(self.fun, argnum))
 
     def defgrad(self, gradmaker, argnum=0):
         self.grads[argnum] = gradmaker
