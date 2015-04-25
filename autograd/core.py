@@ -5,41 +5,14 @@ import types
 import math
 import numpy as np
 
-def grad(fun, argnum=0):
+def grad(fun,argnum=0):
     """
     Returns a function which computes the gradient of `fun` with respect to
     positional argument number `argnum`. The returned function takes the same
     arguments as `fun`, but returns the gradient instead. The gradient has
     the same type as the argument."""
-    def gradfun(*args, **kwargs):
-        tape = CalculationTape()
-        arg_wrt = args[argnum]
-        start_node = new_node(safe_type(getval(arg_wrt)), [tape])
-        args = list(args)
-        args[argnum] = merge_tapes(start_node, arg_wrt)
-        end_node = fun(*args, **kwargs)
-        if not isinstance(end_node, Node) or tape not in end_node.tapes:
-            warnings.warn("Output seems independent of input. Returning zero gradient.")
-            return zeros_like(start_node)
-        if not type(end_node) is FloatNode:
-            try:
-                end_node = FloatNode.cast(end_node)
-            except TypeError:
-                raise TypeError("Output type {0} can't be cast to float. ".format(type(end_node.value)) +
-                                "Function grad requires a scalar-valued function. Try jacobian or elementwise_grad.")
-        end_node.tapes[tape].outgrads = [1.0]
-        tape.complete = True
-        while tape:
-            node = tape.pop()
-            if node.outgrads:
-                cur_outgrad = node.sum_outgrads()
-                assert type(new_node(getval(cur_outgrad))) == node.node_type, \
-                    "Types are {0} and {1}".format(type(new_node(getval(cur_outgrad))),
-                                                   node.node_type)
-                for gradfun, parent in node.parent_grad_ops:
-                    og = cast_to_node_type(gradfun(cur_outgrad), parent.node_type)
-                    parent.outgrads.append(og)
-        return cur_outgrad
+    def gradfun(*args,**kwargs):
+        return backward_pass(*forward_pass(fun,args,kwargs,argnum))
 
     try:
         gradfun.__name__ = "grad_{fun}_wrt_argnum_{argnum}".format(fun=fun.__name__, argnum=argnum)
@@ -48,7 +21,41 @@ def grad(fun, argnum=0):
                           "argument {argnum}".format(fun=fun.__name__, argnum=argnum)
     except:
         pass
+
     return gradfun
+
+def forward_pass(fun,args,kwargs,argnum=0):
+        tape = CalculationTape()
+        arg_wrt = args[argnum]
+        start_node = new_node(safe_type(getval(arg_wrt)), [tape])
+        args = list(args)
+        args[argnum] = merge_tapes(start_node, arg_wrt)
+        end_node = fun(*args, **kwargs)
+        return start_node, end_node, tape
+
+def backward_pass(start_node, end_node, tape):
+    if not isinstance(end_node, Node) or tape not in end_node.tapes:
+        warnings.warn("Output seems independent of input. Returning zero gradient.")
+        return zeros_like(start_node)
+    if not type(end_node) is FloatNode:
+        try:
+            end_node = FloatNode.cast(end_node)
+        except TypeError:
+            raise TypeError("Output type {0} can't be cast to float. ".format(type(end_node.value)) +
+                            "Function grad requires a scalar-valued function. Try jacobian or elementwise_grad.")
+    end_node.tapes[tape].outgrads = [1.0]
+    tape.complete = True
+    while tape:
+        node = tape.pop()
+        if node.outgrads:
+            cur_outgrad = node.sum_outgrads()
+            assert type(new_node(getval(cur_outgrad))) == node.node_type, \
+                "Types are {0} and {1}".format(type(new_node(getval(cur_outgrad))),
+                                                node.node_type)
+            for gradfun, parent in node.parent_grad_ops:
+                og = cast_to_node_type(gradfun(cur_outgrad), parent.node_type)
+                parent.outgrads.append(og)
+    return cur_outgrad
 
 def cast_to_node_type(x, node_type):
     if type(new_node(getval(x))) is not node_type:
