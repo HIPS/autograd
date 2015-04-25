@@ -116,11 +116,7 @@ def primitive_sum_arrays(*arrays):
         if isinstance(array, SparseArray):
             new_array[array.idx] += array.val
         else:
-            try:
-                new_array += array
-            except ValueError:
-                # broadcasting problem
-                new_array = new_array + array
+            new_array += array
     return new_array
 primitive_sum_arrays.gradmaker = lambda *args : lambda g : g
 
