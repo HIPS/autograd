@@ -14,7 +14,7 @@ def atleast_2d(x):
 #  for forward and reverse mode algorithmic differentiation"
 # by Mike Giles
 # https://people.maths.ox.ac.uk/gilesm/files/NA-08-01.pdf
-inv.defgrad(  lambda ans, x    : lambda g : -dot(dot(atleast_2d(ans).T, g), atleast_2d(ans).T))
+inv.defgrad(  lambda ans, x    : lambda g : -dot(dot(ans.T, g), ans.T))
 det.defgrad(  lambda ans, x    : lambda g : g * ans * inv(x).T)
 solve.defgrad(lambda ans, a, b : lambda g : -dot(atleast_2d(solve(a.T, g)), atleast_2d(ans).T))
 solve.defgrad(lambda ans, a, b : lambda g : solve(a.T, g), argnum=1)
