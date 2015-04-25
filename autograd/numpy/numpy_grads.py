@@ -305,10 +305,36 @@ def make_grad_reshape_list(ans, *arys):
     if len(arys) > 1:
         raise NotImplementedError("Can't handle multiple arguments yet.")
     shape = anp.shape(arys[0])
-    return lambda g : anp.reshape(g, shape)
+    return lambda g: anp.reshape(g, shape)
 anp.atleast_1d.defgrad(make_grad_reshape_list)
 anp.atleast_2d.defgrad(make_grad_reshape_list)
 anp.atleast_3d.defgrad(make_grad_reshape_list)
+
+def make_grad_einsum(argnum, ans, subscripts, *operands):
+    if isinstance(subscripts, basestring):
+        # Einsum was called using "ijk" convention.
+        # First, parse subscripts, swapping outgrad with argwrt.
+        if not '->' in subscripts:
+            raise NotImplementedError("Need indices on both sides.")
+        opnum = argnum - 1
+        insubs, outsub = subscripts.split('->')
+        insubslist = insubs.split(',')
+        subswrt = insubslist[opnum]
+        rest_of_ops = operands[:opnum] + operands[opnum + 1:]
+        #print "rest of ops:", rest_of_ops
+        rest_of_subs = insubslist[:opnum] + insubslist[opnum + 1:]
+        new_subscripts = ','.join([outsub] + rest_of_subs) + '->' + subswrt
+        #print "new subscripts:", new_subscripts
+        def grad(g):
+            #print "g shape: ", anp.shape(g)
+            new_ops = (g,) + rest_of_ops
+            return anp.einsum(new_subscripts, *new_ops)
+        return grad
+    else:
+        # Einsum was called using (op1, dims1, op2, dims2...) convention.
+        return lambda g : g#anp.einsum(g, sublistout,
+anp.einsum.gradmaker = make_grad_einsum
+anp.einsum.defgrad_is_zero(argnums=(0,))
 
 # ----- Handle broadcasting -----
 
