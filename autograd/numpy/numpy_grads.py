@@ -311,28 +311,22 @@ anp.atleast_2d.defgrad(make_grad_reshape_list)
 anp.atleast_3d.defgrad(make_grad_reshape_list)
 
 def make_grad_einsum(argnum, ans, subscripts, *operands):
-    if isinstance(subscripts, basestring):
-        # Einsum was called using "ijk" convention.
-        # First, parse subscripts, swapping outgrad with argwrt.
+    # Gradient of einsum is obtained by swapping outgrad with the argument
+    # being differentiated wrt.
+    if isinstance(subscripts, basestring):  # using "ijk" convention.
         if not '->' in subscripts:
             raise NotImplementedError("Need indices on both sides.")
-        opnum = argnum - 1
-        insubs, outsub = subscripts.split('->')
-        insubslist = insubs.split(',')
-        subswrt = insubslist[opnum]
-        rest_of_ops = operands[:opnum] + operands[opnum + 1:]
-        #print "rest of ops:", rest_of_ops
-        rest_of_subs = insubslist[:opnum] + insubslist[opnum + 1:]
-        new_subscripts = ','.join([outsub] + rest_of_subs) + '->' + subswrt
-        #print "new subscripts:", new_subscripts
-        def grad(g):
-            #print "g shape: ", anp.shape(g)
-            new_ops = (g,) + rest_of_ops
-            return anp.einsum(new_subscripts, *new_ops)
-        return grad
-    else:
-        # Einsum was called using (op1, dims1, op2, dims2...) convention.
-        return lambda g : g#anp.einsum(g, sublistout,
+        op_num = argnum - 1
+        input_subs, output_subs = subscripts.split('->')
+        input_subs_list = input_subs.split(',')
+        subs_wrt = input_subs_list[op_num]
+        rest_of_ops = operands[:op_num] + operands[op_num + 1:]
+        rest_of_subs = input_subs_list[:op_num] + input_subs_list[op_num + 1:]
+        new_subscripts = ','.join([output_subs] + rest_of_subs) + '->' + subs_wrt
+        return lambda g: anp.einsum(new_subscripts, *((g,) + rest_of_ops))
+    else:  # Using (op1, dims1, op2, dims2...) convention.
+        raise NotImplementedError("Don't support (op1, dims1, op2, dims2...) "
+                                  "calling convention yet.")
 anp.einsum.gradmaker = make_grad_einsum
 anp.einsum.defgrad_is_zero(argnums=(0,))
 

@@ -123,15 +123,10 @@ def test_atleast_2d(): combo_check(np.atleast_2d, [0], [1.2, R(1), R(7), R(1,4),
 def test_atleast_3d(): combo_check(np.atleast_3d, [0], [1.2, R(1), R(7), R(1,4), R(2,4), R(2, 4, 5),
                                                         R(2, 4, 3, 5)])
 
-def test_einsum_letters_transpose():
-    combo_check(np.einsum, [1], ['ij->ji'], [R(1, 1), R(4,4), R(3,4)])
-def test_einsum_letters_matmult():
-    combo_check(np.einsum, [1, 2], ['ij,jk->ik'], [R(2, 3)], [R(3,4)])
-def test_einsum_letters_crazy_matmult():
-    combo_check(np.einsum, [1, 2], ['ij,jk->ik'], [R(2, 3)], [R(3,4)])
-def test_einsum_letters_nonsquare_binary():
-    combo_check(np.einsum, [1, 2], ['ij,jk->ik', 'ij,kj->ij'], [R(1, 1), R(1,1)], [R(4, 4), R(4,4)])
-def test_einsum_ops_square():
-    combo_check(np.einsum, [0, 1], [R(1, 1), R(4,4)], [[Ellipsis, 0], [0,1], [1, Ellipsis], [1,1]])
-def test_einsum_ops_square_binary():
-    combo_check(np.einsum, [0, 1, 2, 3], [R(4, 4)], [[Ellipsis, 0], [01], [00], [11]], [R(4,4)], [[Ellipsis, 0], [1, Ellipsis], [11]])
+def test_einsum_transpose():  combo_check(np.einsum, [1],    ['ij->ji'], [R(1, 1), R(4,4), R(3,4)])
+def test_einsum_matmult():    combo_check(np.einsum, [1, 2], ['ij,jk->ik'], [R(2, 3)], [R(3,4)])
+def test_einsum_covsum():     combo_check(np.einsum, [1, 2], ['ijk,lji->lki'], [R(3, 4, 4)], [R(4, 4, 3)])
+def test_einsum_ellipses():   combo_check(np.einsum, [1, 2], ['...jk,...lj->...lk',
+                                                              '...,...->...'], [R(3, 4, 4)], [R(3, 4, 4)])
+def test_einsum_three_args(): combo_check(np.einsum, [1, 2], ['ijk,lji,lli->lki'],
+                                          [R(3, 4, 4)], [R(4, 4, 3)], [R(4, 4, 3)])
