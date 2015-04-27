@@ -154,7 +154,8 @@ def repeat_to_match_shape(x, axis, keepdims):
     if not isarray(x):
         return I, 1
     shape = x.shape
-    if axis is None:
+    if axis is None or anp.all([d == 1 for d in shape[:axis]]
+                             + [d == 1 for d in shape[axis + 1:]]):
         dtype=None
         if anp.iscomplexobj(x):
             dtype = getval(anp.array(x)).dtype   # np.full() has a bug for complex numbers

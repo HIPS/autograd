@@ -129,6 +129,27 @@ def test_third_derivative_other_args2():
 def test_singleton_array_output():
     fun = lambda x : np.sum(np.sin(x), keepdims=True)
     check_grads(fun, npr.randn(3, 3))
+    check_grads(lambda x: np.sum(grad(fun)(x)), npr.randn(3, 3))
+
+def test_singleton_array_output_axis0():
+    fun = lambda x : np.sum(np.sin(x), axis=0, keepdims=True)
+    check_grads(fun, npr.randn(3, 1))
+    check_grads(lambda x: np.sum(grad(fun)(x)), npr.randn(3, 1))
+
+def test_singleton_array_output_axis1():
+    fun = lambda x : np.sum(np.sin(x), axis=1, keepdims=True)
+    check_grads(fun, npr.randn(1, 3))
+    check_grads(lambda x: np.sum(grad(fun)(x)), npr.randn(1, 3))
+
+def test_singleton_array_output_axis0():
+    fun = lambda x : np.sum(np.sin(x), axis=0, keepdims=False)
+    check_grads(fun, npr.randn(3, 1))
+    check_grads(lambda x: np.sum(grad(fun)(x)), npr.randn(3, 1))
+
+def test_singleton_array_output_axis1():
+    fun = lambda x : np.sum(np.sin(x), axis=1, keepdims=False)
+    check_grads(fun, npr.randn(1, 3))
+    check_grads(lambda x: np.sum(grad(fun)(x)), npr.randn(1, 3))
 
 # TODO:
 # Diamond patterns
