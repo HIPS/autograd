@@ -3,6 +3,7 @@ import autograd.numpy.random as npr
 from autograd.util import *
 from autograd import grad
 import warnings
+from nose.tools import raises
 npr.seed(1)
 
 def test_grad_fanout():
@@ -150,6 +151,14 @@ def test_singleton_array_output_axis1():
     fun = lambda x : np.sum(np.sin(x), axis=1, keepdims=False)
     check_grads(fun, npr.randn(1, 3))
     check_grads(lambda x: np.sum(grad(fun)(x)), npr.randn(1, 3))
+
+@raises(TypeError)
+def test_assignment_raises_error():
+    def fun(A, b):
+        A[1] = b
+        return to_scalar(A)
+    A = npr.randn(5)
+    check_grads(fun, A, 3.0)
 
 # TODO:
 # Diamond patterns
