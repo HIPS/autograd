@@ -47,7 +47,6 @@ def jacobian(fun, argnum=0):
     # TODO: consider adding this to `autograd.grad`. We could avoid repeating
     # the forward pass every time.
     def jac_fun(*args, **kwargs):
-        all_grads = []
         arg_in = args[argnum]
         output = fun(*args, **kwargs)
         assert isinstance(getval(arg_in), np.ndarray), "Must have array input"
@@ -59,3 +58,25 @@ def jacobian(fun, argnum=0):
             jac[idxs + input_slice] = grad(scalar_fun, argnum=argnum)(*args, **kwargs)
         return jac
     return jac_fun
+
+def hessian_vector_product(fun, argnum):
+    """Builds a function that returns the exact Hessian-vector product.
+    The returned function has arguments (vector, *args, **kwargs), and takes
+    roughly 4x as long to evaluate as the original function."""
+    fun_grad = grad(fun, argnum)
+    def vector_dot_grad(vector, *args, **kwargs):
+        return np.dot(vector, fun_grad(*args, **kwargs))
+    return grad(vector_dot_grad, argnum + 1)  # Grad wrt original input.
+
+def hessian(fun, argnum=0):
+    """Returns a function that computes the exact Hessian.
+    The Hessian is computed by calling hessian_vector_product separately for
+    each row.  For a function with N inputs, this takes roughly 4N times as
+    long as a single evaluation of the original function."""
+    hvp = hessian_vector_product(fun, argnum)
+    def hessian_fun(*args, **kwargs):
+        arg_in = args[argnum]
+        directions = np.eye(arg_in.size) #axis-aligned directions.
+        hvp_list = [hvp(dir, *args, **kwargs) for dir in directions]
+        return np.array(hvp_list)
+    return hessian_fun
