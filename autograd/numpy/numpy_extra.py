@@ -45,8 +45,11 @@ class ArrayNode(Node):
             return primitive_sum_arrays(*outgrads)
 
     @staticmethod
-    def cast(value):
-        return arraycast(value)
+    def cast(value, example):
+        result = arraycast(value)
+        if result.shape != example.shape:
+            result = result.reshape(example.shape)
+        return result
 
     @staticmethod
     def new_sparse_array(template, idx, x):

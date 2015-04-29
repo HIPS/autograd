@@ -39,7 +39,7 @@ def backward_pass(start_node, end_node, tape):
         return zeros_like(start_node)
     if not type(end_node) is FloatNode:
         try:
-            end_node = FloatNode.cast(end_node)
+            end_node = FloatNode.cast(end_node, 1.0)
         except TypeError:
             raise TypeError("Output type {0} can't be cast to float. ".format(type(end_node.value))
                             + "Function grad requires a scalar-valued function. "
@@ -53,13 +53,13 @@ def backward_pass(start_node, end_node, tape):
             assert type(new_node(getval(cur_outgrad))) == node.node_type, \
                 "Types are {0} and {1}".format(type(new_node(getval(cur_outgrad))), node.node_type)
             for gradfun, parent in node.parent_grad_ops:
-                og = cast_to_node_type(gradfun(cur_outgrad), parent.node_type)
+                og = cast_to_node_type(gradfun(cur_outgrad), parent.node_type, parent.node_value)
                 parent.outgrads.append(og)
     return cur_outgrad
 
-def cast_to_node_type(x, node_type):
+def cast_to_node_type(x, node_type, example):
     if type(new_node(getval(x))) is not node_type:
-        return node_type.cast(x)
+        return node_type.cast(x, example)
     else:
         return x
 
@@ -135,11 +135,12 @@ def zeros_like(value):
         return new_node(value, []).zeros_like(value)
 
 class ReverseNode(object):
-    __slots__ = ['parent_grad_ops', 'outgrads', 'node_type']
-    def __init__(self, node_type):
+    __slots__ = ['parent_grad_ops', 'outgrads', 'node_type', 'node_value']
+    def __init__(self, node_type, node_value):
         self.parent_grad_ops = []
         self.outgrads = []
         self.node_type = node_type
+        self.node_value = node_value
 
     def sum_outgrads(self):
         return self.node_type.sum_outgrads(self.outgrads)
@@ -151,7 +152,7 @@ class Node(object):
         self.value = value
         self.tapes = {}
         for tape in tapes:
-            new_rnode = ReverseNode(type(self))
+            new_rnode = ReverseNode(type(self), value)
             tape.append(new_rnode)
             self.tapes[tape] = new_rnode
 
@@ -179,7 +180,7 @@ class FloatNode(Node):
     def zeros_like(value):
         return 0.0
     @staticmethod
-    def cast(value):
+    def cast(value, example):
         return cast(value, cast_to_float)
 
 Node.type_mappings[float] = FloatNode
@@ -194,7 +195,7 @@ class ComplexNode(FloatNode):
     def zeros_like(value):
         return 0.0 + 0.0j
     @staticmethod
-    def cast(value):
+    def cast(value, example):
         return cast(value, cast_to_complex)
 
 def cast_to_complex(value):

@@ -9,8 +9,11 @@ class ComplexArrayNode(ArrayNode):
         return anp.zeros(value.shape) + 0.0j
 
     @staticmethod
-    def cast(value):
-        return complex_arraycast(value)
+    def cast(value, example):
+        result = complex_arraycast(value)
+        if result.shape != example.shape:
+            result = result.reshape(example.shape)
+        return result
 
     @staticmethod
     def new_sparse_array(template, idx, x):
