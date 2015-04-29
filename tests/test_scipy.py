@@ -48,9 +48,9 @@ R = npr.randn
 def test_logsumexp1():
     combo_check(autograd.scipy.misc.logsumexp, [0], [1.1, R(4), R(3,4)],
                 axis=[None, 0], keepdims=[True, False])
-#def test_logsumexp2():
-#    combo_check(autograd.scipy.misc.logsumexp, [0], [R(3,4), R(4,5,6), R(1,5)],
-#                axis=[None, 0, 1], keepdims=[True, False])
+def test_logsumexp2():
+    combo_check(autograd.scipy.misc.logsumexp, [0], [R(3,4), R(4,5,6), R(1,5)],
+                axis=[None, 0, 1], keepdims=[True, False])
 def test_logsumexp3():
     combo_check(autograd.scipy.misc.logsumexp, [0], [R(4)], b = [np.exp(R(4))],
                 axis=[None, 0], keepdims=[True, False])
@@ -60,11 +60,11 @@ def test_logsumexp4():
 def test_logsumexp5():
     combo_check(autograd.scipy.misc.logsumexp, [0], [R(2,3,4)], b = [np.exp(R(2,3,4))],
                 axis=[None, 0, 1], keepdims=[True, False])
-#def test_logsumexp6():
-#    x = npr.randn(1,5)
-#    def f(a): return autograd.scipy.misc.logsumexp(a, axis=1, keepdims=True)
-#    check_grads(f, x)
-#    check_grads(lambda a: to_scalar(grad(f)(a)), x)
+def test_logsumexp6():
+    x = npr.randn(1,5)
+    def f(a): return autograd.scipy.misc.logsumexp(a, axis=1, keepdims=True)
+    check_grads(f, x)
+    check_grads(lambda a: to_scalar(grad(f)(a)), x)
 
 ### Signal ###
 

@@ -142,6 +142,16 @@ def test_singleton_array_output_axis1():
    check_grads(fun, npr.randn(1, 3))
    check_grads(lambda x: np.sum(grad(fun)(x)), npr.randn(1, 3))
 
+def test_singleton_array_output_axis0_keepdims():
+   fun = lambda x : np.sum(np.sin(x), axis=0, keepdims=True)
+   check_grads(fun, npr.randn(3, 1))
+   check_grads(lambda x: np.sum(grad(fun)(x)), npr.randn(3, 1))
+
+def test_singleton_array_output_axis1_keepdims():
+   fun = lambda x : np.sum(np.sin(x), axis=1, keepdims=True)
+   check_grads(fun, npr.randn(1, 3))
+   check_grads(lambda x: np.sum(grad(fun)(x)), npr.randn(1, 3))
+
 @raises(TypeError)
 def test_assignment_raises_error():
     def fun(A, b):
