@@ -1,11 +1,11 @@
 from distutils.core import setup
 setup(name='autograd',
-      version='1.0.1',
+      version='1.0.2',
       description='Efficiently computes derivatives of numpy code.',
       author='Dougal Maclaurin and David Duvenaud',
       author_email="maclaurin@physics.harvard.edu, dduvenaud@seas.harvard.edu",
       packages=['autograd', 'autograd.numpy', 'autograd.scipy', 'autograd.scipy.stats'],
-      install_requires=['numpy>=1.8', 'scipy'],
+      install_requires=['numpy>=1.8'],
       keywords=['Automatic differentiation', 'backpropagation', 'gradients',
                 'machine learning', 'optimization', 'neural networks',
                 'Python', 'Numpy', 'Scipy'],
