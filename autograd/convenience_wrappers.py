@@ -61,7 +61,7 @@ def jacobian(fun, argnum=0):
 
 def hessian_vector_product(fun, argnum=0):
     """Builds a function that returns the exact Hessian-vector product.
-    The returned function has arguments (vector, *args, **kwargs), and takes
+    The returned function has arguments (*args, vector, **kwargs), and takes
     roughly 4x as long to evaluate as the original function."""
     fun_grad = grad(fun, argnum)
     def vector_dot_grad(*args, **kwargs):
@@ -78,7 +78,6 @@ def hessian(fun, argnum=0):
     def hessian_fun(*args, **kwargs):
         arg_in = args[argnum]
         directions = np.eye(arg_in.size)  # axis-aligned directions.
-        hvp_list = [hvp(*(args+(dir,)), **kwargs) for dir in directions]
+        hvp_list = [hvp(*(args+(direction,)), **kwargs) for direction in directions]
         return np.array(hvp_list)
     return hessian_fun
-
