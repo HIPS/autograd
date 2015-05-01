@@ -64,9 +64,10 @@ def hessian_vector_product(fun, argnum):
     The returned function has arguments (vector, *args, **kwargs), and takes
     roughly 4x as long to evaluate as the original function."""
     fun_grad = grad(fun, argnum)
-    def vector_dot_grad(vector, *args, **kwargs):
+    def vector_dot_grad(*args, **kwargs):
+        args, vector = args[:-1], args[-1]
         return np.dot(vector, fun_grad(*args, **kwargs))
-    return grad(vector_dot_grad, argnum + 1)  # Grad wrt original input.
+    return grad(vector_dot_grad, argnum)  # Grad wrt original input.
 
 def hessian(fun, argnum=0):
     """Returns a function that computes the exact Hessian.
@@ -76,7 +77,8 @@ def hessian(fun, argnum=0):
     hvp = hessian_vector_product(fun, argnum)
     def hessian_fun(*args, **kwargs):
         arg_in = args[argnum]
-        directions = np.eye(arg_in.size) #axis-aligned directions.
-        hvp_list = [hvp(dir, *args, **kwargs) for dir in directions]
+        directions = np.eye(arg_in.size)  # axis-aligned directions.
+        hvp_list = [hvp(*(args+(dir,)), **kwargs) for dir in directions]
         return np.array(hvp_list)
     return hessian_fun
+
