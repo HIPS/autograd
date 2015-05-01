@@ -59,7 +59,7 @@ def jacobian(fun, argnum=0):
         return jac
     return jac_fun
 
-def hessian_vector_product(fun, argnum):
+def hessian_vector_product(fun, argnum=0):
     """Builds a function that returns the exact Hessian-vector product.
     The returned function has arguments (vector, *args, **kwargs), and takes
     roughly 4x as long to evaluate as the original function."""
