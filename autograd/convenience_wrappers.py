@@ -4,6 +4,21 @@ import itertools as it
 import autograd.numpy as np
 from autograd.core import grad, getval
 
+
+def multigrad(fun, argnums=0):
+    """Takes gradients wrt multiple arguments simultaneously."""
+    original_fun = fun
+    def combined_arg_fun(multi_arg, *args, **kwargs):
+        extra_args_list = list(args)
+        for argnum_ix, arg_ix in enumerate(argnums):
+            extra_args_list[arg_ix] = multi_arg[argnum_ix]
+        return original_fun(*extra_args_list, **kwargs)
+    gradfun = grad(combined_arg_fun, argnum=0)
+    def gradfun_rearranged(*args, **kwargs):
+        multi_arg = tuple([args[i] for i in argnums])
+        return gradfun(multi_arg, *args, **kwargs)
+    return gradfun_rearranged
+
 def grad_and_aux(fun, argnum=0):
     """Builds a function that returns the gradient of the first output and the
     (unmodified) second output of a function that returns two outputs."""
