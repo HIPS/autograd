@@ -342,9 +342,10 @@ def test_concatenate_axis_1_unnamed():
     check_grads(d_fun, A)
 
 def test_trace():
-    def fun(x): return np.trace(x)
+    def fun(x): return np.trace(x, offset=offset)
     d_fun = lambda x : to_scalar(grad(fun)(x))
-    mat = npr.randn(10, 10)
+    mat = npr.randn(10, 11)
+    offset = npr.randint(-9,11)
     check_grads(fun, mat)
     check_grads(d_fun, mat)
 
