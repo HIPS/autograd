@@ -122,7 +122,7 @@ anp.expand_dims.defgrad(lambda ans, x, axis     : lambda g : anp.reshape(g, anp.
 anp.squeeze.defgrad(lambda ans, x, axis=None    : lambda g : anp.reshape(g, anp.shape(x)))
 anp.repeat.defgrad( lambda ans, x, shape, axis  : lambda g : anp.sum(g, axis, keepdims=True))
 anp.split.defgrad(  lambda ans, x, idxs, axis=0 : lambda g : anp.concatenate(g, axis=axis))
-anp.diag.defgrad(   lambda ans, x               : lambda g : anp.diag(g))
+anp.diag.defgrad(   lambda ans, x, k=0          : lambda g : anp.diag(g, k))
 anp.flipud.defgrad( lambda ans, x,              : lambda g : anp.flipud(g))
 anp.fliplr.defgrad( lambda ans, x,              : lambda g : anp.fliplr(g))
 anp.rot90.defgrad(  lambda ans, x, k=1          : lambda g : anp.rot90(g, -k))

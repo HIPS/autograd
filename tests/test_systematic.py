@@ -132,3 +132,4 @@ def test_einsum_three_args(): combo_check(np.einsum, [1, 2], ['ijk,lji,lli->lki'
                                           [R(3, 4, 4)], [R(4, 4, 3)], [R(4, 4, 3)])
 
 def test_trace(): combo_check(np.trace, [0], [R(5, 5), R(4, 5), R(5, 4)], offset=[-1, 0, 1])
+def test_diag(): combo_check(np.diag, [0], [R(5, 5)], k=[-1, 0, 1])
