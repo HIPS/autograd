@@ -342,11 +342,29 @@ def test_concatenate_axis_1_unnamed():
     check_grads(d_fun, A)
 
 def test_trace():
-    def fun(x): return np.trace(x)
+    def fun(x): return np.trace(x, offset=offset)
     d_fun = lambda x : to_scalar(grad(fun)(x))
-    mat = npr.randn(10, 10)
+    mat = npr.randn(10, 11)
+    offset = npr.randint(-9,11)
     check_grads(fun, mat)
     check_grads(d_fun, mat)
+
+def test_trace2():
+    def fun(x): return np.trace(x, offset=offset)
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    mat = npr.randn(11, 10)
+    offset = npr.randint(-9,11)
+    check_grads(fun, mat)
+    check_grads(d_fun, mat)
+
+# TODO: Allow extra dimensions and dim1, dim2 args.
+# def test_trace_extradims():
+#     def fun(x): return np.trace(x, offset=offset)
+#     d_fun = lambda x : to_scalar(grad(fun)(x))
+#     mat = npr.randn(5, 6, 4)
+#     offset = npr.randint(-5,6)
+#     check_grads(fun, mat)
+#     check_grads(d_fun, mat)
 
 def test_diag():
     def fun(x): return to_scalar(np.diag(x))
