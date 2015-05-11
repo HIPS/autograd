@@ -20,21 +20,56 @@ def test_fft_axis():
     check_grads(fun, mat)
     check_grads(d_fun, mat)
 
-#def test_fft_n_smaller():
-#    D = 5
-#    def fun(x): return to_scalar(np.fft.fft(x, D - 2))
-#    d_fun = lambda x : to_scalar(grad(fun)(x))
-#    mat = npr.randn(D, D)
-#    check_grads(fun, mat)
-#    check_grads(d_fun, mat)
+def test_fft_n_smaller():
+   D = 5
+   for fft_fun in (np.fft.fft, np.fft.ifft):
+       def fun(x): return to_scalar(fft_fun(x, D - 2))
+       d_fun = lambda x : to_scalar(grad(fun)(x))
+       mat = npr.randn(D, D)
+       check_grads(fun, mat)
+       check_grads(d_fun, mat)
 
-#def test_fft_n_bigger():
-#    D = 5
-#    def fun(x): return to_scalar(np.fft.fft(x, D + 2))
-#    d_fun = lambda x : to_scalar(grad(fun)(x))
-#    mat = npr.randn(D, D)
-#    check_grads(fun, mat)
-#    check_grads(d_fun, mat)
+def test_fft_n_bigger():
+   D = 5
+   for fft_fun in (np.fft.fft, np.fft.ifft):
+       def fun(x): return to_scalar(fft_fun(x, D + 2))
+       d_fun = lambda x : to_scalar(grad(fun)(x))
+       mat = npr.randn(D, D)
+       check_grads(fun, mat)
+       check_grads(d_fun, mat)
+
+def make_test_fft_s(fft_fun):
+   def test_fun():
+       D = 5
+       def fun(x): return to_scalar(fft_fun(x, s=s, axes=axes))
+       d_fun = lambda x : to_scalar(grad(fun)(x))
+
+       mat = npr.randn(D,D,D) / 10.0
+       s = [D + 2, D - 2]
+       axes = [0,2]
+
+       check_grads(fun, mat)
+       check_grads(d_fun, mat)
+   return test_fun
+
+test_fft2_s = make_test_fft_s(np.fft.fft2)
+test_ifft2_s = make_test_fft_s(np.fft.ifft2)
+test_fftn_s = make_test_fft_s(np.fft.fftn)
+test_ifftn_s = make_test_fft_s(np.fft.ifftn)
+
+## TODO: fft gradient not implemented for repeated axes
+# def test_fft_repeated_axis():
+#     D = 5
+#     for fft_fun in (np.fft.fft2,np.fft.ifft2,np.fft.fftn, np.fft.ifftn):
+#        def fun(x): return to_scalar(fft_fun(x, s=s, axes=axes))
+#        d_fun = lambda x : to_scalar(grad(fun)(x))
+
+#        mat = npr.randn(D,D,D) / 10.0
+#        s = [D + 2, D - 2]
+#        axes = [0,0]
+
+#        check_grads(fun, mat)
+#        check_grads(d_fun, mat)
 
 def test_ifft():
     def fun(x): return to_scalar(np.fft.ifft(x))
