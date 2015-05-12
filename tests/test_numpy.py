@@ -357,11 +357,19 @@ def test_trace2():
     check_grads(fun, mat)
     check_grads(d_fun, mat)
 
-# TODO: Allow extra dimensions and dim1, dim2 args.
-# def test_trace_extradims():
-#     def fun(x): return np.trace(x, offset=offset)
+def test_trace_extradims():
+    def fun(x): return to_scalar(np.trace(x, offset=offset))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    mat = npr.randn(5,6,4,3)
+    offset = npr.randint(-5,6)
+    check_grads(fun, mat)
+    check_grads(d_fun, mat)
+
+# TODO: Allow axis1, axis2 args.
+# def test_trace_extradims2():
+#     def fun(x): return to_scalar(np.trace(x, offset=offset, axis1=3,axis2=2))
 #     d_fun = lambda x : to_scalar(grad(fun)(x))
-#     mat = npr.randn(5, 6, 4)
+#     mat = npr.randn(5,6,4,3)
 #     offset = npr.randint(-5,6)
 #     check_grads(fun, mat)
 #     check_grads(d_fun, mat)
