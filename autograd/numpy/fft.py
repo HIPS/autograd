@@ -6,7 +6,8 @@ from autograd.core import primitive
 
 wrap_namespace(ffto.__dict__, globals())
 
-## TODO: make fft gradient work for a repeated axis, e.g. by replacing fftn with repeated calls to 1d fft along each axis
+# TODO: make fft gradient work for a repeated axis,
+# e.g. by replacing fftn with repeated calls to 1d fft along each axis
 def fft_defgrad(fft_fun):
     def fft_grad(ans, x, *args, **kwargs):
         check_no_repeated_axes(*args, **kwargs)
@@ -23,10 +24,10 @@ ifftshift.defgrad(lambda ans, x, axes=None : lambda g : anp.conj(fftshift(anp.co
 def truncate_pad(x, shape):
     # truncate/pad x to have the appropriate shape
     slices = [slice(n) for n in shape]
-    pads = zip(anp.zeros(len(shape)), 
+    pads = zip(anp.zeros(len(shape)),
                anp.maximum(0, anp.array(shape) - anp.array(x.shape)))
     return anp.pad(x, pads, 'constant')[slices]
-truncate_pad.defgrad( lambda ans, x, shape: lambda g: truncate_pad(g, x.shape))
+truncate_pad.defgrad(lambda ans, x, shape: lambda g: truncate_pad(g, x.shape))
 
 ## TODO: could be made less stringent, to fail only when repeated axis has different values of s
 def check_no_repeated_axes(*args, **kwargs):

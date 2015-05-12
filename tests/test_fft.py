@@ -38,24 +38,22 @@ def test_fft_n_bigger():
        check_grads(fun, mat)
        check_grads(d_fun, mat)
 
-def make_test_fft_s(fft_fun):
-   def test_fun():
-       D = 5
-       def fun(x): return to_scalar(fft_fun(x, s=s, axes=axes))
-       d_fun = lambda x : to_scalar(grad(fun)(x))
+def check_fft_s(fft_fun):
+   D = 5
+   def fun(x): return to_scalar(fft_fun(x, s=s, axes=axes))
+   d_fun = lambda x : to_scalar(grad(fun)(x))
 
-       mat = npr.randn(D,D,D) / 10.0
-       s = [D + 2, D - 2]
-       axes = [0,2]
+   mat = npr.randn(D,D,D) / 10.0
+   s = [D + 2, D - 2]
+   axes = [0,2]
 
-       check_grads(fun, mat)
-       check_grads(d_fun, mat)
-   return test_fun
+   check_grads(fun, mat)
+   check_grads(d_fun, mat)
 
-test_fft2_s = make_test_fft_s(np.fft.fft2)
-test_ifft2_s = make_test_fft_s(np.fft.ifft2)
-test_fftn_s = make_test_fft_s(np.fft.fftn)
-test_ifftn_s = make_test_fft_s(np.fft.ifftn)
+def test_fft2_s():  check_fft_s(np.fft.fft2)
+def test_ifft2_s(): check_fft_s(np.fft.ifft2)
+def test_fftn_s():  check_fft_s(np.fft.fftn)
+def test_ifftn_s(): check_fft_s(np.fft.ifftn)
 
 ## TODO: fft gradient not implemented for repeated axes
 # def test_fft_repeated_axis():
