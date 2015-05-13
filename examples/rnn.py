@@ -1,8 +1,11 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import autograd.numpy as np
 import autograd.numpy.random as npr
 from autograd import value_and_grad
 from autograd.util import quick_grad_check
 from scipy.optimize import minimize
+from six.moves import range
 
 class WeightsParser(object):
     """A helper class to index into a parameter vector."""
@@ -56,7 +59,7 @@ def build_rnn(input_size, state_size, output_size):
     def loss(weights, inputs, targets):
         logprobs = outputs(weights, inputs)
         loss_sum = 0.0
-        for t in xrange(len(targets)):  # For every time step
+        for t in range(len(targets)):  # For every time step
             loss_sum -= np.sum(logprobs[t] * targets[t])
         return loss_sum / targets.shape[0] / targets.shape[1]
 
@@ -100,15 +103,15 @@ if __name__ == '__main__':
     pred_fun, loss_fun, frac_err, num_weights = build_rnn(input_size, state_size, output_size)
 
     def print_training_prediction(weights, train_inputs, train_targets):
-        print "Training text                         Predicted text"
+        print("Training text                         Predicted text")
         logprobs = np.asarray(pred_fun(weights, train_inputs))
-        for t in xrange(logprobs.shape[1]):
+        for t in range(logprobs.shape[1]):
             training_text  = one_hot_to_string(train_targets[:,t,:])
             predicted_text = one_hot_to_string(logprobs[:,t,:])
-            print training_text.replace('\n', ' ') + "| " + predicted_text.replace('\n', ' ')
+            print(training_text.replace('\n', ' ') + "| " + predicted_text.replace('\n', ' '))
 
     def callback(weights):
-        print "Train loss:", loss_fun(weights, train_inputs, train_targets)
+        print("Train loss:", loss_fun(weights, train_inputs, train_targets))
         print_training_prediction(weights, train_inputs, train_targets)
 
    # Build gradient of loss function using autograd.
@@ -122,18 +125,18 @@ if __name__ == '__main__':
     # Check the gradients numerically, just to be safe
     quick_grad_check(loss_fun, init_weights, (train_inputs, train_targets))
 
-    print "Training RNN..."
+    print("Training RNN...")
     result = minimize(training_loss_and_grad, init_weights, jac=True, method='CG',
                       options={'maxiter':train_iters}, callback=callback)
     trained_weights = result.x
 
-    print
-    print "Generating text from RNN..."
+    print()
+    print("Generating text from RNN...")
     num_letters = 30
-    for t in xrange(20):
+    for t in range(20):
         text = " "
-        for i in xrange(num_letters):
+        for i in range(num_letters):
             seqs = string_to_one_hot(text, output_size)[:, np.newaxis, :]
             logprobs = pred_fun(trained_weights, seqs)[-1].ravel()
             text += chr(npr.choice(len(logprobs), p=np.exp(logprobs)))
-        print text
+        print(text)

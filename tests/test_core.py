@@ -1,5 +1,6 @@
 """This file doesn't import the numpy wrapper, to check if core works
    on basic operations even without numpy."""
+from __future__ import absolute_import
 import warnings
 from autograd import grad, value_and_grad
 

@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import autograd.numpy as np
 from autograd import value_and_grad
 
@@ -5,6 +7,7 @@ from scipy.optimize import minimize
 
 import matplotlib.pyplot as plt
 import os
+from six.moves import range
 
 rows, cols = 40, 60
 
@@ -23,7 +26,7 @@ def project(vx, vy, occlusion):
                 + np.roll(vy, -1, axis=0) - np.roll(vy, 1, axis=0))
     div = make_continuous(div, occlusion)
 
-    for k in xrange(50):
+    for k in range(50):
         p = (div + np.roll(p, 1, axis=1) + np.roll(p, -1, axis=1)
                  + np.roll(p, 1, axis=0) + np.roll(p, -1, axis=0))/4.0
         p = make_continuous(p, occlusion)
@@ -87,9 +90,9 @@ def simulate(vx, vy, num_time_steps, occlusion, ax=None, render=False):
     blue_smoke = np.zeros((rows, cols))
     blue_smoke[rows/2:3*rows/4] = 1
 
-    print "Running simulation..."
+    print("Running simulation...")
     vx, vy = project(vx, vy, occlusion)
-    for t in xrange(num_time_steps):
+    for t in range(num_time_steps):
         plot_matrix(ax, red_smoke, occlusion, blue_smoke, t, render)
         vx_updated = advect(vx, vx, vy)
         vy_updated = advect(vy, vx, vy)
@@ -117,7 +120,7 @@ if __name__ == '__main__':
 
     simulation_timesteps = 20
 
-    print "Loading initial and target states..."
+    print("Loading initial and target states...")
     init_vx = np.ones((rows, cols))
     init_vy = np.zeros((rows, cols))
 
@@ -144,18 +147,18 @@ if __name__ == '__main__':
         cur_occlusion = np.reshape(weights, (rows, cols))
         simulate(init_vx, init_vy, simulation_timesteps, cur_occlusion, ax)
 
-    print "Rendering initial flow..."
+    print("Rendering initial flow...")
     callback(init_occlusion)
 
-    print "Optimizing initial conditions..."
+    print("Optimizing initial conditions...")
     result = minimize(objective_with_grad, init_occlusion, jac=True, method='CG',
                       options={'maxiter':50, 'disp':True}, callback=callback)
 
-    print "Rendering optimized flow..."
+    print("Rendering optimized flow...")
     final_occlusion = np.reshape(result.x, (rows, cols))
     simulate(init_vx, init_vy, simulation_timesteps, final_occlusion, ax, render=True)
 
-    print "Converting frames to an animated GIF..."   # Using imagemagick.
+    print("Converting frames to an animated GIF...")   # Using imagemagick.
     os.system("convert -delay 5 -loop 0 step*.png "
               "-delay 250 step{0:03d}.png wing.gif".format(simulation_timesteps))
     os.system("rm step*.png")

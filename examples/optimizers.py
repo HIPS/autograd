@@ -3,15 +3,17 @@
    These are just standard routines that don't make any use of autograd,
    though you could take gradients of these functions too if you want
    to do meta-optimization."""
+from __future__ import absolute_import
 
 import autograd.numpy as np
+from six.moves import range
 
 
 def sgd(grad, x, callback=None, num_iters=200, step_size=0.1, mass=0.9):
     """Stochastic gradient descent with momentum.
     grad() must have signature grad(x, i), where i is the iteration number."""
     velocity = np.zeros(len(x))
-    for i in xrange(num_iters):
+    for i in range(num_iters):
         g = grad(x, i)
         if callback: callback(x, i, g)
         velocity = mass * velocity - (1.0 - mass) * g
@@ -21,7 +23,7 @@ def sgd(grad, x, callback=None, num_iters=200, step_size=0.1, mass=0.9):
 def rmsprop(grad, x, callback=None, num_iters=100, step_size=0.1, gamma=0.9, eps = 10**-8):
     """Root mean squared prop: See Adagrad paper for details."""
     avg_sq_grad = np.ones(len(x))
-    for i in xrange(num_iters):
+    for i in range(num_iters):
         g = grad(x, i)
         if callback: callback(x, i, g)
         avg_sq_grad = avg_sq_grad * gamma + g**2 * (1 - gamma)
@@ -34,7 +36,7 @@ def adam(grad, x, callback=None, num_iters=100,
     It's basically RMSprop with momentum and some correction terms."""
     m = np.zeros(len(x))
     v = np.zeros(len(x))
-    for i in xrange(num_iters):
+    for i in range(num_iters):
         b1t = 1 - (1 - b1) * lam**i
         g = grad(x, i)
         if callback: callback(x, i, g)

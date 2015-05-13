@@ -1,11 +1,14 @@
 """Convolutional neural net on MNIST, modeled on 'LeNet-5',
 http://yann.lecun.com/exdb/publis/pdf/lecun-98.pdf"""
+from __future__ import absolute_import
+from __future__ import print_function
 
 import autograd.numpy as np
 import autograd.numpy.random as npr
 import autograd.scipy.signal
 from autograd import grad
 from autograd.util import quick_grad_check
+from six.moves import range
 
 convolve = autograd.scipy.signal.convolve
 
@@ -158,7 +161,7 @@ if __name__ == '__main__':
     num_epochs = 50
 
     # Load and process MNIST data (borrowing from Kayak)
-    print "Loading training data..."
+    print("Loading training data...")
     import imp, urllib
     add_color_channel = lambda x : x.reshape((x.shape[0], 1, x.shape[1], x.shape[2]))
     one_hot = lambda x, K : np.array(x[:,None] == np.arange(K)[None, :], dtype=int)
@@ -183,11 +186,11 @@ if __name__ == '__main__':
     # Check the gradients numerically, just to be safe
     # quick_grad_check(loss_fun, W, (train_images[:50], train_labels[:50]))
 
-    print "    Epoch      |    Train err  |   Test error  "
+    print("    Epoch      |    Train err  |   Test error  ")
     def print_perf(epoch, W):
         test_perf  = frac_err(W, test_images, test_labels)
         train_perf = frac_err(W, train_images, train_labels)
-        print "{0:15}|{1:15}|{2:15}".format(epoch, train_perf, test_perf)
+        print("{0:15}|{1:15}|{2:15}".format(epoch, train_perf, test_perf))
 
     # Train with sgd
     batch_idxs = make_batches(N_data, batch_size)

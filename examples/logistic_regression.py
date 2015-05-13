@@ -1,6 +1,9 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import autograd.numpy as np
 from autograd import grad
 from autograd.util import quick_grad_check
+from six.moves import range
 
 def sigmoid(x):
     return 0.5*(np.tanh(x) + 1)
@@ -30,8 +33,8 @@ weights = np.array([0.0, 0.0, 0.0])
 quick_grad_check(training_loss, weights)
 
 # Optimize weights using gradient descent.
-print "Initial loss:", training_loss(weights)
-for i in xrange(100):
+print("Initial loss:", training_loss(weights))
+for i in range(100):
     weights -= training_gradient_fun(weights) * 0.01
 
-print  "Trained loss:", training_loss(weights)
+print("Trained loss:", training_loss(weights))

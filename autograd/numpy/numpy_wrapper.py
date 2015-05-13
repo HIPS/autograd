@@ -1,9 +1,11 @@
 from __future__ import absolute_import
+from __future__ import print_function
 import types
 from .use_gpu_numpy import use_gpu_numpy
+import six
 
 if use_gpu_numpy():
-    print "Using GPU-supporting numpy wrapper"
+    print("Using GPU-supporting numpy wrapper")
     import gpu_numpy as np
 else:
     import numpy as np
@@ -12,9 +14,9 @@ import warnings
 from autograd.core import primitive
 
 def wrap_namespace(old, new):
-    unchanged_types =  set([types.FloatType, types.IntType, types.NoneType, types.TypeType])
+    unchanged_types =  set([float, int, type(None), type])
     function_types = set([np.ufunc, types.FunctionType, types.BuiltinFunctionType])
-    for name, obj in old.iteritems():
+    for name, obj in six.iteritems(old):
         if type(obj) in function_types:
             new[name] = primitive(obj)
         elif type(obj) in unchanged_types:

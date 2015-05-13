@@ -5,6 +5,9 @@ import autograd.numpy as np
 import numpy as npo # original numpy
 import itertools as it
 from numpy.lib.stride_tricks import as_strided
+import six
+from six.moves import range
+from six.moves import zip
 
 def prod(x):
     return npo.prod(x, dtype=int)
@@ -13,7 +16,7 @@ def prod(x):
 def convolve(A, B, axes=None, dot_axes=[(),()], mode='full'):
     assert mode in ['valid', 'full'], "Mode {0} not yet implemented".format(mode)
     if axes is None:
-        axes = [range(A.ndim), range(A.ndim)]
+        axes = [list(range(A.ndim)), list(range(A.ndim))]
     wrong_order = any([B.shape[ax_B] < A.shape[ax_A] for ax_A, ax_B in zip(*axes)])
     if wrong_order:
         if mode=='valid' and not all([B.shape[ax_B] <= A.shape[ax_A] for ax_A, ax_B in zip(*axes)]):
@@ -22,9 +25,9 @@ def convolve(A, B, axes=None, dot_axes=[(),()], mode='full'):
             i1 =      B.ndim - len(dot_axes[1]) - len(axes[1]) # B ignore
             i2 = i1 + A.ndim - len(dot_axes[0]) - len(axes[0]) # A ignore
             i3 = i2 + len(axes[0])
-            ignore_B = range(i1)
-            ignore_A = range(i1, i2)
-            conv     = range(i2, i3)
+            ignore_B = list(range(i1))
+            ignore_A = list(range(i1, i2))
+            conv     = list(range(i2, i3))
             return convolve(B, A, axes=axes[::-1], dot_axes=dot_axes[::-1], mode=mode).transpose(ignore_A + ignore_B + conv)
 
     if mode == 'full':
@@ -45,8 +48,8 @@ def convolve(A, B, axes=None, dot_axes=[(),()], mode='full'):
 
 def einsum_tensordot(A, B, axes, reverse=False):
     # Does tensor dot product using einsum, which shouldn't require a copy.
-    A_axnums = range(A.ndim)
-    B_axnums = range(A.ndim, A.ndim + B.ndim)
+    A_axnums = list(range(A.ndim))
+    B_axnums = list(range(A.ndim, A.ndim + B.ndim))
     sum_axnum = A.ndim + B.ndim
     for i_sum, (i_A, i_B) in enumerate(zip(*axes)):
         A_axnums[i_A] = sum_axnum + i_sum
@@ -62,7 +65,7 @@ def pad_to_full(A, B, axes):
 def parse_axes(A_shape, B_shape, conv_axes, dot_axes, mode):
     A_ndim, B_ndim = len(A_shape), len(B_shape)
     if conv_axes is None:
-        conv_axes = [range(A_ndim), range(A_ndim)]
+        conv_axes = [list(range(A_ndim)), list(range(A_ndim))]
     axes = {'A' : {'conv' : list(conv_axes[0]),
                    'dot'  : list(dot_axes[0]),
                    'ignore' : [i for i in range(A_ndim)
@@ -76,13 +79,13 @@ def parse_axes(A_shape, B_shape, conv_axes, dot_axes, mode):
     i1 =      len(axes['A']['ignore'])
     i2 = i1 + len(axes['B']['ignore'])
     i3 = i2 + len(axes['A']['conv'])
-    axes['out'] = {'ignore_A' : range(i1),
-                   'ignore_B' : range(i1, i2),
-                   'conv'     : range(i2, i3)}
+    axes['out'] = {'ignore_A' : list(range(i1)),
+                   'ignore_B' : list(range(i1, i2)),
+                   'conv'     : list(range(i2, i3))}
     conv_shape = [compute_conv_size(A_shape[i], B_shape[j], mode)
                   for i, j in zip(axes['A']['conv'], axes['B']['conv'])]
-    shapes = {'A'   : {s : [A_shape[i] for i in ax] for s, ax in axes['A'].iteritems()},
-              'B'   : {s : [B_shape[i] for i in ax] for s, ax in axes['B'].iteritems()}}
+    shapes = {'A'   : {s : [A_shape[i] for i in ax] for s, ax in six.iteritems(axes['A'])},
+              'B'   : {s : [B_shape[i] for i in ax] for s, ax in six.iteritems(axes['B'])}}
     shapes['out'] = {'ignore_A' : shapes['A']['ignore'],
                      'ignore_B' : shapes['B']['ignore'],
                      'conv'     : conv_shape}
