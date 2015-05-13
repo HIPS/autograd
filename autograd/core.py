@@ -115,8 +115,12 @@ class primitive(object):
                 rnode.parent_grad_ops.append((gradfun, parent))
         return result
 
-    def __get__(self, obj, objtype):
-        return types.MethodType(self, obj, objtype)
+    if six.PY3:
+        def __get__(self, obj, objtype):
+            return types.MethodType(self, obj)
+    else:
+        def __get__(self, obj, objtype):
+            return types.MethodType(self, obj, objtype)
 
 @primitive
 def merge_tapes(x, y): return x
