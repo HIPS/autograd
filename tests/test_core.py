@@ -12,7 +12,7 @@ def check_close(a, b, atol=1e-4, rtol=1e-4):
     assert abs(a - b) < atol + rtol*abs(b), "Diffs are: {0}".format(a - b)
 
 def check_binary_func(fun, independent=False):
-    with warnings.catch_warnings(independent) as w:
+    with warnings.catch_warnings(record=independent) as w:
         x, y = 0.7, 1.8
         a = grad(fun)(x, y)
         b = nd(lambda x: fun(x, y), x)
