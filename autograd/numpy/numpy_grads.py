@@ -310,10 +310,11 @@ anp.atleast_1d.defgrad(make_grad_reshape_list)
 anp.atleast_2d.defgrad(make_grad_reshape_list)
 anp.atleast_3d.defgrad(make_grad_reshape_list)
 
-def make_grad_einsum(argnum, ans, subscripts, *operands):
+def make_grad_einsum(argnum, ans, *operands):
     # Gradient of einsum is obtained by swapping outgrad with the argument
     # being differentiated wrt.
-    if isinstance(subscripts, basestring):  # using "ijk" convention.
+    if isinstance(operands[0], basestring):  # using "ijk" convention.
+        subscripts, operands = operands[0], operands[1:]
         if not '->' in subscripts:
             raise NotImplementedError("Need indices on both sides.")
         op_num = argnum - 1
@@ -324,11 +325,14 @@ def make_grad_einsum(argnum, ans, subscripts, *operands):
         rest_of_subs = input_subs_list[:op_num] + input_subs_list[op_num + 1:]
         new_subscripts = ','.join([output_subs] + rest_of_subs) + '->' + subs_wrt
         return lambda g: anp.einsum(new_subscripts, *((g,) + rest_of_ops))
-    else:  # Using (op1, dims1, op2, dims2...) convention.
-        raise NotImplementedError("Don't support (op1, dims1, op2, dims2...) "
-                                  "calling convention yet.")
+    else:  # Using (op0, sublist0, op1, sublist1..., sublistout) convention.
+        if len(operands) % 2 == 0:
+            raise NotImplementedError("Need sublistout argument")
+        operands = list(operands)
+        rest_of_ops = [operands[-1]] + operands[:argnum] + operands[(argnum+2):-1] + [operands[argnum+1]]
+        return lambda g: anp.einsum(g, *rest_of_ops)
+
 anp.einsum.gradmaker = make_grad_einsum
-anp.einsum.defgrad_is_zero(argnums=(0,))
 
 # ----- Handle broadcasting -----
 
