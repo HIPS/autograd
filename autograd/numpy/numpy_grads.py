@@ -131,6 +131,7 @@ anp.full.defgrad(   lambda ans, shape, fill_value, dtype=None : lambda g : anp.s
 anp.triu.defgrad(   lambda ans, x, k=0          : lambda g : anp.triu(g, k=k))
 anp.tril.defgrad(   lambda ans, x, k=0          : lambda g : anp.tril(g, k=k))
 anp.clip.defgrad(   lambda ans, x, a_min, a_max : lambda g : g * anp.logical_and(ans != a_min, ans != a_max))
+anp.swapaxes.defgrad(lambda ans, x, axis1, axis2: lambda g : anp.swapaxes(g, axis2, axis1))
 anp.real_if_close.defgrad(lambda ans, x : lambda g : g)
 anp.real.defgrad(  lambda ans, x   : lambda g : g)
 anp.imag.defgrad(  lambda ans, x   : lambda g : -1j * g)
