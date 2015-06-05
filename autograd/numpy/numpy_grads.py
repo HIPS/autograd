@@ -346,7 +346,7 @@ def unbroadcast(ans, x, gradfun):
             while anp.ndim(result) > len(shape):
                 result = anp.sum(result, axis=0)
             for axis, size in enumerate(shape):
-                if size is 1:
+                if size == 1:
                     result = anp.sum(result, axis=axis, keepdims=True)
             assert anp.shape(result) == shape
             return result
