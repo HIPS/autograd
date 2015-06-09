@@ -160,6 +160,10 @@ class Node(object):
     def sum_outgrads(outgrads):
         return sum(outgrads[1:], outgrads[0])
 
+    def __str__(self):
+        return "Autograd {0} with value {1} and {2} tape(s)".format(
+            type(self).__name__, str(self.value), len(self.tapes))
+
 @primitive
 def cast(value, caster):
     return caster(value)
