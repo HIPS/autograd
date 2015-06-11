@@ -1,20 +1,23 @@
+from __future__ import absolute_import
+from __future__ import print_function
 # Inspecting the numpy namespace and classifying numpy's functions
 import numpy as np
 from collections import defaultdict
 import types
 import inspect
+import six
 
 heading = lambda x : "-"*20 + str(x) + "-"*20
 
 np_types = defaultdict(list)
-for name, obj in np.__dict__.iteritems():
+for name, obj in six.iteritems(np.__dict__):
     np_types[type(obj)].append(name)
 
-print "Objects in numpy namespace by type:"
-for t, vals in np_types.iteritems():
-    print heading(t)
-    print vals
-print "="*80
+print("Objects in numpy namespace by type:")
+for t, vals in six.iteritems(np_types):
+    print(heading(t))
+    print(vals)
+print("="*80)
 
 all_ufuncs = np_types[np.ufunc]
 unary_ufuncs = []
@@ -29,16 +32,16 @@ for ufunc in all_ufuncs:
     else:
         other_ufuncs.append(ufunc)
 
-print heading("Unary ufuncs:")
-print sorted(unary_ufuncs)
-print heading("Binary ufuncs:")
-print sorted(binary_ufuncs)
+print(heading("Unary ufuncs:"))
+print(sorted(unary_ufuncs))
+print(heading("Binary ufuncs:"))
+print(sorted(binary_ufuncs))
 if other_ufuncs:
-    print heading("Other ufuncs:")
-    print sorted(other_ufuncs)
+    print(heading("Other ufuncs:"))
+    print(sorted(other_ufuncs))
 
 all_regular_funcs = np_types[types.FunctionType] + np_types[types.BuiltinFunctionType]
-print heading("Stat functions with keepdims kwarg and ndarray method")
+print(heading("Stat functions with keepdims kwarg and ndarray method"))
 keepdims_funcs = []
 all_other_funcs = []
 for func in all_regular_funcs:
@@ -53,7 +56,7 @@ for func in all_regular_funcs:
             all_other_funcs.append(func)
     except TypeError:
         pass
-print sorted(keepdims_funcs)
+print(sorted(keepdims_funcs))
 
-print heading("All other functions")
-print sorted(all_other_funcs)
+print(heading("All other functions"))
+print(sorted(all_other_funcs))

@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import warnings
 
 import autograd.numpy as np
@@ -521,7 +522,7 @@ def test_len():
     check_grads(d_fun, A)
 
 def test_r_basic():
-    with warnings.catch_warnings(True) as w:
+    with warnings.catch_warnings(record=True) as w:
         def fun(x):
             c = npr.randn(3, 2)
             b = np.r_[x]
@@ -532,7 +533,7 @@ def test_r_basic():
         check_grads(d_fun, A)
 
 def test_r_double():
-    with warnings.catch_warnings(True) as w:
+    with warnings.catch_warnings(record=True) as w:
         def fun(x):
             c = npr.randn(3, 2)
             b = np.r_[x, x]
@@ -543,7 +544,7 @@ def test_r_double():
         check_grads(d_fun, A)
 
 def test_no_relation():
-    with warnings.catch_warnings(True) as w:
+    with warnings.catch_warnings(record=True) as w:
         c = npr.randn(3, 2)
         def fun(x):
             return to_scalar(c)
@@ -553,7 +554,7 @@ def test_no_relation():
         check_grads(d_fun, A)
 
 def test_r_no_relation():
-    with warnings.catch_warnings(True) as w:
+    with warnings.catch_warnings(record=True) as w:
         c = npr.randn(3, 2)
         def fun(x):
             b = np.r_[c]
@@ -564,7 +565,7 @@ def test_r_no_relation():
         check_grads(d_fun, A)
 
 def test_r_node_and_const():
-    with warnings.catch_warnings(True) as w:
+    with warnings.catch_warnings(record=True) as w:
         c = npr.randn(3, 2)
         def fun(x):
             b = np.r_[x, c]
@@ -575,7 +576,7 @@ def test_r_node_and_const():
         check_grads(d_fun, A)
 
 def test_r_mixed():
-    with warnings.catch_warnings(True) as w:
+    with warnings.catch_warnings(record=True) as w:
         c = npr.randn(3, 2)
         def fun(x):
             b = np.r_[x, c, x]
@@ -586,7 +587,7 @@ def test_r_mixed():
         check_grads(d_fun, A)
 
 def test_r_slicing():
-    with warnings.catch_warnings(True) as w:
+    with warnings.catch_warnings(record=True) as w:
         c = npr.randn(10)
         def fun(x):
             b = np.r_[x, c, 1:10]
@@ -597,7 +598,7 @@ def test_r_slicing():
         check_grads(d_fun, A)
 
 def test_c_():
-    with warnings.catch_warnings(True) as w:
+    with warnings.catch_warnings(record=True) as w:
         c = npr.randn(3, 2)
         def fun(x):
             b = np.c_[x, c, x]
@@ -608,7 +609,7 @@ def test_c_():
         check_grads(d_fun, A)
 
 def test_c_mixed():
-    with warnings.catch_warnings(True) as w:
+    with warnings.catch_warnings(record=True) as w:
         c = npr.randn(3, 2)
         def fun(x):
             b = np.c_[x, c, x]

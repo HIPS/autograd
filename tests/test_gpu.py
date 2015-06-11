@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import autograd.numpy.random as npr
 import autograd.numpy as np
 import operator as op
@@ -8,7 +10,7 @@ from numpy_utils import (combo_check, stat_check, unary_ufunc_check,
 npr.seed(0)
 
 if not use_gpu_numpy():
-    print "Can't test GPU support without flag set"
+    print("Can't test GPU support without flag set")
 else:
 
     def R(*shape):

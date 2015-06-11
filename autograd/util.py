@@ -1,8 +1,14 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import autograd.numpy as np
 import itertools as it
 from autograd.core import grad, safe_type
 from copy import copy
 from autograd.numpy.use_gpu_numpy import use_gpu_numpy
+import six
+from six.moves import map
+from six.moves import range
+from six.moves import zip
 
 if use_gpu_numpy():
     garray_obj = np.garray
@@ -25,14 +31,14 @@ def unary_nd(f, x, eps=EPS):
             nd_grad = np.array(np.zeros(x.shape), dtype=np.gpu_float32)
         else:
             nd_grad = np.zeros(x.shape)
-        for dims in it.product(*map(range, x.shape)):
+        for dims in it.product(*list(map(range, x.shape))):
             nd_grad[dims] = unary_nd(indexed_function(f, x, dims), x[dims])
         return nd_grad
     elif isinstance(x, tuple):
         return tuple([unary_nd(indexed_function(f, tuple(x), i), x[i])
                       for i in range(len(x))])
     elif isinstance(x, dict):
-        return {k : unary_nd(indexed_function(f, x, k), v) for k, v in x.iteritems()}
+        return {k : unary_nd(indexed_function(f, x, k), v) for k, v in six.iteritems(x)}
     elif isinstance(x, list):
         return [unary_nd(indexed_function(f, x, i), v) for i, v in enumerate(x)]
     elif np.iscomplexobj(x):
@@ -85,7 +91,7 @@ def quick_grad_check(fun, arg0, extra_args=(), kwargs={}, verbose=True,
     """Checks the gradient of a function (w.r.t. to its first arg) in a random direction"""
 
     if verbose:
-        print "Checking gradient of {0} at {1}".format(fun, arg0)
+        print("Checking gradient of {0} at {1}".format(fun, arg0))
 
     if rs is None:
         rs = np.random.RandomState()
@@ -101,8 +107,8 @@ def quick_grad_check(fun, arg0, extra_args=(), kwargs={}, verbose=True,
         "Check failed! nd={0}, ad={1}".format(numeric_grad, analytic_grad)
 
     if verbose:
-        print "Gradient projection OK (numeric grad: {0}, analytic grad: {1})".format(
-            numeric_grad, analytic_grad)
+        print("Gradient projection OK (numeric grad: {0}, analytic grad: {1})".format(
+            numeric_grad, analytic_grad))
 
 equivalence_class = {}
 for float_type in [np.float64, np.float32, np.float16]:

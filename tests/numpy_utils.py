@@ -1,7 +1,10 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import itertools as it
 import autograd.numpy.random as npr
 from autograd import grad, primitive
 from autograd.util import check_equivalent, check_grads, to_scalar
+from six.moves import range
 
 
 def combo_check(fun, argnums, *args, **kwargs):
@@ -13,7 +16,7 @@ def combo_check(fun, argnums, *args, **kwargs):
         cur_args = args_and_kwargs[:num_args]
         cur_kwargs = dict(args_and_kwargs[num_args:])
         check_fun_and_grads(fun, cur_args, cur_kwargs, argnums=argnums)
-        print ".",
+        print(".", end=' ')
 
 def check_fun_and_grads(fun, args, kwargs, argnums):
     wrt_args = [args[i] for i in argnums]
@@ -22,7 +25,7 @@ def check_fun_and_grads(fun, args, kwargs, argnums):
             check_equivalent(fun(*args, **kwargs),
                              fun.fun(*args, **kwargs))
     except:
-        print "Value test failed! Args were", args, kwargs
+        print("Value test failed! Args were", args, kwargs)
         raise
 
     try:
@@ -33,7 +36,7 @@ def check_fun_and_grads(fun, args, kwargs, argnums):
             return to_scalar(fun(*full_args, **kwargs))
         check_grads(scalar_fun, *wrt_args)
     except:
-        print "First derivative test failed! Args were", args, kwargs
+        print("First derivative test failed! Args were", args, kwargs)
         raise
 
     try:
@@ -42,7 +45,7 @@ def check_fun_and_grads(fun, args, kwargs, argnums):
                 return to_scalar(grad(scalar_fun, argnum=i)(*args))
             check_grads(d_scalar_fun, *wrt_args)
     except:
-        print "Second derivative test failed! Args were", args, kwargs
+        print("Second derivative test failed! Args were", args, kwargs)
         raise
 
 def stat_check(fun, test_complex=True):

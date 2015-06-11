@@ -1,5 +1,6 @@
 # This file is to check that future division works.
 from __future__ import division
+from __future__ import absolute_import
 
 import autograd.numpy as np
 from autograd.util import *

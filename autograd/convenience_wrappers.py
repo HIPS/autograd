@@ -1,8 +1,10 @@
 """Convenience functions built on top of `grad`."""
+from __future__ import absolute_import
 import itertools as it
 
 import autograd.numpy as np
 from autograd.core import grad, getval
+from six.moves import map
 
 
 def multigrad(fun, argnums=0):
@@ -68,7 +70,7 @@ def jacobian(fun, argnum=0):
         assert isinstance(getval(output), np.ndarray), "Must have array output"
         jac = np.zeros(output.shape + arg_in.shape)
         input_slice = (slice(None),) * len(arg_in.shape)
-        for idxs in it.product(*map(range, output.shape)):
+        for idxs in it.product(*list(map(range, output.shape))):
             scalar_fun = lambda *args, **kwargs : fun(*args, **kwargs)[idxs]
             jac[idxs + input_slice] = grad(scalar_fun, argnum=argnum)(*args, **kwargs)
         return jac

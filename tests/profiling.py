@@ -1,16 +1,19 @@
+from __future__ import absolute_import
+from __future__ import print_function
 from autograd import grad
 import autograd.numpy as np
 import autograd.numpy.random as npr
 from time import time
 from contextlib import contextmanager
+from six.moves import range
 
 @contextmanager
 def tictoc(text=""):
-    print "--- Start clock ---"
+    print("--- Start clock ---")
     t1 = time()
     yield
     dt = time() - t1
-    print "--- Stop clock {0}: {1} seconds elapsed ---".format(text, dt)
+    print("--- Stop clock {0}: {1} seconds elapsed ---".format(text, dt))
 
 def fan_out_fan_in():
     """The 'Pearlmutter test' """

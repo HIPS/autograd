@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 from autograd.core import primitive, Node, getval, zeros_like, cast
+from six.moves import zip
 
 class TupleNode(Node):
     __slots__ = []

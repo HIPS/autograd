@@ -1,6 +1,8 @@
 """This example shows how to define the gradient of your own functions.
 This can be useful for speed, numerical stability, or in cases where
 your code depends on external library calls."""
+from __future__ import absolute_import
+from __future__ import print_function
 import autograd.numpy as np
 import autograd.numpy.random as npr
 
@@ -45,7 +47,7 @@ if __name__ == '__main__':
         return np.sum(lse)
 
     grad_of_example = grad(example_func)
-    print "Gradient: ", grad_of_example(npr.randn(10))
+    print("Gradient: ", grad_of_example(npr.randn(10)))
 
     # Check the gradients numerically, just to be safe.
     quick_grad_check(example_func, npr.randn(10))

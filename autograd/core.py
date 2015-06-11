@@ -4,6 +4,7 @@ import operator as op
 import types
 import math
 import numpy as np
+import six
 
 def grad(fun, argnum=0):
     """
@@ -99,7 +100,7 @@ class primitive(object):
             if isinstance(arg, Node):
                 argvals[i] = arg.value
                 if i in self.zero_grads: continue
-                for tape, parent_rnode in arg.tapes.iteritems():
+                for tape, parent_rnode in six.iteritems(arg.tapes):
                     if not tape.complete:
                         ops.append((tape, i, parent_rnode))
                         tapes.add(tape)
@@ -114,8 +115,12 @@ class primitive(object):
                 rnode.parent_grad_ops.append((gradfun, parent))
         return result
 
-    def __get__(self, obj, objtype):
-        return types.MethodType(self, obj, objtype)
+    if six.PY3:
+        def __get__(self, obj, objtype):
+            return types.MethodType(self, obj)
+    else:
+        def __get__(self, obj, objtype):
+            return types.MethodType(self, obj, objtype)
 
 @primitive
 def merge_tapes(x, y): return x
@@ -216,14 +221,24 @@ def safe_type(value):
     else:
         return value
 
-differentiable_ops = ['__add__', '__sub__', '__mul__', '__pow__', '__div__', '__mod__',
+if six.PY3:
+    DIV = '__truediv__'
+    RDIV = '__rtruediv__'
+else:
+    DIV = '__div__'
+    RDIV = '__rdiv__'
+
+differentiable_ops = ['__add__', '__sub__', '__mul__', '__pow__', '__mod__',
                       '__neg__', '__radd__', '__rsub__', '__rmul__', '__rpow__',
-                      '__rdiv__', '__rmod__']
+                      '__rmod__', DIV, RDIV]
+
 nondifferentiable_ops = ['__eq__', '__ne__', '__gt__', '__ge__', '__lt__', '__le__',]
 for float_op in differentiable_ops + nondifferentiable_ops:
     setattr(FloatNode, float_op, primitive(getattr(float, float_op)))
 
 FloatNode.__dict__['__neg__'].defgrad(lambda ans, x : op.neg)
+
+
 
 for comp_op in nondifferentiable_ops:
     FloatNode.__dict__[comp_op].defgrad_is_zero(argnums=(0, 1))
@@ -237,8 +252,8 @@ FloatNode.__dict__['__mul__'].defgrad(lambda ans, x, y : lambda g : y * g)
 FloatNode.__dict__['__mul__'].defgrad(lambda ans, x, y : lambda g : x * g, argnum=1)
 FloatNode.__dict__['__sub__'].defgrad(lambda ans, x, y : I)
 FloatNode.__dict__['__sub__'].defgrad(lambda ans, x, y : op.neg, argnum=1)
-FloatNode.__dict__['__div__'].defgrad(lambda ans, x, y : lambda g : g / y)
-FloatNode.__dict__['__div__'].defgrad(lambda ans, x, y : lambda g : - g * x / y**2, argnum=1)
+FloatNode.__dict__[DIV].defgrad(lambda ans, x, y : lambda g : g / y)
+FloatNode.__dict__[DIV].defgrad(lambda ans, x, y : lambda g : - g * x / y**2, argnum=1)
 FloatNode.__dict__['__pow__'].defgrad(lambda ans, x, y : lambda g : g * y * x ** (y - 1))
 FloatNode.__dict__['__pow__'].defgrad(lambda ans, x, y : lambda g : g * log(x) * x ** y, argnum=1)
 FloatNode.__dict__['__mod__'].defgrad(lambda ans, x, y : I)
@@ -257,6 +272,6 @@ def swap_args(grads):
 FloatNode.__dict__['__radd__'].grads = swap_args(FloatNode.__dict__['__add__'].grads)
 FloatNode.__dict__['__rmul__'].grads = swap_args(FloatNode.__dict__['__mul__'].grads)
 FloatNode.__dict__['__rsub__'].grads = swap_args(FloatNode.__dict__['__sub__'].grads)
-FloatNode.__dict__['__rdiv__'].grads = swap_args(FloatNode.__dict__['__div__'].grads)
+FloatNode.__dict__[RDIV].grads = swap_args(FloatNode.__dict__[DIV].grads)
 FloatNode.__dict__['__rpow__'].grads = swap_args(FloatNode.__dict__['__pow__'].grads)
 FloatNode.__dict__['__rmod__'].grads = swap_args(FloatNode.__dict__['__mod__'].grads)

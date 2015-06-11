@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import autograd.numpy.random as npr
 import autograd.numpy as np
 import operator as op
@@ -70,7 +71,7 @@ def test_op_add(): binary_ufunc_check(op.add)
 def test_op_sub(): binary_ufunc_check(op.sub)
 def test_op_mod(): binary_ufunc_check_no_same_args(op.mod, lims_B=[0.3, 2.0], test_complex=False)
 def test_op_mod_neg(): binary_ufunc_check_no_same_args(op.mod, lims_B=[-0.3, -2.0], test_complex=False)
-def test_op_div(): binary_ufunc_check(op.div, lims_B=[0.5, 2.0])
+def test_op_div(): binary_ufunc_check(op.truediv, lims_B=[0.5, 2.0])
 def test_op_pow(): binary_ufunc_check(op.pow, lims_A=[0.7, 2.0])
 
 

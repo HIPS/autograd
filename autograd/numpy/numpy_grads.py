@@ -1,8 +1,12 @@
+from __future__ import absolute_import
 import operator as op
 
 from autograd.core import getval
 from . import numpy_wrapper as anp
 from .numpy_extra import ArrayNode, take
+import six
+from six.moves import range
+from six.moves import zip
 
 # ----- Functions that are constant w.r.t. continuous inputs -----
 
@@ -233,19 +237,19 @@ anp.dot.gradmaker = make_grad_dot
 
 def make_grad_tensordot(argnum, ans, A, B, axes=2):
     if type(axes) is int:
-        axes = (range(anp.ndim(A))[-axes:],
-                range(anp.ndim(B))[:axes])
+        axes = (list(range(anp.ndim(A)))[-axes:],
+                list(range(anp.ndim(B)))[:axes])
 
     def gradfun(g):
         N_axes_summed = len(axes[0])
         if argnum == 0:
             X, Y = A, B
             X_axes_summed, Y_axes_summed = axes
-            g_axes_from_Y = range(anp.ndim(g))[(anp.ndim(X) - N_axes_summed):]
+            g_axes_from_Y = list(range(anp.ndim(g)))[(anp.ndim(X) - N_axes_summed):]
         else:
             X, Y = B, A
             X_axes_summed, Y_axes_summed = axes[::-1]
-            g_axes_from_Y = range(anp.ndim(g))[:(anp.ndim(Y) - N_axes_summed)]
+            g_axes_from_Y = list(range(anp.ndim(g)))[:(anp.ndim(Y) - N_axes_summed)]
 
         Y_axes_ignored = [i for i in range(anp.ndim(Y)) if i not in Y_axes_summed]
         result = anp.tensordot(g, Y, axes=[g_axes_from_Y, Y_axes_ignored])
@@ -299,7 +303,7 @@ anp.partition.defgrad(make_grad_partition)
 
 def unpermuter(permutation):
     unsort = anp.zeros(len(permutation), dtype=int)
-    unsort[permutation] = range(len(permutation))
+    unsort[permutation] = list(range(len(permutation)))
     return lambda g: g[unsort]
 
 def make_grad_reshape_list(ans, *arys):
@@ -314,7 +318,7 @@ anp.atleast_3d.defgrad(make_grad_reshape_list)
 def make_grad_einsum(argnum, ans, *operands):
     # Gradient of einsum is obtained by swapping outgrad with the argument
     # being differentiated wrt.
-    if isinstance(operands[0], basestring):  # using "ijk" convention.
+    if isinstance(operands[0], six.string_types):  # using "ijk" convention.
         subscripts, operands = operands[0], operands[1:]
         if not '->' in subscripts:
             raise NotImplementedError("Need indices on both sides.")

@@ -10,6 +10,7 @@ import autograd.scipy.stats
 from autograd import grad
 
 from numpy_utils import combo_check, check_grads, unary_ufunc_check, to_scalar
+from six.moves import range
 npr.seed(1)
 
 ### Stats ###

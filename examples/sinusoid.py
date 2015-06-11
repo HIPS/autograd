@@ -1,6 +1,10 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import autograd.numpy as np
 import matplotlib.pyplot as plt
 from autograd import grad
+from six.moves import map
+from six.moves import range
 
 def fun(x):
     return np.sin(x)
@@ -9,7 +13,7 @@ d_fun = grad(fun)    # First derivative
 dd_fun = grad(d_fun) # Second derivative
 
 x = np.linspace(-10, 10, 100)
-plt.plot(x, map(fun, x), x, map(d_fun, x), x, map(dd_fun, x))
+plt.plot(x, list(map(fun, x)), x, list(map(d_fun, x)), x, list(map(dd_fun, x)))
 
 plt.xlim([-10, 10])
 plt.ylim([-1.2, 1.2])
@@ -21,8 +25,8 @@ plt.clf()
 def fun(x):
     currterm = x
     ans = currterm
-    for i in xrange(1000):
-        print i,
+    for i in range(1000):
+        print(i, end=' ')
         currterm = - currterm * x ** 2 / ((2 * i + 3) * (2 * i + 2))
         ans = ans + currterm
         if np.abs(currterm) < 0.2: break # (Very generous tolerance!)
@@ -33,7 +37,7 @@ d_fun = grad(fun)
 dd_fun = grad(d_fun)
 
 x = np.linspace(-10, 10, 100)
-plt.plot(x, map(fun, x), x, map(d_fun, x), x, map(dd_fun, x))
+plt.plot(x, list(map(fun, x)), x, list(map(d_fun, x)), x, list(map(dd_fun, x)))
 
 plt.xlim([-10, 10])
 plt.ylim([-1.2, 1.2])
