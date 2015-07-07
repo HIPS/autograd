@@ -137,4 +137,4 @@ def make_grad_convolve(argnum, ans, A, B, axes=None, dot_axes=[(),()], mode='ful
         new_order = npo.argsort(axes[_X_]['ignore'] + axes[_X_]['dot'] + axes[_X_]['conv'])
         return np.transpose(result, new_order)
     return grad_fun
-convolve.gradmaker = make_grad_convolve
+convolve.defgrads(make_grad_convolve, [0, 1])

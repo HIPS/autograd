@@ -43,18 +43,16 @@ def wrap_if_nodes_inside(raw_array, slow_op_name=None):
         if slow_op_name:
             warnings.warn("{0} is slow for array inputs. "
                           "np.concatenate() is faster.".format(slow_op_name))
-        return array_from_args(raw_array.shape, *raw_array.ravel())
+        return array_from_args(*raw_array.ravel()).reshape(raw_array.shape)
     else:
         return raw_array
 
 @primitive
-def array_from_args(front_shape, *args):
-    new_array = np.array(args)
-    return new_array.reshape(front_shape + new_array.shape[1:])
+def array_from_args(*args):
+    return np.array(args)
 
-def array_from_args_gradmaker(argnum, ans, front_shape, *args):
-    new_shape = (np.prod(front_shape),) + ans.shape[len(front_shape):]
-    return lambda g : reshape(g, new_shape)[argnum - 1]
+def array_from_args_gradmaker(argnum, ans, args, kwargs):
+    return lambda g : g[argnum]
 array_from_args.gradmaker = array_from_args_gradmaker
 
 # ----- Enable functions called using [] ----

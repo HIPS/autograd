@@ -4,6 +4,7 @@ import operator as op
 import types
 import math
 import numpy as np
+import functools
 import six
 
 def grad(fun, argnum=0):
@@ -75,9 +76,9 @@ class primitive(object):
         self.__name__ = fun.__name__
         self.__doc__ = fun.__doc__
 
-    def gradmaker(self, argnum, *args, **kwargs):
+    def gradmaker(self, argnum, ans, args, kwargs):
         try:
-            return self.grads[argnum](*args, **kwargs)
+            return self.grads[argnum](ans, *args, **kwargs)
         except KeyError:
             if self.grads == {}:
                 raise NotImplementedError("Gradient of {0} not yet implemented."
@@ -87,6 +88,10 @@ class primitive(object):
 
     def defgrad(self, gradmaker, argnum=0):
         self.grads[argnum] = gradmaker
+
+    def defgrads(self, gradmaker, argnums):
+        for argnum in argnums:
+            self.defgrad(functools.partial(gradmaker, argnum), argnum)
 
     def defgrad_is_zero(self, argnums=(0,)):
         for argnum in argnums:
@@ -110,7 +115,7 @@ class primitive(object):
         if ops:
             result = new_node(result, tapes)
             for tape, argnum, parent in ops:
-                gradfun = self.gradmaker(argnum, result, *args, **kwargs)
+                gradfun = self.gradmaker(argnum, result, args, kwargs)
                 rnode = result.tapes[tape]
                 rnode.parent_grad_ops.append((gradfun, parent))
         return result

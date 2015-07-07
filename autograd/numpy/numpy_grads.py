@@ -233,7 +233,7 @@ def make_grad_dot(argnum, ans, A, B):
     else:
         axes = ([A.ndim - 1], [max(0, B.ndim - 2)])
     return make_grad_tensordot(argnum, ans, A, B, axes=axes)
-anp.dot.gradmaker = make_grad_dot
+anp.dot.defgrads(make_grad_dot, [0, 1])
 
 def make_grad_tensordot(argnum, ans, A, B, axes=2):
     if type(axes) is int:
@@ -261,12 +261,13 @@ def make_grad_tensordot(argnum, ans, A, B, axes=2):
             result = result[()]
         return anp.transpose(result, axes=reverse_permutation)
     return gradfun
-anp.tensordot.gradmaker = make_grad_tensordot
+anp.tensordot.defgrads(make_grad_tensordot, [0, 1])
 
 anp.outer.defgrad(lambda ans, a, b : lambda g : anp.dot(g, b.T))
 anp.outer.defgrad(lambda ans, a, b : lambda g : anp.dot(a.T, g), argnum=1)
 
-def make_grad_concatenate_args(argnum, ans, axis, *args):
+def make_grad_concatenate_args(argnum, ans, axis_args, kwargs):
+    axis, args = axis_args[0], axis_args[1:]
     start = sum([a.shape[axis] for a in args[:argnum-1]])
     idxs = [slice(None)] * ans.ndim
     idxs[axis] = slice(start, start + args[argnum-1].shape[axis])
@@ -315,7 +316,7 @@ anp.atleast_1d.defgrad(make_grad_reshape_list)
 anp.atleast_2d.defgrad(make_grad_reshape_list)
 anp.atleast_3d.defgrad(make_grad_reshape_list)
 
-def make_grad_einsum(argnum, ans, *operands):
+def make_grad_einsum(argnum, ans, operands, kwargs):
     # Gradient of einsum is obtained by swapping outgrad with the argument
     # being differentiated wrt.
     if isinstance(operands[0], six.string_types):  # using "ijk" convention.
