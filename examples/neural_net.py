@@ -33,6 +33,24 @@ def make_nn_funs(layer_sizes, L2_reg):
     return N, predictions, loss, frac_err
 
 
+def load_mnist():
+    print("Loading training data...")
+    import imp, urllib
+    partial_flatten = lambda x : np.reshape(x, (x.shape[0], np.prod(x.shape[1:])))
+    one_hot = lambda x, K: np.array(x[:,None] == np.arange(K)[None, :], dtype=int)
+    source, _ = urllib.urlretrieve(
+        'https://raw.githubusercontent.com/HIPS/Kayak/master/examples/data.py')
+    data = imp.load_source('data', source).mnist()
+    train_images, train_labels, test_images, test_labels = data
+    train_images = partial_flatten(train_images) / 255.0
+    test_images  = partial_flatten(test_images)  / 255.0
+    train_labels = one_hot(train_labels, 10)
+    test_labels = one_hot(test_labels, 10)
+    N_data = train_images.shape[0]
+
+    return N_data, train_images, train_labels, test_images, test_labels
+
+
 def make_batches(N_data, batch_size):
     return [slice(i, min(i+batch_size, N_data))
             for i in range(0, N_data, batch_size)]
@@ -51,19 +69,7 @@ if __name__ == '__main__':
     num_epochs = 50
 
     # Load and process MNIST data (borrowing from Kayak)
-    print("Loading training data...")
-    import imp, urllib
-    partial_flatten = lambda x : np.reshape(x, (x.shape[0], np.prod(x.shape[1:])))
-    one_hot = lambda x, K: np.array(x[:,None] == np.arange(K)[None, :], dtype=int)
-    source, _ = urllib.urlretrieve(
-        'https://raw.githubusercontent.com/HIPS/Kayak/master/examples/data.py')
-    data = imp.load_source('data', source).mnist()
-    train_images, train_labels, test_images, test_labels = data
-    train_images = partial_flatten(train_images) / 255.0
-    test_images  = partial_flatten(test_images)  / 255.0
-    train_labels = one_hot(train_labels, 10)
-    test_labels = one_hot(test_labels, 10)
-    N_data = train_images.shape[0]
+    N_data, train_images, train_labels, test_images, test_labels = load_mnist()
 
     # Make neural net functions
     N_weights, pred_fun, loss_fun, frac_err = make_nn_funs(layer_sizes, L2_reg)
