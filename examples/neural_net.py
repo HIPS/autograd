@@ -2,67 +2,41 @@ from __future__ import absolute_import
 from __future__ import print_function
 import autograd.numpy as np
 import autograd.numpy.random as npr
+from autograd.scipy.misc import logsumexp
 from autograd import grad
 from autograd.util import quick_grad_check
-from six.moves import range
-from six.moves import zip
 
-class WeightsParser(object):
-    """A helper class to index into a parameter vector."""
-    def __init__(self):
-        self.idxs_and_shapes = {}
-        self.N = 0
-
-    def add_weights(self, name, shape):
-        start = self.N
-        self.N += np.prod(shape)
-        self.idxs_and_shapes[name] = (slice(start, self.N), shape)
-
-    def get(self, vect, name):
-        idxs, shape = self.idxs_and_shapes[name]
-        return np.reshape(vect[idxs], shape)
-
-def make_batches(N_total, N_batch):
-    start = 0
-    batches = []
-    while start < N_total:
-        batches.append(slice(start, start + N_batch))
-        start += N_batch
-    return batches
-
-def logsumexp(X, axis):
-    max_X = np.max(X)
-    return max_X + np.log(np.sum(np.exp(X - max_X), axis=axis, keepdims=True))
 
 def make_nn_funs(layer_sizes, L2_reg):
-    parser = WeightsParser()
-    for i, shape in enumerate(zip(layer_sizes[:-1], layer_sizes[1:])):
-        parser.add_weights(('weights', i), shape)
-        parser.add_weights(('biases', i), (1, shape[1]))
+    shapes = zip(layer_sizes[:-1], layer_sizes[1:])
+    N = sum((m+1)*n for m, n in shapes)
 
-    def predictions(W_vect, X):
-        """Outputs normalized log-probabilities."""
-        cur_units = X
-        N_iter = len(layer_sizes) - 1
-        for i in range(len(layer_sizes) - 1):
-            cur_W = parser.get(W_vect, ('weights', i))
-            cur_B = parser.get(W_vect, ('biases', i))
-            cur_units = np.dot(cur_units, cur_W) + cur_B
-            if i == (N_iter - 1):
-                cur_units = cur_units - logsumexp(cur_units, axis=1)  # Normalize last layer.
-            else:
-                cur_units = np.tanh(cur_units)
-        return cur_units
+    def unpack_layers(params):
+        for m, n in shapes:
+            yield params[:m*n].reshape(m,n), params[m*n:m*n+n]
+            params = params[(m+1)*n:]
+
+    def predictions(params, inputs):
+        for W, b in unpack_layers(params):
+            outputs = np.dot(inputs, W) + b
+            inputs = np.tanh(outputs)
+        return outputs - logsumexp(outputs, axis=1, keepdims=True)
 
     def loss(W_vect, X, T):
         log_prior = -L2_reg * np.dot(W_vect, W_vect)
-        log_lik = np.sum(predictions(W_vect, X) * T) 
+        log_lik = np.sum(predictions(W_vect, X) * T)
         return - log_prior - log_lik
 
     def frac_err(W_vect, X, T):
         return np.mean(np.argmax(T, axis=1) != np.argmax(pred_fun(W_vect, X), axis=1))
 
-    return parser.N, predictions, loss, frac_err
+    return N, predictions, loss, frac_err
+
+
+def make_batches(N_data, batch_size):
+    return [slice(i, min(i+batch_size, N_data))
+            for i in range(0, N_data, batch_size)]
+
 
 if __name__ == '__main__':
     # Network parameters
@@ -75,12 +49,12 @@ if __name__ == '__main__':
     momentum = 0.9
     batch_size = 256
     num_epochs = 50
-    
+
     # Load and process MNIST data (borrowing from Kayak)
     print("Loading training data...")
     import imp, urllib
     partial_flatten = lambda x : np.reshape(x, (x.shape[0], np.prod(x.shape[1:])))
-    one_hot = lambda x, K : np.array(x[:,None] == np.arange(K)[None, :], dtype=int)
+    one_hot = lambda x, K: np.array(x[:,None] == np.arange(K)[None, :], dtype=int)
     source, _ = urllib.urlretrieve(
         'https://raw.githubusercontent.com/HIPS/Kayak/master/examples/data.py')
     data = imp.load_source('data', source).mnist()
@@ -102,14 +76,15 @@ if __name__ == '__main__':
     # Check the gradients numerically, just to be safe
     quick_grad_check(loss_fun, W, (train_images, train_labels))
 
-    print("    Epoch      |    Train err  |   Test error  ")
+    print("    Epoch      |    Train err  |   Test err  ")
+
     def print_perf(epoch, W):
         test_perf  = frac_err(W, test_images, test_labels)
         train_perf = frac_err(W, train_images, train_labels)
         print("{0:15}|{1:15}|{2:15}".format(epoch, train_perf, test_perf))
 
     # Train with sgd
-    batch_idxs = make_batches(N_data, batch_size)
+    batch_idxs = make_batches(train_images.shape[0], batch_size)
     cur_dir = np.zeros(N_weights)
 
     for epoch in range(num_epochs):
