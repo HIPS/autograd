@@ -54,7 +54,9 @@ def elementwise_grad(fun, argnum=0):
     of the Jacobian, and does the computation in one pass rather than in a loop.
     Note: this is only valid if the Jacobian is diagonal. Only arrays are
     currently supported."""
-    return grad(lambda x : np.sum(fun(x)), argnum=argnum)
+    def sum_output(*args, **kwargs):
+        return np.sum(fun(*args, **kwargs))
+    return grad(sum_output, argnum=argnum)
 
 def jacobian(fun, argnum=0):
     """Returns a function that computes the Jacobian of `fun`. If the input to

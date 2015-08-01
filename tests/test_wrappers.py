@@ -34,3 +34,27 @@ def test_multigrad():
     exact = multigrad(complicated_fun, argnums=[3, 1])(A, B, C, D, E, f=F, g=G)
     numeric = nd(complicated_fun_3_1, D, B)
     check_equivalent(exact, numeric)
+
+
+def test_elementwise_grad():
+    def simple_fun(a):
+        return a + np.sin(a) + np.cosh(a)
+
+    A = npr.randn(10)
+
+    exact = elementwise_grad(simple_fun)(A)
+    numeric = np.squeeze(np.array([nd(simple_fun, A[i]) for i in xrange(len(A))]))
+    check_equivalent(exact, numeric)
+
+
+def test_elementwise_grad_multiple_args():
+    def simple_fun(a, b):
+        return a + np.sin(a) + np.cosh(b)
+
+    A = 0.9
+    B = npr.randn(10)
+    argnum = 1
+
+    exact = elementwise_grad(simple_fun, argnum=argnum)(A, B)
+    numeric = np.squeeze(np.array([nd(simple_fun, A, B[i])[argnum] for i in xrange(len(B))]))
+    check_equivalent(exact, numeric)
