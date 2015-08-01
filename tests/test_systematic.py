@@ -141,3 +141,6 @@ def test_einsum2_three_args(): combo_check(np.einsum, [0, 2],
 def test_trace(): combo_check(np.trace, [0], [R(5, 5), R(4, 5), R(5, 4), R(3, 4, 5)], offset=[-1, 0, 1])
 def test_diag(): combo_check(np.diag, [0], [R(5, 5)], k=[-1, 0, 1])
 def test_swapaxes(): combo_check(np.swapaxes, [0], [R(3,4,5)], axis1=[0, 1, 2], axis2=[0, 1, 2])
+
+#def test_select(): combo_check(np.select, [0, 1], [[R(3,4,5) > 0, R(3,4,5) > 0, R(3,4,5) > 0]],
+#                                                  [[R(3,4,5),     R(3,4,5),     R(3,4,5)]], default=[0.0, 1.1])

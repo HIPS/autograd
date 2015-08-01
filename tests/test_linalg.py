@@ -51,6 +51,16 @@ def test_det():
     check_grads(fun, mat)
     check_grads(d_fun, mat)
 
+def test_slogdet():
+    def fun(x):
+        sign, logdet = np.linalg.slogdet(x)
+        return logdet
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    D = 6
+    mat = npr.randn(D, D)
+    check_grads(fun, mat)
+    check_grads(d_fun, mat)
+
 def test_frobeneus_norm():
     def fun(x): return to_scalar(np.linalg.norm(x))
     d_fun = lambda x : to_scalar(grad(fun)(x))
