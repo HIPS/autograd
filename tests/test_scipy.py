@@ -126,6 +126,9 @@ def test_polygamma():
 def test_psi():     unary_ufunc_check(autograd.scipy.special.psi,     lims=[0.3, 2.0], test_complex=False)
 def test_digamma(): unary_ufunc_check(autograd.scipy.special.digamma, lims=[0.3, 2.0], test_complex=False)
 def test_gamma():   unary_ufunc_check(autograd.scipy.special.gamma,   lims=[0.3, 2.0], test_complex=False)
+def test_gammaln(): unary_ufunc_check(autograd.scipy.special.gammaln, lims=[0.3, 2.0], test_complex=False)
+def test_gammasgn():unary_ufunc_check(autograd.scipy.special.gammasgn,lims=[0.3, 2.0], test_complex=False)
+def test_rgamma()  :unary_ufunc_check(autograd.scipy.special.rgamma,  lims=[0.3, 2.0], test_complex=False)
 
 def test_j0(): unary_ufunc_check(autograd.scipy.special.j0, lims=[0.2, 20.0], test_complex=False)
 def test_j1(): unary_ufunc_check(autograd.scipy.special.j1, lims=[0.2, 20.0], test_complex=False)

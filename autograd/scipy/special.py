@@ -7,12 +7,18 @@ polygamma = primitive(scipy.special.polygamma)
 psi       = primitive(scipy.special.psi)        # psi(x) is just polygamma(0, x)
 digamma   = primitive(scipy.special.digamma)    # digamma is another name for psi.
 gamma     = primitive(scipy.special.gamma)
+gammaln   = primitive(scipy.special.gammaln)
+gammasgn  = primitive(scipy.special.gammasgn)
+rgamma    = primitive(scipy.special.rgamma)
 
+gammasgn.defgrad_is_zero()
 polygamma.defgrad_is_zero(argnums=(0,))
 polygamma.defgrad(lambda ans, n, x: lambda g: g * polygamma(n + 1, x), argnum=1)
 psi.defgrad(      lambda ans, x: lambda g: g * polygamma(1, x))
 digamma.defgrad(  lambda ans, x: lambda g: g * polygamma(1, x))
 gamma.defgrad(    lambda ans, x: lambda g: g * ans * psi(x))
+gammaln.defgrad(  lambda ans, x: lambda g: g * psi(x))
+rgamma.defgrad(   lambda ans, x: lambda g: g * psi(x) / -gamma(x))
 
 
 ### Bessel functions ###
