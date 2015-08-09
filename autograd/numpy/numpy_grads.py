@@ -124,7 +124,6 @@ anp.roll.defgrad(   lambda ans, x, shift, axis=None  : lambda g : anp.roll(g, -s
 anp.ravel.defgrad(  lambda ans, x, order=None   : lambda g : anp.reshape(g, anp.shape(x), order=order))
 anp.expand_dims.defgrad(lambda ans, x, axis     : lambda g : anp.reshape(g, anp.shape(x)))
 anp.squeeze.defgrad(lambda ans, x, axis=None    : lambda g : anp.reshape(g, anp.shape(x)))
-anp.repeat.defgrad( lambda ans, x, shape, axis  : lambda g : anp.sum(g, axis, keepdims=True))
 anp.split.defgrad(  lambda ans, x, idxs, axis=0 : lambda g : anp.concatenate(g, axis=axis))
 anp.diag.defgrad(   lambda ans, x, k=0          : lambda g : anp.diag(g, k))
 anp.flipud.defgrad( lambda ans, x,              : lambda g : anp.flipud(g))
@@ -145,6 +144,23 @@ anp.where.defgrad( lambda ans, c, x=None, y=None : lambda g : anp.where(c, g, an
 anp.where.defgrad( lambda ans, c, x=None, y=None : lambda g : anp.where(c, anp.zeros(g.shape), g), argnum=2)
 
 # ----- Trickier grads -----
+
+def make_grad_reshape(ans, x, repeats, axis=None):
+    shape = x.shape
+    if axis is None:  # If axis is none, np.repeat() repeats the flattened array.
+        def reshape_grad(g):
+            expanded = anp.reshape(g, (anp.prod(shape),) + (repeats,))
+            return anp.reshape(anp.sum(expanded, axis=1, keepdims=False), shape)
+        return reshape_grad
+    else:
+        if shape[axis] == 1:  # For this common case, the logic is simple.
+            return lambda g: anp.sum(g, axis=axis, keepdims=True)
+        else:
+            def reshape_grad(g):
+                expanded = anp.reshape(g, shape[0:axis+1] + (repeats,) + shape[axis+1:])
+                return anp.sum(expanded, axis=axis+1, keepdims=False)
+            return reshape_grad
+anp.repeat.defgrad(make_grad_reshape)
 
 isarray = lambda x : isinstance(getval(x), anp.ndarray)
 def make_grad_transpose(ans, x, axes=None):

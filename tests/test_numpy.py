@@ -658,10 +658,37 @@ def test_squeeze_method():
     check_grads(fun, A)
     check_grads(d_fun, A)
 
-
 def test_repeat():
-    A = npr.randn(5, 1, 4)
+    A = npr.randn(5, 3, 4)
     def fun(x): return to_scalar(np.repeat(x, 2, axis=1))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    check_grads(fun, A)
+    check_grads(d_fun, A)
+
+def test_repeat_axis1_rep1():
+    A = npr.randn(5, 3, 4)
+    def fun(x): return to_scalar(np.repeat(x, 1, axis=1))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    check_grads(fun, A)
+    check_grads(d_fun, A)
+
+def test_repeat_axis0():
+    A = npr.randn(5, 3)
+    def fun(x): return to_scalar(np.repeat(x, 2, axis=0))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    check_grads(fun, A)
+    check_grads(d_fun, A)
+
+def test_repeat_1d_axis0():
+    A = npr.randn(5)
+    def fun(x): return to_scalar(np.repeat(x, 2, axis=0))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    check_grads(fun, A)
+    check_grads(d_fun, A)
+
+def test_repeat_axis0_rep1():
+    A = npr.randn(5, 1)
+    def fun(x): return to_scalar(np.repeat(x, 1, axis=0))
     d_fun = lambda x : to_scalar(grad(fun)(x))
     check_grads(fun, A)
     check_grads(d_fun, A)
