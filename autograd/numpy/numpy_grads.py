@@ -145,29 +145,30 @@ anp.where.defgrad( lambda ans, c, x=None, y=None : lambda g : anp.where(c, anp.z
 
 # ----- Trickier grads -----
 
-def make_grad_reshape(ans, x, repeats, axis=None):
+def make_grad_repeat(ans, x, repeats, axis=None):
     shape = x.shape
     if axis is None:  # If axis is none, np.repeat() repeats the flattened array.
-        def reshape_grad(g):
+        def grad_repeat(g):
             expanded = anp.reshape(g, (anp.prod(shape),) + (repeats,))
             return anp.reshape(anp.sum(expanded, axis=1, keepdims=False), shape)
-        return reshape_grad
+        return grad_repeat
     else:
         if shape[axis] == 1:  # For this common case, the logic is simple.
             return lambda g: anp.sum(g, axis=axis, keepdims=True)
         else:
-            def reshape_grad(g):
+            def grad_repeat(g):
                 expanded = anp.reshape(g, shape[0:axis+1] + (repeats,) + shape[axis+1:])
                 return anp.sum(expanded, axis=axis+1, keepdims=False)
-            return reshape_grad
-anp.repeat.defgrad(make_grad_reshape)
+            return grad_repeat
+anp.repeat.defgrad(make_grad_repeat)
 
-isarray = lambda x : isinstance(getval(x), anp.ndarray)
 def make_grad_transpose(ans, x, axes=None):
     if axes is not None:
         axes = anp.argsort(axes)
     return lambda g : anp.transpose(g, axes)
 anp.transpose.defgrad(make_grad_transpose)
+
+isarray = lambda x : isinstance(getval(x), anp.ndarray)
 
 def repeat_to_match_shape(x, axis, keepdims):
     """Returns a function that repeats an array along axis to get a given shape.
