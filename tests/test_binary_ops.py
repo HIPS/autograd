@@ -75,7 +75,6 @@ def test_pow():
     make_positive = lambda x : np.abs(x) + 1.1 # Numeric derivatives fail near zero
     for arg1, arg2 in arg_pairs():
         arg1 = make_positive(arg1)
-        arg2 = np.round(arg2)
         check_grads(fun, arg1, arg2)
         check_grads(d_fun_0, arg1, arg2)
         check_grads(d_fun_1, arg1, arg2)

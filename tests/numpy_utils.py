@@ -5,6 +5,7 @@ import autograd.numpy.random as npr
 from autograd import grad, primitive
 from autograd.util import check_equivalent, check_grads, to_scalar
 from six.moves import range
+import warnings
 
 
 def combo_check(fun, argnums, *args, **kwargs):
@@ -28,25 +29,26 @@ def check_fun_and_grads(fun, args, kwargs, argnums):
         print("Value test failed! Args were", args, kwargs)
         raise
 
-    try:
-        def scalar_fun(*new_args):
-            full_args = list(args)
-            for i, argnum in enumerate(argnums):
-                full_args[argnum] = new_args[i]
-            return to_scalar(fun(*full_args, **kwargs))
-        check_grads(scalar_fun, *wrt_args)
-    except:
-        print("First derivative test failed! Args were", args, kwargs)
-        raise
+    with warnings.catch_warnings(record=True) as w:
+        try:
+            def scalar_fun(*new_args):
+                full_args = list(args)
+                for i, argnum in enumerate(argnums):
+                    full_args[argnum] = new_args[i]
+                return to_scalar(fun(*full_args, **kwargs))
+            check_grads(scalar_fun, *wrt_args)
+        except:
+            print("First derivative test failed! Args were", args, kwargs)
+            raise
 
-    try:
-        for i in range(len(argnums)):
-            def d_scalar_fun(*args):
-                return to_scalar(grad(scalar_fun, argnum=i)(*args))
-            check_grads(d_scalar_fun, *wrt_args)
-    except:
-        print("Second derivative test failed! Args were", args, kwargs)
-        raise
+        try:
+            for i in range(len(argnums)):
+                def d_scalar_fun(*args):
+                    return to_scalar(grad(scalar_fun, argnum=i)(*args))
+                check_grads(d_scalar_fun, *wrt_args)
+        except:
+            print("Second derivative test failed! Args were", args, kwargs)
+            raise
 
 def stat_check(fun, test_complex=True):
     # Tests functions that compute statistics, like sum, mean, etc
