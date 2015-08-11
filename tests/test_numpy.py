@@ -715,6 +715,20 @@ def test_tensordot_kwargs_by_position():
                             x * np.ones((2,2)), 2)
     grad(fun)(1.0)
 
+def test_multi_index():
+    A = npr.randn(3)
+    fun = lambda x: np.sum(x[[0, 0]])
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    check_grads(fun, A)
+    check_grads(d_fun, A)
+
+def test_multi_index2():
+    A = npr.randn(3)
+    fun = lambda x: np.sum(x[[0, 1, 0]])
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    check_grads(fun, A)
+    check_grads(d_fun, A)
+
 #def test_index_exp_slicing():
 #    def fun(x):
 #        b = np.index_exp[x, x]

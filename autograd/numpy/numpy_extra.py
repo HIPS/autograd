@@ -1,4 +1,6 @@
 from __future__ import absolute_import
+import numpy as np
+
 from autograd.core import (Node, FloatNode, primitive, cast,
                            differentiable_ops, nondifferentiable_ops, getval)
 from . import numpy_wrapper as anp
@@ -117,7 +119,7 @@ def primitive_sum_arrays(*arrays):
     new_array = type(new_array_node(arrays[0], [])).zeros_like(arrays[0]) # TODO: simplify this
     for array in arrays:
         if isinstance(array, SparseArray):
-            new_array[array.idx] += array.val
+            np.add.at(new_array, array.idx, array.val)
         else:
             new_array += array
     return new_array
