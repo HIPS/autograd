@@ -28,7 +28,7 @@ def make_nn_funs(layer_sizes, L2_reg):
         return - log_prior - log_lik
 
     def frac_err(W_vect, X, T):
-        return np.mean(np.argmax(T, axis=1) != np.argmax(pred_fun(W_vect, X), axis=1))
+        return np.mean(np.argmax(T, axis=1) != np.argmax(predictions(W_vect, X), axis=1))
 
     return N, predictions, loss, frac_err
 
