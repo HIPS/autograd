@@ -47,7 +47,7 @@ We can continue to differentiate as many times as we like:
 >>> plt.show()
 ```
 
-<img src="examples/tanh.png" width="600">
+<img src="examples/0_tanh.png" width="600">
 
 ## Documentation
 

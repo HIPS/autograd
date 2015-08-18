@@ -24,5 +24,5 @@ plt.plot(x, list(map(tanh, x)),
          x, list(map(dddddd_fun, x)))
 
 plt.axis('off')
-plt.savefig("tanh.png")
+plt.savefig("0_tanh.png")
 plt.clf()
