@@ -142,6 +142,9 @@ anp.conj.defgrad(  lambda ans, x   : lambda g : anp.conj(g))
 anp.angle.defgrad( lambda ans, x   : lambda g : g * anp.conj(x * 1j) / anp.abs(x)**2)
 anp.where.defgrad( lambda ans, c, x=None, y=None : lambda g : anp.where(c, g, anp.zeros(g.shape)), argnum=1)
 anp.where.defgrad( lambda ans, c, x=None, y=None : lambda g : anp.where(c, anp.zeros(g.shape), g), argnum=2)
+anp.cross.defgrad(lambda ans, a, b, axisa=-1, axisb=-1, axisc=-1, axis=None : lambda g : anp.cross(b, g, axisb, axisc, axisa, axis), argnum=0)
+anp.cross.defgrad(lambda ans, a, b, axisa=-1, axisb=-1, axisc=-1, axis=None : lambda g : anp.cross(g, a, axisc, axisa, axisb, axis), argnum=1)
+
 
 # ----- Trickier grads -----
 
