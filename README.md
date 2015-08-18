@@ -55,10 +55,10 @@ You can find a tutorial [here.](docs/tutorial.md)
 
 ## End-to-end examples
 
-* [Simple neural net](examples/neural_net.py)
-* [Convolutional neural net](examples/convnet.py)
-* [Recurrent neural net](examples/rnn.py)
-* [LSTM](examples/lstm.py)
+* [Simple neural net](examples/1_neural_net.py)
+* [Convolutional neural net](examples/2_convnet.py)
+* [Recurrent neural net](examples/2_rnn.py)
+* [LSTM](examples/2_lstm.py)
 * [Backpropagating through a fluid simulation](examples/fluidsim/fluidsim.py)
 
 <img src="examples/fluidsim/animated.gif" width="400">
