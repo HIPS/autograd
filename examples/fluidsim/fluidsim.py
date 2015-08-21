@@ -82,7 +82,8 @@ if __name__ == '__main__':
 
     print("Loading initial and target states...")
     init_smoke = imread('init_smoke.png')[:,:,0]
-    target = imread('peace.png')[::2,::2,3]
+    #target = imread('peace.png')[::2,::2,3]
+    target = imread('skull.png')[::2,::2]
     rows, cols = target.shape
 
     init_dx_and_dy = np.zeros((2, rows, cols)).ravel()
@@ -120,5 +121,5 @@ if __name__ == '__main__':
 
     print("Converting frames to an animated GIF...")
     os.system("convert -delay 5 -loop 0 step*.png"
-              " -delay 250 step100.png animated.gif")  # Using imagemagick.
+              " -delay 250 step100.png surprise.gif")  # Using imagemagick.
     os.system("rm step*.png")

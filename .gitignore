@@ -4,7 +4,6 @@ examples/data
 .idea/
 .DS_Store
 build/
-examples/fluidsim/surprise.gif
 data/
 dist/
 MANIFEST
