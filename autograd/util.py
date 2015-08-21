@@ -5,6 +5,7 @@ import itertools as it
 from autograd.core import grad, safe_type
 from copy import copy
 from autograd.numpy.use_gpu_numpy import use_gpu_numpy
+from autograd.container_types import ListNode
 import six
 from six.moves import map
 from six.moves import range
@@ -86,6 +87,8 @@ def check_grads(fun, *args):
     check_equivalent(exact, numeric)
 
 def to_scalar(x):
+    if isinstance(x, list) or isinstance(x, ListNode):
+        return sum([to_scalar(item) for item in x])
     return np.sum(np.real(np.sin(x)))
 
 def quick_grad_check(fun, arg0, extra_args=(), kwargs={}, verbose=True,
@@ -117,7 +120,6 @@ for float_type in [np.float64, np.float32, np.float16]:
     equivalence_class[float_type] = float
 for complex_type in [np.complex64, np.complex128]:
     equivalence_class[complex_type] = complex
-#equivalence_class[list] = tuple
 
 def base_class(t):
     if t in equivalence_class:
