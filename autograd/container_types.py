@@ -5,7 +5,7 @@ from six.moves import zip
 class TupleNode(Node):
     __slots__ = []
     def __getitem__(self, idx):
-        return take(self, idx)
+        return tuple_take(self, idx)
     def __len__(self):
         return len(self.value)
 
@@ -24,47 +24,62 @@ def primitive_sum_tuples(*tuples):
     return tuple([sum(elements[1:], elements[0]) for elements in zip(*tuples)])
 primitive_sum_tuples.gradmaker = lambda *args : lambda g : g
 
+@primitive
+def tuple_take(A, idx):
+    return A[idx]
+def make_grad_tuple_take(ans, A, idx):
+    return lambda g : tuple_untake(g, idx, A)
+tuple_take.defgrad(make_grad_tuple_take)
+
+@primitive
+def tuple_untake(x, idx, template):
+    result = list(zeros_like(template))
+    result[idx] = x
+    return tuple(result)
+tuple_untake.defgrad(lambda ans, x, idx, template : lambda g : tuple_take(g, idx))
+tuple_untake.defgrad_is_zero(argnums=(1, 2))
+
+
 class ListNode(Node):
     __slots__ = []
     def __getitem__(self, idx):
-        return take(self, idx)
+        return list_take(self, idx)
     def __len__(self):
         return len(self.value)
 
     @staticmethod
     def zeros_like(value):
-        return tuple([zeros_like(item) for item in getval(value)])
+        return [zeros_like(item) for item in getval(value)]
 
     @staticmethod
     def sum_outgrads(outgrads):
-        return primitive_sum_tuples(*outgrads)
+        return primitive_sum_lists(*outgrads)
 
     @staticmethod
-    def cast(value):
+    def cast(value, example):
         return cast(value, cast_to_list)
 
 def cast_to_list(x):
-    print "casting:", x
     return list(x)
 
 Node.type_mappings[list] = ListNode
 
 @primitive
-def primitive_sum_tuples(*tuples):
-    return tuple([sum(elements[1:], elements[0]) for elements in zip(*tuples)])
-primitive_sum_tuples.gradmaker = lambda *args : lambda g : g
+def primitive_sum_lists(*lists):
+    return [sum(elements[1:], elements[0]) for elements in zip(*lists)]
+primitive_sum_lists.gradmaker = lambda *args : lambda g : g
 
 @primitive
-def take(A, idx):
+def list_take(A, idx):
     return A[idx]
-def make_grad_take(ans, A, idx):
-    return lambda g : untake(g, idx, A)
-take.defgrad(make_grad_take)
+def make_grad_list_take(ans, A, idx):
+    return lambda g : list_untake(g, idx, A)
+list_take.defgrad(make_grad_list_take)
 
 @primitive
-def untake(x, idx, template):
+def list_untake(x, idx, template):
     result = list(zeros_like(template))
     result[idx] = x
-    return tuple(result)
-untake.defgrad(lambda ans, x, idx, template : lambda g : take(g, idx))
-untake.defgrad_is_zero(argnums=(1, 2))
+    return result
+list_untake.defgrad(lambda ans, x, idx, template : lambda g : list_take(g, idx))
+list_untake.defgrad_is_zero(argnums=(1, 2))

@@ -117,7 +117,7 @@ for float_type in [np.float64, np.float32, np.float16]:
     equivalence_class[float_type] = float
 for complex_type in [np.complex64, np.complex128]:
     equivalence_class[complex_type] = complex
-equivalence_class[list] = tuple
+#equivalence_class[list] = tuple
 
 def base_class(t):
     if t in equivalence_class:

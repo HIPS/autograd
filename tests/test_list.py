@@ -1,6 +1,6 @@
 import autograd.numpy as np
 import autograd.numpy.random as npr
-from autograd.util import *
+from autograd.util import check_grads
 from autograd import grad
 npr.seed(1)
 
@@ -36,8 +36,10 @@ def test_grads():
         return A + B + C
 
     input_list = [npr.randn(5, 6),
-                   npr.randn(4, 3),
-                   npr.randn(2, 4)]
+                  npr.randn(4, 3),
+                  npr.randn(2, 4)]
 
     check_grads(fun, input_list)
     check_grads(d_fun, input_list)
+
+test_grads()
