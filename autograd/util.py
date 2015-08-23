@@ -5,7 +5,7 @@ import itertools as it
 from autograd.core import grad, safe_type
 from copy import copy
 from autograd.numpy.use_gpu_numpy import use_gpu_numpy
-from autograd.container_types import ListNode
+from autograd.container_types import ListNode, TupleNode
 import six
 from six.moves import map
 from six.moves import range
@@ -87,7 +87,8 @@ def check_grads(fun, *args):
     check_equivalent(exact, numeric)
 
 def to_scalar(x):
-    if isinstance(x, list) or isinstance(x, ListNode):
+    if isinstance(x, list)  or isinstance(x, ListNode) or \
+       isinstance(x, tuple) or isinstance(x, TupleNode):
         return sum([to_scalar(item) for item in x])
     return np.sum(np.real(np.sin(x)))
 
