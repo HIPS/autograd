@@ -55,8 +55,13 @@ def build_lstm(input_size, state_size, output_size):
         hiddens = outgate * np.tanh(cells)
         return hiddens, cells
 
+    def hiddens_to_output_probs(predict_weights, hiddens):
+        output = activations(predict_weights, hiddens)
+        return output - logsumexp(output)     # Normalize log-probs.
+
     def outputs(weights, inputs):
-        """Goes from right to left, updating the state."""
+        """Outputs normalized log-probabilities of each character, plus an
+           extra one at the end."""
         forget_weights  = parser.get(weights, 'forget')
         change_weights  = parser.get(weights, 'change')
         ingate_weights  = parser.get(weights, 'ingate')
@@ -65,25 +70,23 @@ def build_lstm(input_size, state_size, output_size):
         num_sequences = inputs.shape[1]
         hiddens = np.repeat(parser.get(weights, 'init_hiddens'), num_sequences, axis=0)
         cells   = np.repeat(parser.get(weights, 'init_cells'),   num_sequences, axis=0)
-        output = []
+
+        output = [hiddens_to_output_probs(predict_weights, hiddens)]
         for input in inputs:  # Iterate over time steps.
             hiddens, cells = update_lstm(input, hiddens, cells, forget_weights,
                                          change_weights, ingate_weights, outgate_weights)
-            cur_output = activations(predict_weights, hiddens)
-            output.append(cur_output - logsumexp(cur_output))
-        return output # Output normalized log-probabilities.
+            output.append(hiddens_to_output_probs(predict_weights, hiddens))
+        return output
 
-    def loss(weights, inputs, targets):
+    def log_likelihood(weights, inputs, targets):
         logprobs = outputs(weights, inputs)
-        loss_sum = 0.0
-        for t in range(len(targets)):  # For every time step
-            loss_sum -= np.sum(logprobs[t] * targets[t])
-        return loss_sum / targets.shape[0] / targets.shape[1]
+        loglik = 0.0
+        num_time_steps, num_examples, _ = inputs.shape
+        for t in range(num_time_steps):
+            loglik += np.sum(logprobs[t] * targets[t])
+        return loglik / (num_time_steps * num_examples)
 
-    def frac_err(weights, inputs, targets):
-        return np.mean(np.argmax(targets, axis=2) != np.argmax(outputs(weights, inputs), axis=2))
-
-    return outputs, loss, frac_err, parser.num_weights
+    return outputs, log_likelihood, parser.num_weights
 
 def string_to_one_hot(string, maxchar):
     """Converts an ASCII string to a one-of-k encoding."""
@@ -93,15 +96,15 @@ def string_to_one_hot(string, maxchar):
 def one_hot_to_string(one_hot_matrix):
     return "".join([chr(np.argmax(c)) for c in one_hot_matrix])
 
-def build_dataset(filename, sequence_length, alphabet_size, num_lines = -1, pad=""):
+def build_dataset(filename, sequence_length, alphabet_size, max_lines=-1):
     """Loads a text file, and turns each line into an encoded sequence."""
     with open(filename) as f:
         content = f.readlines()
-    content = content[:num_lines]
+    content = content[:max_lines]
     content = [line for line in content if len(line) > 2]   # Remove blank lines
     seqs = np.zeros((sequence_length, len(content), alphabet_size))
     for ix, line in enumerate(content):
-        padded_line = (pad + line + " " * sequence_length)[:sequence_length]
+        padded_line = (line + " " * sequence_length)[:sequence_length]
         seqs[:, ix, :] = string_to_one_hot(padded_line, alphabet_size)
     return seqs
 
@@ -113,33 +116,32 @@ if __name__ == '__main__':
     param_scale = 0.01
     train_iters = 100
 
-    train_inputs   = build_dataset('lstm.py', seq_length, input_size, num_lines = 60, pad = " ")
-    train_targets  = build_dataset('lstm.py', seq_length, input_size, num_lines = 60)
+    train_inputs = build_dataset('lstm.py', seq_length, input_size, max_lines=60)
 
-    pred_fun, loss_fun, frac_err, num_weights = build_lstm(input_size, state_size, output_size)
+    pred_fun, loglike_fun, num_weights = build_lstm(input_size, state_size, output_size)
 
-    def print_training_prediction(weights, train_inputs, train_targets):
+    def print_training_prediction(weights):
         print("Training text                         Predicted text")
         logprobs = np.asarray(pred_fun(weights, train_inputs))
         for t in range(logprobs.shape[1]):
-            training_text  = one_hot_to_string(train_targets[:,t,:])
+            training_text  = one_hot_to_string(train_inputs[:,t,:])
             predicted_text = one_hot_to_string(logprobs[:,t,:])
-            print(training_text.replace('\n', ' ') + "| " + predicted_text.replace('\n', ' '))
-
-    def callback(weights):
-        print("Train loss:", loss_fun(weights, train_inputs, train_targets))
-        print_training_prediction(weights, train_inputs, train_targets)
-
-   # Build gradient of loss function using autograd.
-    loss_and_grad = value_and_grad(loss_fun)
+            print(training_text.replace('\n', ' ') + "|" + predicted_text.replace('\n', ' '))
 
     # Wrap function to only have one argument, for scipy.minimize.
-    def training_loss_and_grad(weights):
-        return loss_and_grad(weights, train_inputs, train_targets)
+    def training_loss(weights):
+        return -loglike_fun(weights, train_inputs, train_inputs)
+
+    def callback(weights):
+        print("Train loss:", training_loss(weights))
+        print_training_prediction(weights)
+
+   # Build gradient of loss function using autograd.
+    training_loss_and_grad = value_and_grad(training_loss)
 
     init_weights = npr.randn(num_weights) * param_scale
     # Check the gradients numerically, just to be safe
-    quick_grad_check(loss_fun, init_weights, (train_inputs, train_targets))
+    quick_grad_check(training_loss, init_weights)
 
     print("Training LSTM...")
     result = minimize(training_loss_and_grad, init_weights, jac=True, method='CG',
@@ -149,7 +151,7 @@ if __name__ == '__main__':
     print("\nGenerating text from LSTM model...")
     num_letters = 30
     for t in range(20):
-        text = " "
+        text = ""
         for i in range(num_letters):
             seqs = string_to_one_hot(text, output_size)[:, np.newaxis, :]
             logprobs = pred_fun(trained_weights, seqs)[-1].ravel()
