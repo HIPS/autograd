@@ -120,7 +120,7 @@ def primitive_sum_arrays(*arrays):
     new_array = type(new_array_node(arrays[0], [])).zeros_like(arrays[0]) # TODO: simplify this
     for array in arrays:
         if isinstance(array, SparseArray):
-            np.add.at(new_array, array.idx, array.val)
+            np.add.at(new_array, np.arange(*array.idx.indices(array.idx.stop)), array.val)
         else:
             new_array += array
     return new_array
