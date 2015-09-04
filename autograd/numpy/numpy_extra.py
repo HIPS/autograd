@@ -30,6 +30,7 @@ class ArrayNode(Node):
     shape = property(lambda self: self.value.shape)
     ndim  = property(lambda self: self.value.ndim)
     size  = property(lambda self: self.value.size)
+    dtype = property(lambda self: self.value.dtype)
     T = property(lambda self: anp.transpose(self))
 
     def __len__(self):
