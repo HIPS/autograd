@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 import autograd.numpy.random as npr
 import autograd.numpy as np
+import autograd.scipy.stats.multivariate_normal as mvn
 import operator as op
 from numpy_utils import (combo_check, stat_check, unary_ufunc_check,
                          binary_ufunc_check, binary_ufunc_check_no_same_args)
@@ -141,6 +142,7 @@ def test_einsum2_three_args(): combo_check(np.einsum, [0, 2],
 
 def test_trace():    combo_check(np.trace, [0], [R(5, 5), R(4, 5), R(5, 4), R(3, 4, 5)], offset=[-1, 0, 1])
 def test_diag():     combo_check(np.diag, [0], [R(5, 5)], k=[-1, 0, 1])
+def test_diag_flat():combo_check(np.diag, [0], [R(5)],    k=[-1, 0, 1])
 def test_swapaxes(): combo_check(np.swapaxes, [0], [R(3,4,5)], axis1=[0, 1, 2], axis2=[0, 1, 2])
 def test_cross():    combo_check(np.cross, [0, 1], [R(3,3)], [R(3,3)],
                                  axisa=[-1, 0, 1], axisb=[-1, 0, 1], axisc=[-1, 0, 1], axis=[None, -1, 0, 1])
@@ -174,3 +176,7 @@ def test_concatenate_3d():    combo_check(np.concatenate, [0], [(R(2, 2, 2), R(2
 
 #def test_select(): combo_check(np.select, [0, 1], [[R(3,4,5) > 0, R(3,4,5) > 0, R(3,4,5) > 0]],
 #                                                  [[R(3,4,5),     R(3,4,5),     R(3,4,5)]], default=[0.0, 1.1])
+
+def make_psd(mat): return np.dot(mat.T, mat) + np.eye(mat.shape[0])
+def test_mvn_pdf():    combo_check(mvn.logpdf, [0, 1, 2], [R(4)], [R(4)], [make_psd(R(4, 4))])
+def test_mvn_logpdf(): combo_check(mvn.logpdf, [0, 1, 2], [R(4)], [R(4)], [make_psd(R(4, 4))])
