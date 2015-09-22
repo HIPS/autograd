@@ -16,8 +16,8 @@ logpdf = primitive(scipy.stats.multivariate_normal.logpdf)
 
 def lower_half(mat):
     # Takes the lower half of the matrix, and half the diagonal.
-    # There's probably an easier way to do this.
-    return np.tril(mat, k=-1) + 0.5 * np.diag(np.diag(mat))
+    # Necessary since numpy only uses lower half of covariance matrix.
+    return 0.5 * (np.tril(mat) + np.triu(mat, 1).T)
 
 def covgrad(x, mean, cov):
     # I think once we have Cholesky we can make this nicer.
