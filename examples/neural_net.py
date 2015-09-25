@@ -13,7 +13,7 @@ def make_nn_funs(layer_sizes, L2_reg):
 
     def unpack_layers(W_vect):
         for m, n in shapes:
-            yield W_vect[:m*n].reshape(m,n), W_vect[m*n:m*n+n]
+            yield W_vect[:m*n].reshape((m,n)), W_vect[m*n:m*n+n]
             W_vect = W_vect[(m+1)*n:]
 
     def predictions(W_vect, inputs):
