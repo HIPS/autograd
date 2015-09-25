@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from distutils.core import setup
 setup(name='autograd',
-      version='1.0.4',
+      version='1.0.5',
       description='Efficiently computes derivatives of numpy code.',
       author='Dougal Maclaurin and David Duvenaud',
       author_email="maclaurin@physics.harvard.edu, dduvenaud@seas.harvard.edu",
