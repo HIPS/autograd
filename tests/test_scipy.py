@@ -8,6 +8,7 @@ import autograd.numpy.random as npr
 import autograd.scipy.misc
 import autograd.scipy.signal
 import autograd.scipy.stats as stats
+import autograd.scipy.stats.multivariate_normal as mvn
 import autograd.scipy.special as special
 from autograd import grad
 
@@ -20,6 +21,23 @@ def test_norm_pdf():    combo_check(stats.norm.pdf,    [0,1,2], [R(4)], [R(4)], 
 def test_norm_cdf():    combo_check(stats.norm.cdf,    [0,1,2], [R(4)], [R(4)], [R(4)**2 + 1.1])
 def test_norm_logpdf(): combo_check(stats.norm.logpdf, [0,1,2], [R(4)], [R(4)], [R(4)**2 + 1.1])
 def test_norm_logcdf(): combo_check(stats.norm.logcdf, [0,1,2], [R(4)], [R(4)], [R(4)**2 + 1.1])
+
+def make_psd(mat): return np.dot(mat.T, mat) + np.eye(mat.shape[0])
+def test_mvn_pdf():    combo_check(mvn.logpdf, [0, 1, 2], [R(4)], [R(4)], [make_psd(R(4, 4))])
+def test_mvn_logpdf(): combo_check(mvn.logpdf, [0, 1, 2], [R(4)], [R(4)], [make_psd(R(4, 4))])
+
+alpha = npr.random(4)**2 + 1.2
+x = stats.dirichlet.rvs(alpha, size=1)[0,:]
+
+# Need to normalize input so that x's sum to one even when we perturb them to compute numeric gradient.
+def normalize(x): return x / sum(x)
+def normalized_dirichlet_pdf(   x, alpha): return stats.dirichlet.pdf(   normalize(x), alpha)
+def normalized_dirichlet_logpdf(x, alpha): return stats.dirichlet.logpdf(normalize(x), alpha)
+
+def test_dirichlet_pdf_x():        combo_check(normalized_dirichlet_pdf,    [0], [x], [alpha])
+def test_dirichlet_pdf_alpha():    combo_check(stats.dirichlet.pdf,         [1], [x], [alpha])
+def test_dirichlet_logpdf_x():     combo_check(normalized_dirichlet_logpdf, [0], [x], [alpha])
+def test_dirichlet_logpdf_alpha(): combo_check(stats.dirichlet.logpdf,      [1], [x], [alpha])
 
 ### Misc ###
 R = npr.randn
@@ -78,9 +96,9 @@ def test_convolve_ignore_dot():
                 axes=[([1],[1])], dot_axes=[([0],[2]), ([0],[0])], mode=['full', 'valid'])
 
 ### Special ###
-def test_polygamma(): combo_check(special.polygamma, [1], [0], R(4)**2 + 0.3)
-def test_jn():        combo_check(special.jn,        [1], [2], R(4)**2 + 0.3)
-def test_yn():        combo_check(special.yn,        [1], [2], R(4)**2 + 0.3)
+def test_polygamma(): combo_check(special.polygamma, [1], [0], R(4)**2 + 1.3)
+def test_jn():        combo_check(special.jn,        [1], [2], R(4)**2 + 1.3)
+def test_yn():        combo_check(special.yn,        [1], [2], R(4)**2 + 1.3)
 
 def test_psi():     unary_ufunc_check(special.psi,     lims=[0.3, 2.0], test_complex=False)
 def test_digamma(): unary_ufunc_check(special.digamma, lims=[0.3, 2.0], test_complex=False)

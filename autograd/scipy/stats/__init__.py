@@ -7,3 +7,8 @@ try:
     from . import multivariate_normal
 except AttributeError:
     pass
+
+try:
+    from . import dirichlet
+except AttributeError:
+    pass
