@@ -3,6 +3,7 @@ from autograd.core import primitive, Node, getval, zeros_like, cast
 from six.moves import zip
 import six
 
+
 class TupleNode(Node):
     __slots__ = []
     def __getitem__(self, idx):
@@ -22,7 +23,7 @@ Node.type_mappings[tuple] = TupleNode
 
 @primitive
 def primitive_sum_tuples(*tuples):
-    return tuple([sum(elements[1:], elements[0]) for elements in zip(*tuples)])
+    return tuple([primitive_sum(elements) for elements in zip(*tuples)])
 primitive_sum_tuples.gradmaker = lambda *args : lambda g : g
 
 @primitive
@@ -67,7 +68,7 @@ Node.type_mappings[list] = ListNode
 
 @primitive
 def primitive_sum_lists(*lists):
-    return [sum(elements[1:], elements[0]) for elements in zip(*lists)]
+    return [primitive_sum(elements) for elements in zip(*lists)]
 primitive_sum_lists.gradmaker = lambda *args : lambda g : g
 
 @primitive
@@ -118,7 +119,7 @@ def primitive_sum_dicts(*dicts):
        Returns a new dict whose values are the sum over all input dicts."""
     # assert set(dicts[0]) == set(dicts[0]).intersection(*dicts)
     keys = dicts[0]
-    return {k : sum([dict[k] for dict in dicts]) for k in keys}
+    return {k : primitive_sum([dict[k] for dict in dicts]) for k in keys}
 primitive_sum_dicts.gradmaker = lambda *args : lambda g : g
 
 @primitive
@@ -135,3 +136,15 @@ def dict_untake(x, idx, template):
     return result
 dict_untake.defgrad(lambda ans, x, idx, template : lambda g : dict_take(g, idx))
 dict_untake.defgrad_is_zero(argnums=(1, 2))
+
+primitive_summers = {
+    list: primitive_sum_lists,
+    tuple: primitive_sum_tuples,
+    dict: primitive_sum_dicts,
+}
+
+def primitive_sum(container):
+    thetype = type(container[0])
+    if thetype in primitive_summers:
+        return primitive_summers[thetype](*container)
+    return sum(container[1:], container[0])
