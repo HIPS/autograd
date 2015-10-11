@@ -137,12 +137,14 @@ def dict_untake(x, idx, template):
 dict_untake.defgrad(lambda ans, x, idx, template : lambda g : dict_take(g, idx))
 dict_untake.defgrad_is_zero(argnums=(1, 2))
 
+primitive_summers = {
+    list: primitive_sum_lists,
+    tuple: primitive_sum_tuples,
+    dict: primitive_sum_dicts,
+}
+
 def primitive_sum(container):
-    if isinstance(container[0], list):
-        return primitive_sum_lists(*container)
-    if isinstance(container[0], dict):
-        return primitive_sum_dicts(*container)
-    if isinstance(container[0], tuple):
-        return primitive_sum_tuples(*container)
-    else:
-        return sum(container[1:], container[0])
+    thetype = type(container[0])
+    if thetype in primitive_summers:
+        return primitive_summers[thetype](*container)
+    return sum(container[1:], container[0])
