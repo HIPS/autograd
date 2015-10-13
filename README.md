@@ -59,6 +59,7 @@ You can find a tutorial [here.](docs/tutorial.md)
 * [Convolutional neural net](examples/convnet.py)
 * [Recurrent neural net](examples/rnn.py)
 * [LSTM](examples/lstm.py)
+* [Neural Turing Machine](https://github.com/DoctorTeeth/diffmem/blob/512aadeefd6dbafc1bdd253a64b6be192a435dc3/ntm/ntm.py)
 * [Backpropagating through a fluid simulation](examples/fluidsim/fluidsim.py)
 
 <img src="examples/fluidsim/animated.gif" width="400">
