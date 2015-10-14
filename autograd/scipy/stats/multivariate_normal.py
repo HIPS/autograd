@@ -4,8 +4,9 @@ import scipy.stats
 import autograd.numpy as np
 from autograd.core import primitive
 
-pdf    = primitive(scipy.stats.multivariate_normal.pdf)
-logpdf = primitive(scipy.stats.multivariate_normal.logpdf)
+pdf    =  primitive(scipy.stats.multivariate_normal.pdf)
+logpdf =  primitive(scipy.stats.multivariate_normal.logpdf)
+entropy = primitive(scipy.stats.multivariate_normal.entropy)
 
 # With thanks to Eric Bresch.
 # Some formulas are from
@@ -32,3 +33,6 @@ logpdf.defgrad(lambda ans, x, mean, cov: lambda g: -g * covgrad(x, mean, cov),  
 pdf.defgrad(lambda ans, x, mean, cov: lambda g: -g * ans * np.linalg.solve(cov, x - mean), argnum=0)
 pdf.defgrad(lambda ans, x, mean, cov: lambda g:  g * ans * np.linalg.solve(cov, x - mean), argnum=1)
 pdf.defgrad(lambda ans, x, mean, cov: lambda g: -g * ans * covgrad(x, mean, cov),          argnum=2)
+
+entropy.defgrad_is_zero(argnums=(0,))
+entropy.defgrad(lambda ans, mean, cov: lambda g:  0.5 * g * np.linalg.inv(cov).T, argnum=1)
