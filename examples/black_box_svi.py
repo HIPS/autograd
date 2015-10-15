@@ -85,4 +85,4 @@ if __name__ == '__main__':
     init_mean    = -1  * np.ones(D)
     init_log_cov = -10 * np.ones(D)
     init_var_params = np.concatenate([init_mean, init_log_cov])
-    variational_params = adam(gradient, init_var_params, num_iters=200, callback=callback)
+    variational_params = adam(gradient, init_var_params, step_size=0.1, num_iters=200, callback=callback)
