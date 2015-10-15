@@ -729,6 +729,13 @@ def test_multi_index2():
     check_grads(fun, A)
     check_grads(d_fun, A)
 
+def test_index_dot_slices():
+    A = npr.randn(4)
+    def fun(x): return np.dot(x[:2], x[2:])
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    check_grads(fun, A)
+    check_grads(d_fun, A)
+
 #def test_index_exp_slicing():
 #    def fun(x):
 #        b = np.index_exp[x, x]
