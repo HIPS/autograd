@@ -99,7 +99,7 @@ if __name__ == '__main__':
     train_iters = 100
 
     # Learn to predict our own source code.
-    train_inputs = build_dataset('lstm.py', seq_length, input_size, max_lines=60)
+    train_inputs = build_dataset('rnn.py', seq_length, input_size, max_lines=60)
 
     pred_fun, loglike_fun, num_weights = build_rnn(input_size, state_size, output_size)
 
@@ -126,7 +126,7 @@ if __name__ == '__main__':
     # Check the gradients numerically, just to be safe
     quick_grad_check(training_loss, init_weights)
 
-    print("Training LSTM...")
+    print("Training RNN...")
     result = minimize(training_loss_and_grad, init_weights, jac=True, method='CG',
                       options={'maxiter':train_iters}, callback=callback)
     trained_weights = result.x
