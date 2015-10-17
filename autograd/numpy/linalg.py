@@ -34,7 +34,7 @@ def make_grad_norm(ans, x, ord=None, axis=None):
             raise NotImplementedError(
                 'Gradient of norm not implemented for ord={}'.format(ord))
 
-    expand = lambda a: anp.expand_dims(a, axis=axis) if axis is not None else a
+    expand = lambda a: a if axis is None else anp.expand_dims(a, axis=axis)
 
     def norm_grad(g):
         check_implemented()
