@@ -29,7 +29,7 @@ def make_grad_norm(ans, x, ord=None, axis=None):
 
         if matrix_norm and not frobenius_norm:
             raise NotImplementedError(
-                'Gradient of norm not implemented for matrix norms other than fro')
+                'Gradient of matrix norm not implemented for ord={}'.format(ord))
         if not diffable_pnorm:
             raise NotImplementedError(
                 'Gradient of norm not implemented for ord={}'.format(ord))
