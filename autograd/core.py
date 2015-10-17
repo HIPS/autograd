@@ -80,11 +80,13 @@ class primitive(object):
         try:
             return self.grads[argnum](ans, *args, **kwargs)
         except KeyError:
-            if self.grads == {}:
-                raise NotImplementedError("Gradient of {0} not yet implemented."
-                                          .format(self.fun, argnum))
-            raise NotImplementedError("Gradient of {0} w.r.t. arg number {1} not yet implemented."
-                                      .format(self.fun, argnum))
+            def error(*args, **kwargs):
+                if self.grads == {}:
+                    errstr = "Gradient of {0} not yet implemented."
+                else:
+                    errstr = "Gradient of {0} w.r.t. arg number {1} not yet implemented."
+                raise NotImplementedError(errstr.format(self.fun, argnum))
+            return error
 
     def defgrad(self, gradmaker, argnum=0):
         self.grads[argnum] = gradmaker
@@ -136,7 +138,7 @@ def new_node(value, tapes=[]):
     try:
         return Node.type_mappings[type(value)](value, tapes)
     except KeyError:
-        raise TypeError("Can't differentiate wrt {0}".format(type(value)))
+        return NoDerivativeNode(value, tapes)
 
 def zeros_like(value):
     if isinstance(value, Node):
@@ -157,12 +159,13 @@ class ReverseNode(object):
 
 class Node(object):
     __slots__ = ['value', 'tapes']
+    Rnode = ReverseNode
     type_mappings = {}
     def __init__(self, value, tapes):
         self.value = value
         self.tapes = {}
         for tape in tapes:
-            new_rnode = ReverseNode(type(self), value)
+            new_rnode = self.Rnode(type(self), value)
             tape.append(new_rnode)
             self.tapes[tape] = new_rnode
 
@@ -280,3 +283,25 @@ FloatNode.__dict__['__rsub__'].grads = swap_args(FloatNode.__dict__['__sub__'].g
 FloatNode.__dict__[RDIV].grads = swap_args(FloatNode.__dict__[DIV].grads)
 FloatNode.__dict__['__rpow__'].grads = swap_args(FloatNode.__dict__['__pow__'].grads)
 FloatNode.__dict__['__rmod__'].grads = swap_args(FloatNode.__dict__['__mod__'].grads)
+
+
+# These two nodes are for handling errors. Instead of raising errors immediately
+# on the forward pass, we build them into the graph and raise them on the
+# reverse pass so that evaluating nondifferentiable functions that don't affect
+# the output don't cause problems (c.f. Issue #43).
+
+class NoDerivativeReverseNode(ReverseNode):
+    def __init__(self, node_type, node_value):
+        super(NoDerivativeReverseNode,self).__init__(node_type, node_value)
+        self.type = type(node_value)
+
+    def sum_outgrads(self):
+        raise TypeError("Can't differentiate wrt {0}".format(self.type))
+
+class NoDerivativeNode(FloatNode):
+    # inherit from FloatNode so that numerical infix operators work
+    Rnode = NoDerivativeReverseNode
+
+    @staticmethod
+    def cast(value, example):
+        return example  # pass through so we can raise an error on reverse pass
