@@ -24,7 +24,7 @@ solve.defgrad(lambda ans, a, b : lambda g : solve(a.T, g), argnum=1)
 def make_grad_norm(ans, x, ord=None, axis=None):
     def check_implemented():
         matrix_norm = (x.ndim==2 and axis is None) or isinstance(axis, tuple)
-        frobenius_norm = ord is None or ord == 'Fro'
+        frobenius_norm = ord is None or ord == 'fro'
         diffable_pnorm = ord is None or ord > 1
 
         if matrix_norm and not frobenius_norm:
