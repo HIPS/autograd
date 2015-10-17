@@ -57,7 +57,7 @@ array_from_args.gradmaker = array_from_args_gradmaker
 
 @primitive
 def select(condlist, choicelist, **kwargs):
-    return np.select(condlist, choicelist, **kwargs)[()]
+    return wrap_if_nodes_inside(np.select(condlist, choicelist, **kwargs))
 
 # ----- Enable functions called using [] ----
 
