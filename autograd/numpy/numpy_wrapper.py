@@ -55,6 +55,10 @@ def array_from_args_gradmaker(argnum, ans, args, kwargs):
     return lambda g : g[argnum]
 array_from_args.gradmaker = array_from_args_gradmaker
 
+@primitive
+def select(condlist, choicelist, **kwargs):
+    return np.select(condlist, choicelist, **kwargs)[()]
+
 # ----- Enable functions called using [] ----
 
 class r_class():
