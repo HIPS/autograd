@@ -20,7 +20,31 @@ slogdet.defgrad(lambda ans, x    : lambda g : g[1] * inv(x).T)
 solve.defgrad(  lambda ans, a, b : lambda g : -dot(atleast_2d_col(solve(a.T, g)),
                                                  atleast_2d_col(ans).T))
 solve.defgrad(lambda ans, a, b : lambda g : solve(a.T, g), argnum=1)
-norm.defgrad( lambda ans, a    : lambda g : dot(g, a/ans))
+
+def make_grad_norm(ans, x, ord=None, axis=None):
+    def check_implemented():
+        matrix_norm = (x.ndim==2 and axis is None) or isinstance(axis, tuple)
+        frobenius_norm = ord is None or ord == 'Fro'
+        diffable_pnorm = ord is None or ord > 1
+
+        if matrix_norm and not frobenius_norm:
+            raise NotImplementedError(
+                'Gradient of norm not implemented for matrix norms other than fro')
+        if not diffable_pnorm:
+            raise NotImplementedError(
+                'Gradient of norm not implemented for ord={}'.format(ord))
+
+    expand = lambda a: anp.expand_dims(a, axis=axis) if axis is not None else a
+
+    def norm_grad(g):
+        check_implemented()
+        if ord is None or ord == 2 or ord is 'fro':
+            return expand(g / ans) * x
+        else:
+            # see https://en.wikipedia.org/wiki/Norm_(mathematics)#p-norm
+            return expand(g / ans**(ord-1)) * x * anp.abs(x)**(ord-2)
+    return norm_grad
+norm.defgrad(make_grad_norm)
 
 def make_grad_eigh(ans, x, UPLO='L'):
     """Gradient for eigenvalues and vectors of a symmetric matrix."""
