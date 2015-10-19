@@ -25,7 +25,7 @@ def black_box_variational_inference(logprob, D, num_samples):
     def variational_objective(params, t):
         """Provides a stochastic estimate of the variational lower bound."""
         mean, cov = unpack_params(params)
-        samples = rs.randn(num_samples, D) * np.sqrt(cov) + mean
+        samples = rs.rand(num_samples, D) * np.sqrt(cov) + mean
         lower_bound = mvn.entropy(mean, np.diag(cov)) + np.mean(logprob(samples, t))
         return -lower_bound
 
@@ -44,7 +44,7 @@ if __name__ == '__main__':
         a Gaussian evaluated at zero with a Gaussian prior on the log-variance."""
         mu, log_sigma = x[:, 0], x[:, 1]
         prior       = norm.logpdf(log_sigma, 0, 1.35)
-        likelihood  = norm.logpdf(mu,        0, np.exp(log_sigma) + 0.0001)
+        likelihood  = norm.logpdf(mu,        0, np.exp(log_sigma))
         return prior + likelihood
 
     # Build variational objective.
@@ -85,4 +85,4 @@ if __name__ == '__main__':
     init_mean    = -1  * np.ones(D)
     init_log_cov = -10 * np.ones(D)
     init_var_params = np.concatenate([init_mean, init_log_cov])
-    variational_params = adam(gradient, init_var_params, step_size=0.1, num_iters=200, callback=callback)
+    variational_params = adam(gradient, init_var_params, step_size=0.1, num_iters=2000, callback=callback)

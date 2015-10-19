@@ -47,7 +47,7 @@ def build_toy_dataset(n_data=40, noise_std=0.1):
     inputs  = np.concatenate([np.linspace(0, 2, num=n_data/2),
                               np.linspace(6, 8, num=n_data/2)])
     targets = np.cos(inputs) + rs.randn(n_data) * noise_std
-    inputs = (inputs - 5.0) / 4.0
+    inputs = (inputs - 4.0) / 4.0
     inputs  = inputs.reshape((len(inputs), D))
     targets = targets.reshape((len(targets), D))
     return inputs, targets
@@ -57,8 +57,9 @@ if __name__ == '__main__':
 
     # Specify inference problem by its unnormalized log-posterior.
     rbf = lambda x: norm.pdf(x, 0, 1)
+    sq = lambda x: np.sin(x)
     num_weights, predictions, logprob = \
-        make_nn_funs(layer_sizes=[1, 20, 1], L2_reg=0.01,
+        make_nn_funs(layer_sizes=[1, 10, 10, 1], L2_reg=0.01,
                      noise_variance = 0.01, nonlinearity=rbf)
 
     inputs, targets = build_toy_dataset()
@@ -75,14 +76,16 @@ if __name__ == '__main__':
     plt.ion()
     plt.show(block=False)
 
+
     def callback(params, t, g):
         print("Iteration {} lower bound {}".format(t, -objective(params, t)))
 
         # Sample functions from posterior.
-        mean, cov = unpack_params(params)
         rs = npr.RandomState(0)
+        mean, cov = unpack_params(params)
+        #rs = npr.RandomState(0)
         sample_weights = rs.randn(10, num_weights) * np.sqrt(cov) + mean
-        plot_inputs = np.linspace(-8, 8, num=200)
+        plot_inputs = np.linspace(-8, 8, num=400)
         outputs = predictions(sample_weights, np.expand_dims(plot_inputs, 1))
 
         # Plot data and functions.
@@ -96,7 +99,7 @@ if __name__ == '__main__':
     # Initialize variational parameters
     rs = npr.RandomState(0)
     init_mean    = rs.randn(num_weights)
-    init_log_cov = -5 * np.ones(num_weights)
+    init_log_cov = -10 * np.ones(num_weights)
     init_var_params = np.concatenate([init_mean, init_log_cov])
 
     print("Optimizing variational parameters...")
