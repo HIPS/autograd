@@ -61,13 +61,37 @@ def test_slogdet():
     check_grads(fun, mat)
     check_grads(d_fun, mat)
 
-def test_frobeneus_norm():
+def test_vector_2norm():
+    def fun(x): return to_scalar(np.linalg.norm(x))
+    d_fun = lambda x: to_scalar(grad(fun)(x))
+    D = 6
+    vec = npr.randn(D)
+    check_grads(fun, vec)
+    check_grads(d_fun, vec)
+
+def test_frobenius_norm():
     def fun(x): return to_scalar(np.linalg.norm(x))
     d_fun = lambda x : to_scalar(grad(fun)(x))
     D = 6
     mat = npr.randn(D, D-1)
     check_grads(fun, mat)
     check_grads(d_fun, mat)
+
+def test_vector_norm_ord():
+    def helper(size, ord):
+        def fun(x): return np.linalg.norm(x, ord=ord)
+        vec = npr.randn(size)
+        check_grads(fun, vec)
+    for ord in xrange(2,5):
+        yield helper, 6, ord
+
+def test_norm_axis():
+    def helper(shape, axis):
+        def fun(x): return to_scalar(np.linalg.norm(x, axis=axis))
+        arr = npr.randn(*shape)
+        check_grads(fun, arr)
+    for axis in xrange(3):
+        yield helper, (6,5,4), axis
 
 def test_eigvalh_lower():
     def fun(x):

@@ -173,5 +173,5 @@ def test_concatenate_3d():    combo_check(np.concatenate, [0], [(R(2, 2, 2), R(2
 # def test_dstack_3d(): combo_check(np.dstack, [0], [R(2, 3, 4), (R(2, 3, 1), R(2, 3, 5))])
 
 
-#def test_select(): combo_check(np.select, [0, 1], [[R(3,4,5) > 0, R(3,4,5) > 0, R(3,4,5) > 0]],
-#                                                  [[R(3,4,5),     R(3,4,5),     R(3,4,5)]], default=[0.0, 1.1])
+def test_select(): combo_check(np.select, [1], [[R(3,4,5) > 0, R(3,4,5) > 0, R(3,4,5) > 0]],
+                                                  [[R(3,4,5),     R(3,4,5),     R(3,4,5)]], default=[0.0, 1.1])
