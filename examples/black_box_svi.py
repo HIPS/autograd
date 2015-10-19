@@ -16,17 +16,19 @@ def black_box_variational_inference(logprob, D, num_samples):
     local reparameterization trick from http://arxiv.org/abs/1506.02557"""
 
     def unpack_params(params):
-        # Variational dist is a diagonal Gaussian
-        # parametrized by its mean and log-variances.
-        mean, cov = params[:D], np.exp(params[D:])
-        return mean, cov
+        # Variational dist is a diagonal Gaussian.
+        mean, log_std = params[:D], params[D:]
+        return mean, log_std
+
+    def gaussian_entropy(log_std):
+        return 0.5 * D * (1.0 + np.log(2*np.pi)) + np.sum(log_std)
 
     rs = npr.RandomState(0)
     def variational_objective(params, t):
         """Provides a stochastic estimate of the variational lower bound."""
-        mean, cov = unpack_params(params)
-        samples = rs.rand(num_samples, D) * np.sqrt(cov) + mean
-        lower_bound = mvn.entropy(mean, np.diag(cov)) + np.mean(logprob(samples, t))
+        mean, log_std = unpack_params(params)
+        samples = rs.randn(num_samples, D) * np.exp(log_std) + mean
+        lower_bound = gaussian_entropy(log_std) + np.mean(logprob(samples, t))
         return -lower_bound
 
     gradient = grad(variational_objective)
@@ -75,14 +77,14 @@ if __name__ == '__main__':
         target_distribution = lambda x : np.exp(log_posterior(x, t))
         plot_isocontours(ax, target_distribution)
 
-        mean, cov = unpack_params(params)
-        variational_contour = lambda x: mvn.pdf(x, mean, np.diag(cov))
+        mean, log_std = unpack_params(params)
+        variational_contour = lambda x: mvn.pdf(x, mean, np.diag(np.exp(2*log_std)))
         plot_isocontours(ax, variational_contour)
         plt.draw()
         plt.pause(1.0/30.0)
 
     print("Optimizing variational parameters...")
-    init_mean    = -1  * np.ones(D)
-    init_log_cov = -10 * np.ones(D)
-    init_var_params = np.concatenate([init_mean, init_log_cov])
+    init_mean    = -1 * np.ones(D)
+    init_log_std = -5 * np.ones(D)
+    init_var_params = np.concatenate([init_mean, init_log_std])
     variational_params = adam(gradient, init_var_params, step_size=0.1, num_iters=2000, callback=callback)

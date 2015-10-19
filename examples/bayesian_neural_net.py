@@ -82,9 +82,9 @@ if __name__ == '__main__':
 
         # Sample functions from posterior.
         rs = npr.RandomState(0)
-        mean, cov = unpack_params(params)
+        mean, log_std = unpack_params(params)
         #rs = npr.RandomState(0)
-        sample_weights = rs.randn(10, num_weights) * np.sqrt(cov) + mean
+        sample_weights = rs.randn(10, num_weights) * np.exp(log_std) + mean
         plot_inputs = np.linspace(-8, 8, num=400)
         outputs = predictions(sample_weights, np.expand_dims(plot_inputs, 1))
 
@@ -99,8 +99,8 @@ if __name__ == '__main__':
     # Initialize variational parameters
     rs = npr.RandomState(0)
     init_mean    = rs.randn(num_weights)
-    init_log_cov = -10 * np.ones(num_weights)
-    init_var_params = np.concatenate([init_mean, init_log_cov])
+    init_log_std = -5 * np.ones(num_weights)
+    init_var_params = np.concatenate([init_mean, init_log_std])
 
     print("Optimizing variational parameters...")
     variational_params = adam(gradient, init_var_params,
