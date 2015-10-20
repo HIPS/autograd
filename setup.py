@@ -2,6 +2,8 @@ from __future__ import absolute_import
 from distutils.core import setup
 from distutils.extension import Extension
 from distutils.command.build_ext import build_ext as _build_ext
+from distutils.errors import CompileError
+from warnings import warn
 
 try:
     from Cython.Distutils import build_ext as _build_ext
@@ -12,14 +14,22 @@ else:
     use_cython = True
     ext = '.pyx'
 
-# see http://stackoverflow.com/q/19919905 for explanation
 class build_ext(_build_ext):
+    # see http://stackoverflow.com/q/19919905 for explanation
     def finalize_options(self):
         _build_ext.finalize_options(self)
         # prevent numpy from thinking it's in the setup process
         __builtins__.__NUMPY_SETUP__ = False
         import numpy as np
         self.include_dirs.append(np.get_include())
+
+    # if optional extension modules fail to build, keep going anyway
+    def run(self):
+        try:
+            _build_ext.run(self)
+        except CompileError:
+            warn('Failed to build optional extension modules')
+
 cmdclass = {'build_ext': build_ext}
 
 extensions = [Extension('autograd.numpy.linalg_extra', ['autograd/numpy/linalg_extra' + ext])]
