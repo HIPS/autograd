@@ -85,7 +85,7 @@ class primitive(object):
                     errstr = "Gradient of {0} not yet implemented."
                 else:
                     errstr = "Gradient of {0} w.r.t. arg number {1} not yet implemented."
-                raise NotImplementedError(errstr.format(self.fun, argnum))
+                raise NotImplementedError(errstr.format(self.fun.__name__, argnum))
             return error
 
     def defgrad(self, gradmaker, argnum=0):
