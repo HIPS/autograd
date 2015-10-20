@@ -118,7 +118,9 @@ def test_eigvalh_upper():
 def test_cholesky():
     def fun(A):
         return to_scalar(np.linalg.cholesky(A))
+    d_fun = lambda A: to_scalar(grad(fun)(A))
     def rand_psd(D):
         mat = npr.randn(D,D)
         return np.dot(mat, mat.T)
     check_grads(fun, rand_psd(6))
+    # check_grads(d_fun, rand_psd(6))

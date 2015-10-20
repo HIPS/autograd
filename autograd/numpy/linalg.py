@@ -66,8 +66,8 @@ eigh.defgrad(make_grad_eigh)
 
 def make_grad_cholesky(L, A):
     # based on choleskies_cython.pyx in SheffieldML/GPy and (Smith 1995)
-    # this won't work with higher-order grads, both because of the inplace ops
-    # in the python version and because of the cython version
+    # TODO for higher-order differentiation, replace dsymv, get rid of inplace
+    # ops, make cholesky grad primitive and defgrad? also ArrayNode assignment
     from scipy.linalg.blas import dsymv
     N = L.shape[0]
 
