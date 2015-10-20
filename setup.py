@@ -1,18 +1,26 @@
 from __future__ import absolute_import
 from distutils.core import setup
 from distutils.extension import Extension
-import numpy as np  # TODO http://stackoverflow.com/q/19919905
+from distutils.command.build_ext import build_ext as _build_ext
 
 try:
-    from Cython.Distutils import build_ext
-except:
+    from Cython.Distutils import build_ext as _build_ext
+except ImportError:
     use_cython = False
-    cmdclass = {}
     ext = '.c'
 else:
     use_cython = True
-    cmdclass = {'build_ext': build_ext}
     ext = '.pyx'
+
+# see http://stackoverflow.com/q/19919905 for explanation
+class build_ext(_build_ext):
+    def finalize_options(self):
+        _build_ext.finalize_options(self)
+        # prevent numpy from thinking it's in the setup process
+        __builtins__.__NUMPY_SETUP__ = False
+        import numpy as np
+        self.include_dirs.append(np.get_include())
+cmdclass = {'build_ext': build_ext}
 
 extensions = [Extension('autograd.numpy.linalg_extra', ['autograd/numpy/linalg_extra' + ext])]
 
@@ -35,5 +43,4 @@ setup(
                  'Programming Language :: Python :: 3.4'],
     ext_modules=extensions,
     cmdclass=cmdclass,
-    include_dirs=[np.get_include(),],
 )
