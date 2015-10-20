@@ -1,8 +1,9 @@
 from __future__ import absolute_import
-from functools import partial
+from functools import partial, wraps
 import numpy.linalg as npla
 from .numpy_wrapper import wrap_namespace, dot
 from . import numpy_wrapper as anp
+from ..core import primitive
 
 wrap_namespace(npla.__dict__, globals())
 
@@ -84,9 +85,9 @@ def make_grad_cholesky(L, A):
 
     try:
         from .linalg_extra import cholesky_grad as cython_cholesky_grad
-        cholesky_grad = partial(cython_cholesky_grad, L.value)
+        cholesky_grad = wraps(cython_cholesky_grad)(partial(cython_cholesky_grad, L.value))
     except ImportError:
         cholesky_grad = cholesky_grad_python
 
-    return cholesky_grad
+    return primitive(cholesky_grad)
 cholesky.defgrad(make_grad_cholesky)
