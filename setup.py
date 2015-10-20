@@ -30,8 +30,6 @@ class build_ext(_build_ext):
         except CompileError:
             warn('Failed to build optional extension modules')
 
-cmdclass = {'build_ext': build_ext}
-
 extensions = [Extension('autograd.numpy.linalg_extra', ['autograd/numpy/linalg_extra' + ext])]
 
 setup(
@@ -52,5 +50,5 @@ setup(
                  'Programming Language :: Python :: 2.7',
                  'Programming Language :: Python :: 3.4'],
     ext_modules=extensions,
-    cmdclass=cmdclass,
+    cmdclass={'build_ext': build_ext},
 )
