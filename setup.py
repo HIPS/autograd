@@ -1,5 +1,7 @@
 from __future__ import absolute_import
 from distutils.core import setup
+import numpy as np
+from Cython.Build import cythonize  # TODO remove for pip version
 setup(name='autograd',
       version='1.0.9',
       description='Efficiently computes derivatives of numpy code.',
@@ -15,4 +17,7 @@ setup(name='autograd',
       classifiers=['Development Status :: 4 - Beta',
                    'License :: OSI Approved :: MIT License',
                    'Programming Language :: Python :: 2.7',
-                   'Programming Language :: Python :: 3.4'])
+                   'Programming Language :: Python :: 3.4'],
+      ext_modules=cythonize('autograd/**/*.pyx'),
+      include_dirs=[np.get_include(),],
+)

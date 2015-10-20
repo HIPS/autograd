@@ -114,3 +114,11 @@ def test_eigvalh_upper():
     hmat = np.dot(mat.T, mat)
     check_grads(fun, hmat)
     check_grads(d_fun, hmat)
+
+def test_cholesky():
+    def fun(A):
+        return to_scalar(np.linalg.cholesky(A))
+    def rand_psd(D):
+        mat = npr.randn(D,D)
+        return np.dot(mat, mat.T)
+    check_grads(fun, rand_psd(6))

@@ -65,23 +65,26 @@ def make_grad_eigh(ans, x, UPLO='L'):
 eigh.defgrad(make_grad_eigh)
 
 def make_grad_cholesky(L, A):
-    # based on choleskies_cython.pyx in SheffieldML/GPy and Smith 1995
+    # based on choleskies_cython.pyx in SheffieldML/GPy and (Smith 1995)
+    # this won't work with higher-order grads, both because of the inplace ops
+    # in the python version and because of the cython version
+    from scipy.linalg.blas import dsymv
     N = L.shape[0]
 
     def cholesky_grad_python(g):
         dL = anp.tril(g)
         dL[-1,-1] /= 2 * L[-1,-1]
         for k in xrange(N-2, -1, -1):
-            dL[k+1:,k] -= anp.dot(dL[k+1:,k+1:], L[k+1:,k])
-            dL[k+1:, k] -= dL.flat[k+1::N+1] * L[k+1:,k]
+            dL[k+1:,k] -= dsymv(1., dL[k+1:,k+1:], L[k+1:,k], lower=True)
+            dL[k+1:,k] -= anp.diag(dL[k+1:,k+1:]) * L[k+1:,k]
             dL[k+1:,k] /= L[k,k]
             dL[k,k] -= anp.dot(dL[k+1:,k], L[k+1:,k])
             dL[k,k] /= 2 * L[k,k]
         return dL
 
     try:
-        from .linalg_extra import cholesky_grad
-        cholesky_grad = partial(cholesky_grad, L)
+        from .linalg_extra import cholesky_grad as cython_cholesky_grad
+        cholesky_grad = partial(cython_cholesky_grad, L.value)
     except ImportError:
         cholesky_grad = cholesky_grad_python
 
