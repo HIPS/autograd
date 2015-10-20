@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from distutils.core import setup
 from distutils.extension import Extension
-import numpy as np
+import numpy as np  # TODO http://stackoverflow.com/q/19919905
 
 try:
     from Cython.Distutils import build_ext
