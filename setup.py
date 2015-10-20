@@ -9,10 +9,8 @@ try:
     from Cython.Distutils import build_ext as _build_ext
 except ImportError:
     use_cython = False
-    ext = '.c'
 else:
     use_cython = True
-    ext = '.pyx'
 
 class build_ext(_build_ext):
     # see http://stackoverflow.com/q/19919905 for explanation
@@ -29,7 +27,15 @@ class build_ext(_build_ext):
         except CompileError:
             warn('Failed to build optional extension modules')
 
-extensions = [Extension('autograd.numpy.linalg_extra', ['autograd/numpy/linalg_extra' + ext])]
+if use_cython:
+    from Cython.Build import cythonize
+    extensions = cythonize('**/*.pyx')
+else:
+    extensions = [
+        Extension(
+            'autograd.numpy.linalg_extra', ['autograd/numpy/linalg_extra.c'],
+            extra_compile_args=['-w','-Ofast']),
+    ]
 
 setup(
     name='autograd',

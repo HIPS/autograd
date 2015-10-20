@@ -1,4 +1,4 @@
-# distutils: extra_compile_args = -O2 -w -ffast-math
+# distutils: extra_compile_args = -Ofast -w
 # cython: boundscheck=False, nonecheck=False, wraparound=False, cdivision=True
 
 # based on code by James Hensman and Alan Saul, 2015, used with permission
