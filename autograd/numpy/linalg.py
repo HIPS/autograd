@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from functools import partial
 import numpy.linalg as npla
 from .numpy_wrapper import wrap_namespace, dot
 from . import numpy_wrapper as anp
@@ -62,3 +63,30 @@ def make_grad_eigh(ans, x, UPLO='L'):
             return anp.tril(dx) + anp.triu(dx, 1).T
     return eigh_grad
 eigh.defgrad(make_grad_eigh)
+
+def make_grad_cholesky(L, A):
+    # based on choleskies_cython.pyx in SheffieldML/GPy and (Smith 1995)
+    # TODO for higher-order differentiation, replace dsymv, get rid of inplace
+    # ops, make cholesky grad primitive and defgrad? also ArrayNode assignment
+    from scipy.linalg.blas import dsymv
+    N = L.shape[0]
+
+    def cholesky_grad_python(g):
+        dL = anp.tril(g)
+        dL[-1,-1] /= 2 * L[-1,-1]
+        for k in xrange(N-2, -1, -1):
+            dL[k+1:,k] -= dsymv(1., dL[k+1:,k+1:], L[k+1:,k], lower=True)
+            dL[k+1:,k] -= anp.diag(dL[k+1:,k+1:]) * L[k+1:,k]
+            dL[k+1:,k] /= L[k,k]
+            dL[k,k] -= anp.dot(dL[k+1:,k], L[k+1:,k])
+            dL[k,k] /= 2 * L[k,k]
+        return dL
+
+    try:
+        from .linalg_extra import cholesky_grad as cython_cholesky_grad
+        cholesky_grad = partial(cython_cholesky_grad, L.value)
+    except ImportError:
+        cholesky_grad = cholesky_grad_python
+
+    return cholesky_grad
+cholesky.defgrad(make_grad_cholesky)
