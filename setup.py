@@ -1,6 +1,5 @@
 from __future__ import absolute_import
-from setuptools import setup
-from setuptools.extension import Extension
+from setuptools import setup, Extension
 from setuptools.command.build_ext import build_ext as _build_ext
 from distutils.errors import CompileError
 from warnings import warn
