@@ -8,3 +8,4 @@ data/
 dist/
 MANIFEST
 *.so
+*.c
