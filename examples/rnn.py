@@ -54,10 +54,10 @@ def build_rnn(input_size, state_size, output_size):
         change_weights    = parser.get(weights, 'change')
         predict_weights   = parser.get(weights, 'predict')
 
-        output = []
+        output = [hiddens_to_output_probs(predict_weights, hiddens)]
         for input in inputs:  # Iterate over time steps.
-            output.append(hiddens_to_output_probs(predict_weights, hiddens))
             hiddens = update(input, hiddens, change_weights)
+            output.append(hiddens_to_output_probs(predict_weights, hiddens))
         return output
 
     def log_likelihood(weights, inputs, targets):

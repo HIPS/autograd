@@ -71,11 +71,11 @@ def build_lstm(input_size, state_size, output_size):
         hiddens = np.repeat(parser.get(weights, 'init_hiddens'), num_sequences, axis=0)
         cells   = np.repeat(parser.get(weights, 'init_cells'),   num_sequences, axis=0)
 
-        output = []
+        output = [hiddens_to_output_probs(predict_weights, hiddens)]
         for input in inputs:  # Iterate over time steps.
-            output.append(hiddens_to_output_probs(predict_weights, hiddens))
             hiddens, cells = update_lstm(input, hiddens, cells, forget_weights,
                                          change_weights, ingate_weights, outgate_weights)
+            output.append(hiddens_to_output_probs(predict_weights, hiddens))
         return output
 
     def log_likelihood(weights, inputs, targets):
