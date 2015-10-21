@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 import warnings
+import copy
 import operator as op
 import types
 import math
@@ -7,23 +8,37 @@ import numpy as np
 import functools
 import six
 
+def attach_name_and_doc(fun, argnum):
+    namestr = "grad_{fun}_wrt_argnum_{argnum}".format(fun=fun.__name__, argnum=argnum)
+    docstr = "Gradient of function {fun} with respect to argument number {argnum}. " \
+        "Has the same arguments as {fun} but the return value has type of" \
+        "argument {argnum}".format(fun=fun.__name__, argnum=argnum)
+
+    def wrap(gradfun):
+        try:
+            gradfun.__name__ = namestr
+            gradfun.__doc__ = docstr
+        finally:
+            return gradfun
+    return wrap
+
 def grad(fun, argnum=0):
     """
     Returns a function which computes the gradient of `fun` with respect to
     positional argument number `argnum`. The returned function takes the same
     arguments as `fun`, but returns the gradient instead. The gradient has
     the same type as the argument."""
+    @attach_name_and_doc(fun, argnum)
     def gradfun(*args,**kwargs):
         return backward_pass(*forward_pass(fun,args,kwargs,argnum))
+    return gradfun
 
-    try:
-        gradfun.__name__ = "grad_{fun}_wrt_argnum_{argnum}".format(fun=fun.__name__, argnum=argnum)
-        gradfun.__doc__ = "Gradient of function {fun} with respect to argument number {argnum}. " \
-                          "Has the same arguments as {fun} but the return value has type of" \
-                          "argument {argnum}".format(fun=fun.__name__, argnum=argnum)
-    except:
-        pass
 
+def tuple_grad(fun, argnum=0):
+    @attach_name_and_doc(fun, argnum)
+    def gradfun(*args, **kwargs):
+        start_node, end_nodes, tape = forward_pass(fun, args, kwargs, argnum)
+        return [backward_pass(start_node, end_node, tape) for end_node in end_nodes]
     return gradfun
 
 def forward_pass(fun, args, kwargs, argnum=0):
@@ -46,8 +61,13 @@ def backward_pass(start_node, end_node, tape):
             raise TypeError("Output type {0} can't be cast to float. ".format(type(end_node.value))
                             + "Function grad requires a scalar-valued function. "
                               "Try jacobian or elementwise_grad.")
+
+    for node in tape:
+        node.outgrads = []
     end_node.tapes[tape].outgrads = [1.0]
+
     tape.complete = True
+    tape = copy.copy(tape)
     while tape:
         node = tape.pop()
         if node.outgrads:
