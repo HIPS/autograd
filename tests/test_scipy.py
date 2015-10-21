@@ -22,6 +22,11 @@ def test_norm_cdf():    combo_check(stats.norm.cdf,    [0,1,2], [R(4)], [R(4)], 
 def test_norm_logpdf(): combo_check(stats.norm.logpdf, [0,1,2], [R(4)], [R(4)], [R(4)**2 + 1.1])
 def test_norm_logcdf(): combo_check(stats.norm.logcdf, [0,1,2], [R(4)], [R(4)], [R(4)**2 + 1.1])
 
+def test_norm_pdf_broadcast():    combo_check(stats.norm.pdf,    [0,1,2], [R(4,3)], [R(1,3)], [R(4,1)**2 + 1.1])
+def test_norm_cdf_broadcast():    combo_check(stats.norm.cdf,    [0,1,2], [R(4,3)], [R(1,3)], [R(4,1)**2 + 1.1])
+def test_norm_logpdf_broadcast(): combo_check(stats.norm.logpdf, [0,1,2], [R(4,3)], [R(1,3)], [R(4,1)**2 + 1.1])
+def test_norm_logcdf_broadcast(): combo_check(stats.norm.logcdf, [0,1,2], [R(4,3)], [R(1,3)], [R(4,1)**2 + 1.1])
+
 def make_psd(mat): return np.dot(mat.T, mat) + np.eye(mat.shape[0])
 def test_mvn_pdf():    combo_check(mvn.logpdf, [0, 1, 2], [R(4)], [R(4)], [make_psd(R(4, 4))])
 def test_mvn_logpdf(): combo_check(mvn.logpdf, [0, 1, 2], [R(4)], [R(4)], [make_psd(R(4, 4))])
