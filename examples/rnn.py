@@ -5,7 +5,10 @@ import autograd.numpy.random as npr
 from autograd import value_and_grad
 from autograd.util import quick_grad_check
 from scipy.optimize import minimize
+from os.path import dirname, join
 from six.moves import range
+
+lstm_filename = join(dirname(__file__), 'lstm.py')
 
 class WeightsParser(object):
     """A helper class to index into a parameter vector."""
@@ -99,7 +102,7 @@ if __name__ == '__main__':
     train_iters = 100
 
     # Learn to predict our own source code.
-    train_inputs = build_dataset(__file__, seq_length, input_size, max_lines=60)
+    train_inputs = build_dataset(lstm_filename, seq_length, input_size, max_lines=60)
 
     pred_fun, loglike_fun, num_weights = build_rnn(input_size, state_size, output_size)
 
