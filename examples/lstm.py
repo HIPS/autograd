@@ -116,7 +116,7 @@ if __name__ == '__main__':
     param_scale = 0.01
     train_iters = 100
 
-    train_inputs = build_dataset('lstm.py', seq_length, input_size, max_lines=60)
+    train_inputs = build_dataset(__file__, seq_length, input_size, max_lines=60)
 
     pred_fun, loglike_fun, num_weights = build_lstm(input_size, state_size, output_size)
 
