@@ -5,8 +5,6 @@ import autograd.numpy as anp
 from autograd.numpy.numpy_wrapper import wrap_namespace
 from autograd.numpy.linalg import atleast_2d_col as al2d
 
-anp.set_printoptions(precision=3)
-
 wrap_namespace(scipy.linalg.__dict__, globals())  # populates module namespace
 
 
