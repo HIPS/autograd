@@ -33,7 +33,6 @@ def grad(fun, argnum=0):
         return backward_pass(*forward_pass(fun,args,kwargs,argnum))
     return gradfun
 
-
 def tuple_grad(fun, argnum=0):
     @attach_name_and_doc(fun, argnum)
     def gradfun(*args, **kwargs):
