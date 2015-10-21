@@ -51,13 +51,13 @@ def build_rnn(input_size, state_size, output_size):
         """Goes from right to left, updating the state."""
         num_sequences = inputs.shape[1]
         hiddens = np.repeat(parser.get(weights, 'init_hiddens'), num_sequences, axis=0)
-        change_weights  = parser.get(weights, 'change')
-        predict_weights = parser.get(weights, 'predict')
+        change_weights    = parser.get(weights, 'change')
+        predict_weights   = parser.get(weights, 'predict')
 
-        output = [hiddens_to_output_probs(predict_weights, hiddens)]
+        output = []
         for input in inputs:  # Iterate over time steps.
-            hiddens = update(input, hiddens, change_weights)
             output.append(hiddens_to_output_probs(predict_weights, hiddens))
+            hiddens = update(input, hiddens, change_weights)
         return output
 
     def log_likelihood(weights, inputs, targets):
