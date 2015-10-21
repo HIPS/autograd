@@ -7,6 +7,7 @@ from autograd.numpy.linalg import atleast_2d_col as al2d
 
 wrap_namespace(scipy.linalg.__dict__, globals())  # populates module namespace
 
+sqrtm.defgrad(lambda ans, A, **kwargs: lambda g: solve_lyapunov(ans, g))
 
 def _flip(a, trans):
     if anp.iscomplexobj(a):
@@ -26,9 +27,3 @@ solve_triangular.defgrad(make_grad_solve_triangular)
 solve_triangular.defgrad(lambda ans, a, b, trans=0, lower=False, **kwargs: lambda g:
     solve_triangular(a, g, trans=_flip(a, trans), lower=lower), argnum=1)
 
-
-def make_grad_sqrtm(ans, A, **kwargs):
-    def sqrtm_grad(g):
-        return solve_lyapunov(ans, g)
-    return sqrtm_grad
-sqrtm.defgrad(make_grad_sqrtm)
