@@ -3,7 +3,7 @@ from __future__ import absolute_import
 import itertools as it
 
 import autograd.numpy as np
-from autograd.core import grad, getval
+from autograd.core import grad, tuple_grad, getval
 from six.moves import map
 
 
@@ -76,6 +76,16 @@ def jacobian(fun, argnum=0):
             scalar_fun = lambda *args, **kwargs : fun(*args, **kwargs)[idxs]
             jac[idxs + input_slice] = grad(scalar_fun, argnum=argnum)(*args, **kwargs)
         return jac
+    return jac_fun
+
+def vector_jacobian(fun, argnum=0):
+    'For vector-valued `fun`, returns the jacobian matrix'
+    list_fun = lambda *args, **kwargs: list(fun(*args, **kwargs))
+    gradfun = tuple_grad(list_fun, argnum=argnum)
+
+    def jac_fun(*args, **kwargs):
+        return np.vstack(gradfun(*args, **kwargs))
+
     return jac_fun
 
 def hessian_vector_product(fun, argnum=0):
