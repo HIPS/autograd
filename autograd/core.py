@@ -51,7 +51,7 @@ def backward_pass(start_node, end_node, tape):
     if not isinstance(end_node, Node) or tape not in end_node.tapes:
         warnings.warn("Output seems independent of input. Returning zero gradient.")
         return zeros_like(start_node)
-    if not type(end_node) is FloatNode:
+    if type(end_node) is not FloatNode:
         try:
             end_node = FloatNode.cast(end_node, 1.0)
         except TypeError:
