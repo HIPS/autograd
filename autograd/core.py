@@ -5,14 +5,15 @@ import operator as op
 import types
 import math
 import numpy as np
-import functools
+from functools import partial
 import six
 
-def attach_name_and_doc(fun, argnum):
-    namestr = "grad_{fun}_wrt_argnum_{argnum}".format(fun=fun.__name__, argnum=argnum)
-    docstr = "Gradient of function {fun} with respect to argument number {argnum}. " \
+def attach_name_and_doc(fun, argnum, opname):
+    namestr = "{op}_{fun}_wrt_argnum_{argnum}".format(
+        op=opname.lower(), fun=fun.__name__, argnum=argnum)
+    docstr = "{op} of function {fun} with respect to argument number {argnum}. " \
         "Has the same arguments as {fun} but the return value has type of" \
-        "argument {argnum}".format(fun=fun.__name__, argnum=argnum)
+        "argument {argnum}".format(op=opname, fun=fun.__name__, argnum=argnum)
 
     def wrap(gradfun):
         try:
@@ -28,16 +29,29 @@ def grad(fun, argnum=0):
     positional argument number `argnum`. The returned function takes the same
     arguments as `fun`, but returns the gradient instead. The gradient has
     the same type as the argument."""
-    @attach_name_and_doc(fun, argnum)
+    @attach_name_and_doc(fun, argnum, 'Gradient')
     def gradfun(*args,**kwargs):
         return backward_pass(*forward_pass(fun,args,kwargs,argnum))
     return gradfun
 
-def tuple_grad(fun, argnum=0):
-    @attach_name_and_doc(fun, argnum)
+def jacobian(fun, argnum=0):
+    dummy = lambda: None
+
+    def list_of_scalars_fun(*args, **kwargs):
+        val = fun(*args, **kwargs)
+        dummy.outshape = () if np.isscalar(getval(val)) else val.shape
+        return list(np.ravel(val))
+
+    @attach_name_and_doc(fun, argnum, 'Jacobian')
     def gradfun(*args, **kwargs):
-        start_node, end_nodes, tape = forward_pass(fun, args, kwargs, argnum)
-        return [backward_pass(start_node, end_node, tape) for end_node in end_nodes]
+        dummy.inshape = () if np.isscalar(args[argnum]) else args[argnum].shape
+
+        start_node, end_nodes, tape = \
+            forward_pass(list_of_scalars_fun, args, kwargs, argnum)
+        grads = map(partial(backward_pass, start_node, tape=tape), end_nodes)
+
+        shape = dummy.outshape + dummy.inshape
+        return np.reshape(np.concatenate(grads), shape) if shape else grads[0]
     return gradfun
 
 def forward_pass(fun, args, kwargs, argnum=0):
@@ -112,7 +126,7 @@ class primitive(object):
 
     def defgrads(self, gradmaker, argnums):
         for argnum in argnums:
-            self.defgrad(functools.partial(gradmaker, argnum), argnum)
+            self.defgrad(partial(gradmaker, argnum), argnum)
 
     def defgrad_is_zero(self, argnums=(0,)):
         for argnum in argnums:
