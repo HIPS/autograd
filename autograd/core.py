@@ -34,7 +34,6 @@ def jacobian(fun, argnum=0):
     def gradfun(*args, **kwargs):
         start_node, end_nodes, tape = forward_pass(list_fun, args, kwargs, argnum)
         grads = map(partial(backward_pass, start_node, tape=tape), end_nodes)
-
         shape = dummy.outshape + getshape(args[argnum])
         return np.reshape(np.concatenate(grads), shape) if shape else grads[0]
     return gradfun
