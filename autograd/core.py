@@ -37,20 +37,21 @@ def grad(fun, argnum=0):
 def jacobian(fun, argnum=0):
     dummy = lambda: None
 
+    def getshape(val):
+        return () if np.isscalar(getval(val)) else val.shape
+
     def list_of_scalars_fun(*args, **kwargs):
         val = fun(*args, **kwargs)
-        dummy.outshape = () if np.isscalar(getval(val)) else val.shape
+        dummy.outshape = getshape(val)
         return list(np.ravel(val))
 
     @attach_name_and_doc(fun, argnum, 'Jacobian')
     def gradfun(*args, **kwargs):
-        dummy.inshape = () if np.isscalar(args[argnum]) else args[argnum].shape
-
         start_node, end_nodes, tape = \
             forward_pass(list_of_scalars_fun, args, kwargs, argnum)
         grads = map(partial(backward_pass, start_node, tape=tape), end_nodes)
 
-        shape = dummy.outshape + dummy.inshape
+        shape = dummy.outshape + getshape(args[argnum])
         return np.reshape(np.concatenate(grads), shape) if shape else grads[0]
     return gradfun
 
