@@ -8,21 +8,6 @@ import numpy as np
 from functools import partial
 import six
 
-def attach_name_and_doc(fun, argnum, opname):
-    namestr = "{op}_{fun}_wrt_argnum_{argnum}".format(
-        op=opname.lower(), fun=fun.__name__, argnum=argnum)
-    docstr = "{op} of function {fun} with respect to argument number {argnum}. " \
-        "Has the same arguments as {fun} but the return value has type of" \
-        "argument {argnum}".format(op=opname, fun=fun.__name__, argnum=argnum)
-
-    def wrap(gradfun):
-        try:
-            gradfun.__name__ = namestr
-            gradfun.__doc__ = docstr
-        finally:
-            return gradfun
-    return wrap
-
 def grad(fun, argnum=0):
     """
     Returns a function which computes the gradient of `fun` with respect to
@@ -40,15 +25,14 @@ def jacobian(fun, argnum=0):
     def getshape(val):
         return () if np.isscalar(getval(val)) else val.shape
 
-    def list_of_scalars_fun(*args, **kwargs):
+    def list_fun(*args, **kwargs):
         val = fun(*args, **kwargs)
         dummy.outshape = getshape(val)
         return list(np.ravel(val))
 
     @attach_name_and_doc(fun, argnum, 'Jacobian')
     def gradfun(*args, **kwargs):
-        start_node, end_nodes, tape = \
-            forward_pass(list_of_scalars_fun, args, kwargs, argnum)
+        start_node, end_nodes, tape = forward_pass(list_fun, args, kwargs, argnum)
         grads = map(partial(backward_pass, start_node, tape=tape), end_nodes)
 
         shape = dummy.outshape + getshape(args[argnum])
@@ -92,6 +76,21 @@ def backward_pass(start_node, end_node, tape):
                 og = cast_to_node_type(gradfun(cur_outgrad), parent.node_type, parent.node_value)
                 parent.outgrads.append(og)
     return cur_outgrad
+
+def attach_name_and_doc(fun, argnum, opname):
+    namestr = "{op}_{fun}_wrt_argnum_{argnum}".format(
+        op=opname.lower(), fun=fun.__name__, argnum=argnum)
+    docstr = "{op} of function {fun} with respect to argument number {argnum}. " \
+        "Has the same arguments as {fun} but the return value has type of" \
+        "argument {argnum}".format(op=opname, fun=fun.__name__, argnum=argnum)
+
+    def wrap(gradfun):
+        try:
+            gradfun.__name__ = namestr
+            gradfun.__doc__ = docstr
+        finally:
+            return gradfun
+    return wrap
 
 def cast_to_node_type(x, node_type, example):
     if type(new_node(getval(x))) is not node_type:
