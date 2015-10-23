@@ -12,14 +12,22 @@ def grad(fun, argnum=0):
     """
     Returns a function which computes the gradient of `fun` with respect to
     positional argument number `argnum`. The returned function takes the same
-    arguments as `fun`, but returns the gradient instead. The gradient has
-    the same type as the argument."""
+    arguments as `fun`, but returns the gradient instead. The function `fun`
+    should be scalar-valued. The gradient has the same type as the argument."""
     @attach_name_and_doc(fun, argnum, 'Gradient')
     def gradfun(*args,**kwargs):
         return backward_pass(*forward_pass(fun,args,kwargs,argnum))
     return gradfun
 
 def jacobian(fun, argnum=0):
+    """
+    Returns a function which computes the Jacobian of `fun` with respect to
+    positional argument number `argnum`, which must be a scalar or array. Unlike
+    `grad` it is not restricted to scalar-output functions, but also it cannot
+    take derivatives with respect to some argument types (like lists or dicts).
+    If the input to `fun` has shape (in1, in2, ...) and the output has shape
+    (out1, out2, ...) then the Jacobian has shape (out1, out2, ..., in1, in2, ...).
+    """
     dummy = lambda: None
 
     def getshape(val):
