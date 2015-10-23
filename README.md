@@ -72,7 +72,7 @@ Just run `pip install autograd`
 
 Autograd was written by [Dougal Maclaurin](mailto:maclaurin@physics.harvard.edu),
 [David Duvenaud](http://mlg.eng.cam.ac.uk/duvenaud/)
-and [Matthew Johnson](http://www.mit.edu/~mattjj/),
+and [Matt Johnson](http://www.mit.edu/~mattjj/),
 and we're actively
 developing it. Please feel free to submit any bugs or feature requests.
 We'd also love to hear about your experiences with autograd in general.
