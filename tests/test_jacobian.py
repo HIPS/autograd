@@ -47,10 +47,9 @@ def test_jacobian_against_wrapper():
 def test_jacobian_higher_order():
     fun = lambda x: np.sin(np.outer(x,x)) + np.cos(np.dot(x,x))
 
-    # this just checks to ensure these don't crash
-    jacobian(fun)(npr.randn(3))
-    jacobian(jacobian(fun))(npr.randn(3))
-    jacobian(jacobian(jacobian(fun)))(npr.randn(3))
+    jacobian(fun)(npr.randn(3)).shape == (3,3,3)
+    jacobian(jacobian(fun))(npr.randn(3)).shape == (3,3,3,3)
+    jacobian(jacobian(jacobian(fun)))(npr.randn(3)).shape == (3,3,3,3,3)
 
     check_grads(lambda x: np.sum(jacobian(fun)(x)), npr.randn(3))
     check_grads(lambda x: np.sum(jacobian(jacobian(fun))(x)), npr.randn(3))
