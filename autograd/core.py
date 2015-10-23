@@ -31,21 +31,24 @@ def jacobian(fun, argnum=0):
     dummy = lambda: None
 
     def getshape(val):
+        val = getval(val)
         assert np.isscalar(val) or isinstance(val, np.ndarray), \
             'Jacobian requires input and output to be scalar- or array-valued'
         return () if np.isscalar(val) else val.shape
 
     def list_fun(*args, **kwargs):
         val = fun(*args, **kwargs)
-        dummy.outshape = getshape(getval(val))
+        dummy.outshape = getshape(val)
         return list(np.ravel(val))
+
+    concatenate = lambda lst: np.concatenate(map(np.atleast_1d, lst))
 
     @attach_name_and_doc(fun, argnum, 'Jacobian')
     def gradfun(*args, **kwargs):
         start_node, end_nodes, tape = forward_pass(list_fun, args, kwargs, argnum)
         grads = map(partial(backward_pass, start_node, tape=tape), end_nodes)
         shape = dummy.outshape + getshape(args[argnum])
-        return np.reshape(np.concatenate(grads), shape) if shape else grads[0]
+        return np.reshape(concatenate(grads), shape) if shape else grads[0]
     return gradfun
 
 def forward_pass(fun, args, kwargs, argnum=0):
