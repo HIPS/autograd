@@ -70,13 +70,15 @@ Just run `pip install autograd`
 
 ## Authors
 
-Autograd was written by [Dougal Maclaurin](mailto:maclaurin@physics.harvard.edu)
-and [David Duvenaud](http://mlg.eng.cam.ac.uk/duvenaud/) and we're actively
+Autograd was written by [Dougal Maclaurin](mailto:maclaurin@physics.harvard.edu),
+[David Duvenaud](http://mlg.eng.cam.ac.uk/duvenaud/)
+and [Matthew Johnson](http://www.mit.edu/~mattjj/),
+and we're actively
 developing it. Please feel free to submit any bugs or feature requests.
 We'd also love to hear about your experiences with autograd in general.
 Drop us an email!
 
-We want to thank [Matthew Johnson](http://www.mit.edu/~mattjj/), Jasper Snoek, and the rest of the HIPS group
+We want to thank Jasper Snoek, and the rest of the HIPS group
 (led by Prof. Ryan P. Adams) for helpful contributions and advice; Barak Pearlmutter
 for foundational work on automatic differentiation and for guidance on our
 implementation; and Analog Devices International and Samsung Advanced Institute
