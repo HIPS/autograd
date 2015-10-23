@@ -1,1 +1,1 @@
-recursive-include autograd *.c
+recursive-include autograd *.c *.h *.pyx
