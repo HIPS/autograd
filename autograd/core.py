@@ -31,11 +31,13 @@ def jacobian(fun, argnum=0):
     dummy = lambda: None
 
     def getshape(val):
-        return () if np.isscalar(getval(val)) else val.shape
+        assert np.isscalar(val) or isinstance(val, np.ndarray), \
+            'Jacobian requires input and output to be scalar- or array-valued'
+        return () if np.isscalar(val) else val.shape
 
     def list_fun(*args, **kwargs):
         val = fun(*args, **kwargs)
-        dummy.outshape = getshape(val)
+        dummy.outshape = getshape(getval(val))
         return list(np.ravel(val))
 
     @attach_name_and_doc(fun, argnum, 'Jacobian')
