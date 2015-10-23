@@ -23,7 +23,7 @@ def jacobian(fun, argnum=0):
     """
     Returns a function which computes the Jacobian of `fun` with respect to
     positional argument number `argnum`, which must be a scalar or array. Unlike
-    `grad` it is not restricted to scalar-valued functions, but also it cannot
+    `grad` it is not restricted to scalar-output functions, but also it cannot
     take gradients with respect to argument types like lists. If the input to
     `fun` has shape (in1, in2, ...) and the output has shape (out1, out2, ...)
     then the Jacobian has shape (out1, out2, ..., in1, in2, ...).
