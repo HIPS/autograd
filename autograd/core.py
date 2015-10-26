@@ -1,29 +1,54 @@
 from __future__ import absolute_import
 import warnings
+import copy
 import operator as op
 import types
 import math
 import numpy as np
-import functools
+from functools import partial
 import six
 
 def grad(fun, argnum=0):
     """
     Returns a function which computes the gradient of `fun` with respect to
     positional argument number `argnum`. The returned function takes the same
-    arguments as `fun`, but returns the gradient instead. The gradient has
-    the same type as the argument."""
+    arguments as `fun`, but returns the gradient instead. The function `fun`
+    should be scalar-valued. The gradient has the same type as the argument."""
+    @attach_name_and_doc(fun, argnum, 'Gradient')
     def gradfun(*args,**kwargs):
         return backward_pass(*forward_pass(fun,args,kwargs,argnum))
+    return gradfun
 
-    try:
-        gradfun.__name__ = "grad_{fun}_wrt_argnum_{argnum}".format(fun=fun.__name__, argnum=argnum)
-        gradfun.__doc__ = "Gradient of function {fun} with respect to argument number {argnum}. " \
-                          "Has the same arguments as {fun} but the return value has type of" \
-                          "argument {argnum}".format(fun=fun.__name__, argnum=argnum)
-    except:
-        pass
+def jacobian(fun, argnum=0):
+    """
+    Returns a function which computes the Jacobian of `fun` with respect to
+    positional argument number `argnum`, which must be a scalar or array. Unlike
+    `grad` it is not restricted to scalar-output functions, but also it cannot
+    take derivatives with respect to some argument types (like lists or dicts).
+    If the input to `fun` has shape (in1, in2, ...) and the output has shape
+    (out1, out2, ...) then the Jacobian has shape (out1, out2, ..., in1, in2, ...).
+    """
+    dummy = lambda: None
 
+    def getshape(val):
+        val = getval(val)
+        assert np.isscalar(val) or isinstance(val, np.ndarray), \
+            'Jacobian requires input and output to be scalar- or array-valued'
+        return () if np.isscalar(val) else val.shape
+
+    def list_fun(*args, **kwargs):
+        val = fun(*args, **kwargs)
+        dummy.outshape = getshape(val)
+        return list(np.ravel(val))
+
+    concatenate = lambda lst: np.concatenate(map(np.atleast_1d, lst))
+
+    @attach_name_and_doc(fun, argnum, 'Jacobian')
+    def gradfun(*args, **kwargs):
+        start_node, end_nodes, tape = forward_pass(list_fun, args, kwargs, argnum)
+        grads = map(partial(backward_pass, start_node, tape=tape), end_nodes)
+        shape = dummy.outshape + getshape(args[argnum])
+        return np.reshape(concatenate(grads), shape) if shape else grads[0]
     return gradfun
 
 def forward_pass(fun, args, kwargs, argnum=0):
@@ -39,15 +64,20 @@ def backward_pass(start_node, end_node, tape):
     if not isinstance(end_node, Node) or tape not in end_node.tapes:
         warnings.warn("Output seems independent of input. Returning zero gradient.")
         return zeros_like(start_node)
-    if not type(end_node) is FloatNode:
+    if type(end_node) is not FloatNode:
         try:
             end_node = FloatNode.cast(end_node, 1.0)
         except TypeError:
             raise TypeError("Output type {0} can't be cast to float. ".format(type(end_node.value))
                             + "Function grad requires a scalar-valued function. "
                               "Try jacobian or elementwise_grad.")
+
+    for node in tape:
+        node.outgrads = []
     end_node.tapes[tape].outgrads = [1.0]
+
     tape.complete = True
+    tape = copy.copy(tape)
     while tape:
         node = tape.pop()
         if node.outgrads:
@@ -58,6 +88,21 @@ def backward_pass(start_node, end_node, tape):
                 og = cast_to_node_type(gradfun(cur_outgrad), parent.node_type, parent.node_value)
                 parent.outgrads.append(og)
     return cur_outgrad
+
+def attach_name_and_doc(fun, argnum, opname):
+    namestr = "{op}_{fun}_wrt_argnum_{argnum}".format(
+        op=opname.lower(), fun=fun.__name__, argnum=argnum)
+    docstr = "{op} of function {fun} with respect to argument number {argnum}. " \
+        "Has the same arguments as {fun} but the return value has type of" \
+        "argument {argnum}".format(op=opname, fun=fun.__name__, argnum=argnum)
+
+    def wrap(gradfun):
+        try:
+            gradfun.__name__ = namestr
+            gradfun.__doc__ = docstr
+        finally:
+            return gradfun
+    return wrap
 
 def cast_to_node_type(x, node_type, example):
     if type(new_node(getval(x))) is not node_type:
@@ -93,7 +138,7 @@ class primitive(object):
 
     def defgrads(self, gradmaker, argnums):
         for argnum in argnums:
-            self.defgrad(functools.partial(gradmaker, argnum), argnum)
+            self.defgrad(partial(gradmaker, argnum), argnum)
 
     def defgrad_is_zero(self, argnums=(0,)):
         for argnum in argnums:
