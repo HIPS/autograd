@@ -38,10 +38,10 @@ else:
 
 setup(
     name='autograd',
-    version='1.0.9',
+    version='1.1.0',
     description='Efficiently computes derivatives of numpy code.',
-    author='Dougal Maclaurin and David Duvenaud',
-    author_email="maclaurin@physics.harvard.edu, dduvenaud@seas.harvard.edu",
+    author='Dougal Maclaurin and David Duvenaud and Matthew Johnson',
+    author_email="maclaurin@physics.harvard.edu, dduvenaud@seas.harvard.edu, mattjj@mit.edu",
     packages=['autograd', 'autograd.numpy', 'autograd.scipy', 'autograd.scipy.stats'],
     install_requires=['numpy>=1.9', 'six'],
     setup_requires=['numpy>=1.9'],

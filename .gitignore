@@ -9,3 +9,4 @@ dist/
 MANIFEST
 *.so
 *.c
+autograd.egg-info/
