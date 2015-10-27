@@ -2,14 +2,16 @@ from __future__ import absolute_import
 from setuptools import setup, Extension
 from setuptools.command.build_ext import build_ext as _build_ext
 from distutils.errors import CompileError
+from Cython.Compiler.Errors import CompileError as CythonCompileError
 from warnings import warn
+import os
 
 try:
     from Cython.Distutils import build_ext as _build_ext
 except ImportError:
     use_cython = False
 else:
-    use_cython = True
+    use_cython = os.getenv('USE_CYTHON', False)
 
 class build_ext(_build_ext):
     # see http://stackoverflow.com/q/19919905 for explanation
@@ -24,17 +26,20 @@ class build_ext(_build_ext):
         try:
             _build_ext.run(self)
         except CompileError:
-            warn('Failed to build optional extension modules')
+            warn('Failed to compile optional extension modules')
+
+extensions = [
+    Extension(
+        'autograd.numpy.linalg_extra', ['autograd/numpy/linalg_extra.c'],
+        extra_compile_args=['-w','-Ofast']),
+]
 
 if use_cython:
     from Cython.Build import cythonize
-    extensions = cythonize('**/*.pyx')
-else:
-    extensions = [
-        Extension(
-            'autograd.numpy.linalg_extra', ['autograd/numpy/linalg_extra.c'],
-            extra_compile_args=['-w','-Ofast']),
-    ]
+    try:
+        extensions = cythonize('**/*.pyx')
+    except CythonCompileError:
+        warn('Failed to generate extension module code from Cython file')
 
 setup(
     name='autograd',
