@@ -42,7 +42,7 @@ if use_cython:
 
 setup(
     name='autograd',
-    version='1.1.0',
+    version='1.1.1',
     description='Efficiently computes derivatives of numpy code.',
     author='Dougal Maclaurin and David Duvenaud and Matthew Johnson',
     author_email="maclaurin@physics.harvard.edu, dduvenaud@seas.harvard.edu, mattjj@csail.mit.edu",
