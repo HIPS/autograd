@@ -214,6 +214,11 @@ class Node(object):
             tape.append(new_rnode)
             self.tapes[tape] = new_rnode
 
+    def __bool__(self):
+        return bool(self.value)
+
+    __nonzero__ = __bool__
+
     @staticmethod
     def sum_outgrads(outgrads):
         return sum(outgrads[1:], outgrads[0])
