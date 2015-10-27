@@ -2,7 +2,6 @@ from __future__ import absolute_import
 from setuptools import setup, Extension
 from setuptools.command.build_ext import build_ext as _build_ext
 from distutils.errors import CompileError
-from Cython.Compiler.Errors import CompileError as CythonCompileError
 from warnings import warn
 import os
 
@@ -38,7 +37,7 @@ if use_cython:
     from Cython.Build import cythonize
     try:
         extensions = cythonize('**/*.pyx')
-    except CythonCompileError:
+    except:
         warn('Failed to generate extension module code from Cython file')
 
 setup(
