@@ -120,14 +120,18 @@ def test_eigvalh_upper():
     check_grads(d_fun, hmat)
 
 def test_cholesky():
+    # we write a test function that explicitly symmetrizes because otherwise
+    # cholesky only reads from the lower triangle and hence the numerical
+    # gradient is lower triangular
+    def symmetrize(A):
+        L = np.tril(A)
+        return (L + L.T)/2.
     def fun(A):
-        return to_scalar(np.linalg.cholesky(A))
-    d_fun = lambda A: to_scalar(grad(fun)(A))
+        return to_scalar(np.linalg.cholesky(symmetrize(A)))
     def rand_psd(D):
         mat = npr.randn(D,D)
         return np.dot(mat, mat.T)
     check_grads(fun, rand_psd(6))
-    # check_grads(d_fun, rand_psd(6))
 
 def test_sqrtm():
     def fun(A):

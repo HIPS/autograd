@@ -82,7 +82,7 @@ def make_grad_cholesky(L, A):
             dL[k+1:,k] /= L[k,k]
             dL[k,k] -= anp.dot(dL[k+1:,k], L[k+1:,k])
             dL[k,k] /= 2 * L[k,k]
-        return dL
+        return (dL + dL.T)/2.
 
     try:
         from .linalg_extra import cholesky_grad as cython_cholesky_grad
