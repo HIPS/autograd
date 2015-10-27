@@ -57,6 +57,8 @@ anp.iscomplex.defgrad_is_zero()
 anp.nan_to_num.defgrad_is_zero()
 anp.size.defgrad_is_zero()
 anp.where.defgrad_is_zero(argnums=(0,))
+anp.isscalar.defgrad_is_zero()
+anp.isreal.defgrad_is_zero()
 
 # ----- Binary ufuncs -----
 
