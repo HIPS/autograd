@@ -4,9 +4,8 @@ import operator as op
 from autograd.core import getval
 from . import numpy_wrapper as anp
 from .numpy_extra import ArrayNode, take
-import six
-from six.moves import range
-from six.moves import zip
+from builtins import range, zip
+from future.utils import string_types
 
 # ----- Functions that are constant w.r.t. continuous inputs -----
 
@@ -345,7 +344,7 @@ anp.atleast_3d.defgrad(make_grad_reshape_list)
 def make_grad_einsum(argnum, ans, operands, kwargs):
     # Gradient of einsum is obtained by swapping outgrad with the argument
     # being differentiated wrt.
-    if isinstance(operands[0], six.string_types):  # using "ijk" convention.
+    if isinstance(operands[0], string_types):  # using "ijk" convention.
         subscripts, operands = operands[0], operands[1:]
         if not '->' in subscripts:
             raise NotImplementedError("Need indices on both sides.")

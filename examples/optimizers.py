@@ -6,7 +6,7 @@
 from __future__ import absolute_import
 
 import autograd.numpy as np
-from six.moves import range
+from builtins import range
 
 
 def sgd(grad, x, callback=None, num_iters=200, step_size=0.1, mass=0.9):

@@ -5,7 +5,7 @@ import autograd.numpy as np
 import autograd.numpy.random as npr
 from time import time
 from contextlib import contextmanager
-from six.moves import range
+from builtins import range
 
 @contextmanager
 def tictoc(text=""):

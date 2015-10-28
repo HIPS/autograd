@@ -146,15 +146,15 @@ def test_swapaxes(): combo_check(np.swapaxes, [0], [R(3,4,5)], axis1=[0, 1, 2], 
 def test_cross():    combo_check(np.cross, [0, 1], [R(3,3)], [R(3,3)],
                                  axisa=[-1, 0, 1], axisb=[-1, 0, 1], axisc=[-1, 0, 1], axis=[None, -1, 0, 1])
 
-def test_vsplit_2d(): combo_check(np.vsplit, [0], [R(4, 8)],    [4, [2, 2]])
-def test_vsplit_3d(): combo_check(np.vsplit, [0], [R(4, 4, 4)], [2, [2, 2]])
-def test_hsplit_2d(): combo_check(np.hsplit, [0], [R(4, 8)],    [4, [2, 2]])
-def test_hsplit_3d(): combo_check(np.hsplit, [0], [R(4, 4, 4)], [2, [2, 2]])
-def test_dsplit_3d(): combo_check(np.dsplit, [0], [R(4, 4, 4)], [2, [2, 2]])
+def test_vsplit_2d(): combo_check(np.vsplit, [0], [R(4, 8)],    [4, [1, 2]])
+def test_vsplit_3d(): combo_check(np.vsplit, [0], [R(4, 4, 4)], [2, [1, 2]])
+def test_hsplit_2d(): combo_check(np.hsplit, [0], [R(4, 8)],    [4, [1, 2]])
+def test_hsplit_3d(): combo_check(np.hsplit, [0], [R(4, 4, 4)], [2, [1, 2]])
+def test_dsplit_3d(): combo_check(np.dsplit, [0], [R(4, 4, 4)], [2, [1, 2]])
 
 def test_split_1d(): combo_check(np.split, [0], [R(1), R(7)], [1],         axis=[0])
-def test_split_2d(): combo_check(np.split, [0], [R(4, 8)],    [4, [2, 2]], axis=[0, 1])
-def test_split_3d(): combo_check(np.split, [0], [R(4, 4, 4)], [2, [2, 2]], axis=[0, 1, 2])
+def test_split_2d(): combo_check(np.split, [0], [R(4, 8)],    [4, [1, 2]], axis=[0, 1])
+def test_split_3d(): combo_check(np.split, [0], [R(4, 4, 4)], [2, [1, 2]], axis=[0, 1, 2])
 
 def test_array_split_1d(): combo_check(np.array_split, [0], [R(1), R(7)], [1, 3],      axis=[0])
 def test_array_split_2d(): combo_check(np.array_split, [0], [R(7, 7)],    [4, [3, 5]], axis=[0, 1])

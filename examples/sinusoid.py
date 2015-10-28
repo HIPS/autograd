@@ -3,8 +3,7 @@ from __future__ import print_function
 import autograd.numpy as np
 import matplotlib.pyplot as plt
 from autograd import grad
-from six.moves import map
-from six.moves import range
+from builtins import range, map
 
 def fun(x):
     return np.sin(x)

@@ -5,7 +5,7 @@ import autograd.numpy.random as npr
 from autograd import value_and_grad
 from autograd.util import quick_grad_check
 from scipy.optimize import minimize
-from six.moves import range
+from builtins import range
 
 class WeightsParser(object):
     """A helper class to index into a parameter vector."""

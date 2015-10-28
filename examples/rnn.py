@@ -6,7 +6,7 @@ from autograd import value_and_grad
 from autograd.util import quick_grad_check
 from scipy.optimize import minimize
 from os.path import dirname, join
-from six.moves import range
+from builtins import range
 
 lstm_filename = join(dirname(__file__), 'lstm.py')
 

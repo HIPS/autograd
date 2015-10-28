@@ -5,6 +5,8 @@ import autograd.numpy.random as npr
 import autograd.scipy.linalg as spla
 from autograd.util import *
 from autograd import grad
+from builtins import range
+
 npr.seed(1)
 
 def test_inv():
@@ -84,7 +86,7 @@ def test_vector_norm_ord():
         def fun(x): return np.linalg.norm(x, ord=ord)
         vec = npr.randn(size)
         check_grads(fun, vec)
-    for ord in xrange(2,5):
+    for ord in range(2,5):
         yield helper, 6, ord
 
 def test_norm_axis():
@@ -92,7 +94,7 @@ def test_norm_axis():
         def fun(x): return to_scalar(np.linalg.norm(x, axis=axis))
         arr = npr.randn(*shape)
         check_grads(fun, arr)
-    for axis in xrange(3):
+    for axis in range(3):
         yield helper, (6,5,4), axis
 
 def test_eigvalh_lower():

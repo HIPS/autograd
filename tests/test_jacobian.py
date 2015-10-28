@@ -4,6 +4,8 @@ import autograd.numpy.random as npr
 from autograd.util import *
 from autograd import grad, jacobian
 from autograd.convenience_wrappers import jacobian as old_jacobian
+from builtins import map
+
 npr.seed(1)
 
 

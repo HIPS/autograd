@@ -4,6 +4,7 @@ import numpy.linalg as npla
 from .numpy_wrapper import wrap_namespace, dot
 from . import numpy_wrapper as anp
 from ..core import primitive
+from builtins import range
 
 wrap_namespace(npla.__dict__, globals())
 
@@ -75,7 +76,7 @@ def make_grad_cholesky(L, A):
     def cholesky_grad_python(g):
         dL = anp.tril(g)
         dL[-1,-1] /= 2 * L[-1,-1]
-        for k in xrange(N-2, -1, -1):
+        for k in range(N-2, -1, -1):
             dL[k+1:,k] -= dsymv(1., dL[k+1:,k+1:], L[k+1:,k], lower=True)
             dL[k+1:,k] -= anp.diag(dL[k+1:,k+1:]) * L[k+1:,k]
             dL[k+1:,k] /= L[k,k]

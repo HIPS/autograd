@@ -9,7 +9,7 @@ from scipy.misc import imread
 import matplotlib
 import matplotlib.pyplot as plt
 import os
-from six.moves import range
+from builtins import range
 
 # Fluid simulation code based on
 # "Real-Time Fluid Dynamics for Games" by Jos Stam

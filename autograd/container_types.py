@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from autograd.core import primitive, Node, getval, zeros_like, cast
-from six.moves import zip
-import six
+from builtins import zip
+from future.utils import iteritems
 
 
 class TupleNode(Node):
@@ -98,7 +98,7 @@ class DictNode(Node):
 
     @staticmethod
     def zeros_like(self):
-        return {k : zeros_like(v) for k, v in six.iteritems(getval(self))}
+        return {k : zeros_like(v) for k, v in iteritems(getval(self))}
 
     @staticmethod
     def sum_outgrads(outgrads):

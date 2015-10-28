@@ -2,7 +2,7 @@ from __future__ import absolute_import
 import autograd.numpy as np
 import matplotlib.pyplot as plt
 from autograd import grad
-from six.moves import map
+from builtins import map
 
 def tanh(x):
     return (1.0 - np.exp(-x))  / ( 1.0 + np.exp(-x))
