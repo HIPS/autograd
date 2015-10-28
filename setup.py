@@ -5,6 +5,7 @@ from distutils.errors import CompileError
 from warnings import warn
 import os
 
+# use cython if it is importable and the environment has USE_CYTHON
 try:
     from Cython.Distutils import build_ext as _build_ext
 except ImportError:
@@ -12,6 +13,7 @@ except ImportError:
 else:
     use_cython = os.getenv('USE_CYTHON', False)
 
+# subclass the build_ext command to handle numpy include and build failures
 class build_ext(_build_ext):
     # see http://stackoverflow.com/q/19919905 for explanation
     def finalize_options(self):
@@ -27,12 +29,14 @@ class build_ext(_build_ext):
         except CompileError:
             warn('Failed to compile optional extension modules')
 
+# list the extension files to build
 extensions = [
     Extension(
         'autograd.numpy.linalg_extra', ['autograd/numpy/linalg_extra.c'],
         extra_compile_args=['-w','-Ofast']),
 ]
 
+# if using cython, regenerate the extension files from the .pyx sources
 if use_cython:
     from Cython.Build import cythonize
     try:
