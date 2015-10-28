@@ -1,13 +1,6 @@
 cache: apt
 sudo: false
 language: python
-addons:
-  apt:
-    packages:
-    - libatlas-dev
-    - libatlas-base-dev
-    - liblapack-dev
-    - gfortran
 python:
   - "2.7"
   - "3.4"

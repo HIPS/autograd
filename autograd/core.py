@@ -42,7 +42,7 @@ def jacobian(fun, argnum=0):
         dummy.outshape = getshape(val)
         return list(np.ravel(val))
 
-    concatenate = lambda lst: np.concatenate(map(np.atleast_1d, lst))
+    concatenate = lambda lst: np.concatenate(list(map(np.atleast_1d, lst)))
 
     @attach_name_and_doc(fun, argnum, 'Jacobian')
     def gradfun(*args, **kwargs):

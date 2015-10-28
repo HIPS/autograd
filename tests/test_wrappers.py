@@ -4,6 +4,8 @@ import autograd.numpy.random as npr
 from autograd.util import *
 from autograd import (grad, elementwise_grad, jacobian, value_and_grad,
                       grad_and_aux, hessian_vector_product, hessian, multigrad)
+from builtins import range
+
 npr.seed(1)
 
 def test_hessian():
@@ -43,7 +45,7 @@ def test_elementwise_grad():
     A = npr.randn(10)
 
     exact = elementwise_grad(simple_fun)(A)
-    numeric = np.squeeze(np.array([nd(simple_fun, A[i]) for i in xrange(len(A))]))
+    numeric = np.squeeze(np.array([nd(simple_fun, A[i]) for i in range(len(A))]))
     check_equivalent(exact, numeric)
 
 
@@ -56,5 +58,5 @@ def test_elementwise_grad_multiple_args():
     argnum = 1
 
     exact = elementwise_grad(simple_fun, argnum=argnum)(A, B)
-    numeric = np.squeeze(np.array([nd(simple_fun, A, B[i])[argnum] for i in xrange(len(B))]))
+    numeric = np.squeeze(np.array([nd(simple_fun, A, B[i])[argnum] for i in range(len(B))]))
     check_equivalent(exact, numeric)
