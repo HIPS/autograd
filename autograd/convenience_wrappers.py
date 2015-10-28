@@ -4,7 +4,7 @@ import itertools as it
 
 import autograd.numpy as np
 from autograd.core import grad, getval
-from six.moves import map
+from builtins import map
 
 
 def multigrad(fun, argnums=0):

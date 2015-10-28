@@ -3,7 +3,7 @@ from __future__ import print_function
 import autograd.numpy as np
 from autograd import grad
 from autograd.util import quick_grad_check
-from six.moves import range
+from builtins import range
 
 def sigmoid(x):
     return 0.5*(np.tanh(x) + 1)

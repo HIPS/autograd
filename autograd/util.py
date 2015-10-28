@@ -6,10 +6,8 @@ from autograd.core import grad, safe_type
 from copy import copy
 from autograd.numpy.use_gpu_numpy import use_gpu_numpy
 from autograd.container_types import ListNode, TupleNode
-import six
-from six.moves import map
-from six.moves import range
-from six.moves import zip
+from builtins import map, range, zip
+from future.utils import iteritems
 
 if use_gpu_numpy():
     garray_obj = np.garray
@@ -39,7 +37,7 @@ def unary_nd(f, x, eps=EPS):
         return tuple([unary_nd(indexed_function(f, tuple(x), i), x[i])
                       for i in range(len(x))])
     elif isinstance(x, dict):
-        return {k : unary_nd(indexed_function(f, x, k), v) for k, v in six.iteritems(x)}
+        return {k : unary_nd(indexed_function(f, x, k), v) for k, v in iteritems(x)}
     elif isinstance(x, list):
         return [unary_nd(indexed_function(f, x, i), v) for i, v in enumerate(x)]
     elif np.iscomplexobj(x):

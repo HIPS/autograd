@@ -47,7 +47,7 @@ setup(
     author='Dougal Maclaurin and David Duvenaud and Matthew Johnson',
     author_email="maclaurin@physics.harvard.edu, dduvenaud@seas.harvard.edu, mattjj@csail.mit.edu",
     packages=['autograd', 'autograd.numpy', 'autograd.scipy', 'autograd.scipy.stats'],
-    install_requires=['numpy>=1.9', 'six'],
+    install_requires=['numpy>=1.9', 'future'],
     setup_requires=['numpy>=1.9'],
     keywords=['Automatic differentiation', 'backpropagation', 'gradients',
               'machine learning', 'optimization', 'neural networks',

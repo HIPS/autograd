@@ -5,16 +5,16 @@ import numpy as np
 from collections import defaultdict
 import types
 import inspect
-import six
+from future.utils import iteritems
 
 heading = lambda x : "-"*20 + str(x) + "-"*20
 
 np_types = defaultdict(list)
-for name, obj in six.iteritems(np.__dict__):
+for name, obj in iteritems(np.__dict__):
     np_types[type(obj)].append(name)
 
 print("Objects in numpy namespace by type:")
-for t, vals in six.iteritems(np_types):
+for t, vals in iteritems(np_types):
     print(heading(t))
     print(vals)
 print("="*80)

@@ -8,7 +8,7 @@ import autograd.numpy.random as npr
 import autograd.scipy.signal
 from autograd import grad
 from autograd.util import quick_grad_check
-from six.moves import range
+from builtins import range
 
 convolve = autograd.scipy.signal.convolve
 

@@ -3,7 +3,7 @@ import numpy.fft as ffto
 from .numpy_wrapper import wrap_namespace
 from . import numpy_wrapper as anp
 from autograd.core import primitive
-from six.moves import zip
+from builtins import zip
 
 wrap_namespace(ffto.__dict__, globals())
 

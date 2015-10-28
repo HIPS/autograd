@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+import sys
 import warnings
 import copy
 import operator as op
@@ -6,7 +7,7 @@ import types
 import math
 import numpy as np
 from functools import partial
-import six
+from future.utils import iteritems
 
 def grad(fun, argnum=0):
     """
@@ -152,7 +153,7 @@ class primitive(object):
             if isinstance(arg, Node):
                 argvals[i] = arg.value
                 if i in self.zero_grads: continue
-                for tape, parent_rnode in six.iteritems(arg.tapes):
+                for tape, parent_rnode in iteritems(arg.tapes):
                     if not tape.complete:
                         ops.append((tape, i, parent_rnode))
                         tapes.add(tape)
@@ -167,7 +168,7 @@ class primitive(object):
                 rnode.parent_grad_ops.append((gradfun, parent))
         return result
 
-    if six.PY3:
+    if sys.version_info >= (3,):
         def __get__(self, obj, objtype):
             return types.MethodType(self, obj)
     else:
@@ -279,7 +280,7 @@ def safe_type(value):
     else:
         return value
 
-if six.PY3:
+if sys.version_info >= (3,):
     DIV = '__truediv__'
     RDIV = '__rtruediv__'
 else:

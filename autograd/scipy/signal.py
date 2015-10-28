@@ -5,9 +5,8 @@ import autograd.numpy as np
 import numpy as npo # original numpy
 import itertools as it
 from numpy.lib.stride_tricks import as_strided
-import six
-from six.moves import range
-from six.moves import zip
+from builtins import range, zip
+from future.utils import iteritems
 
 def prod(x):
     return npo.prod(x, dtype=int)
@@ -84,8 +83,8 @@ def parse_axes(A_shape, B_shape, conv_axes, dot_axes, mode):
                    'conv'     : list(range(i2, i3))}
     conv_shape = [compute_conv_size(A_shape[i], B_shape[j], mode)
                   for i, j in zip(axes['A']['conv'], axes['B']['conv'])]
-    shapes = {'A'   : {s : [A_shape[i] for i in ax] for s, ax in six.iteritems(axes['A'])},
-              'B'   : {s : [B_shape[i] for i in ax] for s, ax in six.iteritems(axes['B'])}}
+    shapes = {'A'   : {s : [A_shape[i] for i in ax] for s, ax in iteritems(axes['A'])},
+              'B'   : {s : [B_shape[i] for i in ax] for s, ax in iteritems(axes['B'])}}
     shapes['out'] = {'ignore_A' : shapes['A']['ignore'],
                      'ignore_B' : shapes['B']['ignore'],
                      'conv'     : conv_shape}

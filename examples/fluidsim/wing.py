@@ -7,7 +7,7 @@ from scipy.optimize import minimize
 
 import matplotlib.pyplot as plt
 import os
-from six.moves import range
+from builtins import range
 
 rows, cols = 40, 60
 
