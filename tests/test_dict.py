@@ -3,6 +3,7 @@ import autograd.numpy.random as npr
 from autograd.util import check_grads
 from autograd import grad
 
+npr.seed(0)
 
 def test_getter():
     def fun(input_dict):
@@ -43,7 +44,7 @@ def test_grads():
 
 def test_iter():
     def fun(input_dict):
-        for i, k in enumerate(input_dict):
+        for i, k in enumerate(sorted(input_dict)):
             A = np.sum(np.sin(input_dict[k])) * (i + 1.0)
             B = np.sum(np.cos(input_dict[k]))
         return A + B
