@@ -27,4 +27,4 @@ def cholesky_grad(floating[:,:] L, floating[:,:] dL):
     cdef double[::1,:] _dL = np.require(np.tril(dL), np.double, 'F')
     cdef double[::1,:] _L = np.require(L, np.double, 'F')
     _cholesky_grad(_L, _dL)
-    return np.asarray(_dL)
+    return (np.asarray(_dL) + np.asarray(_dL).T)/2.

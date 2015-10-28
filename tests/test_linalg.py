@@ -9,6 +9,13 @@ from builtins import range
 
 npr.seed(1)
 
+def check_symmetric_matrix_grads(fun, *args):
+    def symmetrize(A):
+        L = np.tril(A)
+        return (L + L.T)/2.
+    new_fun = lambda *args: fun(symmetrize(args[0]), *args[1:])
+    return check_grads(new_fun, *args)
+
 def test_inv():
     def fun(x): return to_scalar(np.linalg.inv(x))
     d_fun = lambda x : to_scalar(grad(fun)(x))
@@ -122,12 +129,10 @@ def test_eigvalh_upper():
 def test_cholesky():
     def fun(A):
         return to_scalar(np.linalg.cholesky(A))
-    d_fun = lambda A: to_scalar(grad(fun)(A))
     def rand_psd(D):
         mat = npr.randn(D,D)
         return np.dot(mat, mat.T)
-    check_grads(fun, rand_psd(6))
-    # check_grads(d_fun, rand_psd(6))
+    check_symmetric_matrix_grads(fun, rand_psd(6))
 
 def test_sqrtm():
     def fun(A):
@@ -135,7 +140,7 @@ def test_sqrtm():
     def rand_psd(D):
         mat = npr.randn(D,D)
         return np.dot(mat, mat.T)
-    check_grads(fun, rand_psd(6))
+    check_symmetric_matrix_grads(fun, rand_psd(6))
 
 def test_solve_triangular_arg1():
     D = 6
