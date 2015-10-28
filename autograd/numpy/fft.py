@@ -25,7 +25,7 @@ ifftshift.defgrad(lambda ans, x, axes=None : lambda g : anp.conj(fftshift(anp.co
 def truncate_pad(x, shape):
     # truncate/pad x to have the appropriate shape
     slices = [slice(n) for n in shape]
-    pads = list(zip(anp.zeros(len(shape)),
+    pads = list(zip(anp.zeros(len(shape), dtype=int),
                anp.maximum(0, anp.array(shape) - anp.array(x.shape))))
     return anp.pad(x, pads, 'constant')[slices]
 truncate_pad.defgrad(lambda ans, x, shape: lambda g: truncate_pad(g, x.shape))
