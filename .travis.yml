@@ -15,6 +15,6 @@ before_install:
   - export PATH="$HOME/miniconda/bin:$PATH"
   - conda update --yes conda
 install:
-  - conda install --yes python=$TRAVIS_PYTHON_VERSION pip numpy=1.9.3 scipy cython nose future
+  - conda install --yes python=$TRAVIS_PYTHON_VERSION pip numpy scipy cython nose future
   - pip install -v .
 script: nosetests tests
