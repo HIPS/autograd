@@ -142,6 +142,11 @@ def test_einsum2_three_args(): combo_check(np.einsum, [0, 2],
 def test_trace():    combo_check(np.trace, [0], [R(5, 5), R(4, 5), R(5, 4), R(3, 4, 5)], offset=[-1, 0, 1])
 def test_diag():     combo_check(np.diag, [0], [R(5, 5)], k=[-1, 0, 1])
 def test_diag_flat():combo_check(np.diag, [0], [R(5)],    k=[-1, 0, 1])
+def test_tril():     combo_check(np.tril, [0], [R(5, 5)], k=[-1, 0, 1])
+def test_triu():     combo_check(np.tril, [0], [R(5, 5)], k=[-1, 0, 1])
+def test_tril_3d():  combo_check(np.tril, [0], [R(5, 5, 4)], k=[-1, 0, 1])
+def test_triu_3d():  combo_check(np.tril, [0], [R(5, 5, 4)], k=[-1, 0, 1])
+
 def test_swapaxes(): combo_check(np.swapaxes, [0], [R(3,4,5)], axis1=[0, 1, 2], axis2=[0, 1, 2])
 def test_cross():    combo_check(np.cross, [0, 1], [R(3,3)], [R(3,3)],
                                  axisa=[-1, 0, 1], axisb=[-1, 0, 1], axisc=[-1, 0, 1], axis=[None, -1, 0, 1])
