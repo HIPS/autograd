@@ -32,6 +32,9 @@ def test_mvn_pdf():    combo_check(mvn.logpdf, [0, 1, 2], [R(4)], [R(4)], [make_
 def test_mvn_logpdf(): combo_check(mvn.logpdf, [0, 1, 2], [R(4)], [R(4)], [make_psd(R(4, 4))])
 def test_mvn_entropy():combo_check(mvn.entropy,[0, 1],            [R(4)], [make_psd(R(4, 4))])
 
+def test_mvn_pdf_broadcast():    combo_check(mvn.logpdf, [0, 1, 2], [R(5, 4)], [R(4)], [make_psd(R(4, 4))])
+def test_mvn_logpdf_broadcast(): combo_check(mvn.logpdf, [0, 1, 2], [R(5, 4)], [R(4)], [make_psd(R(4, 4))])
+
 alpha = npr.random(4)**2 + 1.2
 x = stats.dirichlet.rvs(alpha, size=1)[0,:]
 
