@@ -16,6 +16,10 @@ def check_symmetric_matrix_grads(fun, *args):
     new_fun = lambda *args: fun(symmetrize(args[0]), *args[1:])
     return check_grads(new_fun, *args)
 
+def rand_psd(D):
+    mat = npr.randn(D,D)
+    return np.dot(mat, mat.T)
+
 def test_inv():
     def fun(x): return to_scalar(np.linalg.inv(x))
     d_fun = lambda x : to_scalar(grad(fun)(x))
@@ -129,17 +133,18 @@ def test_eigvalh_upper():
 def test_cholesky():
     def fun(A):
         return to_scalar(np.linalg.cholesky(A))
-    def rand_psd(D):
-        mat = npr.randn(D,D)
-        return np.dot(mat, mat.T)
+    check_symmetric_matrix_grads(fun, rand_psd(6))
+
+def test_cholesky_reparameterization_trick():
+    def fun(A):
+        rng = np.random.RandomState(0)
+        z = np.dot(np.linalg.cholesky(A), rng.randn(A.shape[0]))
+        return np.linalg.norm(z)
     check_symmetric_matrix_grads(fun, rand_psd(6))
 
 def test_sqrtm():
     def fun(A):
         return to_scalar(spla.sqrtm(A))
-    def rand_psd(D):
-        mat = npr.randn(D,D)
-        return np.dot(mat, mat.T)
     check_symmetric_matrix_grads(fun, rand_psd(6))
 
 def test_solve_triangular_arg1():
