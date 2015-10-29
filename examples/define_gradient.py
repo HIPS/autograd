@@ -11,7 +11,7 @@ from autograd.util import quick_grad_check
 
 
 # @primitive tells autograd not to look inside this function, but instead
-# to treat it as a black box, whose gradient might be specified# later.
+# to treat it as a black box, whose gradient might be specified later.
 # Functions with this decorator can contain anything that Python knows
 # how to execute.
 @primitive
