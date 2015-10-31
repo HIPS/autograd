@@ -17,7 +17,7 @@ def make_gp_funs(cov_func, num_cov_params):
     def unpack_params(params):
         mean        = params[0]
         cov_params  = params[2:]
-        noise_scale = np.exp(params[1])
+        noise_scale = np.exp(params[1]) + 0.001
         return mean, cov_params, noise_scale
 
     def predict(params, x, y, xstar):
@@ -39,9 +39,16 @@ def make_gp_funs(cov_func, num_cov_params):
 
     return num_cov_params + 2, predict, log_marginal_likelihood
 
+# Define an example covariance function.
+def rbf_covariance(kernel_params, x, xp):
+    output_scale = np.exp(kernel_params[0])
+    lengthscales = np.exp(kernel_params[1:])
+    diffs = np.expand_dims(x /lengthscales, 1)\
+          - np.expand_dims(xp/lengthscales, 0)
+    return output_scale * np.exp(-0.5 * np.sum(diffs**2, axis=2))
 
-def build_toy_dataset(n_data=20, noise_std=0.1):
-    D = 1
+
+def build_toy_dataset(D=1, n_data=20, noise_std=0.1):
     rs = npr.RandomState(0)
     inputs  = np.concatenate([np.linspace(0, 3, num=n_data/2),
                               np.linspace(6, 8, num=n_data/2)])
@@ -55,19 +62,11 @@ if __name__ == '__main__':
 
     D = 1
 
-    # Define covariance function.
-    def rbf_covariance(kernel_params, x, xp):
-        lengthscales = np.exp(kernel_params[0])
-        output_scale = np.exp(kernel_params[1:])
-        diffs = np.expand_dims(x /lengthscales, 1)\
-              - np.expand_dims(xp/lengthscales, 0)
-        return output_scale * np.exp(-0.5 * np.sum(diffs**2, axis=2))
-
     # Build model and objective function.
     num_params, predict, log_marginal_likelihood = \
         make_gp_funs(rbf_covariance, num_cov_params=D + 1)
 
-    X, y = build_toy_dataset()
+    X, y = build_toy_dataset(D=D)
     objective = lambda params: -log_marginal_likelihood(params, X, y)
 
     # Set up figure.
