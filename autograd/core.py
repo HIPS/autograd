@@ -35,7 +35,7 @@ def jacobian(fun, argnum=0):
         val = getval(val)
         assert np.isscalar(val) or isinstance(val, np.ndarray), \
             'Jacobian requires input and output to be scalar- or array-valued'
-        return () if np.isscalar(val) else val.shape
+        return np.shape(val)
 
     def list_fun(*args, **kwargs):
         val = fun(*args, **kwargs)
