@@ -29,6 +29,14 @@ def test_inv():
     check_grads(fun, mat)
     check_grads(d_fun, mat)
 
+def test_inv_3d():
+    fun = lambda x: to_scalar(np.linalg.inv(x))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    D = 4
+    mat = npr.randn(D, D, D) + 5*np.eye(D)
+    check_grads(fun, mat)
+    check_grads(d_fun, mat)
+
 def test_solve_arg1():
     D = 8
     A = npr.randn(D, D) + 10.0 * np.eye(D)
@@ -82,6 +90,14 @@ def test_det():
     check_grads(fun, mat)
     check_grads(d_fun, mat)
 
+def test_det_3d():
+    fun = lambda x: to_scalar(np.linalg.det(x))
+    d_fun = lambda x: to_scalar(grad(fun)(x))
+    D = 3
+    mat = npr.randn(D, D, D)
+    check_grads(fun, mat)
+    check_grads(d_fun, mat)
+
 def test_slogdet():
     def fun(x):
         sign, logdet = np.linalg.slogdet(x)
@@ -89,6 +105,14 @@ def test_slogdet():
     d_fun = lambda x : to_scalar(grad(fun)(x))
     D = 6
     mat = npr.randn(D, D)
+    check_grads(fun, mat)
+    check_grads(fun, -mat)
+    check_grads(d_fun, mat)
+
+def test_slogdet_3d():
+    fun = lambda x: np.sum(np.linalg.slogdet(x)[1])
+    d_fun = lambda x: to_scalar(grad(fun)(x))
+    mat = np.concatenate([(rand_psd(5) + 5*np.eye(5))[None,...] for _ in range(3)])
     check_grads(fun, mat)
     check_grads(d_fun, mat)
 

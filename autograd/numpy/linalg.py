@@ -13,12 +13,22 @@ wrap_namespace(npla.__dict__, globals())
 #  for forward and reverse mode algorithmic differentiation"
 # by Mike Giles
 # https://people.maths.ox.ac.uk/gilesm/files/NA-08-01.pdf
-inv.defgrad(    lambda ans, x    : lambda g : -dot(dot(ans.T, g), ans.T))
-det.defgrad(    lambda ans, x    : lambda g : g * ans * inv(x).T)
-slogdet.defgrad(lambda ans, x    : lambda g : g[1] * inv(x).T)
+
+# transpose by swappling last two dimensions
+T = lambda x: anp.swapaxes(x, -1, -2)
+
+# add two dimensions to the end of x
+add2d = lambda x: anp.array(x)[...,None,None]
+
+det.defgrad(lambda ans, x: lambda g: add2d(g) * add2d(ans) * T(inv(x)))
+slogdet.defgrad(lambda ans, x: lambda g: add2d(g[1]) * T(inv(x)))
+
+def make_grad_inv(ans, x):
+    dot = anp.dot if ans.ndim == 2 else partial(anp.einsum, '...ij,...jk->...ik')
+    return lambda g: -dot(dot(T(ans), g), T(ans))
+inv.defgrad(make_grad_inv)
 
 def make_grad_solve(argnum, ans, a, b):
-    T = lambda x: anp.swapaxes(x, -1, -2)
     updim = lambda x: x if x.ndim == a.ndim else x[...,None]
     dot = anp.dot if a.ndim == 2 else partial(anp.einsum, '...ij,...jk->...ik')
 
