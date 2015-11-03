@@ -23,7 +23,7 @@ def make_grad_solve(argnum, ans, a, b):
     dot = anp.dot if a.ndim == 2 else partial(anp.einsum, '...ij,...jk->...ik')
 
     grad_arg0 = lambda g: -dot(updim(solve(T(a), g)), T(updim(ans)))
-    grad_arg1 = lambda g : solve(T(a), g)
+    grad_arg1 = lambda g: solve(T(a), g)
 
     return grad_arg0 if argnum == 0 else grad_arg1
 solve.defgrads(make_grad_solve, [0, 1])
