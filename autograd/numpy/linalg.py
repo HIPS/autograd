@@ -17,15 +17,16 @@ inv.defgrad(    lambda ans, x    : lambda g : -dot(dot(ans.T, g), ans.T))
 det.defgrad(    lambda ans, x    : lambda g : g * ans * inv(x).T)
 slogdet.defgrad(lambda ans, x    : lambda g : g[1] * inv(x).T)
 
-T = lambda x: anp.swapaxes(x, -1, -2)
-def make_grad_solve_arg0(ans, a, b):
+def make_grad_solve(argnum, ans, a, b):
+    T = lambda x: anp.swapaxes(x, -1, -2)
     updim = lambda x: x if x.ndim == a.ndim else x[...,None]
-    gradfun_2d = lambda g: -dot(updim(solve(a.T, g)), updim(ans).T)
-    gradfun = lambda g: -anp.einsum(
-        '...ij,...jk->...ik', updim(solve(T(a), g)), T(updim(ans)))
-    return gradfun_2d if a.ndim == 2 else gradfun
-solve.defgrad(make_grad_solve_arg0)
-solve.defgrad(lambda ans, a, b: lambda g : solve(T(a), g), argnum=1)
+    dot = anp.dot if a.ndim == 2 else partial(anp.einsum, '...ij,...jk->...ik')
+
+    grad_arg0 = lambda g: -dot(updim(solve(T(a), g)), T(updim(ans)))
+    grad_arg1 = lambda g : solve(T(a), g)
+
+    return grad_arg0 if argnum == 0 else grad_arg1
+solve.defgrads(make_grad_solve, [0, 1])
 
 def make_grad_norm(ans, x, ord=None, axis=None):
     def check_implemented():
