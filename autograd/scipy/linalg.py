@@ -3,7 +3,6 @@ import scipy.linalg
 
 import autograd.numpy as anp
 from autograd.numpy.numpy_wrapper import wrap_namespace
-from autograd.numpy.linalg import atleast_2d_col as al2d
 
 wrap_namespace(scipy.linalg.__dict__, globals())  # populates module namespace
 
@@ -20,6 +19,7 @@ def make_grad_solve_triangular(ans, a, b, trans=0, lower=False, **kwargs):
     transpose = lambda x: x if _flip(a, trans) != 'N' else x.T
 
     def solve_triangular_grad(g):
+        al2d = lambda x: x if x.ndim > 1 else x[...,None]
         v = al2d(solve_triangular(a, g, trans=_flip(a, trans), lower=lower))
         return -transpose(tri(anp.dot(v, al2d(ans).T)))
     return solve_triangular_grad

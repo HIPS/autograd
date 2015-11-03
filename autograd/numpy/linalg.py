@@ -8,10 +8,6 @@ from builtins import range
 
 wrap_namespace(npla.__dict__, globals())
 
-def atleast_2d_col(x):
-    # Promotes a 1D array into a column rather than a row.
-    return x if x.ndim > 1 else x[:,None]
-
 # Some formulas are from
 # "An extended collection of matrix derivative results
 #  for forward and reverse mode algorithmic differentiation"
@@ -20,9 +16,16 @@ def atleast_2d_col(x):
 inv.defgrad(    lambda ans, x    : lambda g : -dot(dot(ans.T, g), ans.T))
 det.defgrad(    lambda ans, x    : lambda g : g * ans * inv(x).T)
 slogdet.defgrad(lambda ans, x    : lambda g : g[1] * inv(x).T)
-solve.defgrad(  lambda ans, a, b : lambda g : -dot(atleast_2d_col(solve(a.T, g)),
-                                                 atleast_2d_col(ans).T))
-solve.defgrad(lambda ans, a, b : lambda g : solve(a.T, g), argnum=1)
+
+T = lambda x: anp.swapaxes(x, -1, -2)
+def make_grad_solve_arg0(ans, a, b):
+    updim = lambda x: x if x.ndim == a.ndim else x[...,None]
+    gradfun_2d = lambda g: -dot(updim(solve(a.T, g)), updim(ans).T)
+    gradfun = lambda g: -anp.einsum(
+        '...ij,...jk->...ik', updim(solve(T(a), g)), T(updim(ans)))
+    return gradfun_2d if a.ndim == 2 else gradfun
+solve.defgrad(make_grad_solve_arg0)
+solve.defgrad(lambda ans, a, b: lambda g : solve(T(a), g), argnum=1)
 
 def make_grad_norm(ans, x, ord=None, axis=None):
     def check_implemented():

@@ -47,8 +47,6 @@ def test_solve_arg1_1d():
     check_grads(fun, A)
     check_grads(d_fun, A)
 
-#return np.dot(b,np.dot(np.linalg.inv(A),b))
-
 def test_solve_arg2():
     D = 6
     A = npr.randn(D, D) + 1.0 * np.eye(D)
@@ -57,6 +55,24 @@ def test_solve_arg2():
     d_fun = lambda x : to_scalar(grad(fun)(x))
     check_grads(fun, B)
     check_grads(d_fun, B)
+
+def test_solve_arg1_3d():
+    D = 4
+    A = npr.randn(D+1, D, D) + 5*np.eye(D)
+    B = npr.randn(D+1, D)
+    fun = lambda A: to_scalar(np.linalg.solve(A, B))
+    d_fun = lambda A: to_scalar(grad(fun)(A))
+    check_grads(fun, A)
+    check_grads(d_fun, A)
+
+def test_solve_arg1_3d_3d():
+    D = 4
+    A = npr.randn(D+1, D, D) + 5*np.eye(D)
+    B = npr.randn(D+1, D, D+2)
+    fun = lambda A: to_scalar(np.linalg.solve(A, B))
+    d_fun = lambda A: to_scalar(grad(fun)(A))
+    check_grads(fun, A)
+    check_grads(d_fun, A)
 
 def test_det():
     def fun(x): return np.linalg.det(x)

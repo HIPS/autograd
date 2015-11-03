@@ -42,7 +42,7 @@ if use_cython:
     try:
         extensions = cythonize('**/*.pyx')
     except:
-        warn('Failed to generate extension module code from Cython file')
+        warn('Failed to generate extension module code from Cython files')
 
 setup(
     name='autograd',
