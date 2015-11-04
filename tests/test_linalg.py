@@ -38,7 +38,7 @@ def test_inv_3d():
     check_grads(fun, mat)
     check_grads(d_fun, mat)
 
-    mat = npr.randn(D, D, D) + 5*np.eye(D)
+    mat = npr.randn(D, D, D, D) + 5*np.eye(D)
     check_grads(fun, mat)
     check_grads(d_fun, mat)
 
