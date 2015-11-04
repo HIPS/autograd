@@ -1,4 +1,4 @@
-from __future__ import division
+from __future__ import division, print_function
 import autograd.numpy as np
 import autograd.numpy.random as npr
 from autograd.scipy.misc import logsumexp
@@ -9,12 +9,12 @@ import string
 import sys
 
 
-def EM(init_params, data):
+def EM(init_params, data, callback=None):
     def EM_update(params):
         natural_params = map(np.log, params)
-        ll, expected_stats = vgrad(log_partition_function)(natural_params, data)  # E step
-        print ll; sys.stdout.flush()
-        return map(normalize, expected_stats)                                     # M step
+        loglike, E_stats = vgrad(log_partition_function)(natural_params, data)  # E step
+        if callback: callback(loglike, params)
+        return map(normalize, E_stats)                                          # M step
 
     def fixed_point(f, x0):
         x1 = f(x0)
@@ -40,9 +40,11 @@ def log_partition_function(natural_params, data):
         return sum(map(partial(log_partition_function, natural_params), data))
 
     log_pi, log_A, log_B = natural_params
+
     log_alpha = log_pi
-    for y_t in data:
-        log_alpha = logsumexp(log_alpha[:,None] + log_A, axis=0) + log_B[:,y_t]
+    for y in data:
+        log_alpha = logsumexp(log_alpha[:,None] + log_A, axis=0) + log_B[:,y]
+
     return logsumexp(log_alpha)
 
 
@@ -73,6 +75,9 @@ if __name__ == '__main__':
     np.random.seed(0)
     np.seterr(divide='ignore')
 
+    # callback to print log likelihoods during training
+    print_loglike = lambda loglike, params: print(loglike)
+
     # load training data
     lstm_filename = join(dirname(__file__), 'lstm.py')
     train_inputs, num_outputs = build_dataset(lstm_filename, max_lines=60)
@@ -80,4 +85,4 @@ if __name__ == '__main__':
     # train with EM
     num_states = 20
     init_params = initialize_hmm_parameters(num_states, num_outputs)
-    pi, A, B = EM(init_params, train_inputs)
+    pi, A, B = EM(init_params, train_inputs, print_loglike)
