@@ -32,7 +32,12 @@ def test_inv():
 def test_inv_3d():
     fun = lambda x: to_scalar(np.linalg.inv(x))
     d_fun = lambda x : to_scalar(grad(fun)(x))
+
     D = 4
+    mat = npr.randn(D, D, D) + 5*np.eye(D)
+    check_grads(fun, mat)
+    check_grads(d_fun, mat)
+
     mat = npr.randn(D, D, D) + 5*np.eye(D)
     check_grads(fun, mat)
     check_grads(d_fun, mat)
