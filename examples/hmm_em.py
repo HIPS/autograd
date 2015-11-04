@@ -2,15 +2,19 @@ from __future__ import division
 import autograd.numpy as np
 import autograd.numpy.random as npr
 from autograd.scipy.misc import logsumexp
-from autograd import grad
+from autograd.convenience_wrappers import value_and_grad as vgrad
 from functools import partial
+from os.path import join, dirname
+import string
+import sys
 
 
 def EM(init_params, data):
     def EM_update(params):
         natural_params = map(np.log, params)
-        expected_stats = grad(log_partition_function)(natural_params, data)  # E step
-        return map(normalize, expected_stats)                                # M step
+        ll, expected_stats = vgrad(log_partition_function)(natural_params, data)  # E step
+        print ll; sys.stdout.flush()
+        return map(normalize, expected_stats)                                     # M step
 
     def fixed_point(f, x0):
         x1 = f(x0)
@@ -19,7 +23,8 @@ def EM(init_params, data):
         return x1
 
     def different(params1, params2):
-        return not all(map(np.allclose, params1, params2))
+        allclose = partial(np.allclose, atol=1e-3, rtol=1e-3)
+        return not all(map(allclose, params1, params2))
 
     return fixed_point(EM_update, init_params)
 
@@ -41,16 +46,38 @@ def log_partition_function(natural_params, data):
     return logsumexp(log_alpha)
 
 
+def initialize_hmm_parameters(num_states, num_outputs):
+    init_pi = normalize(npr.rand(num_states))
+    init_A = normalize(npr.rand(num_states, num_states))
+    init_B = normalize(npr.rand(num_states, num_outputs))
+    return init_pi, init_A, init_B
+
+
+def build_dataset(filename, max_lines=-1):
+    """Loads a text file, and turns each line into an encoded sequence."""
+    encodings = dict(map(reversed, enumerate(string.printable)))
+    digitize = lambda char: encodings[char] if char in encodings else len(encodings)
+    encode_line = lambda line: np.array(list(map(digitize, line)))
+    nonblank_line = lambda line: len(line) > 2
+
+    with open(filename) as f:
+        lines = f.readlines()
+
+    encoded_lines = map(encode_line, filter(nonblank_line, lines)[:max_lines])
+    num_outputs = len(encodings) + 1
+
+    return encoded_lines, num_outputs
+
+
 if __name__ == '__main__':
     np.random.seed(0)
     np.seterr(divide='ignore')
 
-    data = np.array([
-        0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,0,1,1,1,0,0,1,0,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1])
+    # load training data
+    lstm_filename = join(dirname(__file__), 'lstm.py')
+    train_inputs, num_outputs = build_dataset(lstm_filename, max_lines=60)
 
-    init_pi = normalize(npr.rand(3))
-    init_A = normalize(npr.rand(3,3))
-    init_B = normalize(npr.rand(3,2))
-    init_params = (init_pi, init_A, init_B)
-
-    pi, A, B = EM(init_params, data)
+    # train with EM
+    num_states = 20
+    init_params = initialize_hmm_parameters(num_states, num_outputs)
+    pi, A, B = EM(init_params, train_inputs)
