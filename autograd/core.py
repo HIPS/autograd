@@ -8,7 +8,6 @@ import math
 import numpy as np
 from functools import partial
 from future.utils import iteritems
-from exceptions import TypeError
 
 def grad(fun, argnum=0):
     """
