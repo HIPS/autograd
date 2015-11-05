@@ -115,9 +115,9 @@ def improve_exception_message(e):
             "** autograd doesn't support assigning into arrays **",
     }
 
-    keypair = (type(e), e.message)
+    keypair = (type(e), str(e))
     if keypair in common_errors:
-        return type(e)(e.message + '\n' + common_errors[keypair])
+        return type(e)(str(e) + '\n' + common_errors[keypair])
     return e
 
 def cast_to_node_type(x, node_type, example):
