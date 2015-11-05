@@ -1,0 +1,38 @@
+package:
+  name: autograd
+  # there are ways to derive version from other sources; for now, it's hard-coded
+  version: 1.1.1
+
+source:
+  {% if not environ.get('BINSTAR_PLATFORM', None) %}
+  git_url: ../
+  {% else %}
+  # we're building on binstar, we already have the repo; treat as local path
+  path: ../
+  {% endif %}
+
+requirements:
+  build:
+    - python
+    - setuptools
+    - future
+    - numpy >=1.9
+
+  run:
+    - python
+    - future
+    - numpy >=1.9
+
+build:
+  script: python setup.py build && python setup.py install
+
+test:
+  # Python imports
+  imports:
+    - autograd
+    - autograd.numpy
+
+about:
+  home: https://github.com/HIPS/autograd
+  license: MIT
+  summary: 'Efficiently computes derivatives of numpy code.'
