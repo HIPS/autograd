@@ -8,6 +8,7 @@ import math
 import numpy as np
 from functools import partial
 from future.utils import iteritems
+from exceptions import TypeError
 
 def grad(fun, argnum=0):
     """
@@ -58,7 +59,12 @@ def forward_pass(fun, args, kwargs, argnum=0):
         start_node = new_node(safe_type(getval(arg_wrt)), [tape])
         args = list(args)
         args[argnum] = merge_tapes(start_node, arg_wrt)
-        end_node = fun(*args, **kwargs)
+        try:
+            end_node = fun(*args, **kwargs)
+        except TypeError as e:
+            if e.message == 'float() argument must be a string or a number':
+                raise TypeError(e.message + "\n** autograd doesn't support assigning into arrays **")
+            raise e
         return start_node, end_node, tape
 
 def backward_pass(start_node, end_node, tape):
