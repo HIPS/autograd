@@ -170,6 +170,14 @@ def make_grad_repeat(ans, x, repeats, axis=None):
             return grad_repeat
 anp.repeat.defgrad(make_grad_repeat)
 
+def make_grad_tile(ans, x, reps):
+    def tile_grad(g):
+        for axis, rep in enumerate(reps):
+            g = sum(anp.split(g, rep, axis))
+        return anp.reshape(g, x.shape)
+    return tile_grad
+anp.tile.defgrad(make_grad_tile)
+
 def make_grad_transpose(ans, x, axes=None):
     if axes is not None:
         axes = anp.argsort(axes)
@@ -181,6 +189,8 @@ isarray = lambda x : isinstance(getval(x), anp.ndarray)
 def repeat_to_match_shape(x, axis, keepdims):
     """Returns a function that repeats an array along axis to get a given shape.
        Also returns the number of repetitions of the array."""
+    assert isinstance(axis, (type(None), int, tuple))
+
     if not isarray(x):
         return I, 1
     shape = x.shape
@@ -192,12 +202,21 @@ def repeat_to_match_shape(x, axis, keepdims):
             return lambda g : anp.full(shape, anp.sum(g), dtype=dtype), anp.prod(shape)
         else:
             return lambda g : anp.full(shape, g, dtype=dtype), anp.prod(shape)
-    else:
+    elif isinstance(axis, int):
         if keepdims:
             return lambda g : anp.repeat(g, shape[axis], axis), shape[axis]
         else:
             return lambda g : anp.repeat(anp.expand_dims(g, axis),
                                          shape[axis], axis), shape[axis]
+    else:
+        repeats  = [shape[i] if i in axis else 1 for i in range(len(shape))]
+        expanded = [shape[i] if i not in axis else 1 for i in range(len(shape))]
+        num_reps = anp.prod(anp.array(shape)[list(axis)])
+
+        if keepdims:
+            return lambda g: anp.tile(g, repeats), num_reps
+        else:
+            return lambda g: anp.tile(anp.reshape(g, expanded), repeats), num_reps
 
 def make_grad_np_sum(ans, x, axis=None, keepdims=False):
     repeater, _ = repeat_to_match_shape(x, axis, keepdims)
