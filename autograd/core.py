@@ -375,12 +375,12 @@ class AutogradException(Exception):
         else:
             return self.message
 
-def add_extra_error_message(e):
-    common_errors = defaultdict(lambda: None, {
-        (TypeError, 'float() argument must be a string or a number'):
-            "autograd doesn't support assigning into arrays",
-    })
+common_errors = defaultdict(lambda: None, {
+    (TypeError, 'float() argument must be a string or a number'):
+        "autograd doesn't support assigning into arrays",
+})
 
+def add_extra_error_message(e):
     etype, value, traceback = sys.exc_info()
     extra_message = common_errors[(type(e), str(e))]
 
