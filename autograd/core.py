@@ -360,7 +360,7 @@ class NoDerivativeNode(FloatNode):
         return example  # pass through so we can raise an error on reverse pass
 
 
-class AutogradException(Exception):
+class AutogradHint(Exception):
     def __init__(self, message, subexception_type=None, subexception_val=None):
         self.message = message
         self.subexception_type = subexception_type
@@ -377,7 +377,7 @@ class AutogradException(Exception):
 
 common_errors = defaultdict(lambda: None, {
     (TypeError, 'float() argument must be a string or a number'):
-        "autograd doesn't support assigning into arrays",
+        "This error *might* be caused by assigning into arrays, which autograd doesn't support.",
 })
 
 def add_extra_error_message(e):
@@ -386,7 +386,7 @@ def add_extra_error_message(e):
 
     if extra_message:
         if sys.version_info >= (3,):
-            raise_from(AutogradException(extra_message), e)
+            raise_from(AutogradHint(extra_message), e)
         else:
-            raise_(AutogradException, (extra_message, etype, value), traceback)
+            raise_(AutogradHint, (extra_message, etype, value), traceback)
     raise_(etype, value, traceback)
