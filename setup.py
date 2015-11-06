@@ -17,6 +17,7 @@ else:
 class build_ext(_build_ext):
     # see http://stackoverflow.com/q/19919905 for explanation
     def finalize_options(self):
+        import __builtin__
         _build_ext.finalize_options(self)
         __builtin__.__NUMPY_SETUP__ = False
         import numpy as np
