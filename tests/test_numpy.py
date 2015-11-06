@@ -137,6 +137,13 @@ def test_sum_3():
     check_grads(fun, mat)
     check_grads(d_fun, mat)
 
+def test_sum_with_axis_tuple():
+    def fun(x): return to_scalar(np.sum(x, axis=(1,2)))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    mat = npr.randn(10, 11, 7)
+    check_grads(fun, mat)
+    check_grads(d_fun, mat)
+
 def test_flipud():
     def fun(x): return to_scalar(np.flipud(x))
     d_fun = lambda x : to_scalar(grad(fun)(x))
