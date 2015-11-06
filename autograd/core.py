@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 import sys
 import warnings
 import copy
@@ -7,7 +7,8 @@ import types
 import math
 import numpy as np
 from functools import partial
-from future.utils import iteritems
+from future.utils import iteritems, raise_from
+from collections import defaultdict
 
 def grad(fun, argnum=0):
     """
@@ -58,11 +59,25 @@ def forward_pass(fun, args, kwargs, argnum=0):
         start_node = new_node(safe_type(getval(arg_wrt)), [tape])
         args = list(args)
         args[argnum] = merge_tapes(start_node, arg_wrt)
+
         try:
             end_node = fun(*args, **kwargs)
         except Exception as e:
-            raise improve_exception_message(e)
+            extra_message = common_errors[(type(e), str(e))]
+            if extra_message:
+                if sys.version_info >= (3,):
+                    raise_from(Exception(extra_message), e)
+                else:
+                    etype, value, traceback = sys.exc_info()
+                    raise Exception, (extra_message, etype, value), traceback
+            raise
+
         return start_node, end_node, tape
+
+common_errors = defaultdict(lambda: None, {
+    (TypeError, 'float() argument must be a string or a number'):
+        "autograd doesn't support assigning into arrays",
+})
 
 def backward_pass(start_node, end_node, tape):
     if not isinstance(end_node, Node) or tape not in end_node.tapes:
@@ -107,18 +122,6 @@ def attach_name_and_doc(fun, argnum, opname):
         finally:
             return gradfun
     return wrap
-
-
-def improve_exception_message(e):
-    common_errors = {
-        (TypeError, 'float() argument must be a string or a number'):
-            "** autograd doesn't support assigning into arrays **",
-    }
-
-    keypair = (type(e), str(e))
-    if keypair in common_errors:
-        return type(e)(str(e) + '\n' + common_errors[keypair])
-    return e
 
 def cast_to_node_type(x, node_type, example):
     if type(new_node(getval(x))) is not node_type:
