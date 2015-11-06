@@ -66,6 +66,9 @@ You can find a tutorial [here.](docs/tutorial.md)
 
 <img src="examples/fluidsim/animated.gif" width="400">
 
+* [Variational inference in Bayesian neural network](examples/bayesian_neural_net.py)
+* [Gaussian process regression](examples/gaussian_process.py)
+
 ## How to install
 
 Just run `pip install autograd`
