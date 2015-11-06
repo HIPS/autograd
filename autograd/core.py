@@ -7,7 +7,7 @@ import types
 import math
 import numpy as np
 from functools import partial
-from future.utils import iteritems, raise_from
+from future.utils import iteritems, raise_from, raise_
 from collections import defaultdict
 
 def grad(fun, argnum=0):
@@ -106,23 +106,6 @@ def attach_name_and_doc(fun, argnum, opname):
         finally:
             return gradfun
     return wrap
-
-def add_extra_error_message(e):
-    common_errors = defaultdict(lambda: None, {
-        (TypeError, 'float() argument must be a string or a number'):
-            "autograd doesn't support assigning into arrays",
-    })
-
-    etype, value, traceback = sys.exc_info()
-    extra_message = common_errors[(type(e), str(e))]
-
-    if extra_message:
-        if sys.version_info >= (3,):
-            raise_from(Exception(extra_message), e)
-        else:
-            raise Exception, (extra_message, etype, value), traceback
-    raise etype, value, traceback
-
 
 def cast_to_node_type(x, node_type, example):
     if type(new_node(getval(x))) is not node_type:
@@ -375,3 +358,35 @@ class NoDerivativeNode(FloatNode):
     @staticmethod
     def cast(value, example):
         return example  # pass through so we can raise an error on reverse pass
+
+
+class AutogradException(Exception):
+    def __init__(self, message, subexception_type=None, subexception_val=None):
+        self.message = message
+        self.subexception_type = subexception_type
+        self.subexception_val = subexception_val
+
+    def __str__(self):
+        if self.subexception_type:
+            return '{message}\nSub-exception:\n{name}: {str}'.format(
+                message=self.message,
+                name=self.subexception_type.__name__,
+                str=self.subexception_type(self.subexception_val))
+        else:
+            return self.message
+
+def add_extra_error_message(e):
+    common_errors = defaultdict(lambda: None, {
+        (TypeError, 'float() argument must be a string or a number'):
+            "autograd doesn't support assigning into arrays",
+    })
+
+    etype, value, traceback = sys.exc_info()
+    extra_message = common_errors[(type(e), str(e))]
+
+    if extra_message:
+        if sys.version_info >= (3,):
+            raise_from(AutogradException(extra_message), e)
+        else:
+            raise_(AutogradException, (extra_message, etype, value), traceback)
+    raise_(etype, value, traceback)
