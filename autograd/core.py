@@ -109,7 +109,7 @@ def backward_pass(start_node, end_node, tape, return_type):
         return grad_dict if return_type == dict else tuple(grad_dict.values())
 
 def replace_args_with_nodes(fun, args, kwargs, argnum, argname, tape):
-    makenode = lambda argval: new_node(safe_type(getval(argval)), [tape])
+    makenode = lambda argval: merge_tapes(new_node(safe_type(getval(argval)), [tape]), argval)
     sig = funcsigs.signature(fun)
 
     if argname is not None:
@@ -118,7 +118,7 @@ def replace_args_with_nodes(fun, args, kwargs, argnum, argname, tape):
         return replace_args_with_nodes(fun, args, kwargs, argnum, None, tape)
     elif argnum is not None and argnum >= 0:
         new_args = list(args)
-        new_args[argnum] = node = merge_tapes(makenode(args[argnum]), args[argnum])
+        new_args[argnum] = node = makenode(args[argnum])
         bindings = sig.bind(*new_args, **kwargs)
         return node, bindings.args, bindings.kwargs, None
     else:
