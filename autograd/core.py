@@ -113,8 +113,7 @@ def replace_args_with_nodes(fun, args, kwargs, argnum, argname, tape):
     sig = funcsigs.signature(fun)
 
     if argname is not None:
-        argnames = list(sig.parameters)
-        argnum = argnames.index(argname)
+        argnum = list(sig.parameters).index(argname)
         return replace_args_with_nodes(fun, args, kwargs, argnum, None, tape)
     elif argnum is not None and argnum >= 0:
         new_args = list(args)
