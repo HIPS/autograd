@@ -1,8 +1,7 @@
 """Convenience functions built on top of `grad`."""
 from __future__ import absolute_import
 import autograd.numpy as np
-from autograd.core import grad, getval, jacobian
-
+from autograd.core import grad, jacobian, getval, primitive
 
 def multigrad(fun, argnums=[0]):
     """Takes gradients wrt multiple arguments simultaneously."""
@@ -16,6 +15,27 @@ def multigrad(fun, argnums=[0]):
         multi_arg = tuple([args[i] for i in argnums])
         return gradfun(multi_arg, *args, **kwargs)
     return gradfun_rearranged
+
+def multigrad_dict(fun):
+    """By default, takes gradients with respect to all arguments, returns them
+    in a dict that maps 'argname' to 'gradval'."""
+    def getcallargs(fun,*args,**kwargs):
+        if isinstance(fun,primitive):
+            fun = fun.fun
+        return inspect.getcallargs(fun, *args, **kwargs)
+
+    return lambda *args, **kwargs: \
+        grad(lambda dct: fun(**dct))(getcallargs(fun, *args, **kwargs))
+
+def getargspec(fun):
+    if isinstance(fun,primitive):
+        fun = fun.fun
+    return inspect.getargspec(fun)
+
+def getcallargs(fun,*args,**kwargs):
+    if isinstance(fun,primitive):
+        fun = fun.fun
+    return inspect.getcallargs(fun,*args,**kwargs)
 
 def grad_and_aux(fun, argnum=0):
     """Builds a function that returns the gradient of the first output and the
