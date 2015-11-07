@@ -45,13 +45,13 @@ if __name__ == "__main__":
     # fit likelihood-extremizing parameters
     r, p = fit_maxlike(data, r_guess=1)
 
-    print('Check that we are at a local stationary point:')
-    print(grad(lambda rp: np.sum(negbin_loglike(rp[0], rp[1], data)))((r, p)))
-
+    # report fit
     print('Fit parameters:')
     print('r={r}, p={p}'.format(r=r, p=p))
 
-    # plot data and fit
+    print('Check that we are at a local stationary point:')
+    print(grad(lambda rp: np.sum(negbin_loglike(rp[0], rp[1], data)))((r, p)))
+
     import matplotlib.pyplot as plt
     xm = data.max()
     plt.figure()
