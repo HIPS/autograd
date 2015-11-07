@@ -1,6 +1,5 @@
-[![Build Status](https://travis-ci.org/HIPS/autograd.svg?branch=master)](https://travis-ci.org/HIPS/autograd)
+# Autograd  [![Test status](https://travis-ci.org/HIPS/autograd.svg?branch=master)](https://travis-ci.org/HIPS/autograd)
 
-# Autograd
 
 Autograd can automatically differentiate native Python and Numpy code. It can
 handle a large subset of Python's features, including loops, ifs, recursion and
