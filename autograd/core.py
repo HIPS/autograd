@@ -7,7 +7,7 @@ import math
 import numpy as np
 from functools import partial
 from future.utils import iteritems, raise_from, raise_
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 import funcsigs
 
 def grad(fun, argnum=0, argname=None):
@@ -48,27 +48,30 @@ def jacobian(fun, argnum=0):
 
     @attach_name_and_doc(fun, argnum, 'Jacobian')
     def gradfun(*args, **kwargs):
-        start_node, end_nodes, tape = forward_pass(list_fun, args, kwargs, argnum)
-        grads = list(map(partial(backward_pass, start_node, tape=tape), end_nodes))
+        start_node, end_nodes, tape, return_type = forward_pass(list_fun, args, kwargs, argnum)
+        backward = partial(backward_pass, start_node, tape=tape, return_type=return_type)
+        grads = list(map(backward, end_nodes))
         shape = dummy.outshape + getshape(args[argnum])
         return np.reshape(concatenate(grads), shape) if shape else grads[0]
     return gradfun
 
 def forward_pass(fun, args, kwargs, argnum=None, argname=None):
     tape = CalculationTape()
-    start_node, args, kwargs = replace_args_with_nodes(fun, args, kwargs, argnum, argname, tape)
+    start_node, args, kwargs, return_type = replace_args_with_nodes(
+        fun, args, kwargs, argnum, argname, tape)
     try: end_node = fun(*args, **kwargs)
     except Exception as e: add_extra_error_message(e)
-    return start_node, end_node, tape
+    return start_node, end_node, tape, return_type
 
-def backward_pass(start_node, end_node, tape):
-    return_dict = isinstance(start_node, dict)
-
+def backward_pass(start_node, end_node, tape, return_type):
     if not isinstance(end_node, Node) or tape not in end_node.tapes:
         warnings.warn("Output seems independent of input. Returning zero gradient.")
-        if not return_dict:
+        if return_type is None:
             return zeros_like(start_node)
-        return {name:zeros_like(node) for name, node in iteritems(start_node)}
+        elif return_type == dict:
+            return OrderedDict((name,zeros_like(node)) for name, node in iteritems(start_node))
+        else:
+            return tuple(zeros_like(node) for node in start_node.values())
     if type(end_node) is not FloatNode:
         try:
             end_node = FloatNode.cast(end_node, 1.0)
@@ -82,7 +85,7 @@ def backward_pass(start_node, end_node, tape):
         rnode.outgrads = []
     end_node.tapes[tape].outgrads = [1.0]
 
-    if return_dict:
+    if return_type is not None:
         start_rnodes = {node.tapes[tape]: name for name, node in iteritems(start_node)}
         grad_dict = {}
 
@@ -96,9 +99,14 @@ def backward_pass(start_node, end_node, tape):
             for gradfun, parent in rnode.parent_grad_ops:
                 og = cast_to_node_type(gradfun(cur_outgrad), parent.node_type, parent.node_value)
                 parent.outgrads.append(og)
-            if return_dict and rnode in start_rnodes:
+            if return_type is not None and rnode in start_rnodes:
                 grad_dict[start_rnodes[rnode]] = cur_outgrad
-    return cur_outgrad if not return_dict else grad_dict
+
+    if return_type is None:
+        return cur_outgrad
+    else:
+        grad_dict = OrderedDict((key, grad_dict[key]) for key in start_node)
+        return grad_dict if return_type == dict else tuple(grad_dict.values())
 
 def replace_args_with_nodes(fun, args, kwargs, argnum, argname, tape):
     makenode = lambda argval: new_node(safe_type(getval(argval)), [tape])
@@ -108,17 +116,18 @@ def replace_args_with_nodes(fun, args, kwargs, argnum, argname, tape):
         argnames = list(sig.parameters)
         argnum = argnames.index(argname)
         return replace_args_with_nodes(fun, args, kwargs, argnum, None, tape)
-    elif argnum is not None:
+    elif argnum is not None and argnum >= 0:
         new_args = list(args)
         new_args[argnum] = node = merge_tapes(makenode(args[argnum]), args[argnum])
         bindings = sig.bind(*new_args, **kwargs)
-        return node, bindings.args, bindings.kwargs
+        return node, bindings.args, bindings.kwargs, None
     else:
         new_args = list(map(makenode, args))
         new_kwargs = {k: makenode(v) for k, v in iteritems(kwargs)}
         bindings = sig.bind(*new_args, **new_kwargs)
-        all_nodes = {name: bindings.arguments[name] for name in sig.parameters}
-        return all_nodes, bindings.args, bindings.kwargs
+        all_nodes = OrderedDict((name, bindings.arguments[name]) for name in sig.parameters)
+        return_type = tuple if argnum is not None else dict
+        return all_nodes, bindings.args, bindings.kwargs, return_type
 
 def attach_name_and_doc(fun, argnum, opname):
     namestr = "{op}_{fun}_wrt_argnum_{argnum}".format(
