@@ -1,10 +1,8 @@
 """Convenience functions built on top of `grad`."""
 from __future__ import absolute_import
-import itertools as it
 
 import autograd.numpy as np
 from autograd.core import grad, getval
-from builtins import map
 
 
 def multigrad(fun, argnums=0):
