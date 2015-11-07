@@ -1,7 +1,6 @@
 from __future__ import absolute_import, print_function
 import sys
 import warnings
-import copy
 import operator as op
 import types
 import math
