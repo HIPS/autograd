@@ -1,14 +1,11 @@
 """Convenience functions built on top of `grad`."""
 from __future__ import absolute_import
-import inspect
 import autograd.numpy as np
 from autograd.core import grad, getval, jacobian
 
 
-def multigrad(fun, argnums=None):
+def multigrad(fun, argnums=[0]):
     """Takes gradients wrt multiple arguments simultaneously."""
-    if argnums is None:
-        argnums = list(range(len(inspect.getargspec(fun).args)))
     def combined_arg_fun(multi_arg, *args, **kwargs):
         extra_args_list = list(args)
         for argnum_ix, arg_ix in enumerate(argnums):
