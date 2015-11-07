@@ -106,6 +106,13 @@ def backward_pass(start_nodes, end_node, tape):
 def replace_args_with_nodes(fun, args, kwargs, argnum, argname, tape):
     makenode = lambda argval: new_node(safe_type(getval(argval)), [tape])
     sig = funcsigs.signature(fun)
+
+    # TODO the problem with argnames is that not all arguments have names!
+    # if the def looks like fun(*args), then there's no name to get
+    # => returning a grad_dict is a bad design
+
+    # so what should we do here? it makes sense to ask for argnum=0 or argnum=1
+    # even though they don't have names
     argnames = list(sig.parameters)
 
     if argnum is not None:
