@@ -2,6 +2,7 @@
 from __future__ import absolute_import
 import autograd.numpy as np
 from autograd.core import grad, getval, jacobian
+from collections import OrderedDict
 
 
 def multigrad(fun, argnums=[0]):
@@ -16,6 +17,21 @@ def multigrad(fun, argnums=[0]):
         multi_arg = tuple([args[i] for i in argnums])
         return gradfun(multi_arg, *args, **kwargs)
     return gradfun_rearranged
+
+def multigrad_dict(fun):
+    "Takes gradients wrt all arguments simultaneously,"
+    "returns a dict mapping 'argname' to 'gradval'"
+
+    import funcsigs
+    sig = funcsigs.signature(fun)
+
+    def gradfun(*args, **kwargs):
+        argdict = dict(sig.bind(*args, **kwargs).arguments)
+        newfun = lambda dct: fun(**{argname:dct[argname] for argname in argdict})
+        grad_dict = grad(newfun)(argdict)
+        return OrderedDict((argname, grad_dict[argname]) for argname in argdict)
+
+    return gradfun
 
 def grad_and_aux(fun, argnum=0):
     """Builds a function that returns the gradient of the first output and the
