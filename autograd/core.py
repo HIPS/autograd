@@ -17,7 +17,7 @@ def grad(fun, argnum=0, argname=None):
     function takes the same arguments as `fun`, but returns the gradient
     instead. The function `fun` should be scalar-valued. The gradient has the
     same type as the argument."""
-    @attach_name_and_doc(fun, argnum, 'Gradient')
+    @attach_name_and_doc(fun, 'Gradient', argnum, argname)
     def gradfun(*args,**kwargs):
         return backward_pass(*forward_pass(fun,args,kwargs,argnum,argname))
     return gradfun
@@ -46,7 +46,7 @@ def jacobian(fun, argnum=0):
 
     concatenate = lambda lst: np.concatenate(list(map(np.atleast_1d, lst)))
 
-    @attach_name_and_doc(fun, argnum, 'Jacobian')
+    @attach_name_and_doc(fun, 'Jacobian', argnum)
     def gradfun(*args, **kwargs):
         start_node, end_nodes, tape, return_type = forward_pass(list_fun, args, kwargs, argnum)
         backward = partial(backward_pass, start_node, tape=tape, return_type=return_type)
@@ -129,12 +129,24 @@ def replace_args_with_nodes(fun, args, kwargs, argnum, argname, tape):
         return_type = tuple if argnum is not None else dict
         return all_nodes, bindings.args, bindings.kwargs, return_type
 
-def attach_name_and_doc(fun, argnum, opname):
-    namestr = "{op}_{fun}_wrt_argnum_{argnum}".format(
-        op=opname.lower(), fun=fun.__name__, argnum=argnum)
-    docstr = "{op} of function {fun} with respect to argument number {argnum}. " \
-        "Has the same arguments as {fun} but the return value has type of" \
-        "argument {argnum}".format(op=opname, fun=fun.__name__, argnum=argnum)
+def attach_name_and_doc(fun, opname, argnum, argname=None):
+    if argnum is not None and argnum >= 0:
+        namestr = "{op}_{fun}_wrt_{argnum}".format(
+            op=opname.lower(), fun=fun.__name__, argnum=argnum)
+        docstr = "{op} of function {fun} with respect to argument number {argnum}. " \
+            "Has the same arguments as {fun} but the return value has type of" \
+            "argument {argnum}".format(op=opname, fun=fun.__name__, argnum=argnum)
+    elif argname is not None:
+        namestr = "{op}_{fun}_wrt_{argname}".format(
+            op=opname.lower(), fun=fun.__name__, argname=argname)
+        docstr = "{op} of function {fun} with respect to argument {argname}. " \
+            "Has the same arguments as {fun} but the return value has type of" \
+            "argument {argname}".format(op=opname, fun=fun.__name__, argname=argname)
+    else:
+        namestr = "{op}_{fun}_wrt_all".format(op=opname.lower(), fun=fun.__name__)
+        docstr = "{op} of function {fun} with respect to all arguments. " \
+            "Has the same arguments as {fun} but the return value is a {type}" \
+            .format(op=opname, fun=fun.__name__, type='dict' if argnum is None else 'tuple')
 
     def wrap(gradfun):
         try:
