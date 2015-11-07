@@ -22,18 +22,19 @@ def negbin_loglike(r, p, x):
     return gammaln(r+x) - gammaln(r) - gammaln(x+1) + x*np.log(p) + r*np.log(1-p)
 
 
+def negbin_sample(r, p, size):
+    # a negative binomial is a gamma-compound-Poisson
+    return npr.poisson(npr.gamma(r, p/(1-p), size=size))
+
+
 def fit_maxlike(x, r_guess):
+    # follows Wikipedia's section on negative binomial max likelihood
     assert np.var(x) > np.mean(x), "Likelihood-maximizing parameters don't exist!"
     loglike = lambda r, p: np.sum(negbin_loglike(r, p, x))
     p = lambda r: np.sum(x) / np.sum(r+x)
     rprime = lambda r: grad(loglike)(r, p(r))
     r = newton(rprime, r_guess)
     return r, p(r)
-
-
-def negbin_sample(r, p, size):
-    # a negative binomial is a gamma-compound-Poisson
-    return npr.poisson(npr.gamma(r, p/(1-p), size=size))
 
 
 if __name__ == "__main__":
