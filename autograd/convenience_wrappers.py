@@ -58,26 +58,6 @@ def elementwise_grad(fun, argnum=0):
         return np.sum(fun(*args, **kwargs))
     return grad(sum_output, argnum=argnum)
 
-def jacobian(fun, argnum=0):
-    """Returns a function that computes the Jacobian of `fun`. If the input to
-    `fun` has shape (in1, in2, ...) and the output has shape (out1, out2, ...)
-    then the Jacobian has shape (out1, out2, ..., in1, in2, ...).  Only arrays
-    are currently supported."""
-    # TODO: consider adding this to `autograd.grad`. We could avoid repeating
-    # the forward pass every time.
-    def jac_fun(*args, **kwargs):
-        arg_in = args[argnum]
-        output = fun(*args, **kwargs)
-        assert isinstance(getval(arg_in), np.ndarray), "Must have array input"
-        assert isinstance(getval(output), np.ndarray), "Must have array output"
-        jac = np.zeros(output.shape + arg_in.shape)
-        input_slice = (slice(None),) * len(arg_in.shape)
-        for idxs in it.product(*list(map(range, output.shape))):
-            scalar_fun = lambda *args, **kwargs : fun(*args, **kwargs)[idxs]
-            jac[idxs + input_slice] = grad(scalar_fun, argnum=argnum)(*args, **kwargs)
-        return jac
-    return jac_fun
-
 def hessian_vector_product(fun, argnum=0):
     """Builds a function that returns the exact Hessian-vector product.
     The returned function has arguments (*args, vector, **kwargs), and takes
