@@ -2,9 +2,7 @@ from __future__ import absolute_import
 import autograd.numpy as np
 import autograd.numpy.random as npr
 from autograd.util import *
-from autograd import (grad, elementwise_grad, jacobian, value_and_grad,
-                      grad_and_aux, hessian_vector_product, hessian, multigrad,
-                      multigrad_dict)
+from autograd import grad, elementwise_grad, hessian, multigrad
 from builtins import range
 
 npr.seed(1)
@@ -43,23 +41,6 @@ def test_multigrad_onearg():
     packed_fun = lambda xy: np.sum(xy[0] + np.sin(xy[1]))
     A, B = npr.randn(3), npr.randn(3)
     check_equivalent(multigrad(fun)(A,B), grad(packed_fun)((A,B)))
-
-def test_multigrad_dict():
-    def complicated_fun(a,b,c,d,e,f=1.1, g=9.0):
-        return a + np.sin(b) + np.cosh(c) + np.cos(d) + np.tan(e) + f + g
-
-    A = 0.5
-    B = -0.3
-    C = 0.2
-    D = -1.1
-    E = 0.7
-    F = 0.6
-    G = -0.1
-
-    gradtuple = multigrad(complicated_fun)(A, B, C, D, E, f=F, g=G)
-    graddict = multigrad_dict(complicated_fun)(A, B, C, D, E, f=F, g=G)
-    for val, key in zip(gradtuple, ['a', 'b', 'c', 'd', 'e', 'f', 'g']):
-        assert np.isclose(graddict[key], val)
 
 def test_elementwise_grad():
     def simple_fun(a):
