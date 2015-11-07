@@ -16,6 +16,11 @@ def multigrad(fun, argnums=[0]):
         return gradfun(multi_arg, *args, **kwargs)
     return gradfun_rearranged
 
+def multigrad_dict(fun):
+    "Takes gradients wrt all arguments simultaneously,"
+    "returns a dict mapping 'argname' to 'gradval'"
+    return grad(fun, None)
+
 def grad_and_aux(fun, argnum=0):
     """Builds a function that returns the gradient of the first output and the
     (unmodified) second output of a function that returns two outputs."""
