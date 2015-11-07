@@ -2,7 +2,7 @@
 from __future__ import absolute_import
 
 import autograd.numpy as np
-from autograd.core import grad, getval
+from autograd.core import grad, getval, jacobian
 
 
 def multigrad(fun, argnums=0):
@@ -67,14 +67,5 @@ def hessian_vector_product(fun, argnum=0):
     return grad(vector_dot_grad, argnum)  # Grad wrt original input.
 
 def hessian(fun, argnum=0):
-    """Returns a function that computes the exact Hessian.
-    The Hessian is computed by calling hessian_vector_product separately for
-    each row.  For a function with N inputs, this takes roughly 4N times as
-    long as a single evaluation of the original function."""
-    hvp = hessian_vector_product(fun, argnum)
-    def hessian_fun(*args, **kwargs):
-        arg_in = args[argnum]
-        directions = np.eye(arg_in.size)  # axis-aligned directions.
-        hvp_list = [hvp(*(args+(direction,)), **kwargs) for direction in directions]
-        return np.array(hvp_list)
-    return hessian_fun
+    "Returns a function that computes the exact Hessian."
+    return jacobian(jacobian(fun, argnum), argnum)
