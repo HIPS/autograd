@@ -1,24 +1,28 @@
 from __future__ import absolute_import, print_function
 import sys
 import warnings
-import copy
 import operator as op
 import types
 import math
 import numpy as np
 from functools import partial
 from future.utils import iteritems, raise_from, raise_
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
+import funcsigs
 
-def grad(fun, argnum=0):
+def grad(fun, argnum=0, argname=None):
     """
     Returns a function which computes the gradient of `fun` with respect to
-    positional argument number `argnum`. The returned function takes the same
-    arguments as `fun`, but returns the gradient instead. The function `fun`
-    should be scalar-valued. The gradient has the same type as the argument."""
-    @attach_name_and_doc(fun, argnum, 'Gradient')
+    positional argument number `argnum` or argname `argname`. The returned
+    function takes the same arguments as `fun`, but returns the gradient
+    instead. The function `fun` should be scalar-valued. The gradient has the
+    same type as the argument."""
+    if argname is not None and argnum != 0:
+        raise ValueError("Specify either an argnum or an argname, not both.")
+
+    @attach_name_and_doc(fun, 'Gradient', argnum, argname)
     def gradfun(*args,**kwargs):
-        return backward_pass(*forward_pass(fun,args,kwargs,argnum))
+        return backward_pass(*forward_pass(fun,args,kwargs,argnum,argname))
     return gradfun
 
 def jacobian(fun, argnum=0):
@@ -45,28 +49,30 @@ def jacobian(fun, argnum=0):
 
     concatenate = lambda lst: np.concatenate(list(map(np.atleast_1d, lst)))
 
-    @attach_name_and_doc(fun, argnum, 'Jacobian')
+    @attach_name_and_doc(fun, 'Jacobian', argnum)
     def gradfun(*args, **kwargs):
         start_node, end_nodes, tape = forward_pass(list_fun, args, kwargs, argnum)
-        grads = list(map(partial(backward_pass, start_node, tape=tape), end_nodes))
+        grads = map(partial(backward_pass, start_node, tape=tape), end_nodes)
         shape = dummy.outshape + getshape(args[argnum])
-        return np.reshape(concatenate(grads), shape) if shape else grads[0]
+        return np.reshape(concatenate(grads), shape) if shape else list(grads)[0]
     return gradfun
 
-def forward_pass(fun, args, kwargs, argnum=0):
-        tape = CalculationTape()
-        arg_wrt = args[argnum]
-        start_node = new_node(safe_type(getval(arg_wrt)), [tape])
-        args = list(args)
-        args[argnum] = merge_tapes(start_node, arg_wrt)
-        try: end_node = fun(*args, **kwargs)
-        except Exception as e: add_extra_error_message(e)
-        return start_node, end_node, tape
+def forward_pass(fun, args, kwargs, argnum=None, argname=None):
+    tape = CalculationTape()
+    start_node, args, kwargs = replace_args_with_nodes(
+        fun, args, kwargs, argnum, argname, tape)
+    try: end_node = fun(*args, **kwargs)
+    except Exception as e: add_extra_error_message(e)
+    return start_node, end_node, tape
 
 def backward_pass(start_node, end_node, tape):
+    return_dict = isinstance(start_node, dict)
+
     if not isinstance(end_node, Node) or tape not in end_node.tapes:
         warnings.warn("Output seems independent of input. Returning zero gradient.")
-        return zeros_like(start_node)
+        if not return_dict:
+            return zeros_like(start_node)
+        return OrderedDict((name,zeros_like(node)) for name, node in iteritems(start_node))
     if type(end_node) is not FloatNode:
         try:
             end_node = FloatNode.cast(end_node, 1.0)
@@ -75,29 +81,69 @@ def backward_pass(start_node, end_node, tape):
                             + "Function grad requires a scalar-valued function. "
                               "Try jacobian or elementwise_grad.")
 
-    for node in tape:
-        node.outgrads = []
+    tape.complete = True
+    for rnode in tape:
+        rnode.outgrads = []
     end_node.tapes[tape].outgrads = [1.0]
 
-    tape.complete = True
-    tape = copy.copy(tape)
-    while tape:
-        node = tape.pop()
-        if node.outgrads:
-            cur_outgrad = node.sum_outgrads()
-            assert type(new_node(getval(cur_outgrad))) == node.node_type, \
-                "Types are {0} and {1}".format(type(new_node(getval(cur_outgrad))), node.node_type)
-            for gradfun, parent in node.parent_grad_ops:
+    if return_dict:
+        start_rnodes = {node.tapes[tape]: name for name, node in iteritems(start_node)}
+        grad_dict = {}
+
+    op_list = list(tape)
+    while op_list:
+        rnode = op_list.pop()
+        if rnode.outgrads:
+            cur_outgrad = rnode.sum_outgrads()
+            assert type(new_node(getval(cur_outgrad))) == rnode.node_type, \
+                "Types are {0} and {1}".format(type(new_node(getval(cur_outgrad))), rnode.node_type)
+            for gradfun, parent in rnode.parent_grad_ops:
                 og = cast_to_node_type(gradfun(cur_outgrad), parent.node_type, parent.node_value)
                 parent.outgrads.append(og)
+            if return_dict and rnode in start_rnodes:
+                grad_dict[start_rnodes[rnode]] = cur_outgrad
+
+    if return_dict:
+        return OrderedDict((key, grad_dict[key]) for key in start_node)
     return cur_outgrad
 
-def attach_name_and_doc(fun, argnum, opname):
-    namestr = "{op}_{fun}_wrt_argnum_{argnum}".format(
-        op=opname.lower(), fun=fun.__name__, argnum=argnum)
-    docstr = "{op} of function {fun} with respect to argument number {argnum}. " \
-        "Has the same arguments as {fun} but the return value has type of" \
-        "argument {argnum}".format(op=opname, fun=fun.__name__, argnum=argnum)
+def replace_args_with_nodes(fun, args, kwargs, argnum, argname, tape):
+    makenode = lambda argval: merge_tapes(new_node(safe_type(getval(argval)), [tape]), argval)
+    sig = funcsigs.signature(fun)
+
+    if argname is not None:
+        argnum = list(sig.parameters).index(argname)
+        return replace_args_with_nodes(fun, args, kwargs, argnum, None, tape)
+    elif argnum is not None:
+        new_args = list(args)
+        new_args[argnum] = node = makenode(args[argnum])
+        bindings = sig.bind(*new_args, **kwargs)
+        return node, bindings.args, bindings.kwargs
+    else:
+        new_args = list(map(makenode, args))
+        new_kwargs = {k: makenode(v) for k, v in iteritems(kwargs)}
+        bindings = sig.bind(*new_args, **new_kwargs)
+        all_nodes = OrderedDict((name, bindings.arguments[name]) for name in sig.parameters)
+        return all_nodes, bindings.args, bindings.kwargs
+
+def attach_name_and_doc(fun, opname, argnum, argname=None):
+    if argnum is not None:
+        namestr = "{op}_{fun}_wrt_{argnum}".format(
+            op=opname.lower(), fun=fun.__name__, argnum=argnum)
+        docstr = "{op} of function {fun} with respect to argument number {argnum}. " \
+            "Has the same arguments as {fun} but the return value has type of" \
+            "argument {argnum}".format(op=opname, fun=fun.__name__, argnum=argnum)
+    elif argname is not None:
+        namestr = "{op}_{fun}_wrt_{argname}".format(
+            op=opname.lower(), fun=fun.__name__, argname=argname)
+        docstr = "{op} of function {fun} with respect to argument {argname}. " \
+            "Has the same arguments as {fun} but the return value has type of" \
+            "argument {argname}".format(op=opname, fun=fun.__name__, argname=argname)
+    else:
+        namestr = "{op}_{fun}_wrt_all".format(op=opname.lower(), fun=fun.__name__)
+        docstr = "{op} of function {fun} with respect to all arguments. " \
+            "Has the same arguments as {fun} but the return value is a {type}" \
+            .format(op=opname, fun=fun.__name__, type='dict' if argnum is None else 'tuple')
 
     def wrap(gradfun):
         try:

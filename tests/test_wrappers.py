@@ -2,8 +2,7 @@ from __future__ import absolute_import
 import autograd.numpy as np
 import autograd.numpy.random as npr
 from autograd.util import *
-from autograd import (grad, elementwise_grad, jacobian, value_and_grad,
-                      grad_and_aux, hessian_vector_product, hessian, multigrad)
+from autograd import grad, elementwise_grad, hessian, multigrad
 from builtins import range
 
 npr.seed(1)

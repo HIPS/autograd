@@ -3,7 +3,6 @@ from __future__ import absolute_import
 import autograd.numpy as np
 from autograd.core import grad, getval, jacobian
 
-
 def multigrad(fun, argnums=[0]):
     """Takes gradients wrt multiple arguments simultaneously."""
     def combined_arg_fun(multi_arg, *args, **kwargs):
@@ -16,6 +15,11 @@ def multigrad(fun, argnums=[0]):
         multi_arg = tuple([args[i] for i in argnums])
         return gradfun(multi_arg, *args, **kwargs)
     return gradfun_rearranged
+
+def multigrad_dict(fun):
+    "Takes gradients wrt all arguments simultaneously,"
+    "returns a dict mapping 'argname' to 'gradval'"
+    return grad(fun, None)
 
 def grad_and_aux(fun, argnum=0):
     """Builds a function that returns the gradient of the first output and the
