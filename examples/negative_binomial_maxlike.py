@@ -2,7 +2,7 @@ from __future__ import division, print_function
 import autograd.numpy as np
 import autograd.numpy.random as npr
 from autograd.scipy.special import gammaln
-from autograd import grad
+from autograd import grad, multigrad
 
 import scipy.optimize
 
@@ -50,7 +50,7 @@ if __name__ == "__main__":
     print('r={r}, p={p}'.format(r=r, p=p))
 
     print('Check that we are at a local stationary point:')
-    print(grad(lambda rp: np.sum(negbin_loglike(rp[0], rp[1], data)))((r, p)))
+    print(multigrad(lambda r, p: np.sum(negbin_loglike(r, p, data)))(r, p))
 
     import matplotlib.pyplot as plt
     xm = data.max()

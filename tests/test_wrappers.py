@@ -37,6 +37,11 @@ def test_multigrad():
     numeric = nd(complicated_fun_3_1, D, B)
     check_equivalent(exact, numeric)
 
+def test_multigrad_onearg():
+    fun = lambda x, y: np.sum(x + np.sin(y))
+    packed_fun = lambda xy: np.sum(xy[0] + np.sin(xy[1]))
+    A, B = npr.randn(3), npr.randn(3)
+    check_equivalent(multigrad(fun)(A,B), grad(packed_fun)((A,B)))
 
 def test_elementwise_grad():
     def simple_fun(a):
