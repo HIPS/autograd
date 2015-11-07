@@ -18,9 +18,6 @@ def grad(fun, argnum=0, argname=None):
     function takes the same arguments as `fun`, but returns the gradient
     instead. The function `fun` should be scalar-valued. The gradient has the
     same type as the argument."""
-    if (argnum is not None) and (argname is not None):
-        raise ValueError("Specify 'argnum' OR 'argname' (not both).")
-
     @attach_name_and_doc(fun, argnum, 'Gradient')
     def gradfun(*args,**kwargs):
         return backward_pass(*forward_pass(fun,args,kwargs,argnum,argname))
@@ -60,20 +57,19 @@ def jacobian(fun, argnum=0):
 
 def forward_pass(fun, args, kwargs, argnum=None, argname=None):
     tape = CalculationTape()
-    start_nodes, args, kwargs = replace_args_with_nodes(fun, args, kwargs, argnum, argname, tape)
+    start_node, args, kwargs = replace_args_with_nodes(fun, args, kwargs, argnum, argname, tape)
     try: end_node = fun(*args, **kwargs)
     except Exception as e: add_extra_error_message(e)
-    return start_nodes, end_node, tape
+    return start_node, end_node, tape
 
-def backward_pass(start_nodes, end_node, tape):
-    def unpack_result(grad_dict):
-        return grad_dict if len(grad_dict) > 1 else list(grad_dict.values())[0]
+def backward_pass(start_node, end_node, tape):
+    return_dict = isinstance(start_node, dict)
 
     if not isinstance(end_node, Node) or tape not in end_node.tapes:
         warnings.warn("Output seems independent of input. Returning zero gradient.")
-        grad_dict = {argname:zeros_like(start_node)
-                     for argname, start_node in iteritems(start_nodes)}
-        return unpack_result(grad_dict)
+        if not return_dict:
+            return zeros_like(start_node)
+        return {name:zeros_like(node) for name, node in iteritems(start_node)}
     if type(end_node) is not FloatNode:
         try:
             end_node = FloatNode.cast(end_node, 1.0)
@@ -87,9 +83,11 @@ def backward_pass(start_nodes, end_node, tape):
         rnode.outgrads = []
     end_node.tapes[tape].outgrads = [1.0]
 
+    if return_dict:
+        start_rnodes = {node.tapes[tape]: name for name, node in iteritems(start_node)}
+        grad_dict = {}
+
     op_list = list(tape)
-    grad_dict = {}
-    start_rnodes = {node.tapes[tape]: argname for argname, node in iteritems(start_nodes)}
     while op_list:
         rnode = op_list.pop()
         if rnode.outgrads:
@@ -99,33 +97,29 @@ def backward_pass(start_nodes, end_node, tape):
             for gradfun, parent in rnode.parent_grad_ops:
                 og = cast_to_node_type(gradfun(cur_outgrad), parent.node_type, parent.node_value)
                 parent.outgrads.append(og)
-            if rnode in start_rnodes:
+            if return_dict and rnode in start_rnodes:
                 grad_dict[start_rnodes[rnode]] = cur_outgrad
-    return unpack_result(grad_dict)
+    return cur_outgrad if not return_dict else grad_dict
 
 def replace_args_with_nodes(fun, args, kwargs, argnum, argname, tape):
     makenode = lambda argval: new_node(safe_type(getval(argval)), [tape])
     sig = funcsigs.signature(fun)
 
-    # TODO the problem with argnames is that not all arguments have names!
-    # if the def looks like fun(*args), then there's no name to get
-    # => returning a grad_dict is a bad design
-
-    # so what should we do here? it makes sense to ask for argnum=0 or argnum=1
-    # even though they don't have names
-    argnames = list(sig.parameters)
-
-    if argnum is not None:
+    if argname is not None:
+        argnames = list(sig.parameters)
+        argnum = argnames.index(argname)
+        return replace_args_with_nodes(fun, args, kwargs, argnum, None, tape)
+    elif argnum is not None:
         new_args = list(args)
         new_args[argnum] = node = merge_tapes(makenode(args[argnum]), args[argnum])
         bindings = sig.bind(*new_args, **kwargs)
-        return {argnames[argnum]: node}, bindings.args, bindings.kwargs
-    elif argname is not None:
-        argnum = argnames.index(argname)
-        return replace_args_with_nodes(fun, args, kwargs, argnum, None, tape)
+        return node, bindings.args, bindings.kwargs
     else:
-        # replace all arguments
-        raise NotImplementedError
+        new_args = list(map(makenode, args))
+        new_kwargs = {k: makenode(v) for k, v in iteritems(kwargs)}
+        bindings = sig.bind(*new_args, **new_kwargs)
+        all_nodes = {name: bindings.arguments[name] for name in sig.parameters}
+        return all_nodes, bindings.args, bindings.kwargs
 
 def attach_name_and_doc(fun, argnum, opname):
     namestr = "{op}_{fun}_wrt_argnum_{argnum}".format(
