@@ -173,6 +173,7 @@ def make_grad_repeat(ans, x, repeats, axis=None):
 anp.repeat.defgrad(make_grad_repeat)
 
 def make_grad_tile(ans, x, reps):
+    reps = [reps] if anp.isscalar(reps) else reps
     def tile_grad(g):
         for axis, rep in enumerate(reps):
             g = sum(anp.split(g, rep, axis))
