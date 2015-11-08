@@ -54,14 +54,14 @@ def jacobian(fun, argnum=0):
     return jacfun
 
 def forward_pass(fun, args, kwargs, argnum=0):
-        tape = CalculationTape()
-        arg_wrt = args[argnum]
-        start_node = new_node(safe_type(getval(arg_wrt)), [tape])
-        args = list(args)
-        args[argnum] = merge_tapes(start_node, arg_wrt)
-        try: end_node = fun(*args, **kwargs)
-        except Exception as e: add_extra_error_message(e)
-        return start_node, end_node, tape
+    tape = CalculationTape()
+    arg_wrt = args[argnum]
+    start_node = new_node(safe_type(getval(arg_wrt)), [tape])
+    args = list(args)
+    args[argnum] = merge_tapes(start_node, arg_wrt)
+    try: end_node = fun(*args, **kwargs)
+    except Exception as e: add_extra_error_message(e)
+    return start_node, end_node, tape
 
 def backward_pass(start_node, end_node, tape):
     if not isinstance(end_node, Node) or tape not in end_node.tapes:
@@ -299,7 +299,6 @@ for float_op in differentiable_ops + nondifferentiable_ops:
     setattr(FloatNode, float_op, primitive(getattr(float, float_op)))
 
 FloatNode.__dict__['__neg__'].defgrad(lambda ans, x : op.neg)
-
 
 
 for comp_op in nondifferentiable_ops:
