@@ -3,6 +3,7 @@ from __future__ import absolute_import
 import autograd.numpy as np
 from autograd.core import grad, getval, jacobian
 from collections import OrderedDict
+from future.utils import iteritems
 
 
 def multigrad(fun, argnums=[0]):
@@ -26,10 +27,20 @@ def multigrad_dict(fun):
     sig = funcsigs.signature(fun)
 
     def gradfun(*args, **kwargs):
-        argdict = dict(sig.bind(*args, **kwargs).arguments)
-        newfun = lambda dct: fun(**{argname:dct[argname] for argname in argdict})
-        grad_dict = grad(newfun)(argdict)
-        return OrderedDict((argname, grad_dict[argname]) for argname in argdict)
+        bindings = sig.bind(*args, **kwargs)
+        var_positional = next((name for name, parameter in sig.parameters.items()
+                               if parameter.kind == parameter.VAR_POSITIONAL), None)
+        var_keyword = next((name for name, parameter in sig.parameters.items()
+                            if parameter.kind == parameter.VAR_KEYWORD), None)
+        args = lambda dct: dct[var_positional] if var_positional else ()
+        kwargs = lambda dct: \
+            dict(((key, dct[var_keyword][key]) for key in dct[var_keyword]) if var_keyword else (),
+                 **{argname: dct[argname] for argname, parameter in sig.parameters.items()
+                    if parameter.kind != parameter.VAR_POSITIONAL})
+
+        newfun = lambda dct: fun(*args(dct), **kwargs(dct))
+        grad_dict = grad(newfun)(dict(bindings.arguments))
+        return OrderedDict((argname, grad_dict[argname]) for argname in bindings.arguments)
 
     return gradfun
 
