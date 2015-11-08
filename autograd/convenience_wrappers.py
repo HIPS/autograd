@@ -26,21 +26,39 @@ def multigrad_dict(fun):
     import funcsigs
     sig = funcsigs.signature(fun)
 
+    def select(preds, lst):
+        idx = lambda item: next(
+            (i for i, pred in enumerate(preds) if pred(item)), len(preds))
+        results = [[] for _ in preds] + [[]]
+        for item in lst:
+            results[idx(item)].append(item)
+        return results
+
+    is_var_pos = lambda name: sig.parameters[name].kind == sig.parameters[name].VAR_POSITIONAL
+    is_var_kwd = lambda name: sig.parameters[name].kind == sig.parameters[name].VAR_KEYWORD
+    var_pos, var_kwd, argnames = select([is_var_pos, is_var_kwd], sig.parameters)
+
+    joindicts = lambda d1, d2: dict({key:d1[key] for key in d1}, **d2)
+
+    def apply_defaults(arguments):
+        defaults = {name: param.default for name, param in sig.parameters.items()
+                    if param.default is not param.empty}
+        return OrderedDict((name, arguments[name] if name in arguments else defaults[name])
+                           for name in sig.parameters)
+
     def gradfun(*args, **kwargs):
         bindings = sig.bind(*args, **kwargs)
-        var_positional = next((name for name, parameter in sig.parameters.items()
-                               if parameter.kind == parameter.VAR_POSITIONAL), None)
-        var_keyword = next((name for name, parameter in sig.parameters.items()
-                            if parameter.kind == parameter.VAR_KEYWORD), None)
-        args = lambda dct: dct[var_positional] if var_positional else ()
-        kwargs = lambda dct: \
-            dict(((key, dct[var_keyword][key]) for key in dct[var_keyword]) if var_keyword else (),
-                 **{argname: dct[argname] for argname, parameter in sig.parameters.items()
-                    if parameter.kind != parameter.VAR_POSITIONAL})
 
-        newfun = lambda dct: fun(*args(dct), **kwargs(dct))
-        grad_dict = grad(newfun)(dict(bindings.arguments))
-        return OrderedDict((argname, grad_dict[argname]) for argname in bindings.arguments)
+        args = lambda dct: dct[var_pos[0]] if var_pos else ()
+        kwargs = lambda dct: dct[var_kwd[0]] if var_kwd else {}
+        others = lambda dct: {argname: dct[argname] for argname in argnames
+                              if argname not in var_kwd + var_pos}
+
+        newfun = lambda dct: fun(*args(dct), **joindicts(kwargs(dct), others(dct)))
+
+        argdict = apply_defaults(bindings.arguments)
+        grad_dict = grad(newfun)(dict(argdict))
+        return OrderedDict((argname, grad_dict[argname]) for argname in argdict)
 
     return gradfun
 
