@@ -38,7 +38,7 @@ def multigrad_dict(fun):
     is_var_kwd = lambda name: sig.parameters[name].kind == sig.parameters[name].VAR_KEYWORD
     var_pos, var_kwd, argnames = select([is_var_pos, is_var_kwd], sig.parameters)
 
-    joindicts = lambda d1, d2: dict({key:d1[key] for key in d1}, **d2)
+    todict = lambda dct: {key:dct[key] for key in dct}
 
     def apply_defaults(arguments):
         defaults = {name: param.default for name, param in sig.parameters.items()
@@ -49,12 +49,12 @@ def multigrad_dict(fun):
     def gradfun(*args, **kwargs):
         bindings = sig.bind(*args, **kwargs)
 
-        args = lambda dct: dct[var_pos[0]] if var_pos else ()
-        kwargs = lambda dct: dct[var_kwd[0]] if var_kwd else {}
-        others = lambda dct: {argname: dct[argname] for argname in argnames
-                              if argname not in var_kwd + var_pos}
+        args = lambda dct: tuple(dct[var_pos[0]]) if var_pos else ()
+        kwargs = lambda dct: todict(dct[var_kwd[0]]) if var_kwd else {}
+        others = lambda dct: tuple(dct[argname] for argname in argnames
+                                   if argname not in var_kwd + var_pos)
 
-        newfun = lambda dct: fun(*args(dct), **joindicts(kwargs(dct), others(dct)))
+        newfun = lambda dct: fun(*(others(dct) + args(dct)), **kwargs(dct))
 
         argdict = apply_defaults(bindings.arguments)
         grad_dict = grad(newfun)(dict(argdict))
