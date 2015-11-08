@@ -46,12 +46,12 @@ def jacobian(fun, argnum=0):
     concatenate = lambda lst: np.concatenate(list(map(np.atleast_1d, lst)))
 
     @attach_name_and_doc(fun, argnum, 'Jacobian')
-    def gradfun(*args, **kwargs):
+    def jacfun(*args, **kwargs):
         start_node, end_nodes, tape = forward_pass(list_fun, args, kwargs, argnum)
         grads = list(map(partial(backward_pass, start_node, tape=tape), end_nodes))
         shape = dummy.outshape + getshape(args[argnum])
         return np.reshape(concatenate(grads), shape) if shape else grads[0]
-    return gradfun
+    return jacfun
 
 def forward_pass(fun, args, kwargs, argnum=0):
         tape = CalculationTape()
@@ -71,9 +71,10 @@ def backward_pass(start_node, end_node, tape):
         try:
             end_node = FloatNode.cast(end_node, 1.0)
         except TypeError:
-            raise TypeError("Output type {0} can't be cast to float. ".format(type(end_node.value))
-                            + "Function grad requires a scalar-valued function. "
-                              "Try jacobian or elementwise_grad.")
+            raise TypeError(
+                "Output type {} can't be cast to float. "
+                "Function grad requires a scalar-valued function. "
+                "Try jacobian or elementwise_grad.".format(type(end_node.value)))
 
     for node in tape:
         node.outgrads = []
