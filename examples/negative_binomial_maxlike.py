@@ -50,7 +50,9 @@ if __name__ == "__main__":
     print('r={r}, p={p}'.format(r=r, p=p))
 
     print('Check that we are at a local stationary point:')
-    print(multigrad(lambda r, p: np.sum(negbin_loglike(r, p, data)))(r, p))
+    loglike = lambda r, p: np.sum(negbin_loglike(r, p, data))
+    grad_both = multigrad(loglike, argnums=[0,1])
+    print(grad_both(r, p))
 
     import matplotlib.pyplot as plt
     xm = data.max()
