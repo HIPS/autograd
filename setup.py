@@ -19,7 +19,12 @@ class build_ext(_build_ext):
     # see http://stackoverflow.com/q/19919905 for explanation
     def finalize_options(self):
         _build_ext.finalize_options(self)
-        __builtins__.__NUMPY_SETUP__ = False
+        # __builtins__ is a dict when this module isn't __main__
+        # see https://docs.python.org/2/reference/executionmodel.html
+        if isinstance(__builtins__, dict):
+            __builtins__['__NUMPY_SETUP__'] = False
+        else:
+            __builtins__.__NUMPY_SETUP__ = False
         import numpy as np
         self.include_dirs.append(np.get_include())
 
