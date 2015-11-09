@@ -50,6 +50,8 @@ We can continue to differentiate as many times as we like:
 
 <img src="examples/tanh.png" width="600">
 
+See the [tanh example file](examples/tanh.py) for the code.
+
 ## Documentation
 
 You can find a tutorial [here.](docs/tutorial.md)
