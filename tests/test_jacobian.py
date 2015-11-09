@@ -3,8 +3,6 @@ import autograd.numpy as np
 import autograd.numpy.random as npr
 from autograd.util import *
 from autograd import grad, jacobian
-from autograd.convenience_wrappers import jacobian as old_jacobian
-from builtins import map
 
 npr.seed(1)
 
@@ -33,18 +31,6 @@ def test_jacobian_against_stacked_grads():
     grads = [grad(f)(x) for f in scalar_funs]
 
     assert np.allclose(jac, np.vstack(grads))
-
-def test_jacobian_against_wrapper():
-    A = npr.randn(3,3,3)
-    fun = lambda x: np.einsum(
-        'ijk,jkl->il',
-        A, np.sin(x[...,None] * np.tanh(x[None,...])))
-
-    B = npr.randn(3,3)
-    jac1 = jacobian(fun)(B)
-    jac2 = old_jacobian(fun)(B)
-
-    assert np.allclose(jac1, jac2)
 
 def test_jacobian_higher_order():
     fun = lambda x: np.sin(np.outer(x,x)) + np.cos(np.dot(x,x))
