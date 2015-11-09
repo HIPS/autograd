@@ -1,7 +1,7 @@
 from __future__ import division
 import autograd.numpy as np
 import autograd.numpy.random as npr
-from autograd.util import *
+from autograd.util import check_grads
 from autograd import grad, jacobian
 
 npr.seed(1)
