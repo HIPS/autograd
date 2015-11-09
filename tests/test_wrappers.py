@@ -8,6 +8,14 @@ from builtins import range
 
 npr.seed(1)
 
+def test_value_and_grad():
+    fun = lambda x: np.sum(np.sin(x)**2)
+    dfun = grad(fun)
+    dfun_both = value_and_grad(fun)
+    x = npr.randn(5)
+    check_equivalent(fun(x), dfun_both(x)[0])
+    check_equivalent(dfun(x), dfun_both(x)[1])
+
 def test_hessian():
     # Check Hessian of a quadratic function.
     D = 5

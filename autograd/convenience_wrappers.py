@@ -48,24 +48,19 @@ def value_and_grad(fun, argnum=0):
         val = fun(*args, **kwargs)
         return val, getval(val)
     gradval_and_val = grad_and_aux(double_val_fun, argnum)
-
-    def value_and_grad_fun(*args, **kwargs):
-        gradval, val = gradval_and_val(*args, **kwargs)
-        return val, gradval
-
-    return value_and_grad_fun
+    flip = lambda x, y: (y, x)
+    return lambda *args, **kwargs: flip(*gradval_and_val(*args, **kwargs))
 
 def grad_and_aux(fun, argnum=0):
     """Builds a function that returns the gradient of the first output and the
     (unmodified) second output of a function that returns two outputs."""
     def grad_and_aux_fun(*args, **kwargs):
-        saved_aux = []
+        saved = lambda: None
         def return_val_save_aux(*args, **kwargs):
-            val, aux = fun(*args, **kwargs)
-            saved_aux.append(aux)
+            val, saved.aux = fun(*args, **kwargs)
             return val
         gradval = grad(return_val_save_aux, argnum)(*args, **kwargs)
-        return gradval, saved_aux[0]
+        return gradval, saved.aux
 
     return grad_and_aux_fun
 
