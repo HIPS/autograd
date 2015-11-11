@@ -16,10 +16,8 @@ import warnings
 from autograd.core import primitive, getval
 
 def unbox_args(f):
-    tuple_map = lambda f, tup: tuple(map(f, tup))
-    dict_map = lambda f, dct: {key:f(dct[key]) for key in dct}
-    return wraps(f)(lambda *args, **kwargs: f(
-        *tuple_map(getval, args), **dict_map(getval, kwargs)))
+    return wraps(f)(lambda *args, **kwargs:
+        f(*map(getval, args), **{key: getval(dct[key]) for key in dct})
 
 def wrap_namespace(old, new):
     unchanged_types = {float, int, type(None), type}
