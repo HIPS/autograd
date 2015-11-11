@@ -17,7 +17,7 @@ from autograd.core import primitive, getval
 
 def unbox_args(f):
     return wraps(f)(lambda *args, **kwargs:
-        f(*map(getval, args), **{key: getval(dct[key]) for key in dct})
+        f(*map(getval, args), **{key: getval(kwargs[key]) for key in kwargs}))
 
 def wrap_namespace(old, new):
     unchanged_types = {float, int, type(None), type}
