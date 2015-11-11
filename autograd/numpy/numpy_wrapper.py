@@ -15,13 +15,11 @@ else:
 import warnings
 from autograd.core import primitive, getval
 
-def wrap_int_type(f):
+def unbox_args(f):
     tuple_map = lambda f, tup: tuple(map(f, tup))
     dict_map = lambda f, dct: {key:f(dct[key]) for key in dct}
-    unbox_args = lambda f: wraps(f)(
-        lambda *args, **kwargs: f(*tuple_map(getval, args),
-                                  **dict_map(getval, kwargs)))
-    return unbox_args(f)
+    return wraps(f)(lambda *args, **kwargs: f(
+        *tuple_map(getval, args), **dict_map(getval, kwargs)))
 
 def wrap_namespace(old, new):
     unchanged_types = {float, int, type(None), type}
@@ -31,7 +29,7 @@ def wrap_namespace(old, new):
         if type(obj) in function_types:
             new[name] = primitive(obj)
         elif type(obj) is type and obj in int_types:
-            new[name] = wrap_int_type(obj)
+            new[name] = unbox_args(obj)
         elif type(obj) in unchanged_types:
             new[name] = obj
 
