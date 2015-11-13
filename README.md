@@ -87,5 +87,5 @@ Drop us an email!
 We want to thank Jasper Snoek and the rest of the HIPS group (led by Prof. Ryan
 P. Adams) for helpful contributions and advice; Barak Pearlmutter for
 foundational work on automatic differentiation and for guidance on our
-implementation; and Analog Devices International and Samsung Advanced Institute
+implementation; and Analog Devices Inc. (Lyric Labs) and Samsung Advanced Institute
 of Technology for their generous support.
