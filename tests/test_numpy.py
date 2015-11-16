@@ -779,3 +779,14 @@ def test_index_dot_slices():
 
 # TODO:
 # getitem
+
+def test_cast_to_int():
+    inds = np.ones(5)[:,None]
+
+    def fun(W):
+        W = np.concatenate((W, inds), axis=1)
+        W = W[:,:-1]
+        return W[np.int64(W[:,-1])].sum()
+
+    W = np.random.randn(5, 10)
+    check_grads(fun, W)
