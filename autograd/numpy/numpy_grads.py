@@ -155,6 +155,27 @@ anp.cross.defgrad(lambda ans, a, b, axisa=-1, axisb=-1, axisc=-1, axis=None : la
 
 # ----- Trickier grads -----
 
+
+def make_grad_diff(ans, a, n=1, axis=-1):
+    nd = len(a.shape)
+    sl1 = [slice(None)]*nd
+    sl1[axis] = slice(None, 1)
+
+    sl2 = [slice(None)]*nd
+    sl2[axis] = slice(-1, None)
+
+    undiff = lambda g: anp.concatenate((-g[sl1], -anp.diff(g, axis=axis), g[sl2]), axis=axis)
+
+    def gradfun(g):
+        def helper(g, n):
+            if n == 0:
+                return g
+            return helper(undiff(g), n-1)
+        return helper(g, n)
+
+    return gradfun
+anp.diff.defgrad(make_grad_diff)
+
 def make_grad_repeat(ans, x, repeats, axis=None):
     shape = x.shape
     if axis is None:  # If axis is none, np.repeat() repeats the flattened array.
