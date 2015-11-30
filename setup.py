@@ -58,7 +58,7 @@ extensions = [
 if use_cython:
     from Cython.Build import cythonize
     try:
-        extensions = cythonize(os.path.join('**','*.pyx'))
+        cythonize(r".\autograd\numpy\linalg_extra.pyx")
     except:
         warn('Failed to generate extension module code from Cython files')
 
