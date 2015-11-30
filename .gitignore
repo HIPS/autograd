@@ -1,8 +1,9 @@
-*.pyc
+*.py[cod]
 scratch/
 examples/data
 .idea/
 .DS_Store
+.cache
 build/
 data/
 dist/

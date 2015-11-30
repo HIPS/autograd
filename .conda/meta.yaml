@@ -1,0 +1,51 @@
+package:
+  name: autograd
+  version: "0.0.0"
+
+source:
+  git_url:  https://github.com/HIPS/autograd.git
+
+requirements:
+  build:
+    - python
+    - cython
+    - future
+    - numpy >=1.9
+    - scipy
+    - setuptools
+
+  run:
+    - python
+    - future
+    - numpy >=1.9
+    - scipy
+    - setuptools
+
+test:
+  # Python imports
+  imports:
+    - autograd
+    - autograd.numpy
+    - autograd.scipy
+    - autograd.scipy.stats
+
+  # commands:
+    # You can put test commands to be run here.  Use this to test that the
+    # entry points work.
+
+
+  # You can also put a file called run_test.py in the recipe that will be run
+  # at test time.
+
+  # requires:
+    # Put any additional test requirements here.  For example
+    # - nose
+
+about:
+  home: https://github.com/HIPS/autograd
+  license: MIT License
+  summary: 'Efficiently computes derivatives of numpy code.'
+
+# See
+# http://docs.continuum.io/conda/build.html for
+# more information about meta.yaml

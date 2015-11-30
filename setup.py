@@ -6,13 +6,17 @@ from distutils.errors import CompileError
 from warnings import warn
 import os
 
+from version import __version__ as version
+
+
 # use cython if it is importable and the environment has USE_CYTHON
-try:
+use_cython = os.getenv('USE_CYTHON', False)
+if use_cython:
     from Cython.Distutils import build_ext as _build_ext
-except ImportError:
-    use_cython = False
-else:
-    use_cython = os.getenv('USE_CYTHON', False)
+    from Cython.Build import cythonize
+    # regenerate the extension files from the .pyx sources
+    cythonize(r".\autograd\numpy\linalg_extra.pyx")
+
 
 # subclass the build_ext command to handle numpy include and build failures
 class build_ext(_build_ext):
@@ -54,17 +58,10 @@ extensions = [
         extra_compile_args=['-w','-Ofast']),
 ]
 
-# if using cython, regenerate the extension files from the .pyx sources
-if use_cython:
-    from Cython.Build import cythonize
-    try:
-        extensions = cythonize(os.path.join('**','*.pyx'))
-    except:
-        warn('Failed to generate extension module code from Cython files')
 
 setup(
     name='autograd',
-    version='1.1.2',
+    version=version,
     description='Efficiently computes derivatives of numpy code.',
     author='Dougal Maclaurin and David Duvenaud and Matthew Johnson',
     author_email="maclaurin@physics.harvard.edu, dduvenaud@seas.harvard.edu, mattjj@csail.mit.edu",
