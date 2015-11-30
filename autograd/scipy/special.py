@@ -43,3 +43,12 @@ jn.defgrad_is_zero(argnums=(0,))
 yn.defgrad_is_zero(argnums=(0,))
 jn.defgrad(lambda ans, n, x: lambda g: g * (jn(n - 1, x) - jn(n + 1, x)) / 2.0, argnum=1)
 yn.defgrad(lambda ans, n, x: lambda g: g * (yn(n - 1, x) - yn(n + 1, x)) / 2.0, argnum=1)
+
+
+### Error Function ###
+inv_root_pi = 0.56418958354775627928
+erf = primitive(scipy.special.erf)
+erfc = primitive(scipy.special.erfc)
+
+erf.defgrad(lambda ans, x: lambda g: 2.*g*inv_root_pi*np.exp(-x**2))
+erfc.defgrad(lambda ans, x: lambda g: -2.*g*inv_root_pi*np.exp(-x**2))

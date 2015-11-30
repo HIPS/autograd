@@ -123,3 +123,6 @@ def test_j0(): unary_ufunc_check(special.j0, lims=[0.2, 20.0], test_complex=Fals
 def test_j1(): unary_ufunc_check(special.j1, lims=[0.2, 20.0], test_complex=False)
 def test_y0(): unary_ufunc_check(special.y0, lims=[0.2, 20.0], test_complex=False)
 def test_y1(): unary_ufunc_check(special.y1, lims=[0.2, 20.0], test_complex=False)
+
+def test_erf(): unary_ufunc_check(special.erf, lims=[-3., 3.], test_complex=True)
+def test_erfc(): unary_ufunc_check(special.erfc, lims=[-3., 3.], test_complex=True)
