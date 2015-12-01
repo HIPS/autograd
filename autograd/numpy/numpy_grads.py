@@ -164,7 +164,12 @@ def make_grad_diff(ans, a, n=1, axis=-1):
     sl2 = [slice(None)]*nd
     sl2[axis] = slice(-1, None)
 
-    undiff = lambda g: anp.concatenate((-g[sl1], -anp.diff(g, axis=axis), g[sl2]), axis=axis)
+    def undiff(g):
+        if g.shape[axis] > 0:
+            return anp.concatenate((-g[sl1], -anp.diff(g, axis=axis), g[sl2]), axis=axis)
+        shape = list(g.shape)
+        shape[axis] = 1
+        return anp.zeros(shape)
 
     def gradfun(g):
         def helper(g, n):
