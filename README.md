@@ -69,6 +69,7 @@ You can find a tutorial [here.](docs/tutorial.md)
 
 * [Variational inference in Bayesian neural network](examples/bayesian_neural_net.py)
 * [Gaussian process regression](examples/gaussian_process.py)
+* [Sampyl, a pure Python MCMC package with HMC and NUTS](https://github.com/mcleonard/sampyl)
 
 ## How to install
 
