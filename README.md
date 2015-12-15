@@ -18,8 +18,8 @@ Example use:
 >>>
 >>> def tanh(x):                 # Define a function
 ...     y = np.exp(-x)
-...     return (1.0 - y)  / ( 1.0 + y)
-... 
+...     return (1.0 - y) / (1.0 + y)
+...
 >>> grad_tanh = grad(tanh)       # Obtain its gradient function
 >>> grad_tanh(1.0)               # Evaluate the gradient at x = 1.0
 0.39322386648296376
@@ -30,21 +30,25 @@ Example use:
 We can continue to differentiate as many times as we like:
 
 ```python
->>> grad_tanh_2 = grad(grad_tanh)           # 2nd derivative
->>> grad_tanh_3 = grad(grad_tanh_2)         # 3rd derivative
->>> grad_tanh_4 = grad(grad_tanh_3)         # etc.
->>> grad_tanh_5 = grad(grad_tanh_4)
->>> grad_tanh_6 = grad(grad_tanh_5)
+>>> def elementwise_grad(fun):                   # A wrapper for broadcasting
+...     return grad(lambda x: np.sum(fun(x)))    # (closures are no problem)
+...
+>>> grad_tanh   = elementwise_grad(tanh)
+>>> grad_tanh_2 = elementwise_grad(grad_tanh)     # 2nd derivative
+>>> grad_tanh_3 = elementwise_grad(grad_tanh_2)  # 3rd derivative
+>>> grad_tanh_4 = elementwise_grad(grad_tanh_3)  # etc.
+>>> grad_tanh_5 = elementwise_grad(grad_tanh_4)
+>>> grad_tanh_6 = elementwise_grad(grad_tanh_5)
 >>>
 >>> import matplotlib.pyplot as plt
 >>> x = np.linspace(-7, 7, 200)
->>> plt.plot(x, map(tanh, x),
-...          x, map(grad_tanh, x),
-...          x, map(grad_tanh_2, x),
-...          x, map(grad_tanh_3, x),
-...          x, map(grad_tanh_4, x),
-...          x, map(grad_tanh_5, x),
-...          x, map(grad_tanh_6, x))
+>>> plt.plot(x, tanh(x),
+...          x, grad_tanh(x),
+...          x, grad_tanh_2(x),
+...          x, grad_tanh_3(x),
+...          x, grad_tanh_4(x),
+...          x, grad_tanh_5(x),
+...          x, grad_tanh_6(x))
 >>> plt.show()
 ```
 
