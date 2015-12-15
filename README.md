@@ -34,7 +34,7 @@ We can continue to differentiate as many times as we like:
 ...     return grad(lambda x: np.sum(fun(x)))    # (closures are no problem)
 ...
 >>> grad_tanh   = elementwise_grad(tanh)
->>> grad_tanh_2 = elementwise_grad(grad_tanh)     # 2nd derivative
+>>> grad_tanh_2 = elementwise_grad(grad_tanh)    # 2nd derivative
 >>> grad_tanh_3 = elementwise_grad(grad_tanh_2)  # 3rd derivative
 >>> grad_tanh_4 = elementwise_grad(grad_tanh_3)  # etc.
 >>> grad_tanh_5 = elementwise_grad(grad_tanh_4)
