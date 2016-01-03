@@ -784,9 +784,15 @@ def test_cast_to_int():
     inds = np.ones(5)[:,None]
 
     def fun(W):
-        W = np.concatenate((W, inds), axis=1)
-        W = W[:,:-1]
-        return W[np.int64(W[:,-1])].sum()
+        # glue W and inds together
+        glued_together = np.concatenate((W, inds), axis=1)
+
+        # separate W and inds back out
+        new_W = W[:,:-1]
+        new_inds = np.int64(W[:,-1])
+
+        assert new_inds.dtype == np.int64
+        return new_W[new_inds].sum()
 
     W = np.random.randn(5, 10)
     check_grads(fun, W)

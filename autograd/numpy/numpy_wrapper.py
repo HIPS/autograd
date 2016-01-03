@@ -16,8 +16,16 @@ import warnings
 from autograd.core import primitive, getval
 
 def unbox_args(f):
-    return wraps(f)(lambda *args, **kwargs:
-        f(*map(getval, args), **{key: getval(kwargs[key]) for key in kwargs}))
+    def wrapped(*args, **kwargs):
+        unboxed_args = map(getval, args)
+        unboxed_kwargs = {key: getval(kwargs[key]) for key in kwargs}
+        return f(*unboxed_args, **unboxed_kwargs)
+    return wrapped
+
+def wrap_intdtype(cls):
+    class IntdtypeSubclass(cls):
+        __new__ = unbox_args(cls.__new__)
+    return IntdtypeSubclass
 
 def wrap_namespace(old, new):
     unchanged_types = {float, int, type(None), type}
@@ -27,7 +35,7 @@ def wrap_namespace(old, new):
         if type(obj) in function_types:
             new[name] = primitive(obj)
         elif type(obj) is type and obj in int_types:
-            new[name] = unbox_args(obj)
+            new[name] = wrap_intdtype(obj)
         elif type(obj) in unchanged_types:
             new[name] = obj
 
