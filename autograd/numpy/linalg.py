@@ -87,7 +87,7 @@ def make_grad_cholesky(L, A):
     from scipy.linalg.blas import dsymv
     N = L.shape[0]
 
-    def cholesky_grad_python(g):
+    def cholesky_grad(g):
         dL = anp.tril(g)
         dL[-1,-1] /= 2 * L[-1,-1]
         for k in range(N-2, -1, -1):
@@ -97,12 +97,6 @@ def make_grad_cholesky(L, A):
             dL[k,k] -= anp.dot(dL[k+1:,k], L[k+1:,k])
             dL[k,k] /= 2 * L[k,k]
         return (dL + dL.T)/2.
-
-    try:
-        from .linalg_extra import cholesky_grad as cython_cholesky_grad
-        cholesky_grad = wraps(cython_cholesky_grad)(partial(cython_cholesky_grad, L.value))
-    except ImportError:
-        cholesky_grad = cholesky_grad_python
 
     return primitive(cholesky_grad)
 cholesky.defgrad(make_grad_cholesky)
