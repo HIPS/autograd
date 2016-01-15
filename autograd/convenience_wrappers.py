@@ -1,9 +1,41 @@
 """Convenience functions built on top of `grad`."""
 from __future__ import absolute_import
+from functools import partial
 import autograd.numpy as np
-from autograd.core import grad, getval, jacobian
+from autograd.core import grad, getval, forward_pass, backward_pass, attach_name_and_doc
 from collections import OrderedDict
 
+def jacobian(fun, argnum=0):
+    """
+    Returns a function which computes the Jacobian of `fun` with respect to
+    positional argument number `argnum`, which must be a scalar or array. Unlike
+    `grad` it is not restricted to scalar-output functions, but also it cannot
+    take derivatives with respect to some argument types (like lists or dicts).
+    If the input to `fun` has shape (in1, in2, ...) and the output has shape
+    (out1, out2, ...) then the Jacobian has shape (out1, out2, ..., in1, in2, ...).
+    """
+    dummy = lambda: None
+
+    def getshape(val):
+        val = getval(val)
+        assert np.isscalar(val) or isinstance(val, np.ndarray), \
+            'Jacobian requires input and output to be scalar- or array-valued'
+        return np.shape(val)
+
+    def list_fun(*args, **kwargs):
+        val = fun(*args, **kwargs)
+        dummy.outshape = getshape(val)
+        return list(np.ravel(val))
+
+    concatenate = lambda lst: np.concatenate(list(map(np.atleast_1d, lst)))
+
+    @attach_name_and_doc(fun, argnum, 'Jacobian')
+    def jacfun(*args, **kwargs):
+        start_node, end_nodes, tape = forward_pass(list_fun, args, kwargs, argnum)
+        grads = list(map(partial(backward_pass, start_node, tape=tape), end_nodes))
+        shape = dummy.outshape + getshape(args[argnum])
+        return np.reshape(concatenate(grads), shape) if shape else grads[0]
+    return jacfun
 
 def multigrad(fun, argnums=[0]):
     """Takes gradients wrt multiple arguments simultaneously."""

@@ -35,9 +35,9 @@ def test_jacobian_against_stacked_grads():
 def test_jacobian_higher_order():
     fun = lambda x: np.sin(np.outer(x,x)) + np.cos(np.dot(x,x))
 
-    jacobian(fun)(npr.randn(3)).shape == (3,3,3)
-    jacobian(jacobian(fun))(npr.randn(3)).shape == (3,3,3,3)
-    jacobian(jacobian(jacobian(fun)))(npr.randn(3)).shape == (3,3,3,3,3)
+    assert jacobian(fun)(npr.randn(3)).shape == (3,3,3)
+    assert jacobian(jacobian(fun))(npr.randn(3)).shape == (3,3,3,3)
+    # assert jacobian(jacobian(jacobian(fun)))(npr.randn(3)).shape == (3,3,3,3,3)
 
     check_grads(lambda x: np.sum(np.sin(jacobian(fun)(x))), npr.randn(3))
     check_grads(lambda x: np.sum(np.sin(jacobian(jacobian(fun))(x))), npr.randn(3))
