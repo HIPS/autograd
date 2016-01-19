@@ -115,7 +115,6 @@ def make_grad_cholesky(L, A):
         for k in range(N-2, -1, -1):
             dL[...,k+1:,k] -= dsymv(1., dL[...,k+1:,k+1:], L[...,k+1:,k], lower=True)
             dL[...,k+1:,k] -= diag(dL[...,k+1:,k+1:]) * L[...,k+1:,k]
-            print k, dL.shape, L.shape
             dL[...,k+1:,k] /= L[...,k:k+1,k]
             dL[...,k,k] -= dot(dL[...,k+1:,k], L[...,k+1:,k])
             dL[...,k,k] /= 2 * L[...,k,k]
