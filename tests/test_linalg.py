@@ -12,9 +12,11 @@ npr.seed(1)
 def check_symmetric_matrix_grads(fun, *args):
     def symmetrize(A):
         L = np.tril(A)
-        return (L + L.T)/2.
+        return (L + T(L))/2.
     new_fun = lambda *args: fun(symmetrize(args[0]), *args[1:])
     return check_grads(new_fun, *args)
+
+T = lambda A : np.swapaxes(A, -1, -2)
 
 def rand_psd(D):
     mat = npr.randn(D,D)
@@ -179,6 +181,12 @@ def test_cholesky():
     def fun(A):
         return to_scalar(np.linalg.cholesky(A))
     check_symmetric_matrix_grads(fun, rand_psd(6))
+
+def test_cholesky_broadcast():
+    def fun(A):
+        return to_scalar(np.linalg.cholesky(A))
+    A = np.concatenate([rand_psd(6)[None, :, :] for i in range(3)], axis=0)
+    check_symmetric_matrix_grads(fun, A)
 
 def test_cholesky_reparameterization_trick():
     def fun(A):

@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 from functools import partial, wraps
+import numpy as onp
 import numpy.linalg as npla
 from .numpy_wrapper import wrap_namespace, dot
 from . import numpy_wrapper as anp
@@ -14,7 +15,7 @@ wrap_namespace(npla.__dict__, globals())
 # by Mike Giles
 # https://people.maths.ox.ac.uk/gilesm/files/NA-08-01.pdf
 
-# transpose by swappling last two dimensions
+# transpose by swapping last two dimensions
 T = lambda x: anp.swapaxes(x, -1, -2)
 
 # add two dimensions to the end of x
@@ -80,23 +81,44 @@ def make_grad_eigh(ans, x, UPLO='L'):
     return eigh_grad
 eigh.defgrad(make_grad_eigh)
 
+def broadcasting_dsymv(alpha, A, x, lower=None):
+    N = A.shape[-1]
+    idxs = onp.arange(N)
+    A_lower = onp.tril(A)
+    A_sym = A_lower + T(A_lower)
+    A_sym[..., idxs, idxs] *= 0.5
+    return onp.einsum('...ij,...j->...i', A_sym, x)
+
+def broadcasting_diag(A):
+    idxs = onp.arange(A.shape[-1])
+    return A[...,idxs,idxs]
+
 def make_grad_cholesky(L, A):
     # based on choleskies_cython.pyx in SheffieldML/GPy and (Smith 1995)
     # TODO for higher-order differentiation, replace dsymv, get rid of inplace
     # ops, make cholesky grad primitive and defgrad? also ArrayNode assignment
     from scipy.linalg.blas import dsymv
-    N = L.shape[0]
+    N = L.shape[-1]
+    T = lambda x: onp.swapaxes(x, -1, -2)
+    if A.ndim > 2:
+        dsymv = broadcasting_dsymv
+        dot = partial(onp.einsum, '...i,...i->...')
+        diag = broadcasting_diag
+    else:
+        dot = onp.dot
+        diag = onp.diag
 
+    @primitive
     def cholesky_grad(g):
-        dL = anp.tril(g)
-        dL[-1,-1] /= 2 * L[-1,-1]
+        dL = onp.tril(g)
+        dL[...,-1,-1] /= 2 * L[...,-1,-1]
         for k in range(N-2, -1, -1):
-            dL[k+1:,k] -= dsymv(1., dL[k+1:,k+1:], L[k+1:,k], lower=True)
-            dL[k+1:,k] -= anp.diag(dL[k+1:,k+1:]) * L[k+1:,k]
-            dL[k+1:,k] /= L[k,k]
-            dL[k,k] -= anp.dot(dL[k+1:,k], L[k+1:,k])
-            dL[k,k] /= 2 * L[k,k]
-        return (dL + dL.T)/2.
-
+            dL[...,k+1:,k] -= dsymv(1., dL[...,k+1:,k+1:], L[...,k+1:,k], lower=True)
+            dL[...,k+1:,k] -= diag(dL[...,k+1:,k+1:]) * L[...,k+1:,k]
+            print k, dL.shape, L.shape
+            dL[...,k+1:,k] /= L[...,k:k+1,k]
+            dL[...,k,k] -= dot(dL[...,k+1:,k], L[...,k+1:,k])
+            dL[...,k,k] /= 2 * L[...,k,k]
+        return (dL + T(dL))/2.
     return primitive(cholesky_grad)
 cholesky.defgrad(make_grad_cholesky)
