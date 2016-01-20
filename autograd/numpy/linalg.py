@@ -89,10 +89,6 @@ def broadcasting_dsymv(alpha, A, x, lower=None):
     A_sym[..., idxs, idxs] *= 0.5
     return onp.einsum('...ij,...j->...i', A_sym, x)
 
-def broadcasting_diag(A):
-    idxs = onp.arange(A.shape[-1])
-    return A[...,idxs,idxs]
-
 def make_grad_cholesky(L, A):
     # based on choleskies_cython.pyx in SheffieldML/GPy and (Smith 1995)
     # TODO for higher-order differentiation, replace dsymv, get rid of inplace
@@ -103,7 +99,7 @@ def make_grad_cholesky(L, A):
     if A.ndim > 2:
         dsymv = broadcasting_dsymv
         dot = partial(onp.einsum, '...i,...i->...')
-        diag = broadcasting_diag
+        diag = partial(onp.diagonal, axis1=-1, axis2=-2)
     else:
         dot = onp.dot
         diag = onp.diag
