@@ -2,7 +2,6 @@
 # gradient descent.  This example runs on 2-dimensional data, but the model
 # works on arbitrarily-high dimension.
 
-
 from __future__ import absolute_import
 from __future__ import print_function
 import matplotlib.pyplot as plt
@@ -48,10 +47,7 @@ def make_gmm_funcs(num_components, D):
         means              = parser.get(params, 'means')
         lower_tris = np.tril(parser.get(params, 'lower triangles'), k=-1)
         diag_chols = np.exp( parser.get(params, 'log diagonals'))
-        chols = []
-        for lower_tri, diag in zip(lower_tris, diag_chols):
-            chols.append(np.expand_dims(lower_tri + np.diag(diag), 0))
-        chols = np.concatenate(chols, axis=0)
+        chols = lower_tris + np.make_diagonal(diag_chols, axis1=-1, axis2=-2)
         return normalized_log_proportions, means, chols
 
     def log_marginal_likelihood(params, data):
@@ -80,8 +76,9 @@ def make_pinwheel_data(num_spokes=5, points_per_spoke=40, rate=1.0, noise_std=0.
 
 if __name__ == '__main__':
 
+    num_guassians = 10
     num_gmm_params, log_marginal_likelihood, unpack_params = \
-        make_gmm_funcs(num_components=15, D=2)
+        make_gmm_funcs(num_components=num_guassians, D=2)
 
     data = make_pinwheel_data()
     def objective(params):
@@ -93,7 +90,8 @@ if __name__ == '__main__':
         circle_pts = np.concatenate([xs, ys], axis=1) * 2.0
         for log_proportion, mean, chol in zip(*unpack_params(params)):
             cur_pts = mean + np.dot(circle_pts, chol)
-            ax.plot(cur_pts[:, 0], cur_pts[:, 1], '-')
+            alpha = np.minimum(1.0, np.exp(log_proportion) * num_guassians)
+            ax.plot(cur_pts[:, 0], cur_pts[:, 1], '-', alpha=alpha)
 
     fig = plt.figure(figsize=(12,8), facecolor='white')
     ax = fig.add_subplot(111, frameon=False)
