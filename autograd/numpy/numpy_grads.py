@@ -1,7 +1,8 @@
 from __future__ import absolute_import
+import numpy as onp
 import operator as op
 
-from autograd.core import getval
+from autograd.core import getval, primitive
 from . import numpy_wrapper as anp
 from .numpy_extra import ArrayNode, take
 from builtins import range, zip
@@ -58,6 +59,8 @@ anp.size.defgrad_is_zero()
 anp.where.defgrad_is_zero(argnums=(0,))
 anp.isscalar.defgrad_is_zero()
 anp.isreal.defgrad_is_zero()
+anp.zeros_like.defgrad_is_zero()
+anp.ones_like.defgrad_is_zero()
 
 # ----- Binary ufuncs -----
 
@@ -150,8 +153,32 @@ anp.where.defgrad( lambda ans, c, x=None, y=None : lambda g : anp.where(c, anp.z
 anp.cross.defgrad(lambda ans, a, b, axisa=-1, axisb=-1, axisc=-1, axis=None : lambda g : anp.cross(b, g, axisb, axisc, axisa, axis), argnum=0)
 anp.cross.defgrad(lambda ans, a, b, axisa=-1, axisb=-1, axisc=-1, axis=None : lambda g : anp.cross(g, a, axisc, axisa, axisb, axis), argnum=1)
 
-
 # ----- Trickier grads -----
+
+def make_grad_diff(ans, a, n=1, axis=-1):
+    nd = len(a.shape)
+    sl1 = [slice(None)]*nd
+    sl1[axis] = slice(None, 1)
+
+    sl2 = [slice(None)]*nd
+    sl2[axis] = slice(-1, None)
+
+    def undiff(g):
+        if g.shape[axis] > 0:
+            return anp.concatenate((-g[sl1], -anp.diff(g, axis=axis), g[sl2]), axis=axis)
+        shape = list(g.shape)
+        shape[axis] = 1
+        return anp.zeros(shape)
+
+    def gradfun(g):
+        def helper(g, n):
+            if n == 0:
+                return g
+            return helper(undiff(g), n-1)
+        return helper(g, n)
+
+    return gradfun
+anp.diff.defgrad(make_grad_diff)
 
 def make_grad_repeat(ans, x, repeats, axis=None):
     shape = x.shape
@@ -170,6 +197,15 @@ def make_grad_repeat(ans, x, repeats, axis=None):
             return grad_repeat
 anp.repeat.defgrad(make_grad_repeat)
 
+def make_grad_tile(ans, x, reps):
+    reps = [reps] if anp.isscalar(reps) else reps
+    def tile_grad(g):
+        for axis, rep in enumerate(reps):
+            g = sum(anp.split(g, rep, axis))
+        return anp.reshape(g, x.shape)
+    return tile_grad
+anp.tile.defgrad(make_grad_tile)
+
 def make_grad_transpose(ans, x, axes=None):
     if axes is not None:
         axes = anp.argsort(axes)
@@ -181,6 +217,8 @@ isarray = lambda x : isinstance(getval(x), anp.ndarray)
 def repeat_to_match_shape(x, axis, keepdims):
     """Returns a function that repeats an array along axis to get a given shape.
        Also returns the number of repetitions of the array."""
+    assert isinstance(axis, (type(None), int, tuple))
+
     if not isarray(x):
         return I, 1
     shape = x.shape
@@ -192,12 +230,21 @@ def repeat_to_match_shape(x, axis, keepdims):
             return lambda g : anp.full(shape, anp.sum(g), dtype=dtype), anp.prod(shape)
         else:
             return lambda g : anp.full(shape, g, dtype=dtype), anp.prod(shape)
-    else:
+    elif isinstance(axis, int):
         if keepdims:
             return lambda g : anp.repeat(g, shape[axis], axis), shape[axis]
         else:
             return lambda g : anp.repeat(anp.expand_dims(g, axis),
                                          shape[axis], axis), shape[axis]
+    else:
+        repeats  = [shape[i] if i in axis else 1 for i in range(len(shape))]
+        expanded = [shape[i] if i not in axis else 1 for i in range(len(shape))]
+        num_reps = anp.prod(anp.array(shape)[list(axis)])
+
+        if keepdims:
+            return lambda g: anp.tile(g, repeats), num_reps
+        else:
+            return lambda g: anp.tile(anp.reshape(g, expanded), repeats), num_reps
 
 def make_grad_np_sum(ans, x, axis=None, keepdims=False):
     repeater, _ = repeat_to_match_shape(x, axis, keepdims)
@@ -364,6 +411,30 @@ def make_grad_einsum(argnum, ans, operands, kwargs):
         return lambda g: anp.einsum(g, *rest_of_ops)
 
 anp.einsum.gradmaker = make_grad_einsum
+
+@primitive
+def make_diagonal(D, offset=0, axis1=0, axis2=1):
+    # Numpy doesn't offer a complement to np.diagonal: a function to create new
+    # diagonal arrays with extra dimensions. We need such a function for the
+    # gradient of np.diagonal and it's also quite handy to have. So here it is.
+    if not (offset==0 and axis1==-1 and axis2==-2):
+        raise NotImplementedError("Currently make_diagonal only supports offset=0, axis1=-1, axis2=-2")
+
+    # We use a trick: calling np.diagonal returns a view on the original array,
+    # so we can modify it in-place. (only valid for numpy version >= 1.10.)
+    new_array = onp.zeros(D.shape + (D.shape[-1],))
+    new_array_diag = onp.diagonal(new_array, offset=0, axis1=-1, axis2=-2)
+    new_array_diag.flags.writeable = True
+    new_array_diag[:] = D
+    return new_array
+
+anp.make_diagonal = make_diagonal
+anp.diagonal.defgrad(
+    lambda ans, A, offset=0, axis1=0, axis2=1 :
+    lambda g : anp.make_diagonal(g, offset, axis1, axis2))
+anp.make_diagonal.defgrad(
+    lambda ans, D, offset=0, axis1=0, axis2=1 :
+    lambda g : anp.diagonal(g, offset, axis1, axis2))
 
 # ----- Handle broadcasting -----
 

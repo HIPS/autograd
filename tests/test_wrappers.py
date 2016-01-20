@@ -8,6 +8,14 @@ from builtins import range
 
 npr.seed(1)
 
+def test_value_and_grad():
+    fun = lambda x: np.sum(np.sin(x)**2)
+    dfun = grad(fun)
+    dfun_both = value_and_grad(fun)
+    x = npr.randn(5)
+    check_equivalent(fun(x), dfun_both(x)[0])
+    check_equivalent(dfun(x), dfun_both(x)[1])
+
 def test_hessian():
     # Check Hessian of a quadratic function.
     D = 5
@@ -37,6 +45,11 @@ def test_multigrad():
     numeric = nd(complicated_fun_3_1, D, B)
     check_equivalent(exact, numeric)
 
+def test_multigrad_onearg():
+    fun = lambda x, y: np.sum(x + np.sin(y))
+    packed_fun = lambda xy: np.sum(xy[0] + np.sin(xy[1]))
+    A, B = npr.randn(3), npr.randn(3)
+    check_equivalent(multigrad(fun)(A,B), grad(packed_fun)((A,B)))
 
 def test_elementwise_grad():
     def simple_fun(a):

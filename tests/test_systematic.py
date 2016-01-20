@@ -86,6 +86,16 @@ def test_transpose(): combo_check(np.transpose, [0],
 def test_repeat(): combo_check(np.repeat, [0], [R(2, 3, 4), R(3, 1)],
                                repeats=[0,1,2], axis = [None, 0, 1])
 
+def test_diff():
+    combo_check(np.diff, [0], [R(5,5), R(5,5,5)], n=[1,2], axis=[0,1])
+    combo_check(np.diff, [0], [R(1), R(1,1)], axis=[0])
+    combo_check(np.diff, [0], [R(1,1), R(3,1)], axis=[1])
+
+def test_tile():
+    combo_check(np.tile, [0], [R(2,1,3,1)], reps=[(1, 4, 1, 2)])
+    combo_check(np.tile, [0], [R(1,2)], reps=[(1,2), (2,3), (3,2,1)])
+    combo_check(np.tile, [0], [R(1)], reps=[(2,), 2])
+
 def test_dot(): combo_check(np.dot, [0, 1],
                             [1.5, R(3), R(2, 3)],
                             [0.3, R(3), R(3, 4)])

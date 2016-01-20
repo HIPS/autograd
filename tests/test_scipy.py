@@ -15,6 +15,8 @@ from autograd import grad
 from numpy_utils import combo_check, check_grads, unary_ufunc_check, to_scalar
 
 npr.seed(1)
+R = npr.randn
+U = npr.uniform
 
 ### Stats ###
 def test_norm_pdf():    combo_check(stats.norm.pdf,    [0,1,2], [R(4)], [R(4)], [R(4)**2 + 1.1])
@@ -59,7 +61,6 @@ def test_dirichlet_logpdf_x():     combo_check(normalized_dirichlet_logpdf, [0],
 def test_dirichlet_logpdf_alpha(): combo_check(stats.dirichlet.logpdf,      [1], [x], [alpha])
 
 ### Misc ###
-R = npr.randn
 def test_logsumexp1(): combo_check(autograd.scipy.misc.logsumexp, [0], [1.1, R(4), R(3,4)],                axis=[None, 0],    keepdims=[True, False])
 def test_logsumexp2(): combo_check(autograd.scipy.misc.logsumexp, [0], [R(3,4), R(4,5,6), R(1,5)],         axis=[None, 0, 1], keepdims=[True, False])
 def test_logsumexp3(): combo_check(autograd.scipy.misc.logsumexp, [0], [R(4)], b = [np.exp(R(4))],         axis=[None, 0],    keepdims=[True, False])
@@ -119,14 +120,19 @@ def test_polygamma(): combo_check(special.polygamma, [1], [0], R(4)**2 + 1.3)
 def test_jn():        combo_check(special.jn,        [1], [2], R(4)**2 + 1.3)
 def test_yn():        combo_check(special.yn,        [1], [2], R(4)**2 + 1.3)
 
-def test_psi():     unary_ufunc_check(special.psi,     lims=[0.3, 2.0], test_complex=False)
-def test_digamma(): unary_ufunc_check(special.digamma, lims=[0.3, 2.0], test_complex=False)
-def test_gamma():   unary_ufunc_check(special.gamma,   lims=[0.3, 2.0], test_complex=False)
-def test_gammaln(): unary_ufunc_check(special.gammaln, lims=[0.3, 2.0], test_complex=False)
-def test_gammasgn():unary_ufunc_check(special.gammasgn,lims=[0.3, 2.0], test_complex=False)
-def test_rgamma()  :unary_ufunc_check(special.rgamma,  lims=[0.3, 2.0], test_complex=False)
+def test_psi():       unary_ufunc_check(special.psi,     lims=[0.3, 2.0], test_complex=False)
+def test_digamma():   unary_ufunc_check(special.digamma, lims=[0.3, 2.0], test_complex=False)
+def test_gamma():     unary_ufunc_check(special.gamma,   lims=[0.3, 2.0], test_complex=False)
+def test_gammaln():   unary_ufunc_check(special.gammaln, lims=[0.3, 2.0], test_complex=False)
+def test_gammasgn():  unary_ufunc_check(special.gammasgn,lims=[0.3, 2.0], test_complex=False)
+def test_rgamma()  :  unary_ufunc_check(special.rgamma,  lims=[0.3, 2.0], test_complex=False)
+def test_multigammaln(): combo_check(special.multigammaln, [0], [U(4., 5.), U(4., 5., (2,3))],
+                                     [1, 2, 3])
 
 def test_j0(): unary_ufunc_check(special.j0, lims=[0.2, 20.0], test_complex=False)
 def test_j1(): unary_ufunc_check(special.j1, lims=[0.2, 20.0], test_complex=False)
 def test_y0(): unary_ufunc_check(special.y0, lims=[0.2, 20.0], test_complex=False)
 def test_y1(): unary_ufunc_check(special.y1, lims=[0.2, 20.0], test_complex=False)
+
+def test_erf(): unary_ufunc_check(special.erf, lims=[-3., 3.], test_complex=True)
+def test_erfc(): unary_ufunc_check(special.erfc, lims=[-3., 3.], test_complex=True)

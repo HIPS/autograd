@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 import sys
 import warnings
 import copy
@@ -7,7 +7,8 @@ import types
 import math
 import numpy as np
 from functools import partial
-from future.utils import iteritems
+from future.utils import iteritems, raise_from, raise_
+from collections import defaultdict
 
 def grad(fun, argnum=0):
     """
@@ -20,46 +21,15 @@ def grad(fun, argnum=0):
         return backward_pass(*forward_pass(fun,args,kwargs,argnum))
     return gradfun
 
-def jacobian(fun, argnum=0):
-    """
-    Returns a function which computes the Jacobian of `fun` with respect to
-    positional argument number `argnum`, which must be a scalar or array. Unlike
-    `grad` it is not restricted to scalar-output functions, but also it cannot
-    take derivatives with respect to some argument types (like lists or dicts).
-    If the input to `fun` has shape (in1, in2, ...) and the output has shape
-    (out1, out2, ...) then the Jacobian has shape (out1, out2, ..., in1, in2, ...).
-    """
-    dummy = lambda: None
-
-    def getshape(val):
-        val = getval(val)
-        assert np.isscalar(val) or isinstance(val, np.ndarray), \
-            'Jacobian requires input and output to be scalar- or array-valued'
-        return np.shape(val)
-
-    def list_fun(*args, **kwargs):
-        val = fun(*args, **kwargs)
-        dummy.outshape = getshape(val)
-        return list(np.ravel(val))
-
-    concatenate = lambda lst: np.concatenate(list(map(np.atleast_1d, lst)))
-
-    @attach_name_and_doc(fun, argnum, 'Jacobian')
-    def gradfun(*args, **kwargs):
-        start_node, end_nodes, tape = forward_pass(list_fun, args, kwargs, argnum)
-        grads = map(partial(backward_pass, start_node, tape=tape), end_nodes)
-        shape = dummy.outshape + getshape(args[argnum])
-        return np.reshape(concatenate(grads), shape) if shape else grads[0]
-    return gradfun
-
 def forward_pass(fun, args, kwargs, argnum=0):
-        tape = CalculationTape()
-        arg_wrt = args[argnum]
-        start_node = new_node(safe_type(getval(arg_wrt)), [tape])
-        args = list(args)
-        args[argnum] = merge_tapes(start_node, arg_wrt)
-        end_node = fun(*args, **kwargs)
-        return start_node, end_node, tape
+    tape = CalculationTape()
+    arg_wrt = args[argnum]
+    start_node = new_node(safe_type(getval(arg_wrt)), [tape])
+    args = list(args)
+    args[argnum] = merge_tapes(start_node, arg_wrt)
+    try: end_node = fun(*args, **kwargs)
+    except Exception as e: add_extra_error_message(e)
+    return start_node, end_node, tape
 
 def backward_pass(start_node, end_node, tape):
     if not isinstance(end_node, Node) or tape not in end_node.tapes:
@@ -69,9 +39,10 @@ def backward_pass(start_node, end_node, tape):
         try:
             end_node = FloatNode.cast(end_node, 1.0)
         except TypeError:
-            raise TypeError("Output type {0} can't be cast to float. ".format(type(end_node.value))
-                            + "Function grad requires a scalar-valued function. "
-                              "Try jacobian or elementwise_grad.")
+            raise TypeError(
+                "Output type {} can't be cast to float. "
+                "Function grad requires a scalar-valued function. "
+                "Try jacobian or elementwise_grad.".format(type(end_node.value)))
 
     for node in tape:
         node.outgrads = []
@@ -298,7 +269,6 @@ for float_op in differentiable_ops + nondifferentiable_ops:
 FloatNode.__dict__['__neg__'].defgrad(lambda ans, x : op.neg)
 
 
-
 for comp_op in nondifferentiable_ops:
     FloatNode.__dict__[comp_op].defgrad_is_zero(argnums=(0, 1))
 
@@ -356,3 +326,35 @@ class NoDerivativeNode(FloatNode):
     @staticmethod
     def cast(value, example):
         return example  # pass through so we can raise an error on reverse pass
+
+
+class AutogradHint(Exception):
+    def __init__(self, message, subexception_type=None, subexception_val=None):
+        self.message = message
+        self.subexception_type = subexception_type
+        self.subexception_val = subexception_val
+
+    def __str__(self):
+        if self.subexception_type:
+            return '{message}\nSub-exception:\n{name}: {str}'.format(
+                message=self.message,
+                name=self.subexception_type.__name__,
+                str=self.subexception_type(self.subexception_val))
+        else:
+            return self.message
+
+common_errors = defaultdict(lambda: None, {
+    (TypeError, 'float() argument must be a string or a number'):
+        "This error *might* be caused by assigning into arrays, which autograd doesn't support.",
+})
+
+def add_extra_error_message(e):
+    etype, value, traceback = sys.exc_info()
+    extra_message = common_errors[(type(e), str(e))]
+
+    if extra_message:
+        if sys.version_info >= (3,):
+            raise_from(AutogradHint(extra_message), e)
+        else:
+            raise_(AutogradHint, (extra_message, etype, value), traceback)
+    raise_(etype, value, traceback)

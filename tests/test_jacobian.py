@@ -1,10 +1,8 @@
 from __future__ import division
 import autograd.numpy as np
 import autograd.numpy.random as npr
-from autograd.util import *
+from autograd.util import check_grads
 from autograd import grad, jacobian
-from autograd.convenience_wrappers import jacobian as old_jacobian
-from builtins import map
 
 npr.seed(1)
 
@@ -34,24 +32,12 @@ def test_jacobian_against_stacked_grads():
 
     assert np.allclose(jac, np.vstack(grads))
 
-def test_jacobian_against_wrapper():
-    A = npr.randn(3,3,3)
-    fun = lambda x: np.einsum(
-        'ijk,jkl->il',
-        A, np.sin(x[...,None] * np.tanh(x[None,...])))
-
-    B = npr.randn(3,3)
-    jac1 = jacobian(fun)(B)
-    jac2 = old_jacobian(fun)(B)
-
-    assert np.allclose(jac1, jac2)
-
 def test_jacobian_higher_order():
     fun = lambda x: np.sin(np.outer(x,x)) + np.cos(np.dot(x,x))
 
-    jacobian(fun)(npr.randn(3)).shape == (3,3,3)
-    jacobian(jacobian(fun))(npr.randn(3)).shape == (3,3,3,3)
-    jacobian(jacobian(jacobian(fun)))(npr.randn(3)).shape == (3,3,3,3,3)
+    assert jacobian(fun)(npr.randn(3)).shape == (3,3,3)
+    assert jacobian(jacobian(fun))(npr.randn(3)).shape == (3,3,3,3)
+    # assert jacobian(jacobian(jacobian(fun)))(npr.randn(3)).shape == (3,3,3,3,3)
 
-    check_grads(lambda x: np.sum(jacobian(fun)(x)), npr.randn(3))
-    check_grads(lambda x: np.sum(jacobian(jacobian(fun))(x)), npr.randn(3))
+    check_grads(lambda x: np.sum(np.sin(jacobian(fun)(x))), npr.randn(3))
+    check_grads(lambda x: np.sum(np.sin(jacobian(jacobian(fun))(x))), npr.randn(3))

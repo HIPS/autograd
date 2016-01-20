@@ -3,6 +3,8 @@ from __future__ import print_function
 import types
 from .use_gpu_numpy import use_gpu_numpy
 from future.utils import iteritems
+from functools import wraps
+
 
 if use_gpu_numpy():
     print("Using GPU-supporting numpy wrapper")
@@ -11,14 +13,29 @@ else:
     import numpy as np
 
 import warnings
-from autograd.core import primitive
+from autograd.core import primitive, getval
+
+def unbox_args(f):
+    def wrapped(*args, **kwargs):
+        unboxed_args = map(getval, args)
+        unboxed_kwargs = {key: getval(kwargs[key]) for key in kwargs}
+        return f(*unboxed_args, **unboxed_kwargs)
+    return wrapped
+
+def wrap_intdtype(cls):
+    class IntdtypeSubclass(cls):
+        __new__ = unbox_args(cls.__new__)
+    return IntdtypeSubclass
 
 def wrap_namespace(old, new):
-    unchanged_types = set([float, int, type(None), type])
-    function_types = set([np.ufunc, types.FunctionType, types.BuiltinFunctionType])
+    unchanged_types = {float, int, type(None), type}
+    int_types = {np.int, np.int8, np.int16, np.int32, np.int64, np.integer}
+    function_types = {np.ufunc, types.FunctionType, types.BuiltinFunctionType}
     for name, obj in iteritems(old):
         if type(obj) in function_types:
             new[name] = primitive(obj)
+        elif type(obj) is type and obj in int_types:
+            new[name] = wrap_intdtype(obj)
         elif type(obj) in unchanged_types:
             new[name] = obj
 

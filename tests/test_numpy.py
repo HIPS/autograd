@@ -137,6 +137,13 @@ def test_sum_3():
     check_grads(fun, mat)
     check_grads(d_fun, mat)
 
+def test_sum_with_axis_tuple():
+    def fun(x): return to_scalar(np.sum(x, axis=(1,2)))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    mat = npr.randn(10, 11, 7)
+    check_grads(fun, mat)
+    check_grads(d_fun, mat)
+
 def test_flipud():
     def fun(x): return to_scalar(np.flipud(x))
     d_fun = lambda x : to_scalar(grad(fun)(x))
@@ -772,3 +779,46 @@ def test_index_dot_slices():
 
 # TODO:
 # getitem
+
+def test_cast_to_int():
+    inds = np.ones(5)[:,None]
+
+    def fun(W):
+        # glue W and inds together
+        glued_together = np.concatenate((W, inds), axis=1)
+
+        # separate W and inds back out
+        new_W = W[:,:-1]
+        new_inds = np.int64(W[:,-1])
+
+        assert new_inds.dtype == np.int64
+        return new_W[new_inds].sum()
+
+    W = np.random.randn(5, 10)
+    check_grads(fun, W)
+
+def test_make_diagonal():
+    def fun(D):
+        return to_scalar(np.make_diagonal(D, axis1=-1, axis2=-2))
+
+    D = np.random.randn(4)
+    A = np.make_diagonal(D, axis1=-1, axis2=-2)
+    assert np.allclose(np.diag(A), D)
+    check_grads(fun, D)
+
+    D = np.random.randn(3, 4)
+    A = np.make_diagonal(D, axis1=-1, axis2=-2)
+    assert all([np.allclose(np.diag(A[i]), D[i]) for i in range(3)])
+    check_grads(fun, D)
+
+def test_diagonal():
+    def fun(D):
+        return to_scalar(np.diagonal(D, axis1=-1, axis2=-2))
+
+    D = np.random.randn(4, 4)
+    A = np.make_diagonal(D, axis1=-1, axis2=-2)
+    check_grads(fun, D)
+
+    D = np.random.randn(3, 4, 4)
+    A = np.make_diagonal(D, axis1=-1, axis2=-2)
+    check_grads(fun, D)
