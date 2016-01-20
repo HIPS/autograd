@@ -1,7 +1,8 @@
 from __future__ import absolute_import
+import numpy as onp
 import operator as op
 
-from autograd.core import getval
+from autograd.core import getval, primitive
 from . import numpy_wrapper as anp
 from .numpy_extra import ArrayNode, take
 from builtins import range, zip
@@ -152,9 +153,7 @@ anp.where.defgrad( lambda ans, c, x=None, y=None : lambda g : anp.where(c, anp.z
 anp.cross.defgrad(lambda ans, a, b, axisa=-1, axisb=-1, axisc=-1, axis=None : lambda g : anp.cross(b, g, axisb, axisc, axisa, axis), argnum=0)
 anp.cross.defgrad(lambda ans, a, b, axisa=-1, axisb=-1, axisc=-1, axis=None : lambda g : anp.cross(g, a, axisc, axisa, axisb, axis), argnum=1)
 
-
 # ----- Trickier grads -----
-
 
 def make_grad_diff(ans, a, n=1, axis=-1):
     nd = len(a.shape)
@@ -412,6 +411,30 @@ def make_grad_einsum(argnum, ans, operands, kwargs):
         return lambda g: anp.einsum(g, *rest_of_ops)
 
 anp.einsum.gradmaker = make_grad_einsum
+
+@primitive
+def make_diagonal(D, offset=0, axis1=0, axis2=1):
+    # Numpy doesn't offer a complement to np.diagonal: a function to create new
+    # diagonal arrays with extra dimensions. We need such a function for the
+    # gradient of np.diagonal and it's also quite handy to have. So here it is.
+    if not (offset==0 and axis1==-1 and axis2==-2):
+        raise NotImplementedError("Currently make_diagonal only supports offset=0, axis1=-1, axis2=-2")
+
+    # We use a trick: calling np.diagonal returns a view on the original array,
+    # so we can modify it in-place. (only valid for numpy version >= 1.10.)
+    new_array = onp.zeros(D.shape + (D.shape[-1],))
+    new_array_diag = onp.diagonal(new_array, offset=0, axis1=-1, axis2=-2)
+    new_array_diag.flags.writeable = True
+    new_array_diag[:] = D
+    return new_array
+
+anp.make_diagonal = make_diagonal
+anp.diagonal.defgrad(
+    lambda ans, A, offset=0, axis1=0, axis2=1 :
+    lambda g : anp.make_diagonal(g, offset, axis1, axis2))
+anp.make_diagonal.defgrad(
+    lambda ans, D, offset=0, axis1=0, axis2=1 :
+    lambda g : anp.diagonal(g, offset, axis1, axis2))
 
 # ----- Handle broadcasting -----
 

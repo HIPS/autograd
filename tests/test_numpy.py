@@ -796,3 +796,29 @@ def test_cast_to_int():
 
     W = np.random.randn(5, 10)
     check_grads(fun, W)
+
+def test_make_diagonal():
+    def fun(D):
+        return to_scalar(np.make_diagonal(D, axis1=-1, axis2=-2))
+
+    D = np.random.randn(4)
+    A = np.make_diagonal(D, axis1=-1, axis2=-2)
+    assert np.allclose(np.diag(A), D)
+    check_grads(fun, D)
+
+    D = np.random.randn(3, 4)
+    A = np.make_diagonal(D, axis1=-1, axis2=-2)
+    assert all([np.allclose(np.diag(A[i]), D[i]) for i in range(3)])
+    check_grads(fun, D)
+
+def test_diagonal():
+    def fun(D):
+        return to_scalar(np.diagonal(D, axis1=-1, axis2=-2))
+
+    D = np.random.randn(4, 4)
+    A = np.make_diagonal(D, axis1=-1, axis2=-2)
+    check_grads(fun, D)
+
+    D = np.random.randn(3, 4, 4)
+    A = np.make_diagonal(D, axis1=-1, axis2=-2)
+    check_grads(fun, D)
