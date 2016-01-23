@@ -19,14 +19,7 @@ class TupleNode(Node):
     def sum_outgrads(outgrads):
         return primitive_sum_tuples(*outgrads)
 
-    @staticmethod
-    def cast(value, example):
-        return cast(value, cast_to_tuple)
-
 Node.type_mappings[tuple] = TupleNode
-
-def cast_to_tuple(x):
-    return tuple(x)
 
 @primitive
 def primitive_sum_tuples(*tuples):
