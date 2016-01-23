@@ -19,7 +19,14 @@ class TupleNode(Node):
     def sum_outgrads(outgrads):
         return primitive_sum_tuples(*outgrads)
 
+    @staticmethod
+    def cast(value, example):
+        return cast(value, cast_to_tuple)
+
 Node.type_mappings[tuple] = TupleNode
+
+def cast_to_tuple(x):
+    return tuple(x)
 
 @primitive
 def primitive_sum_tuples(*tuples):
@@ -40,6 +47,12 @@ def tuple_untake(x, idx, template):
     return tuple(result)
 tuple_untake.defgrad(lambda ans, x, idx, template : lambda g : tuple_take(g, idx))
 tuple_untake.defgrad_is_zero(argnums=(1, 2))
+
+@primitive
+def make_tuple(*args):
+    return tuple(args)
+
+make_tuple.gradmaker = lambda argnum, *args: lambda g: g[argnum]
 
 
 class ListNode(Node):

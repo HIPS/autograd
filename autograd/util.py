@@ -5,7 +5,7 @@ import itertools as it
 from autograd.core import grad, safe_type
 from copy import copy
 from autograd.numpy.use_gpu_numpy import use_gpu_numpy
-from autograd.container_types import ListNode, TupleNode
+from autograd.container_types import ListNode, TupleNode, make_tuple
 from builtins import map, range, zip
 from future.utils import iteritems
 

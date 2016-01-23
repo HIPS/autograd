@@ -107,7 +107,7 @@ if use_gpu_numpy():
 else:
     @primitive
     def arraycast(val):
-        if isinstance(val, float):
+        if isinstance(val, (float, tuple)):
             return anp.array(val)
         elif anp.iscomplexobj(val):
             return anp.array(anp.real(val))
