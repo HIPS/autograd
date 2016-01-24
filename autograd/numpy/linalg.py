@@ -112,5 +112,5 @@ def make_grad_cholesky(L, A):
             dL[...,k,k] -= dot(dL[...,k+1:,k], L[...,k+1:,k])
             dL[...,k,k] /= 2 * L[...,k,k]
         return (dL + T(dL))/2.
-    return primitive(cholesky_grad)
+    return cholesky_grad
 cholesky.defgrad(make_grad_cholesky)
