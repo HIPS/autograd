@@ -6,6 +6,7 @@ import autograd.scipy.linalg as spla
 from autograd.util import *
 from autograd import grad
 from builtins import range
+from functools import partial
 
 npr.seed(1)
 
@@ -161,10 +162,10 @@ def test_eigvalh_lower():
         return to_scalar(w) + to_scalar(v)
     d_fun = lambda x : to_scalar(grad(fun)(x))
     D = 6
-    mat = npr.randn(D, D-1)
+    mat = npr.randn(D, D)
     hmat = np.dot(mat.T, mat)
-    check_grads(fun, hmat)
-    check_grads(d_fun, hmat)
+    check_symmetric_matrix_grads(fun, hmat)
+    check_symmetric_matrix_grads(d_fun, hmat)
 
 def test_eigvalh_upper():
     def fun(x):
@@ -172,10 +173,33 @@ def test_eigvalh_upper():
         return to_scalar(w) + to_scalar(v)
     d_fun = lambda x : to_scalar(grad(fun)(x))
     D = 6
-    mat = npr.randn(D, D-1)
+    mat = npr.randn(D, D)
     hmat = np.dot(mat.T, mat)
-    check_grads(fun, hmat)
-    check_grads(d_fun, hmat)
+    check_symmetric_matrix_grads(fun, hmat)
+    check_symmetric_matrix_grads(d_fun, hmat)
+
+broadcast_dot_transpose = partial(np.einsum, '...ij,...kj->...ik')
+def test_eigvalh_lower_broadcasting():
+    def fun(x):
+        w, v = np.linalg.eigh(x)
+        return to_scalar(w) + to_scalar(v)
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    D = 6
+    mat = npr.randn(2, 3, D, D)
+    hmat = broadcast_dot_transpose(mat, mat)
+    check_symmetric_matrix_grads(fun, hmat)
+    check_symmetric_matrix_grads(d_fun, hmat)
+
+def test_eigvalh_upper_broadcasting():
+    def fun(x):
+        w, v = np.linalg.eigh(x, 'U')
+        return to_scalar(w) + to_scalar(v)
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    D = 6
+    mat = npr.randn(2, 3, D, D)
+    hmat = broadcast_dot_transpose(mat, mat)
+    check_symmetric_matrix_grads(fun, hmat)
+    check_symmetric_matrix_grads(d_fun, hmat)
 
 def test_cholesky():
     def fun(A):

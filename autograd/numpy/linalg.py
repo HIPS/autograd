@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-from functools import partial, wraps
+from functools import partial
 import numpy as onp
 import numpy.linalg as npla
 from .numpy_wrapper import wrap_namespace, dot
@@ -66,18 +66,15 @@ norm.defgrad(make_grad_norm)
 
 def make_grad_eigh(ans, x, UPLO='L'):
     """Gradient for eigenvalues and vectors of a symmetric matrix."""
-    N = x.shape[0]
+    N = x.shape[-1]
     w, v = ans              # Eigenvalues, eigenvectors.
+    dot = anp.dot if x.ndim == 2 else partial(anp.einsum, '...ij,...jk->...ik')
     def eigh_grad(g):
         wg, vg = g          # Gradient w.r.t. eigenvalues, eigenvectors.
-        w_repeated = anp.repeat(w[:, anp.newaxis], N, 1)
+        w_repeated = anp.repeat(w[..., anp.newaxis], N, axis=-1)
         off_diag = anp.ones((N, N)) - anp.eye(N)
-        F = off_diag / (w_repeated.T - w_repeated + anp.eye(N))
-        dx = dot(v * wg + dot(v, F * dot(v.T, vg)), v.T)
-        if UPLO == 'U':     # Reflect to account for symmetry.
-            return anp.triu(dx) + anp.tril(dx, -1).T
-        else:
-            return anp.tril(dx) + anp.triu(dx, 1).T
+        F = off_diag / (T(w_repeated) - w_repeated + anp.eye(N))
+        return dot(v * wg[..., anp.newaxis, :] + dot(v, F * dot(T(v), vg)), T(v))
     return eigh_grad
 eigh.defgrad(make_grad_eigh)
 
