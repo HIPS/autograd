@@ -157,8 +157,9 @@ def test_triu():     combo_check(np.tril, [0], [R(5, 5)], k=[-1, 0, 1])
 def test_tril_3d():  combo_check(np.tril, [0], [R(5, 5, 4)], k=[-1, 0, 1])
 def test_triu_3d():  combo_check(np.tril, [0], [R(5, 5, 4)], k=[-1, 0, 1])
 
-def test_swapaxes(): combo_check(np.swapaxes, [0], [R(3,4,5)], axis1=[0, 1, 2], axis2=[0, 1, 2])
-def test_cross():    combo_check(np.cross, [0, 1], [R(3,3)], [R(3,3)],
+def test_swapaxes(): combo_check(np.swapaxes, [0], [R(3, 4, 5)], axis1=[0, 1, 2], axis2=[0, 1, 2])
+def test_rollaxis(): combo_check(np.rollaxis, [0], [R(2, 3, 4)], axis =[0, 1, 2], start=[0, 1, 2, 3])
+def test_cross():    combo_check(np.cross, [0, 1], [R(3, 3)], [R(3, 3)],
                                  axisa=[-1, 0, 1], axisb=[-1, 0, 1], axisc=[-1, 0, 1], axis=[None, -1, 0, 1])
 
 def test_vsplit_2d(): combo_check(np.vsplit, [0], [R(4, 8)],    [4, [1, 2]])
@@ -187,6 +188,5 @@ def test_concatenate_3d():    combo_check(np.concatenate, [0], [(R(2, 2, 2), R(2
 # def test_hstack_3d(): combo_check(np.hstack, [0], [R(2, 3, 4), (R(2, 1, 4), R(2, 5, 4))])
 # def test_dstack_3d(): combo_check(np.dstack, [0], [R(2, 3, 4), (R(2, 3, 1), R(2, 3, 5))])
 
-
 def test_select(): combo_check(np.select, [1], [[R(3,4,5) > 0, R(3,4,5) > 0, R(3,4,5) > 0]],
-                                                  [[R(3,4,5),     R(3,4,5),     R(3,4,5)]], default=[0.0, 1.1])
+                                               [[R(3,4,5),     R(3,4,5),     R(3,4,5)]], default=[0.0, 1.1])

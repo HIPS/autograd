@@ -61,6 +61,7 @@ anp.isscalar.defgrad_is_zero()
 anp.isreal.defgrad_is_zero()
 anp.zeros_like.defgrad_is_zero()
 anp.ones_like.defgrad_is_zero()
+anp.rollaxis.defgrad_is_zero(argnums=(1,2))
 
 # ----- Binary ufuncs -----
 
@@ -143,6 +144,8 @@ anp.triu.defgrad(   lambda ans, x, k=0          : lambda g : anp.triu(g, k=k))
 anp.tril.defgrad(   lambda ans, x, k=0          : lambda g : anp.tril(g, k=k))
 anp.clip.defgrad(   lambda ans, x, a_min, a_max : lambda g : g * anp.logical_and(ans != a_min, ans != a_max))
 anp.swapaxes.defgrad(lambda ans, x, axis1, axis2: lambda g : anp.swapaxes(g, axis2, axis1))
+anp.rollaxis.defgrad(lambda ans, a, axis, start=0: (lambda g : anp.rollaxis(g, start - 1, axis)) if start > axis
+                                              else (lambda g : anp.rollaxis(g, start, axis + 1)))
 anp.real_if_close.defgrad(lambda ans, x : lambda g : g)
 anp.real.defgrad(  lambda ans, x   : lambda g : g)
 anp.imag.defgrad(  lambda ans, x   : lambda g : -1j * g)
