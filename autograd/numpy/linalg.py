@@ -2,7 +2,7 @@ from __future__ import absolute_import
 from functools import partial
 import numpy as onp
 import numpy.linalg as npla
-from .numpy_wrapper import wrap_namespace, dot
+from .numpy_wrapper import wrap_namespace
 from . import numpy_wrapper as anp
 from ..core import primitive
 from builtins import range
