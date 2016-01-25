@@ -14,7 +14,7 @@ def make_gp_funs(cov_func, num_cov_params):
     """Functions that perform Gaussian process regression.
        cov_func has signature (cov_params, x, x')"""
 
-    def unpack_params(params):
+    def unpack_kernel_params(params):
         mean        = params[0]
         cov_params  = params[2:]
         noise_scale = np.exp(params[1]) + 0.001
@@ -23,7 +23,7 @@ def make_gp_funs(cov_func, num_cov_params):
     def predict(params, x, y, xstar):
         """Returns the predictive mean and covariance at locations xstar,
            of the latent function value f (without observation noise)."""
-        mean, cov_params, noise_scale = unpack_params(params)
+        mean, cov_params, noise_scale = unpack_kernel_params(params)
         cov_f_f = cov_func(cov_params, xstar, xstar)
         cov_y_f = cov_func(cov_params, x, xstar)
         cov_y_y = cov_func(cov_params, x, x) + noise_scale * np.eye(len(y))
@@ -32,7 +32,7 @@ def make_gp_funs(cov_func, num_cov_params):
         return pred_mean, pred_cov
 
     def log_marginal_likelihood(params, x, y):
-        mean, cov_params, noise_scale = unpack_params(params)
+        mean, cov_params, noise_scale = unpack_kernel_params(params)
         cov_y_y = cov_func(cov_params, x, x) + noise_scale * np.eye(len(y))
         prior_mean = mean * np.ones(len(y))
         return mvn.logpdf(y, prior_mean, cov_y_y)
