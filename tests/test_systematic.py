@@ -181,9 +181,9 @@ def test_concatenate_tuple(): combo_check(np.concatenate, [0], [[R(1), R(3)]],  
 def test_concatenate_2d():    combo_check(np.concatenate, [0], [(R(2, 2), R(2, 2))],       axis=[0, 1])
 def test_concatenate_3d():    combo_check(np.concatenate, [0], [(R(2, 2, 2), R(2, 2, 2))], axis=[0, 1, 2])
 
-# def test_vstack_1d(): combo_check(np.vstack, [0], [R(2), (R(2), R(2))])
-# def test_vstack_2d(): combo_check(np.vstack, [0], [R(2, 3), (R(2, 4), R(1, 4))])
-# def test_vstack_3d(): combo_check(np.vstack, [0], [R(2, 3, 4), (R(2, 3, 4), R(5, 3, 4))])
+def test_vstack_1d(): combo_check(np.vstack, [0], [R(2), (R(2), R(2))])
+def test_vstack_2d(): combo_check(np.vstack, [0], [R(2, 3), (R(2, 4), R(1, 4))])
+def test_vstack_3d(): combo_check(np.vstack, [0], [R(2, 3, 4), (R(2, 3, 4), R(5, 3, 4))])
 # def test_hstack_2d(): combo_check(np.hstack, [0], [R(2, 3), (R(2, 4), R(1, 4))])
 # def test_hstack_3d(): combo_check(np.hstack, [0], [R(2, 3, 4), (R(2, 1, 4), R(2, 5, 4))])
 # def test_dstack_3d(): combo_check(np.dstack, [0], [R(2, 3, 4), (R(2, 3, 1), R(2, 3, 5))])

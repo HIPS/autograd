@@ -3,7 +3,6 @@ from __future__ import print_function
 import types
 from .use_gpu_numpy import use_gpu_numpy
 from future.utils import iteritems
-from functools import wraps
 
 
 if use_gpu_numpy():
@@ -47,6 +46,7 @@ wrap_namespace(np.__dict__, globals())
 def concatenate_args(axis, *args):
     return np.concatenate(args, axis).view(ndarray)
 concatenate = lambda arr_list, axis=0 : concatenate_args(axis, *arr_list)
+vstack = lambda tup: concatenate([atleast_2d(_m) for _m in tup], axis=0)
 
 def array(A, *args, **kwargs):
     if isinstance(A, np.ndarray):
