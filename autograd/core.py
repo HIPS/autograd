@@ -147,6 +147,46 @@ class primitive(object):
         def __get__(self, obj, objtype):
             return types.MethodType(self, obj, objtype)
 
+class primitive_with_aux(primitive):
+    '''
+    Like primitive, except it also passes some auxiliary values to the gradfun.
+    A function wrapped by primitive_with_aux should return a pair (result, aux),
+    where result is returned to the caller and aux is only passed to the gradfun.'''
+
+    # Some unfortunate code duplication here with primitive, but this keeps
+    # things simple. Lines with the string 'aux' are the only changed ones.
+
+    def __call__(self, *args, **kwargs):
+        argvals = list(args)
+        ops = []
+        tapes = set()
+        for i, arg in enumerate(args):
+            if isinstance(arg, Node):
+                argvals[i] = arg.value
+                if i in self.zero_grads: continue
+                for tape, parent_rnode in iteritems(arg.tapes):
+                    if not tape.complete:
+                        ops.append((tape, i, parent_rnode))
+                        tapes.add(tape)
+
+        result, aux = self.fun(*argvals, **kwargs)
+
+        if result is NotImplemented: return result
+        if ops:
+            result = new_node(result, tapes)
+            for tape, argnum, parent in ops:
+                gradfun = self.gradmaker(argnum, aux, result, args, kwargs)
+                rnode = result.tapes[tape]
+                rnode.parent_grad_ops.append((gradfun, parent))
+        return result
+
+    def gradmaker(self, argnum, aux, ans, args, kwargs):
+        try:
+            return self.grads[argnum](aux, ans, *args, **kwargs)
+        except KeyError:
+            # defer to parent class's handling of this error
+            return super(primitive_with_aux, self).gradmaker(argnum, ans, args, kwargs)
+
 @primitive
 def merge_tapes(x, y): return x
 merge_tapes.defgrad(lambda ans, x, y : lambda g : g)
