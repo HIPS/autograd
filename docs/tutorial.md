@@ -146,7 +146,7 @@ Numpy has [a lot of features](http://docs.scipy.org/doc/numpy/reference/). We've
 Some things remain to be implemented. For example, we support indexing (`x = A[i, j, :]`) but not assignment (`A[i,j] = x`) in arrays that are being differentiated with respect to.
 Assignment is hard to support because it requires keeping copies of the overwritten data, but we plan to support this in the future.
 
-Similarly, we don't support the syntax `A.dot(B)`; use the equivalent `np.dot(A, B)` instead.  The reason we don't support the first way is that subclassing `ndarray` raises a host of issues. As another consequence of not subclassing `ndarray`, some subclass checks can break, like `np.isinstance(x, np.ndarray)` can return `False`.
+Similarly, we don't support the syntax `A.dot(B)`; use the equivalent `np.dot(A, B)` instead.  The reason we don't support the first way is that subclassing `ndarray` raises a host of issues. As another consequence of not subclassing `ndarray`, some subclass checks can break, like `isinstance(x, np.ndarray)` can return `False`.
 
 In-place modification of arrays not being differentiated with respect to (for example, `A[i] = x` or `A += B`) won't raise an error, but be careful.  It's easy to accidentally change something without autograd knowing about it.  This can be a problem because autograd keeps references
 to variables used in the forward pass if they will be needed on the reverse pass.  Making copies would
