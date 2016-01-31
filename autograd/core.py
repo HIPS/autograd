@@ -343,14 +343,25 @@ class AutogradHint(Exception):
         else:
             return self.message
 
-common_errors = defaultdict(lambda: None, {
-    (TypeError, 'float() argument must be a string or a number'):
-        "This error *might* be caused by assigning into arrays, which autograd doesn't support.",
-})
+common_errors = [
+    ((TypeError, 'float() argument must be a string or a number'),
+        "This error *might* be caused by assigning into arrays, which autograd doesn't support."),
+    ((TypeError, "got an unexpected keyword argument 'dtype'"),
+        "This error *might* be caused by importing numpy instead of autograd.numpy, so check that you have 'import autograd.numpy as np' at the top of your file instead of 'import numpy as np'."),
+]
+
+def check_common_errors(error_type, error_message):
+    keys, vals = zip(*common_errors)
+    match = lambda key: error_type == key[0] and key[1] in error_message
+    matches = map(match, keys)
+    num_matches = sum(matches)
+
+    if num_matches == 1:
+        return vals[matches.index(True)]
 
 def add_extra_error_message(e):
     etype, value, traceback = sys.exc_info()
-    extra_message = common_errors[(type(e), str(e))]
+    extra_message = check_common_errors(type(e), str(e))
 
     if extra_message:
         if sys.version_info >= (3,):
