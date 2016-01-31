@@ -348,7 +348,8 @@ common_errors = [
     ((TypeError, r'float() argument must be a string or a number'),
         "This error *might* be caused by assigning into arrays, which autograd doesn't support."),
     ((TypeError, r"got an unexpected keyword argument '(?:dtype)|(?:out)'" ),
-        "This error *might* be caused by importing numpy instead of autograd.numpy. \nCheck that you have 'import autograd.numpy as np' instead of 'import numpy as np'."),
+        "This error *might* be caused by importing numpy instead of autograd.numpy. \n"
+        "Check that you have 'import autograd.numpy as np' instead of 'import numpy as np'."),
 ]
 
 def check_common_errors(error_type, error_message):
