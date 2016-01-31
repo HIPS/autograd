@@ -5,6 +5,7 @@ import copy
 import operator as op
 import types
 import math
+import re
 import numpy as np
 from functools import partial
 from future.utils import iteritems, raise_from, raise_
@@ -344,15 +345,15 @@ class AutogradHint(Exception):
             return self.message
 
 common_errors = [
-    ((TypeError, 'float() argument must be a string or a number'),
+    ((TypeError, r'float() argument must be a string or a number'),
         "This error *might* be caused by assigning into arrays, which autograd doesn't support."),
-    ((TypeError, "got an unexpected keyword argument 'dtype'"),
-        "This error *might* be caused by importing numpy instead of autograd.numpy, so check that you have 'import autograd.numpy as np' at the top of your file instead of 'import numpy as np'."),
+    ((TypeError, r"got an unexpected keyword argument '(?:dtype)|(?:out)'" ),
+        "This error *might* be caused by importing numpy instead of autograd.numpy. \nCheck that you have 'import autograd.numpy as np' instead of 'import numpy as np'."),
 ]
 
 def check_common_errors(error_type, error_message):
     keys, vals = zip(*common_errors)
-    match = lambda key: error_type == key[0] and key[1] in error_message
+    match = lambda key: error_type == key[0] and len(re.findall(key[1], error_message)) != 0
     matches = map(match, keys)
     num_matches = sum(matches)
 
