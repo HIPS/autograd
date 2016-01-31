@@ -47,8 +47,8 @@ def advect(f, vx, vy):
     center_ys = (cell_ys - vy).ravel()
 
     # Compute indices of source cells.
-    left_ix = np.floor(center_ys).astype(np.int)
-    top_ix  = np.floor(center_xs).astype(np.int)
+    left_ix = np.floor(center_ys).astype(int)
+    top_ix  = np.floor(center_xs).astype(int)
     rw = center_ys - left_ix              # Relative weight of right-hand cells.
     bw = center_xs - top_ix               # Relative weight of bottom cells.
     left_ix  = np.mod(left_ix,     rows)  # Wrap around edges of simulation.
