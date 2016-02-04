@@ -312,8 +312,13 @@ anp.dot.defgrads(make_grad_dot, [0, 1])
 
 def make_grad_tensordot(argnum, ans, A, B, axes=2):
     if type(axes) is int:
-        axes = (list(range(anp.ndim(A)))[-axes:],
-                list(range(anp.ndim(B)))[:axes])
+        if axes > 0:
+            axes = (list(range(anp.ndim(A)))[-axes:],
+                    list(range(anp.ndim(B)))[:axes])
+        else:
+            axes = [(), ()] # summing over zero axes
+
+        assert len(axes[0]) == len(axes[1])  # required by tensordot
 
     def gradfun(g):
         N_axes_summed = len(axes[0])
