@@ -70,8 +70,8 @@ def hessian_vector_product(fun, argnum=0):
     fun_grad = grad(fun, argnum)
     def vector_dot_grad(*args, **kwargs):
         args, vector = args[:-1], args[-1]
-        return np.dot(vector, fun_grad(*args, **kwargs))
-    return grad(vector_dot_grad, argnum)  # Grad wrt original input.
+        return np.dot(fun_grad(*args, **kwargs), vector)
+    return jacobian(vector_dot_grad, argnum)  # Grad wrt original input.
 
 def value_and_grad(fun, argnum=0):
     """Returns a function that returns both value and gradient. Suitable for use

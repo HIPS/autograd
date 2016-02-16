@@ -73,3 +73,18 @@ def test_elementwise_grad_multiple_args():
     exact = elementwise_grad(simple_fun, argnum=argnum)(A, B)
     numeric = np.squeeze(np.array([nd(simple_fun, A, B[i])[argnum] for i in range(len(B))]))
     check_equivalent(exact, numeric)
+
+
+def test_hessian_vector_product():
+    fun = lambda a: np.sum(np.sin(a))
+    a = npr.randn(5)
+    v = npr.randn(5)
+    H = hessian(fun)(a)
+    check_equivalent(np.dot(H, v), hessian_vector_product(fun)(a, v))
+
+def test_hessian_matrix_product():
+    fun = lambda a: np.sum(np.sin(a))
+    a = npr.randn(5)
+    V = npr.randn(5, 5)
+    H = hessian(fun)(a)
+    check_equivalent(np.dot(H, V).T, hessian_vector_product(fun)(a, V))
