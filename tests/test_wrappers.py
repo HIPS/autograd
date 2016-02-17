@@ -4,7 +4,7 @@ import autograd.numpy.random as npr
 from autograd.util import *
 from autograd import (grad, elementwise_grad, jacobian, value_and_grad,
                       grad_and_aux, hessian_vector_product, hessian, multigrad,
-                      jacobian, jacobian_vector_product)
+                      jacobian, vector_jacobian_product)
 from builtins import range
 
 npr.seed(1)
@@ -97,23 +97,24 @@ def test_hessian_tensor_product():
     H = hessian(fun)(a)
     check_equivalent(np.tensordot(H, V, axes=3), hessian_vector_product(fun)(a, V))
 
-def test_jacobian_vector_product():
-    fun = lambda a: np.sin(a)
+def test_vector_jacobian_product():
+    # This function will have an asymmetric jacobian matrix.
+    fun = lambda a: np.roll(np.sin(a), 1)
     a = npr.randn(5)
     V = npr.randn(5)
     J = jacobian(fun)(a)
-    check_equivalent(np.dot(J, V), jacobian_vector_product(fun)(a, V))
+    check_equivalent(np.dot(V.T, J), vector_jacobian_product(fun)(a, V))
 
-def test_jacobian_matrix_product():
-    fun = lambda a: np.sin(a)
+def test_matrix_jacobian_product():
+    fun = lambda a: np.roll(np.sin(a), 1)
     a = npr.randn(5, 4)
     V = npr.randn(5, 4)
     J = jacobian(fun)(a)
-    check_equivalent(np.tensordot(J, V), jacobian_vector_product(fun)(a, V))
+    check_equivalent(np.tensordot(V, J), vector_jacobian_product(fun)(a, V))
 
-def test_jacobian_tensor_product():
-    fun = lambda a: np.sin(a)
+def test_tensor_jacobian_product():
+    fun = lambda a: np.roll(np.sin(a), 1)
     a = npr.randn(5, 4, 3)
     V = npr.randn(5, 4, 3)
     J = jacobian(fun)(a)
-    check_equivalent(np.tensordot(J, V, axes=3), jacobian_vector_product(fun)(a, V))
+    check_equivalent(np.tensordot(V, J, axes=3), vector_jacobian_product(fun)(a, V))
