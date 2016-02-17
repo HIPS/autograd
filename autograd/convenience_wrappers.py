@@ -74,9 +74,10 @@ def hessian_vector_product(fun, argnum=0):
                             axes=vector.ndim)
     return grad(vector_dot_grad, argnum)  # Grad wrt original input.
 
-def jacobian_vector_product(fun, argnum=0):
-    """Builds a function that returns the exact Jacobian-vector product.
-    The returned function has arguments (*args, vector, **kwargs)."""
+def vector_jacobian_product(fun, argnum=0):
+    """Builds a function that returns the exact vector-Jacobian product, that
+    is the Jacobian matrix left multiplied by vector. The returned function
+    has arguments (*args, vector, **kwargs)."""
     def vector_dot_fun(*args, **kwargs):
         args, vector = args[:-1], args[-1]
         return np.tensordot(fun(*args, **kwargs), vector, axes=vector.ndim)
