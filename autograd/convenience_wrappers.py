@@ -72,7 +72,7 @@ def hessian_vector_product(fun, argnum=0):
         args, vector = args[:-1], args[-1]
         return np.tensordot(fun_grad(*args, **kwargs), vector,
                             axes=vector.ndim)
-    return jacobian(vector_dot_grad, argnum)  # Grad wrt original input.
+    return grad(vector_dot_grad, argnum)  # Grad wrt original input.
 
 def jacobian_vector_product(fun, argnum=0):
     """Builds a function that returns the exact Jacobian-vector product.
@@ -80,7 +80,7 @@ def jacobian_vector_product(fun, argnum=0):
     def vector_dot_fun(*args, **kwargs):
         args, vector = args[:-1], args[-1]
         return np.tensordot(fun(*args, **kwargs), vector, axes=vector.ndim)
-    return jacobian(vector_dot_fun, argnum)  # Grad wrt original input.
+    return grad(vector_dot_fun, argnum)  # Grad wrt original input.
 
 def value_and_grad(fun, argnum=0):
     """Returns a function that returns both value and gradient. Suitable for use
