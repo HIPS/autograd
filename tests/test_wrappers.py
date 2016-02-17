@@ -84,7 +84,14 @@ def test_hessian_vector_product():
 
 def test_hessian_matrix_product():
     fun = lambda a: np.sum(np.sin(a))
-    a = npr.randn(5)
-    V = npr.randn(5, 5)
+    a = npr.randn(5, 4)
+    V = npr.randn(5, 4)
     H = hessian(fun)(a)
-    check_equivalent(np.dot(H, V).T, hessian_vector_product(fun)(a, V))
+    check_equivalent(np.tensordot(H, V), hessian_vector_product(fun)(a, V))
+
+def test_hessian_tensor_product():
+    fun = lambda a: np.sum(np.sin(a))
+    a = npr.randn(5, 4, 3)
+    V = npr.randn(5, 4, 3)
+    H = hessian(fun)(a)
+    check_equivalent(np.tensordot(H, V, axes=3), hessian_vector_product(fun)(a, V))
