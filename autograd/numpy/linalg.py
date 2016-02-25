@@ -79,7 +79,8 @@ eigh.defgrad(make_grad_eigh)
 
 def make_grad_cholesky(L, A):
     # scipy's dtrtrs wrapper is slow and doesn't broadcast along leading
-    # dimensions, so we just call a generic QR solve
+    # dimensions, so we just call a generic QR solve instead of backsubstitution
+    # (also, we factor twice...)
 
     phi = lambda X: anp.tril(X) / (1. + anp.eye(X.shape[-1]))
 
