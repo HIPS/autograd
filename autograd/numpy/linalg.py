@@ -78,21 +78,18 @@ def make_grad_eigh(ans, x, UPLO='L'):
 eigh.defgrad(make_grad_eigh)
 
 def make_grad_cholesky(L, A):
-    def solve_triangular(L, x, trans='N'):
-        '''scipy's dtrtrs wrapper is slow and doesn't broadcast along leading
-        dimensions, so we just call a generic QR solve'''
-        if trans == 'N':
-            return solve(L, x)
-        return solve(T(L), x)
+    # scipy's dtrtrs wrapper is slow and doesn't broadcast along leading
+    # dimensions, so we just call a generic QR solve
+
+    phi = lambda X: anp.tril(X) / (1. + anp.eye(X.shape[-1]))
 
     def conjugate_solve(L, X):
         'X -> L^{-T} X L^{-1}'
-        return solve_triangular(L, T(solve_triangular(L, T(X), 'T')), 'T')
-
-    phi = lambda X: anp.tril(X) / (1. + anp.eye(X.shape[-1]))
+        return solve(T(L), T(solve(T(L), T(X))))
 
     def cholesky_grad(g):
         S = conjugate_solve(L, phi(anp.einsum('...ki,...kj->...ij', L, g)))
         return (S + T(S)) / 2.
+
     return cholesky_grad
 cholesky.defgrad(make_grad_cholesky)
