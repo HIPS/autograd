@@ -87,30 +87,23 @@ def broadcasting_dsymv(alpha, A, x, lower=None):
     return onp.einsum('...ij,...j->...i', A_sym, x)
 
 def make_grad_cholesky(L, A):
-    # based on choleskies_cython.pyx in SheffieldML/GPy and (Smith 1995)
-    # TODO for higher-order differentiation, replace dsymv, get rid of inplace
-    # ops, make cholesky grad primitive and defgrad? also ArrayNode assignment
-    from scipy.linalg.blas import dsymv
-    N = L.shape[-1]
-    T = lambda x: onp.swapaxes(x, -1, -2)
-    if A.ndim > 2:
-        dsymv = broadcasting_dsymv
-        dot = partial(onp.einsum, '...i,...i->...')
-        diag = partial(onp.diagonal, axis1=-1, axis2=-2)
-    else:
-        dot = onp.dot
-        diag = onp.diag
+    from ..scipy.linalg import solve_triangular as _solve_triangular
+    from .. import numpy as np
+
+    if A.ndim > 2 or L.ndim > 2: raise ValueError, 'broadcasting version not implemented'
+
+    def solve_triangular(L, x, trans='N'):
+        return _solve_triangular(L, x, lower=True, trans=trans)
+
+    def conjugate_solve(L, X):
+        'X -> L^{-T} X L^{-1}'
+        return solve_triangular(L, solve_triangular(L, X.T, 'T').T, 'T')
+
+    phi = lambda X: np.tril(X) / (1. + np.eye(X.shape[0]))
 
     @primitive
     def cholesky_grad(g):
-        dL = onp.tril(g)
-        dL[...,-1,-1] /= 2 * L[...,-1,-1]
-        for k in range(N-2, -1, -1):
-            dL[...,k+1:,k] -= dsymv(1., dL[...,k+1:,k+1:], L[...,k+1:,k], lower=True)
-            dL[...,k+1:,k] -= diag(dL[...,k+1:,k+1:]) * L[...,k+1:,k]
-            dL[...,k+1:,k] /= L[...,k:k+1,k]
-            dL[...,k,k] -= dot(dL[...,k+1:,k], L[...,k+1:,k])
-            dL[...,k,k] /= 2 * L[...,k,k]
-        return (dL + T(dL))/2.
+        S = conjugate_solve(L, phi(np.dot(L.T, g)))
+        return (S + S.T) / 2.
     return cholesky_grad
 cholesky.defgrad(make_grad_cholesky)
