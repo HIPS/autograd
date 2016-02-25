@@ -78,6 +78,7 @@ def make_grad_eigh(ans, x, UPLO='L'):
 eigh.defgrad(make_grad_eigh)
 
 def make_grad_cholesky(L, A):
+    # Based on Iain Murray's note http://arxiv.org/abs/1602.07527
     # scipy's dtrtrs wrapper is slow and doesn't broadcast along leading
     # dimensions, so we just call a generic LU solve instead of backsubstitution
     # (also, we factor twice...)
