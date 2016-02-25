@@ -1,6 +1,5 @@
 from __future__ import absolute_import
 from functools import partial
-import numpy as onp
 import numpy.linalg as npla
 from .numpy_wrapper import wrap_namespace
 from . import numpy_wrapper as anp
@@ -78,32 +77,22 @@ def make_grad_eigh(ans, x, UPLO='L'):
     return eigh_grad
 eigh.defgrad(make_grad_eigh)
 
-def broadcasting_dsymv(alpha, A, x, lower=None):
-    N = A.shape[-1]
-    idxs = onp.arange(N)
-    A_lower = onp.tril(A)
-    A_sym = A_lower + T(A_lower)
-    A_sym[..., idxs, idxs] *= 0.5
-    return onp.einsum('...ij,...j->...i', A_sym, x)
-
 def make_grad_cholesky(L, A):
-    from .. import numpy as np
-
     def solve_triangular(L, x, trans='N'):
         '''scipy's dtrtrs wrapper is slow and doesn't broadcast along leading
         dimensions, so we just call a generic QR solve'''
         if trans == 'N':
-            return np.linalg.solve(L, x)
-        return np.linalg.solve(T(L), x)
+            return solve(L, x)
+        return solve(T(L), x)
 
     def conjugate_solve(L, X):
         'X -> L^{-T} X L^{-1}'
         return solve_triangular(L, T(solve_triangular(L, T(X), 'T')), 'T')
 
-    phi = lambda X: np.tril(X) / (1. + np.eye(X.shape[-1]))
+    phi = lambda X: anp.tril(X) / (1. + anp.eye(X.shape[-1]))
 
     def cholesky_grad(g):
-        S = conjugate_solve(L, phi(np.einsum('...ki,...kj->...ij', L, g)))
+        S = conjugate_solve(L, phi(anp.einsum('...ki,...kj->...ij', L, g)))
         return (S + T(S)) / 2.
     return cholesky_grad
 cholesky.defgrad(make_grad_cholesky)
