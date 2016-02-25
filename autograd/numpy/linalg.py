@@ -87,23 +87,23 @@ def broadcasting_dsymv(alpha, A, x, lower=None):
     return onp.einsum('...ij,...j->...i', A_sym, x)
 
 def make_grad_cholesky(L, A):
-    from ..scipy.linalg import solve_triangular as _solve_triangular
     from .. import numpy as np
 
-    if A.ndim > 2 or L.ndim > 2: raise ValueError, 'broadcasting version not implemented'
-
     def solve_triangular(L, x, trans='N'):
-        return _solve_triangular(L, x, lower=True, trans=trans)
+        '''scipy's dtrtrs wrapper is slow and doesn't broadcast along leading
+        dimensions, so we just call a generic QR solve'''
+        if trans == 'N':
+            return np.linalg.solve(L, x)
+        return np.linalg.solve(T(L), x)
 
     def conjugate_solve(L, X):
         'X -> L^{-T} X L^{-1}'
-        return solve_triangular(L, solve_triangular(L, X.T, 'T').T, 'T')
+        return solve_triangular(L, T(solve_triangular(L, T(X), 'T')), 'T')
 
-    phi = lambda X: np.tril(X) / (1. + np.eye(X.shape[0]))
+    phi = lambda X: np.tril(X) / (1. + np.eye(X.shape[-1]))
 
-    @primitive
     def cholesky_grad(g):
-        S = conjugate_solve(L, phi(np.dot(L.T, g)))
-        return (S + S.T) / 2.
+        S = conjugate_solve(L, phi(np.einsum('...ki,...kj->...ij', L, g)))
+        return (S + T(S)) / 2.
     return cholesky_grad
 cholesky.defgrad(make_grad_cholesky)

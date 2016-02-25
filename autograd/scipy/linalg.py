@@ -26,4 +26,3 @@ def make_grad_solve_triangular(ans, a, b, trans=0, lower=False, **kwargs):
 solve_triangular.defgrad(make_grad_solve_triangular)
 solve_triangular.defgrad(lambda ans, a, b, trans=0, lower=False, **kwargs: lambda g:
     solve_triangular(a, g, trans=_flip(a, trans), lower=lower), argnum=1)
-
