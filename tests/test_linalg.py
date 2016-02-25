@@ -204,7 +204,10 @@ def test_eigvalh_upper_broadcasting():
 def test_cholesky():
     def fun(A):
         return to_scalar(np.linalg.cholesky(A))
+    def fun2(A):
+        return to_scalar(grad(fun)(A))
     check_symmetric_matrix_grads(fun, rand_psd(6))
+    check_symmetric_matrix_grads(fun2, rand_psd(6))
 
 def test_cholesky_broadcast():
     def fun(A):
