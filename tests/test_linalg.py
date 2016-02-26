@@ -202,18 +202,17 @@ def test_eigvalh_upper_broadcasting():
     check_symmetric_matrix_grads(d_fun, hmat)
 
 def test_cholesky():
-    def fun(A):
-        return to_scalar(np.linalg.cholesky(A))
-    def fun2(A):
-        return to_scalar(grad(fun)(A))
+    fun = lambda A: to_scalar(np.linalg.cholesky(A))
+    fun2 = lambda A: to_scalar(grad(fun)(A))
     check_symmetric_matrix_grads(fun, rand_psd(6))
     check_symmetric_matrix_grads(fun2, rand_psd(6))
 
 def test_cholesky_broadcast():
-    def fun(A):
-        return to_scalar(np.linalg.cholesky(A))
+    fun = lambda A: to_scalar(np.linalg.cholesky(A))
+    fun2 = lambda A: to_scalar(grad(fun)(A))
     A = np.concatenate([rand_psd(6)[None, :, :] for i in range(3)], axis=0)
     check_symmetric_matrix_grads(fun, A)
+    check_symmetric_matrix_grads(fun2, A)
 
 def test_cholesky_reparameterization_trick():
     def fun(A):
