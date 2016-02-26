@@ -95,7 +95,7 @@ def test_hessian_tensor_product():
     a = npr.randn(5, 4, 3)
     V = npr.randn(5, 4, 3)
     H = hessian(fun)(a)
-    check_equivalent(np.tensordot(H, V, axes=3), hessian_vector_product(fun)(a, V))
+    check_equivalent(np.tensordot(H, V, axes=np.ndim(V)), hessian_vector_product(fun)(a, V))
 
 def test_vector_jacobian_product():
     # This function will have an asymmetric jacobian matrix.
@@ -115,6 +115,6 @@ def test_matrix_jacobian_product():
 def test_tensor_jacobian_product():
     fun = lambda a: np.roll(np.sin(a), 1)
     a = npr.randn(5, 4, 3)
-    V = npr.randn(5, 4, 3)
+    V = npr.randn(5, 4)
     J = jacobian(fun)(a)
-    check_equivalent(np.tensordot(V, J, axes=3), vector_jacobian_product(fun)(a, V))
+    check_equivalent(np.tensordot(V, J, axes=np.ndim(V)), vector_jacobian_product(fun)(a, V))
