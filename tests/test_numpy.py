@@ -822,3 +822,10 @@ def test_diagonal():
     D = np.random.randn(3, 4, 4)
     A = np.make_diagonal(D, axis1=-1, axis2=-2)
     check_grads(fun, D)
+
+def test_nan_to_num():
+    y = np.array([0., np.nan, np.inf, -np.inf])
+    fun = lambda x: np.sum(np.sin(np.nan_to_num(x + y)))
+
+    x = np.random.randn(4)
+    check_grads(fun, x)
