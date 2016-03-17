@@ -4,19 +4,12 @@ import autograd.numpy as np
 import itertools as it
 from autograd.core import grad, safe_type
 from copy import copy
-from autograd.numpy.use_gpu_numpy import use_gpu_numpy
 from autograd.container_types import ListNode, TupleNode, make_tuple
 from builtins import map, range, zip
 from future.utils import iteritems
 
-if use_gpu_numpy():
-    garray_obj = np.garray
-    array_types = (np.ndarray, garray_obj)
-    EPS, RTOL, ATOL = 1e-4, 1e-2, 1e-2
-else:
-    garray_obj = ()
-    array_types = (np.ndarray,)
-    EPS, RTOL, ATOL = 1e-4, 1e-4, 1e-6
+array_types = (np.ndarray,)
+EPS, RTOL, ATOL = 1e-4, 1e-4, 1e-6
 
 def nd(f, *args):
     unary_f = lambda x : f(*x)
@@ -26,8 +19,6 @@ def unary_nd(f, x, eps=EPS):
     if isinstance(x, array_types):
         if np.iscomplexobj(x):
             nd_grad = np.zeros(x.shape) + 0j
-        elif isinstance(x, garray_obj):
-            nd_grad = np.array(np.zeros(x.shape), dtype=np.gpu_float32)
         else:
             nd_grad = np.zeros(x.shape)
         for dims in it.product(*list(map(range, x.shape))):

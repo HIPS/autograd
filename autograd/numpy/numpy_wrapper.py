@@ -1,18 +1,10 @@
 from __future__ import absolute_import
 from __future__ import print_function
 import types
-from .use_gpu_numpy import use_gpu_numpy
 from future.utils import iteritems
-
-
-if use_gpu_numpy():
-    print("Using GPU-supporting numpy wrapper")
-    import gpu_numpy as np
-else:
-    import numpy as np
-
 import warnings
 from autograd.core import primitive, getval
+import numpy as np
 
 def unbox_args(f):
     def wrapped(*args, **kwargs):

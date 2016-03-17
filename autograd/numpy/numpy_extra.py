@@ -4,7 +4,6 @@ import numpy as np
 from autograd.core import (Node, FloatNode, primitive, cast,
                            differentiable_ops, nondifferentiable_ops, getval)
 from . import numpy_wrapper as anp
-from .use_gpu_numpy import use_gpu_numpy
 
 @primitive
 def take(A, idx):
@@ -93,26 +92,14 @@ for float_type in [anp.float64, anp.float32, anp.float16]:
     Node.type_mappings[float_type] = FloatNode
 
 
-if use_gpu_numpy():
-    @primitive
-    def arraycast(val):
-        if isinstance(val, float):
-            return anp.array(val)
-        elif anp.is_garray(val):
-            return anp.array(val, dtype=anp.float64)
-        elif anp.iscomplexobj(val):
-            return anp.array(anp.real(val))
-        else:
-            raise TypeError("Can't cast type {0} to array".format(type(val)))
-else:
-    @primitive
-    def arraycast(val):
-        if isinstance(val, float):
-            return anp.array(val)
-        elif anp.iscomplexobj(val):
-            return anp.array(anp.real(val))
-        else:
-            raise TypeError("Can't cast type {0} to array".format(type(val)))
+@primitive
+def arraycast(val):
+    if isinstance(val, float):
+        return anp.array(val)
+    elif anp.iscomplexobj(val):
+        return anp.array(anp.real(val))
+    else:
+        raise TypeError("Can't cast type {0} to array".format(type(val)))
 arraycast.defgrad(lambda ans, val: lambda g : g)
 
 @primitive
