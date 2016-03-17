@@ -62,21 +62,6 @@ def backward_pass(g, start_node, end_node, tape):
 
     return cur_outgrad
 
-def attach_name_and_doc(fun, argnum, opname):
-    namestr = "{op}_{fun}_wrt_argnum_{argnum}".format(
-        op=opname.lower(), fun=fun.__name__, argnum=argnum)
-    docstr = "{op} of function {fun} with respect to argument number {argnum}. " \
-        "Has the same arguments as {fun} but the return value has type of" \
-        "argument {argnum}".format(op=opname, fun=fun.__name__, argnum=argnum)
-
-    def wrap(gradfun):
-        try:
-            gradfun.__name__ = namestr
-            gradfun.__doc__ = docstr
-        finally:
-            return gradfun
-    return wrap
-
 def cast_to_node_type(x, node_type, example):
     if type(new_node(getval(x))) is not node_type:
         return node_type.cast(x, example)

@@ -2,7 +2,7 @@
 from __future__ import absolute_import
 from functools import partial
 import autograd.numpy as np
-from autograd.core import make_jvp, getval, forward_pass, backward_pass, attach_name_and_doc
+from autograd.core import make_jvp, getval, forward_pass, backward_pass
 from collections import OrderedDict
 
 def grad(fun, argnum=0):
@@ -159,3 +159,18 @@ def multigrad_dict(fun):
         return OrderedDict((argname, grad_dict[argname]) for argname in argdict)
 
     return gradfun
+
+def attach_name_and_doc(fun, argnum, opname):
+    namestr = "{op}_{fun}_wrt_argnum_{argnum}".format(
+        op=opname.lower(), fun=fun.__name__, argnum=argnum)
+    docstr = "{op} of function {fun} with respect to argument number {argnum}. " \
+        "Has the same arguments as {fun} but the return value has type of" \
+        "argument {argnum}".format(op=opname, fun=fun.__name__, argnum=argnum)
+
+    def wrap(gradfun):
+        try:
+            gradfun.__name__ = namestr
+            gradfun.__doc__ = docstr
+        finally:
+            return gradfun
+    return wrap
