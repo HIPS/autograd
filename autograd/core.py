@@ -11,16 +11,14 @@ from functools import partial
 from future.utils import iteritems, raise_from, raise_
 from collections import defaultdict
 
-def grad(fun, argnum=0):
-    """
-    Returns a function which computes the gradient of `fun` with respect to
-    positional argument number `argnum`. The returned function takes the same
-    arguments as `fun`, but returns the gradient instead. The function `fun`
-    should be scalar-valued. The gradient has the same type as the argument."""
-    @attach_name_and_doc(fun, argnum, 'Gradient')
-    def gradfun(*args,**kwargs):
-        return backward_pass(*forward_pass(fun,args,kwargs,argnum))
-    return gradfun
+def make_jvp(fun, argnum=0):
+    def jvp(*args, **kwargs):
+        start_node, end_node, tape = forward_pass(fun, args, kwargs, argnum)
+        def jvp_bound(g):
+            return backward_pass(g, start_node, end_node, tape)
+        return jvp_bound
+
+    return jvp
 
 def forward_pass(fun, args, kwargs, argnum=0):
     tape = CalculationTape()
@@ -32,7 +30,7 @@ def forward_pass(fun, args, kwargs, argnum=0):
     except Exception as e: add_extra_error_message(e)
     return start_node, end_node, tape
 
-def backward_pass(start_node, end_node, tape):
+def backward_pass(g, start_node, end_node, tape):
     if not isnode(end_node) or tape not in end_node.tapes:
         warnings.warn("Output seems independent of input. Returning zero gradient.")
         return zeros_like(start_node)
@@ -46,7 +44,7 @@ def backward_pass(start_node, end_node, tape):
                 "Try jacobian or elementwise_grad.".format(type(end_node.value)))
 
     outgrads = defaultdict(list)
-    outgrads[end_node] = [1.0]
+    outgrads[end_node] = [g]
     tape.complete = True
     for node in tape[::-1]:
         if node in outgrads:

@@ -2,8 +2,20 @@
 from __future__ import absolute_import
 from functools import partial
 import autograd.numpy as np
-from autograd.core import grad, getval, forward_pass, backward_pass, attach_name_and_doc
+from autograd.core import make_jvp, getval, forward_pass, backward_pass, attach_name_and_doc
 from collections import OrderedDict
+
+def grad(fun, argnum=0):
+    """
+    Returns a function which computes the gradient of `fun` with respect to
+    positional argument number `argnum`. The returned function takes the same
+    arguments as `fun`, but returns the gradient instead. The function `fun`
+    should be scalar-valued. The gradient has the same type as the argument."""
+    @attach_name_and_doc(fun, argnum, 'Gradient')
+    def gradfun(*args,**kwargs):
+        return make_jvp(fun, argnum)(*args, **kwargs)(1.0)
+
+    return gradfun
 
 def jacobian(fun, argnum=0):
     """
@@ -32,7 +44,7 @@ def jacobian(fun, argnum=0):
     @attach_name_and_doc(fun, argnum, 'Jacobian')
     def jacfun(*args, **kwargs):
         start_node, end_nodes, tape = forward_pass(list_fun, args, kwargs, argnum)
-        grads = list(map(partial(backward_pass, start_node, tape=tape), end_nodes))
+        grads = list(map(partial(backward_pass, 1.0, start_node, tape=tape), end_nodes))
         shape = dummy.outshape + getshape(args[argnum])
         return np.reshape(concatenate(grads), shape) if shape else grads[0]
     return jacfun
