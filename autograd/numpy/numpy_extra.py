@@ -80,9 +80,9 @@ class ArrayNode(Node):
     def __lt__(self, other): return anp.less(self, other)
     def __le__(self, other): return anp.less_equal(self, other)
 
-def new_array_node(value, tapes):
+def new_array_node(value, *args):
     try:
-        return array_dtype_mappings[value.dtype](value, tapes)
+        return array_dtype_mappings[value.dtype](value, *args)
     except KeyError:
         raise TypeError("Can't differentiate wrt numpy arrays of dtype {0}".format(value.dtype))
 Node.type_mappings[anp.ndarray] = new_array_node

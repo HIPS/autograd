@@ -25,7 +25,7 @@ def grad(fun, argnum=0):
 def forward_pass(fun, args, kwargs, argnum=0):
     tape = CalculationTape()
     arg_wrt = args[argnum]
-    start_node = new_node(safe_type(getval(arg_wrt)), [tape])
+    start_node = new_node(safe_type(getval(arg_wrt)), None, None, None, set([tape]))
     args = list(args)
     args[argnum] = merge_tapes(start_node, arg_wrt)
     try: end_node = fun(*args, **kwargs)
@@ -45,21 +45,23 @@ def backward_pass(start_node, end_node, tape):
                 "Function grad requires a scalar-valued function. "
                 "Try jacobian or elementwise_grad.".format(type(end_node.value)))
 
-    for node in tape:
-        node.outgrads = []
-    end_node.tapes[tape].outgrads = [1.0]
-
+    outgrads = defaultdict(list)
+    outgrads[end_node] = [1.0]
     tape.complete = True
-    tape = copy.copy(tape)
-    while tape:
-        node = tape.pop()
-        if node.outgrads:
-            cur_outgrad = node.sum_outgrads()
+    for node in tape[::-1]:
+        if node in outgrads:
+            cur_outgrad = node.node_type.sum_outgrads(outgrads[node])
             assert type(new_node(getval(cur_outgrad))) == node.node_type, \
-                "Types are {0} and {1}".format(type(new_node(getval(cur_outgrad))), node.node_type)
-            for gradfun, parent in node.parent_grad_ops:
-                og = cast_to_node_type(gradfun(cur_outgrad), parent.node_type, parent.node_value)
-                parent.outgrads.append(og)
+                "Types are {0} and {1}".format(type(new_node(getval(cur_outgrad))),
+                                               node.node_type)
+            for argnum, parent in enumerate(node.args):
+                if isinstance(parent, Node) and argnum not in node.function.zero_grads:
+                    gradfun = node.function.gradmaker(
+                        argnum, node, node.args, node.kwargs)
+                    og = cast_to_node_type(gradfun(cur_outgrad),
+                                           parent.node_type, parent.value)
+                    outgrads[parent].append(og)
+
     return cur_outgrad
 
 def attach_name_and_doc(fun, argnum, opname):
@@ -117,27 +119,27 @@ class primitive(object):
         for argnum in argnums:
             self.zero_grads.add(argnum)
 
+
     def __call__(self, *args, **kwargs):
-        argvals = list(args)
-        ops = []
+        argvals = []
         tapes = set()
         for i, arg in enumerate(args):
             if isinstance(arg, Node):
-                argvals[i] = arg.value
-                if i in self.zero_grads: continue
-                for tape, parent_rnode in iteritems(arg.tapes):
-                    if not tape.complete:
-                        ops.append((tape, i, parent_rnode))
-                        tapes.add(tape)
+                argvals.append(arg.value)
+                if i not in self.zero_grads:
+                    for tape in arg.tapes:
+                        if not tape.complete:
+                            tapes.add(tape)
+            else:
+                argvals.append(arg)
 
         result = self.fun(*argvals, **kwargs)
         if result is NotImplemented: return result
-        if ops:
-            result = new_node(result, tapes)
-            for tape, argnum, parent in ops:
-                gradfun = self.gradmaker(argnum, result, args, kwargs)
-                rnode = result.tapes[tape]
-                rnode.parent_grad_ops.append((gradfun, parent))
+        if tapes:
+            result = new_node(result, self, args, kwargs, tapes)
+            for tape in tapes:
+                tape.append(result)
+
         return result
 
     if sys.version_info >= (3,):
@@ -172,7 +174,7 @@ class primitive_with_aux(primitive):
         result, aux = self.fun(*argvals, **kwargs)
 
         if result is NotImplemented: return result
-        if ops:
+        if tapes:
             result = new_node(result, tapes)
             for tape, argnum, parent in ops:
                 gradfun = self.gradmaker(argnum, aux, result, args, kwargs)
@@ -192,11 +194,11 @@ def merge_tapes(x, y): return x
 merge_tapes.defgrad(lambda ans, x, y : lambda g : g)
 merge_tapes.defgrad(lambda ans, x, y : lambda g : g, argnum=1)
 
-def new_node(value, tapes=[]):
+def new_node(value, *args):
     try:
-        return Node.type_mappings[type(value)](value, tapes)
+        return Node.type_mappings[type(value)](value, *args)
     except KeyError:
-        return NoDerivativeNode(value, tapes)
+        return NoDerivativeNode(value, *args)
 
 def zeros_like(value):
     if isinstance(value, Node):
@@ -204,28 +206,16 @@ def zeros_like(value):
     else:
         return new_node(value, []).zeros_like(value)
 
-class ReverseNode(object):
-    __slots__ = ['parent_grad_ops', 'outgrads', 'node_type', 'node_value']
-    def __init__(self, node_type, node_value):
-        self.parent_grad_ops = []
-        self.outgrads = []
-        self.node_type = node_type
-        self.node_value = node_value
-
-    def sum_outgrads(self):
-        return self.node_type.sum_outgrads(self.outgrads)
-
 class Node(object):
-    __slots__ = ['value', 'tapes']
-    Rnode = ReverseNode
+    __slots__ = ['value', 'function', 'args', 'kwargs', 'tapes', 'node_type']
     type_mappings = {}
-    def __init__(self, value, tapes):
+    def __init__(self, value, function=None, args=(), kwargs=None, tapes=None):
         self.value = value
-        self.tapes = {}
-        for tape in tapes:
-            new_rnode = self.Rnode(type(self), value)
-            tape.append(new_rnode)
-            self.tapes[tape] = new_rnode
+        self.function = function
+        self.args = args
+        self.kwargs = kwargs
+        self.tapes = tapes
+        self.node_type = type(self)
 
     def __bool__(self):
         return bool(self.value)
@@ -352,18 +342,8 @@ FloatNode.__dict__['__rmod__'].grads = swap_args(FloatNode.__dict__['__mod__'].g
 # reverse pass so that evaluating nondifferentiable functions that don't affect
 # the output don't cause problems (c.f. Issue #43).
 
-class NoDerivativeReverseNode(ReverseNode):
-    def __init__(self, node_type, node_value):
-        super(NoDerivativeReverseNode,self).__init__(node_type, node_value)
-        self.type = type(node_value)
-
-    def sum_outgrads(self):
-        raise TypeError("Can't differentiate wrt {0}".format(self.type))
-
 class NoDerivativeNode(FloatNode):
     # inherit from FloatNode so that numerical infix operators work
-    Rnode = NoDerivativeReverseNode
-
     @staticmethod
     def cast(value, example):
         return example  # pass through so we can raise an error on reverse pass
