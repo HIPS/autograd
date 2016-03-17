@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 import numpy as np
 
-from autograd.core import (Node, FloatNode, primitive, cast,
+from autograd.core import (Node, FloatNode, primitive, cast, add_type_mappings,
                            differentiable_ops, nondifferentiable_ops, getval)
 from . import numpy_wrapper as anp
 
@@ -84,12 +84,12 @@ def new_array_node(value, *args):
         return array_dtype_mappings[value.dtype](value, *args)
     except KeyError:
         raise TypeError("Can't differentiate wrt numpy arrays of dtype {0}".format(value.dtype))
-Node.type_mappings[anp.ndarray] = new_array_node
+add_type_mappings(anp.ndarray, new_array_node)
 
 array_dtype_mappings = {}
 for float_type in [anp.float64, anp.float32, anp.float16]:
     array_dtype_mappings[anp.dtype(float_type)] = ArrayNode
-    Node.type_mappings[float_type] = FloatNode
+    add_type_mappings(float_type, FloatNode)
 
 
 @primitive
@@ -139,4 +139,4 @@ class SparseArray(object):
         self.idx = idx
         self.val = val
         self.dtype = template.dtype
-Node.type_mappings[SparseArray] = ArrayNode
+add_type_mappings(SparseArray, ArrayNode)

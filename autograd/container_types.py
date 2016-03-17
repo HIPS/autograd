@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-from autograd.core import primitive, Node, getval, zeros_like, cast
+from autograd.core import primitive, Node, add_type_mappings, getval, zeros_like, cast
 from builtins import zip
 from future.utils import iteritems
 
@@ -19,7 +19,7 @@ class TupleNode(Node):
     def sum_outgrads(outgrads):
         return primitive_sum_tuples(*outgrads)
 
-Node.type_mappings[tuple] = TupleNode
+add_type_mappings(tuple, TupleNode)
 
 @primitive
 def primitive_sum_tuples(*tuples):
@@ -70,7 +70,7 @@ class ListNode(Node):
 def cast_to_list(x):
     return list(x)
 
-Node.type_mappings[list] = ListNode
+add_type_mappings(list, ListNode)
 
 @primitive
 def primitive_sum_lists(*lists):
@@ -117,7 +117,7 @@ class DictNode(Node):
 def cast_to_dict(x):
     return dict(x)
 
-Node.type_mappings[dict] = DictNode
+add_type_mappings(dict, DictNode)
 
 @primitive
 def primitive_sum_dicts(*dicts):

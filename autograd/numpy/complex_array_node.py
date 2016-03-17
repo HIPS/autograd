@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-from autograd.core import Node, ComplexNode, primitive, cast, getval
+from autograd.core import Node, ComplexNode, primitive, cast, getval, add_type_mappings
 from . import numpy_wrapper as anp
 from .numpy_extra import ArrayNode, array_dtype_mappings, SparseArray
 
@@ -21,7 +21,7 @@ class ComplexArrayNode(ArrayNode):
 
 for complex_type in [anp.complex64, anp.complex128]:
     array_dtype_mappings[anp.dtype(complex_type)] = ComplexArrayNode
-    Node.type_mappings[complex_type] = ComplexNode
+    add_type_mappings(complex_type, ComplexNode)
 
 @primitive
 def complex_arraycast(val):
@@ -30,4 +30,4 @@ complex_arraycast.defgrad(lambda ans, val: lambda g : g)
 
 class ComplexSparseArray(SparseArray):
     pass
-Node.type_mappings[ComplexSparseArray] = ComplexArrayNode
+add_type_mappings(ComplexSparseArray, ComplexArrayNode)

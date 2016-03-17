@@ -33,7 +33,7 @@ def forward_pass(fun, args, kwargs, argnum=0):
     return start_node, end_node, tape
 
 def backward_pass(start_node, end_node, tape):
-    if not isinstance(end_node, Node) or tape not in end_node.tapes:
+    if not isnode(end_node) or tape not in end_node.tapes:
         warnings.warn("Output seems independent of input. Returning zero gradient.")
         return zeros_like(start_node)
     if type(end_node) is not FloatNode:
@@ -55,7 +55,7 @@ def backward_pass(start_node, end_node, tape):
                 "Types are {0} and {1}".format(type(new_node(getval(cur_outgrad))),
                                                node.node_type)
             for argnum, parent in enumerate(node.args):
-                if isinstance(parent, Node) and argnum not in node.function.zero_grads:
+                if isnode(parent) and argnum not in node.function.zero_grads:
                     gradfun = node.function.gradmaker(
                         argnum, node, node.args, node.kwargs)
                     og = cast_to_node_type(gradfun(cur_outgrad),
@@ -124,7 +124,7 @@ class primitive(object):
         argvals = []
         tapes = set()
         for i, arg in enumerate(args):
-            if isinstance(arg, Node):
+            if isnode(arg):
                 argvals.append(arg.value)
                 if i not in self.zero_grads:
                     for tape in arg.tapes:
@@ -161,19 +161,18 @@ merge_tapes.defgrad(lambda ans, x, y : lambda g : g, argnum=1)
 
 def new_node(value, *args):
     try:
-        return Node.type_mappings[type(value)](value, *args)
+        return type_mappings[type(value)](value, *args)
     except KeyError:
         return NoDerivativeNode(value, *args)
 
 def zeros_like(value):
-    if isinstance(value, Node):
+    if isnode(value):
         return value.zeros_like(value)
     else:
         return new_node(value, []).zeros_like(value)
 
 class Node(object):
     __slots__ = ['value', 'function', 'args', 'kwargs', 'tapes', 'node_type']
-    type_mappings = {}
     def __init__(self, value, function=None, args=(), kwargs=None, tapes=None):
         self.value = value
         self.function = function
@@ -195,12 +194,21 @@ class Node(object):
         return "Autograd {0} with value {1} and {2} tape(s)".format(
             type(self).__name__, str(self.value), len(self.tapes))
 
+type_mappings = {}
+node_types = set()
+def add_type_mappings(value_type, node_type):
+    node_types.add(node_type)
+    type_mappings[value_type] = node_type
+
+def isnode(x):
+    return type(x) in node_types
+
 @primitive
 def cast(value, caster):
     return caster(value)
 cast.defgrad(lambda *args: I)
 
-getval = lambda x : x.value if isinstance(x, Node) else x
+getval = lambda x : x.value if isnode(x) else x
 
 class CalculationTape(list):
     def __init__(self):
@@ -217,8 +225,7 @@ class FloatNode(Node):
     @staticmethod
     def cast(value, example):
         return cast(value, cast_to_float)
-
-Node.type_mappings[float] = FloatNode
+add_type_mappings(float, FloatNode)
 
 def cast_to_float(x):
     if np.iscomplexobj(x):
@@ -232,13 +239,14 @@ class ComplexNode(FloatNode):
     @staticmethod
     def cast(value, example):
         return cast(value, cast_to_complex)
+add_type_mappings(complex, ComplexNode)
 
 def cast_to_complex(value):
     if isinstance(value, np.ndarray):
         return complex(value[()])
     else:
         return complex(value)
-Node.type_mappings[complex] = ComplexNode
+
 
 def safe_type(value):
     if isinstance(value, int):
