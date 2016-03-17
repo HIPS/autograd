@@ -149,6 +149,11 @@ class primitive(object):
         def __get__(self, obj, objtype):
             return types.MethodType(self, obj, objtype)
 
+class nograd_primitive(primitive):
+    def __call__(self, *args, **kwargs):
+        argvals = map(getval, args)
+        return self.fun(*argvals, **kwargs)
+
 @primitive
 def merge_tapes(x, y): return x
 merge_tapes.defgrad(lambda ans, x, y : lambda g : g)

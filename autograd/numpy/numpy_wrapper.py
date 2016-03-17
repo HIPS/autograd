@@ -3,7 +3,7 @@ from __future__ import print_function
 import types
 from future.utils import iteritems
 import warnings
-from autograd.core import primitive, getval
+from autograd.core import primitive, nograd_primitive, getval
 import numpy as np
 
 def unbox_args(f):
@@ -18,12 +18,24 @@ def wrap_intdtype(cls):
         __new__ = unbox_args(cls.__new__)
     return IntdtypeSubclass
 
+nograd_functions = [
+    np.floor, np.ceil, np.round, np.rint, np.around, np.fix, np.trunc, np.all,
+    np.any, np.argmax, np.argmin, np.argpartition, np.argsort, np.argwhere, np.nonzero,
+    np.flatnonzero, np.count_nonzero, np.searchsorted, np.sign, np.ndim, np.shape,
+    np.floor_divide, np.logical_and, np.logical_or, np.logical_not, np.logical_xor,
+    np.isfinite, np.isinf, np.isnan, np.isneginf, np.isposinf, np.allclose, np.isclose,
+    np.array_equal, np.array_equiv, np.greater, np.greater_equal, np.less, np.less_equal,
+    np.equal, np.not_equal, np.iscomplexobj, np.iscomplex, np.size, np.isscalar,
+    np.isreal, np.zeros_like, np.ones_like]
+
 def wrap_namespace(old, new):
     unchanged_types = {float, int, type(None), type}
     int_types = {np.int, np.int8, np.int16, np.int32, np.int64, np.integer}
     function_types = {np.ufunc, types.FunctionType, types.BuiltinFunctionType}
     for name, obj in iteritems(old):
-        if type(obj) in function_types:
+        if obj in nograd_functions:
+            new[name] = nograd_primitive(obj)
+        elif type(obj) in function_types:
             new[name] = primitive(obj)
         elif type(obj) is type and obj in int_types:
             new[name] = wrap_intdtype(obj)
