@@ -34,7 +34,7 @@ def backward_pass(g, end_node, tape):
 
     outgrads = defaultdict(list)
     outgrads[end_node] = [cast_like_node(g, end_node)]
-    tape.complete = True
+    tape.active = False
     for node in tape[::-1]:
         if node not in outgrads: continue
         cur_outgrad = node.sum_outgrads(outgrads[node])
@@ -84,25 +84,20 @@ class primitive(object):
         for argnum in argnums:
             self.zero_grads.add(argnum)
 
-
     def __call__(self, *args, **kwargs):
-        argvals = []
+        argvals = list(args)
         tapes = set()
         for i, arg in enumerate(args):
             if isnode(arg):
-                argvals.append(arg.value)
-                if i not in self.zero_grads:
-                    for tape in arg.tapes:
-                        if not tape.complete:
-                            tapes.add(tape)
-            else:
-                argvals.append(arg)
+                argvals[i] = arg.value
+                if i in self.zero_grads: continue
+                tapes.update([t for t in arg.tapes if t.active])
 
-        result = self.fun(*argvals, **kwargs)
+        result_value = self.fun(*argvals, **kwargs)
         if tapes:
-            return node_type(result)(result, self, args, kwargs, tapes)
+            return node_type(result_value)(result_value, self, args, kwargs, tapes)
         else:
-            return result
+            return result_value
 
     if sys.version_info >= (3,):
         def __get__(self, obj, objtype):
@@ -188,7 +183,7 @@ getval = lambda x : x.value if isnode(x) else x
 
 class CalculationTape(list):
     def __init__(self):
-        self.complete = False
+        self.active = True
 
     def __hash__(self):
         return id(self)
