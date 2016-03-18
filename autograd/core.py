@@ -36,29 +36,26 @@ def backward_pass(g, start_node, end_node, tape):
         return zeros_like(start_node)
 
     outgrads = defaultdict(list)
-    g = cast_to_node_type(g, end_node.node_type, end_node.value)
-
-    outgrads[end_node] = [g]
+    outgrads[end_node] = [cast_like_node(g, end_node)]
     tape.complete = True
     for node in tape[::-1]:
         if node in outgrads:
-            cur_outgrad = node.node_type.sum_outgrads(outgrads[node])
-            assert type(new_node(getval(cur_outgrad))) == node.node_type, \
+            cur_outgrad = node.sum_outgrads(outgrads[node])
+            assert type(new_node(getval(cur_outgrad))) == type(node), \
                 "Outgrad type is {0}. Should be {1}".format(
-                    type(new_node(getval(cur_outgrad))), node.node_type)
+                    type(new_node(getval(cur_outgrad))), type(node))
             for argnum, parent in enumerate(node.args):
                 if isnode(parent) and argnum not in node.function.zero_grads:
                     gradfun = node.function.gradmaker(
                         argnum, node, node.args, node.kwargs)
-                    og = cast_to_node_type(gradfun(cur_outgrad),
-                                           parent.node_type, parent.value)
+                    og = cast_like_node(gradfun(cur_outgrad), parent)
                     outgrads[parent].append(og)
 
     return cur_outgrad
 
-def cast_to_node_type(x, node_type, example):
-    if type(new_node(getval(x))) is not node_type:
-        return node_type.cast(x, example)
+def cast_like_node(x, node):
+    if type(new_node(getval(x))) is not type(node):
+        return node.cast(x, node)
     else:
         return x
 
@@ -149,14 +146,13 @@ def zeros_like(value):
         return new_node(value, []).zeros_like(value)
 
 class Node(object):
-    __slots__ = ['value', 'function', 'args', 'kwargs', 'tapes', 'node_type']
+    __slots__ = ['value', 'function', 'args', 'kwargs', 'tapes']
     def __init__(self, value, function=None, args=(), kwargs=None, tapes=None):
         self.value = value
         self.function = function
         self.args = args
         self.kwargs = kwargs
         self.tapes = tapes
-        self.node_type = type(self)
 
     def __bool__(self):
         return bool(self.value)
