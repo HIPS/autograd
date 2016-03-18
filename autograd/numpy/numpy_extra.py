@@ -99,6 +99,7 @@ def array_node_type(value):
         raise TypeError("Can't differentiate wrt numpy arrays of dtype {0}".format(value.dtype))
 
 type_mappings[anp.ndarray] = array_node_type
+array_types = set([anp.ndarray, SparseArray, ArrayNode])
 
 array_dtype_mappings = {}
 for float_type in [anp.float64, anp.float32, anp.float16]:

@@ -4,7 +4,7 @@ import operator as op
 
 from autograd.core import getval, primitive
 from . import numpy_wrapper as anp
-from .numpy_extra import ArrayNode, take
+from .numpy_extra import ArrayNode, take, array_types
 from builtins import range, zip
 from future.utils import string_types
 
@@ -165,7 +165,7 @@ def make_grad_transpose(ans, x, axes=None):
     return lambda g : anp.transpose(g, axes)
 anp.transpose.defgrad(make_grad_transpose)
 
-isarray = lambda x : isinstance(getval(x), anp.ndarray)
+isarray = lambda x : type(x) in array_types
 
 def repeat_to_match_shape(x, axis, keepdims):
     """Returns a function that repeats an array along axis to get a given shape.

@@ -2,7 +2,7 @@ from __future__ import absolute_import
 from autograd.core import (Node, ComplexNode, primitive, cast, getval,
                            register_node_type, type_mappings, return_this)
 from . import numpy_wrapper as anp
-from .numpy_extra import ArrayNode, array_dtype_mappings, SparseArray
+from .numpy_extra import ArrayNode, array_dtype_mappings, SparseArray, array_types
 
 class ComplexSparseArray(SparseArray):
     pass
@@ -25,6 +25,7 @@ class ComplexArrayNode(ArrayNode):
         return ComplexSparseArray(template, idx, x)
 
 register_node_type(ComplexArrayNode)
+array_types.update([ComplexArrayNode, ComplexSparseArray])
 
 for complex_type in [anp.complex64, anp.complex128]:
     array_dtype_mappings[anp.dtype(complex_type)] = ComplexArrayNode
