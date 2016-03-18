@@ -36,35 +36,22 @@ def backward_pass(g, start_node, end_node, tape):
         return zeros_like(start_node)
 
     outgrads = defaultdict(list)
-
-    # TODO: make sure we continuet to raise these sort of errors, and write a test for it
-    #         raise TypeError(
-    #             "Output type {} can't be cast to float. "
-    #             "Function grad requires a scalar-valued function. "
-    #             "Try jacobian or elementwise_grad.".format(type(end_node.value)))
-
     outgrads[end_node] = [cast_like_node(g, end_node)]
     tape.complete = True
     for node in tape[::-1]:
         if node in outgrads:
             cur_outgrad = node.sum_outgrads(outgrads[node])
-            assert type(new_node(getval(cur_outgrad))) == type(node), \
-                "Outgrad type is {0}. Should be {1}".format(
-                    type(new_node(getval(cur_outgrad))), type(node))
+            assert node_type(cur_outgrad) is type(node), \
+                "Outgrad type is {0}/{1}. Should be like {2}".format(
+                    type(cur_outgrad), node_type(cur_outgrad), type(node))
             for argnum, parent in enumerate(node.args):
                 if isnode(parent) and argnum not in node.function.zero_grads:
                     gradfun = node.function.gradmaker(
                         argnum, node, node.args, node.kwargs)
-                    og = cast_like_node(gradfun(cur_outgrad), parent)
-                    outgrads[parent].append(og)
+                    outgrad_raw = gradfun(cur_outgrad)
+                    outgrads[parent].append(cast_like_node(outgrad_raw, parent))
 
     return cur_outgrad
-
-def cast_like_node(x, node):
-    if type(new_node(getval(x))) is not type(node):
-        return node.cast(x, node)
-    else:
-        return x
 
 class primitive(object):
     """
@@ -142,8 +129,9 @@ merge_tapes.defgrad(lambda ans, x, y : lambda g : g, argnum=1)
 
 def new_node(value, *args):
     try:
-        return type_mappings[type(value)](value, *args)
+        return node_type(value)(value, *args)
     except KeyError:
+        print(type(value))
         return NoDerivativeNode(value, *args)
 
 def zeros_like(value):
@@ -154,6 +142,7 @@ def zeros_like(value):
 
 class Node(object):
     __slots__ = ['value', 'function', 'args', 'kwargs', 'tapes']
+    value_types = []
     def __init__(self, value, function=None, args=(), kwargs=None, tapes=None):
         self.value = value
         self.function = function
@@ -176,18 +165,31 @@ class Node(object):
 
 type_mappings = {}
 node_types = set()
-def add_type_mappings(value_type, node_type):
-    node_types.add(node_type)
-    type_mappings[value_type] = node_type
+return_this = lambda t : lambda x : t
+def register_node_type(ntype):
+    node_types.add(ntype)
+    type_mappings[ntype] = return_this(ntype)
+    for vtype in ntype.value_types:
+        type_mappings[vtype] = return_this(ntype)
 
-def isnode(x):
-    return type(x) in node_types
+def node_type(x):
+    try:
+        return type_mappings[type(x)](x)
+    except TypeError:
+        TypeError("Can't differentiate w.r.t. type {}".format(type(x)))
+
+def cast_like_node(x, node):
+    if node_type(x) is not type(node):
+        return node.cast(x, node)
+    else:
+        return x
 
 @primitive
 def cast(value, caster):
     return caster(value)
 cast.defgrad(lambda *args: I)
 
+def isnode(x): return type(x) in node_types
 getval = lambda x : x.value if isnode(x) else x
 
 class CalculationTape(list):
@@ -199,13 +201,14 @@ class CalculationTape(list):
 
 class FloatNode(Node):
     __slots__ = []
+    value_types = [float]
     @staticmethod
     def zeros_like(value):
         return 0.0
     @staticmethod
     def cast(value, example):
         return cast(value, cast_to_float)
-add_type_mappings(float, FloatNode)
+register_node_type(FloatNode)
 
 def cast_to_float(x):
     if np.iscomplexobj(x):
@@ -213,20 +216,20 @@ def cast_to_float(x):
     return float(x)
 
 class ComplexNode(FloatNode):
+    value_types = [complex]
     @staticmethod
     def zeros_like(value):
         return 0.0 + 0.0j
     @staticmethod
     def cast(value, example):
         return cast(value, cast_to_complex)
-add_type_mappings(complex, ComplexNode)
+register_node_type(ComplexNode)
 
 def cast_to_complex(value):
     if isinstance(value, np.ndarray):
         return complex(value[()])
     else:
         return complex(value)
-
 
 def safe_type(value):
     if isinstance(value, int):

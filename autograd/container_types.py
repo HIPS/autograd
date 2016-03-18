@@ -1,11 +1,12 @@
 from __future__ import absolute_import
-from autograd.core import primitive, Node, add_type_mappings, getval, zeros_like, cast
+from autograd.core import primitive, Node, register_node_type, getval, zeros_like, cast
 from builtins import zip
 from future.utils import iteritems
 
 
 class TupleNode(Node):
     __slots__ = []
+    value_types = [tuple]
     def __getitem__(self, idx):
         return tuple_take(self, idx)
     def __len__(self):
@@ -19,7 +20,7 @@ class TupleNode(Node):
     def sum_outgrads(outgrads):
         return primitive_sum_tuples(*outgrads)
 
-add_type_mappings(tuple, TupleNode)
+register_node_type(TupleNode)
 
 @primitive
 def primitive_sum_tuples(*tuples):
@@ -50,6 +51,7 @@ make_tuple.gradmaker = lambda argnum, *args: lambda g: g[argnum]
 
 class ListNode(Node):
     __slots__ = []
+    value_types = [list]
     def __getitem__(self, idx):
         return list_take(self, idx)
     def __len__(self):
@@ -67,10 +69,10 @@ class ListNode(Node):
     def cast(value, example):
         return cast(value, cast_to_list)
 
+register_node_type(ListNode)
+
 def cast_to_list(x):
     return list(x)
-
-add_type_mappings(list, ListNode)
 
 @primitive
 def primitive_sum_lists(*lists):
@@ -95,6 +97,7 @@ list_untake.defgrad_is_zero(argnums=(1, 2))
 
 class DictNode(Node):
     __slots__ = []
+    value_types = [dict]
     def __getitem__(self, idx):
         return dict_take(self, idx)
     def __len__(self):
@@ -117,7 +120,7 @@ class DictNode(Node):
 def cast_to_dict(x):
     return dict(x)
 
-add_type_mappings(dict, DictNode)
+register_node_type(DictNode)
 
 @primitive
 def primitive_sum_dicts(*dicts):

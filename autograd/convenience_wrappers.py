@@ -12,6 +12,13 @@ def grad(fun, argnum=0):
     positional argument number `argnum`. The returned function takes the same
     arguments as `fun`, but returns the gradient instead. The function `fun`
     should be scalar-valued. The gradient has the same type as the argument."""
+
+    # TODO: make sure we continuet to raise these sort of errors, and write a test for it
+    #         raise TypeError(
+    #             "Output type {} can't be cast to float. "
+    #             "Function grad requires a scalar-valued function. "
+    #             "Try jacobian or elementwise_grad.".format(type(end_node.value)))
+
     @attach_name_and_doc(fun, argnum, 'Gradient')
     def gradfun(*args,**kwargs):
         jvp, _ = make_jvp(fun, argnum)(*args, **kwargs)

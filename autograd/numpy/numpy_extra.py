@@ -1,8 +1,9 @@
 from __future__ import absolute_import
 import numpy as np
 
-from autograd.core import (Node, FloatNode, primitive, cast, add_type_mappings,
-                           differentiable_ops, nondifferentiable_ops, getval)
+from autograd.core import (Node, FloatNode, primitive, cast, type_mappings,
+                           register_node_type, differentiable_ops,
+                           nondifferentiable_ops, getval, return_this, zeros_like)
 from . import numpy_wrapper as anp
 
 @primitive
@@ -20,11 +21,21 @@ untake.defgrad_is_zero(argnums=(1, 2))
 
 Node.__array_priority__ = 90.0
 
+class SparseArray(object):
+    # Special type for efficient grads through indexing
+    __array_priority__ = 150.0
+    def __init__(self, template, idx, val):
+        self.shape = template.shape
+        self.idx = idx
+        self.val = val
+        self.dtype = template.dtype
+
 class ArrayNode(Node):
     __slots__ = []
     __getitem__ = take
     __array_priority__ = 100.0
 
+    value_types = [SparseArray]
     # Constants w.r.t float data just pass though
     shape = property(lambda self: self.value.shape)
     ndim  = property(lambda self: self.value.ndim)
@@ -79,18 +90,20 @@ class ArrayNode(Node):
     def __lt__(self, other): return anp.less(self, other)
     def __le__(self, other): return anp.less_equal(self, other)
 
-def new_array_node(value, *args):
+register_node_type(ArrayNode)
+
+def array_node_type(value):
     try:
-        return array_dtype_mappings[value.dtype](value, *args)
+        return array_dtype_mappings[value.dtype]
     except KeyError:
         raise TypeError("Can't differentiate wrt numpy arrays of dtype {0}".format(value.dtype))
-add_type_mappings(anp.ndarray, new_array_node)
+
+type_mappings[anp.ndarray] = array_node_type
 
 array_dtype_mappings = {}
 for float_type in [anp.float64, anp.float32, anp.float16]:
     array_dtype_mappings[anp.dtype(float_type)] = ArrayNode
-    add_type_mappings(float_type, FloatNode)
-
+    type_mappings[float_type] = return_this(FloatNode)
 
 @primitive
 def arraycast(val):
@@ -104,7 +117,7 @@ arraycast.defgrad(lambda ans, val: lambda g : g)
 
 @primitive
 def primitive_sum_arrays(*arrays):
-    new_array = type(new_array_node(arrays[0], [])).zeros_like(arrays[0]) # TODO: simplify this
+    new_array = zeros_like(arrays[0]) # TODO: simplify this
     for array in arrays:
         if isinstance(array, SparseArray):
             np.add.at(new_array, array.idx, array.val)
@@ -129,14 +142,3 @@ setattr(ArrayNode, 'flatten', anp.__dict__['ravel'])
 # Replace FloatNode operators with broadcastable versions
 for method_name in differentiable_ops + nondifferentiable_ops + ['__truediv__', '__rtruediv__']:
     setattr(FloatNode, method_name, ArrayNode.__dict__[method_name])
-
-# ----- Special type for efficient grads through indexing -----
-
-class SparseArray(object):
-    __array_priority__ = 150.0
-    def __init__(self, template, idx, val):
-        self.shape = template.shape
-        self.idx = idx
-        self.val = val
-        self.dtype = template.dtype
-add_type_mappings(SparseArray, ArrayNode)
