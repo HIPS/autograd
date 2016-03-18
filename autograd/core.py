@@ -36,6 +36,13 @@ def backward_pass(g, start_node, end_node, tape):
         return zeros_like(start_node)
 
     outgrads = defaultdict(list)
+
+    # TODO: make sure we continuet to raise these sort of errors, and write a test for it
+    #         raise TypeError(
+    #             "Output type {} can't be cast to float. "
+    #             "Function grad requires a scalar-valued function. "
+    #             "Try jacobian or elementwise_grad.".format(type(end_node.value)))
+
     outgrads[end_node] = [cast_like_node(g, end_node)]
     tape.complete = True
     for node in tape[::-1]:
