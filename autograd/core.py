@@ -1,7 +1,6 @@
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import
 import sys
 import warnings
-import copy
 import operator as op
 import types
 import math
@@ -13,9 +12,9 @@ from collections import defaultdict
 
 def make_jvp(fun, argnum=0):
     def jvp(*args, **kwargs):
-        start_node, end_node, tape = forward_pass(fun, args, kwargs, argnum)
+        end_node, tape = forward_pass(fun, args, kwargs, argnum)
         def jvp_bound(g):
-            return backward_pass(g, start_node, end_node, tape)
+            return backward_pass(g, end_node, tape)
         return jvp_bound, end_node
 
     return jvp
@@ -28,28 +27,28 @@ def forward_pass(fun, args, kwargs, argnum=0):
     args[argnum] = merge_tapes(start_node, arg_wrt)
     try: end_node = fun(*args, **kwargs)
     except Exception as e: add_extra_error_message(e)
-    return start_node, end_node, tape
+    return end_node, tape
 
-def backward_pass(g, start_node, end_node, tape):
+def backward_pass(g, end_node, tape):
     if not isnode(end_node) or tape not in end_node.tapes:
         warnings.warn("Output seems independent of input. Returning zero gradient.")
-        return zeros_like(start_node)
+        return zeros_like(tape[0])
 
     outgrads = defaultdict(list)
     outgrads[end_node] = [cast_like_node(g, end_node)]
     tape.complete = True
     for node in tape[::-1]:
-        if node in outgrads:
-            cur_outgrad = node.sum_outgrads(outgrads[node])
-            assert node_type(cur_outgrad) is  type(node), \
-                "Outgrad type is {0}/{1}. Should be like {2}".format(
-                    type(cur_outgrad), node_type(cur_outgrad), type(node))
-            for argnum, parent in enumerate(node.args):
-                if isnode(parent) and argnum not in node.function.zero_grads:
-                    gradfun = node.function.gradmaker(
-                        argnum, node, node.args, node.kwargs)
-                    outgrad_raw = gradfun(cur_outgrad)
-                    outgrads[parent].append(cast_like_node(outgrad_raw, parent))
+        if node not in outgrads: continue
+        cur_outgrad = node.sum_outgrads(outgrads[node])
+        assert node_type(cur_outgrad) is  type(node), \
+            "Outgrad type is {0}/{1}. Should be like {2}".format(
+                type(cur_outgrad), node_type(cur_outgrad), type(node))
+        for argnum, parent in enumerate(node.args):
+            if isnode(parent) and argnum not in node.function.zero_grads:
+                gradfun = node.function.gradmaker(
+                    argnum, node, node.args, node.kwargs)
+                outgrad_raw = gradfun(cur_outgrad)
+                outgrads[parent].append(cast_like_node(outgrad_raw, parent))
 
     return cur_outgrad
 
@@ -102,7 +101,6 @@ class primitive(object):
                 argvals.append(arg)
 
         result = self.fun(*argvals, **kwargs)
-        if result is NotImplemented: return result
         if tapes:
             result = new_node(result, self, args, kwargs, tapes)
             for tape in tapes:
