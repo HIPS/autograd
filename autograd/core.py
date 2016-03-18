@@ -39,11 +39,10 @@ def backward_pass(g, end_node, tape):
         if node not in outgrads: continue
         cur_outgrad = node.sum_outgrads(outgrads[node])
         assert_type_match(cur_outgrad, node)
-        function, args, kwargs = node.recipe
-        for argnum, parent in enumerate(args):
-            if isnode(parent) and argnum not in function.zero_grads:
-                gradfun = function.gradmaker(argnum, node, args, kwargs)
-                outgrads[parent].append(cast_like(parent, gradfun(cur_outgrad)))
+        function, args, kwargs, parents = node.recipe
+        for argnum, parent in parents:
+            gradfun = function.gradmaker(argnum, node, args, kwargs)
+            outgrads[parent].append(cast_like(parent, gradfun(cur_outgrad)))
 
     return cur_outgrad
 
@@ -61,15 +60,17 @@ class primitive(object):
     def __call__(self, *args, **kwargs):
         argvals = list(args)
         tapes = set()
+        parents = []
         for argnum, arg in enumerate(args):
             if isnode(arg):
                 argvals[argnum] = arg.value
                 if argnum in self.zero_grads: continue
+                parents.append((argnum, arg))
                 tapes.update(t for t in arg.tapes if t.active)
 
         result_value = self.fun(*argvals, **kwargs)
         if tapes:
-            return node_type(result_value)(result_value, (self, args, kwargs), tapes)
+            return node_type(result_value)(result_value, (self, args, kwargs, parents), tapes)
         else:
             return result_value
 
@@ -112,10 +113,9 @@ def add_tape(x, tape):
     all_tapes = set([tape])
     if isnode(x):
         all_tapes.update(x.tapes)
-        value = x.value
+        return node_type(x)(x.value, (identity, (x,), {}, [(0, x)]), all_tapes)
     else:
-        value = x
-    return node_type(x)(value, (identity, (x,), {}), all_tapes)
+        return node_type(x)(x,       (identity, (x,), {}, []      ), all_tapes)
 
 @primitive
 def identity(x) : return x
