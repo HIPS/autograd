@@ -16,7 +16,7 @@ def make_jvp(fun, argnum=0):
         start_node, end_node, tape = forward_pass(fun, args, kwargs, argnum)
         def jvp_bound(g):
             return backward_pass(g, start_node, end_node, tape)
-        return jvp_bound
+        return jvp_bound, end_node
 
     return jvp
 
@@ -34,24 +34,18 @@ def backward_pass(g, start_node, end_node, tape):
     if not isnode(end_node) or tape not in end_node.tapes:
         warnings.warn("Output seems independent of input. Returning zero gradient.")
         return zeros_like(start_node)
-    if type(end_node) is not FloatNode:
-        try:
-            end_node = FloatNode.cast(end_node, 1.0)
-        except TypeError:
-            raise TypeError(
-                "Output type {} can't be cast to float. "
-                "Function grad requires a scalar-valued function. "
-                "Try jacobian or elementwise_grad.".format(type(end_node.value)))
 
     outgrads = defaultdict(list)
+    g = cast_to_node_type(g, end_node.node_type, end_node.value)
+
     outgrads[end_node] = [g]
     tape.complete = True
     for node in tape[::-1]:
         if node in outgrads:
             cur_outgrad = node.node_type.sum_outgrads(outgrads[node])
             assert type(new_node(getval(cur_outgrad))) == node.node_type, \
-                "Types are {0} and {1}".format(type(new_node(getval(cur_outgrad))),
-                                               node.node_type)
+                "Outgrad type is {0}. Should be {1}".format(
+                    type(new_node(getval(cur_outgrad))), node.node_type)
             for argnum, parent in enumerate(node.args):
                 if isnode(parent) and argnum not in node.function.zero_grads:
                     gradfun = node.function.gradmaker(

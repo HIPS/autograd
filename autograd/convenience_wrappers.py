@@ -4,6 +4,7 @@ from functools import partial
 import autograd.numpy as np
 from autograd.core import make_jvp, getval, forward_pass, backward_pass
 from collections import OrderedDict
+import itertools as it
 
 def grad(fun, argnum=0):
     """
@@ -13,7 +14,8 @@ def grad(fun, argnum=0):
     should be scalar-valued. The gradient has the same type as the argument."""
     @attach_name_and_doc(fun, argnum, 'Gradient')
     def gradfun(*args,**kwargs):
-        return make_jvp(fun, argnum)(*args, **kwargs)(1.0)
+        jvp, _ = make_jvp(fun, argnum)(*args, **kwargs)
+        return jvp(1.0)
 
     return gradfun
 
@@ -26,27 +28,28 @@ def jacobian(fun, argnum=0):
     If the input to `fun` has shape (in1, in2, ...) and the output has shape
     (out1, out2, ...) then the Jacobian has shape (out1, out2, ..., in1, in2, ...).
     """
-    dummy = lambda: None
-
     def getshape(val):
         val = getval(val)
         assert np.isscalar(val) or isinstance(val, np.ndarray), \
             'Jacobian requires input and output to be scalar- or array-valued'
         return np.shape(val)
 
-    def list_fun(*args, **kwargs):
-        val = fun(*args, **kwargs)
-        dummy.outshape = getshape(val)
-        return list(np.ravel(val))
+    def unit_vectors(shape):
+        for idxs in it.product(*map(range, shape)):
+            vect = np.zeros(shape)
+            vect[idxs] = 1
+            yield vect
 
-    concatenate = lambda lst: np.concatenate(list(map(np.atleast_1d, lst)))
+    concatenate = lambda lst: np.concatenate(map(np.atleast_1d, lst))
 
     @attach_name_and_doc(fun, argnum, 'Jacobian')
     def jacfun(*args, **kwargs):
-        start_node, end_nodes, tape = forward_pass(list_fun, args, kwargs, argnum)
-        grads = list(map(partial(backward_pass, 1.0, start_node, tape=tape), end_nodes))
-        shape = dummy.outshape + getshape(args[argnum])
-        return np.reshape(concatenate(grads), shape) if shape else grads[0]
+        jvp, ans = make_jvp(fun, argnum)(*args, **kwargs)
+        outshape = getshape(ans)
+        grads = map(jvp, unit_vectors(outshape))
+        jacobian_shape = outshape + getshape(args[argnum])
+        return np.reshape(concatenate(grads), jacobian_shape)
+
     return jacfun
 
 def multigrad(fun, argnums=[0]):
