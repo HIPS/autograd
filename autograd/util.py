@@ -2,8 +2,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 import autograd.numpy as np
 import itertools as it
-from autograd.core import safe_type
-from autograd.convenience_wrappers import grad
+from autograd.convenience_wrappers import grad, safe_type
 from copy import copy
 from autograd.container_types import ListNode, TupleNode, make_tuple
 from builtins import map, range, zip

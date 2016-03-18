@@ -2,9 +2,10 @@
 from __future__ import absolute_import
 from functools import partial
 import autograd.numpy as np
-from autograd.core import make_jvp, getval, forward_pass, backward_pass
+from autograd.core import make_jvp, getval, isnode
 from collections import OrderedDict
 import itertools as it
+import warnings
 
 def grad(fun, argnum=0):
     """
@@ -13,7 +14,7 @@ def grad(fun, argnum=0):
     arguments as `fun`, but returns the gradient instead. The function `fun`
     should be scalar-valued. The gradient has the same type as the argument."""
 
-    # TODO: make sure we continuet to raise these sort of errors, and write a test for it
+    # TODO: make sure we continuet to raise these sort of errors, and write a test for
     #         raise TypeError(
     #             "Output type {} can't be cast to float. "
     #             "Function grad requires a scalar-valued function. "
@@ -21,6 +22,8 @@ def grad(fun, argnum=0):
 
     @attach_name_and_doc(fun, argnum, 'Gradient')
     def gradfun(*args,**kwargs):
+        args = list(args)
+        args[argnum] = safe_type(args[argnum])
         jvp, _ = make_jvp(fun, argnum)(*args, **kwargs)
         return jvp(1.0)
 
@@ -184,3 +187,10 @@ def attach_name_and_doc(fun, argnum, opname):
         finally:
             return gradfun
     return wrap
+
+def safe_type(value):
+    if isinstance(value, int):
+        warnings.warn("Casting int to float to handle differentiation.")
+        return float(value)
+    else:
+        return value

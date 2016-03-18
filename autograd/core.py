@@ -1,6 +1,5 @@
 from __future__ import absolute_import
 import sys
-import warnings
 import operator as op
 import types
 import math
@@ -9,6 +8,7 @@ import numpy as np
 from functools import partial
 from future.utils import iteritems, raise_from, raise_
 from collections import defaultdict
+import warnings
 
 def make_jvp(fun, argnum=0):
     def jvp(*args, **kwargs):
@@ -22,7 +22,7 @@ def make_jvp(fun, argnum=0):
 def forward_pass(fun, args, kwargs, argnum=0):
     tape = CalculationTape()
     arg_wrt = args[argnum]
-    start_node = new_node(safe_type(getval(arg_wrt)), None, None, None, set([tape]))
+    start_node = new_node(getval(arg_wrt), None, None, None, set([tape]))
     args = list(args)
     args[argnum] = merge_tapes(start_node, arg_wrt)
     try: end_node = fun(*args, **kwargs)
@@ -221,13 +221,6 @@ def cast_to_complex(value):
         return complex(value[()])
     else:
         return complex(value)
-
-def safe_type(value):
-    if isinstance(value, int):
-        warnings.warn("Casting int to float to handle differentiation.")
-        return float(value)
-    else:
-        return value
 
 if sys.version_info >= (3,):
     DIV = '__truediv__'
