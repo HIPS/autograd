@@ -41,7 +41,7 @@ def backward_pass(g, start_node, end_node, tape):
     for node in tape[::-1]:
         if node in outgrads:
             cur_outgrad = node.sum_outgrads(outgrads[node])
-            assert node_type(cur_outgrad) is type(node), \
+            assert node_type(cur_outgrad) is  type(node), \
                 "Outgrad type is {0}/{1}. Should be like {2}".format(
                     type(cur_outgrad), node_type(cur_outgrad), type(node))
             for argnum, parent in enumerate(node.args):
@@ -128,11 +128,7 @@ merge_tapes.defgrad(lambda ans, x, y : lambda g : g)
 merge_tapes.defgrad(lambda ans, x, y : lambda g : g, argnum=1)
 
 def new_node(value, *args):
-    try:
-        return node_type(value)(value, *args)
-    except KeyError:
-        print(type(value))
-        return NoDerivativeNode(value, *args)
+    return node_type(value)(value, *args)
 
 def zeros_like(value):
     if isnode(value):
@@ -291,19 +287,6 @@ FloatNode.__dict__['__rsub__'].grads = swap_args(FloatNode.__dict__['__sub__'].g
 FloatNode.__dict__[RDIV].grads = swap_args(FloatNode.__dict__[DIV].grads)
 FloatNode.__dict__['__rpow__'].grads = swap_args(FloatNode.__dict__['__pow__'].grads)
 FloatNode.__dict__['__rmod__'].grads = swap_args(FloatNode.__dict__['__mod__'].grads)
-
-
-# These two nodes are for handling errors. Instead of raising errors immediately
-# on the forward pass, we build them into the graph and raise them on the
-# reverse pass so that evaluating nondifferentiable functions that don't affect
-# the output don't cause problems (c.f. Issue #43).
-
-class NoDerivativeNode(FloatNode):
-    # inherit from FloatNode so that numerical infix operators work
-    @staticmethod
-    def cast(value, example):
-        return example  # pass through so we can raise an error on reverse pass
-
 
 class AutogradHint(Exception):
     def __init__(self, message, subexception_type=None, subexception_val=None):
