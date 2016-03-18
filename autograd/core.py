@@ -33,20 +33,17 @@ def backward_pass(g, end_node, tape):
         return zeros_like(tape[0])
 
     outgrads = defaultdict(list)
-    outgrads[end_node] = [cast_like_node(g, end_node)]
+    outgrads[end_node] = [cast_like(end_node, g)]
     tape.active = False
     for node in tape[::-1]:
         if node not in outgrads: continue
         cur_outgrad = node.sum_outgrads(outgrads[node])
-        assert node_type(cur_outgrad) is  type(node), \
-            "Outgrad type is {0}/{1}. Should be like {2}".format(
-                type(cur_outgrad), node_type(cur_outgrad), type(node))
-        for argnum, parent in enumerate(node.args):
-            if isnode(parent) and argnum not in node.function.zero_grads:
-                gradfun = node.function.gradmaker(
-                    argnum, node, node.args, node.kwargs)
-                outgrad_raw = gradfun(cur_outgrad)
-                outgrads[parent].append(cast_like_node(outgrad_raw, parent))
+        assert_type_match(cur_outgrad, node)
+        function, args, kwargs = node.recipe
+        for argnum, parent in enumerate(args):
+            if isnode(parent) and argnum not in function.zero_grads:
+                gradfun = function.gradmaker(argnum, node, args, kwargs)
+                outgrads[parent].append(cast_like(parent, gradfun(cur_outgrad)))
 
     return cur_outgrad
 
@@ -60,6 +57,21 @@ class primitive(object):
         self.zero_grads = set()
         self.__name__ = fun.__name__
         self.__doc__ = fun.__doc__
+
+    def __call__(self, *args, **kwargs):
+        argvals = list(args)
+        tapes = set()
+        for argnum, arg in enumerate(args):
+            if isnode(arg):
+                argvals[argnum] = arg.value
+                if argnum in self.zero_grads: continue
+                tapes.update(t for t in arg.tapes if t.active)
+
+        result_value = self.fun(*argvals, **kwargs)
+        if tapes:
+            return node_type(result_value)(result_value, (self, args, kwargs), tapes)
+        else:
+            return result_value
 
     def gradmaker(self, argnum, ans, args, kwargs):
         try:
@@ -84,21 +96,6 @@ class primitive(object):
         for argnum in argnums:
             self.zero_grads.add(argnum)
 
-    def __call__(self, *args, **kwargs):
-        argvals = list(args)
-        tapes = set()
-        for i, arg in enumerate(args):
-            if isnode(arg):
-                argvals[i] = arg.value
-                if i in self.zero_grads: continue
-                tapes.update([t for t in arg.tapes if t.active])
-
-        result_value = self.fun(*argvals, **kwargs)
-        if tapes:
-            return node_type(result_value)(result_value, self, args, kwargs, tapes)
-        else:
-            return result_value
-
     if sys.version_info >= (3,):
         def __get__(self, obj, objtype):
             return types.MethodType(self, obj)
@@ -118,7 +115,7 @@ def add_tape(x, tape):
         value = x.value
     else:
         value = x
-    return node_type(x)(value, identity, (x,), {}, all_tapes)
+    return node_type(x)(value, (identity, (x,), {}), all_tapes)
 
 @primitive
 def identity(x) : return x
@@ -128,13 +125,11 @@ def zeros_like(value):
     return node_type(value).zeros_like(value)
 
 class Node(object):
-    __slots__ = ['value', 'function', 'args', 'kwargs', 'tapes']
+    __slots__ = ['value', 'recipe', 'tapes']
     value_types = []
-    def __init__(self, value, function=None, args=(), kwargs=None, tapes=None):
+    def __init__(self, value, recipe, tapes):
         self.value = value
-        self.function = function
-        self.args = args
-        self.kwargs = kwargs
+        self.recipe = recipe
         self.tapes = tapes
         for tape in tapes:
             tape.append(self)
@@ -167,11 +162,15 @@ def node_type(x):
     except TypeError:
         TypeError("Can't differentiate w.r.t. type {}".format(type(x)))
 
-def cast_like_node(x, node):
+def cast_like(node, x):
     if node_type(x) is not type(node):
         return node.cast(x, node)
     else:
         return x
+
+def assert_type_match(x, node):
+    assert node_type(x) is  type(node), \
+        "Type is {}. Should be like {}".format(type(x), type(node))
 
 @primitive
 def cast(value, caster):
