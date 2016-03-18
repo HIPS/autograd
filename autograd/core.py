@@ -21,10 +21,8 @@ def make_jvp(fun, argnum=0):
 
 def forward_pass(fun, args, kwargs, argnum=0):
     tape = CalculationTape()
-    arg_wrt = args[argnum]
-    start_node = new_node(getval(arg_wrt), None, None, None, set([tape]))
     args = list(args)
-    args[argnum] = merge_tapes(start_node, arg_wrt)
+    args[argnum] = add_tape(args[argnum], tape)
     try: end_node = fun(*args, **kwargs)
     except Exception as e: add_extra_error_message(e)
     return end_node, tape
@@ -102,11 +100,9 @@ class primitive(object):
 
         result = self.fun(*argvals, **kwargs)
         if tapes:
-            result = new_node(result, self, args, kwargs, tapes)
-            for tape in tapes:
-                tape.append(result)
-
-        return result
+            return node_type(result)(result, self, args, kwargs, tapes)
+        else:
+            return result
 
     if sys.version_info >= (3,):
         def __get__(self, obj, objtype):
@@ -120,13 +116,18 @@ class nograd_primitive(primitive):
         argvals = map(getval, args)
         return self.fun(*argvals, **kwargs)
 
-@primitive
-def merge_tapes(x, y): return x
-merge_tapes.defgrad(lambda ans, x, y : lambda g : g)
-merge_tapes.defgrad(lambda ans, x, y : lambda g : g, argnum=1)
+def add_tape(x, tape):
+    all_tapes = set([tape])
+    if isnode(x):
+        all_tapes.update(x.tapes)
+        value = x.value
+    else:
+        value = x
+    return node_type(x)(value, identity, (x,), {}, all_tapes)
 
-def new_node(value, *args):
-    return node_type(value)(value, *args)
+@primitive
+def identity(x) : return x
+identity.defgrad(lambda ans, x : lambda g : g)
 
 def zeros_like(value):
     return node_type(value).zeros_like(value)
@@ -140,6 +141,8 @@ class Node(object):
         self.args = args
         self.kwargs = kwargs
         self.tapes = tapes
+        for tape in tapes:
+            tape.append(self)
 
     def __bool__(self):
         return bool(self.value)
