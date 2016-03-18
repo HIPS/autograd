@@ -131,10 +131,7 @@ def new_node(value, *args):
     return node_type(value)(value, *args)
 
 def zeros_like(value):
-    if isnode(value):
-        return value.zeros_like(value)
-    else:
-        return new_node(value, []).zeros_like(value)
+    return node_type(value).zeros_like(value)
 
 class Node(object):
     __slots__ = ['value', 'function', 'args', 'kwargs', 'tapes']
