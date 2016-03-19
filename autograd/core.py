@@ -12,29 +12,27 @@ import warnings
 
 def make_jvp(fun, argnum=0):
     def jvp(*args, **kwargs):
-        end_node, tape = forward_pass(fun, args, kwargs, argnum)
-        def jvp_bound(g):
-            return backward_pass(g, end_node, tape)
-        return jvp_bound, end_node
+        start_node, end_node, tape = forward_pass(fun, args, kwargs, argnum)
+        tape.active = False
+        if not isnode(end_node) or tape not in end_node.tapes:
+            warnings.warn("Output seems independent of input.")
+            return lambda g : zeros_like(start_node), end_node
 
+        return lambda g : backward_pass(g, end_node, tape), end_node
     return jvp
 
 def forward_pass(fun, args, kwargs, argnum=0):
     tape = CalculationTape()
     args = list(args)
-    args[argnum] = add_tape(args[argnum], tape)
+    start_node = add_tape(args[argnum], tape)
+    args[argnum] = start_node
     try: end_node = fun(*args, **kwargs)
     except Exception as e: add_extra_error_message(e)
-    return end_node, tape
+    return start_node, end_node, tape
 
 def backward_pass(g, end_node, tape):
-    if not isnode(end_node) or tape not in end_node.tapes:
-        warnings.warn("Output seems independent of input. Returning zero gradient.")
-        return zeros_like(tape[0])
-
     outgrads = defaultdict(list)
     outgrads[end_node] = [cast_like(end_node, g)]
-    tape.active = False
     for node in tape[::-1]:
         if node not in outgrads: continue
         cur_outgrad = node.sum_outgrads(outgrads[node])
