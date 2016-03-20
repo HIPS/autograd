@@ -77,9 +77,9 @@ def wrap_if_nodes_inside(raw_array, slow_op_name=None):
 def array_from_args(*args):
     return np.array(args)
 
-def array_from_args_gradmaker(argnum, ans, args, kwargs):
-    return lambda g : g[argnum]
-array_from_args.gradmaker = array_from_args_gradmaker
+def array_from_args_gradmaker(argnum, g, ans, args, kwargs):
+    return g[argnum]
+array_from_args.grad = array_from_args_gradmaker
 
 def select(condlist, choicelist, default=0):
     raw_array = np.select(list(condlist), list(choicelist), default=default)

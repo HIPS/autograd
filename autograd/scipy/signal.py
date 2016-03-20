@@ -106,7 +106,7 @@ def flipped_idxs(ndim, axes):
         new_idxs[ax] = slice(None, None, -1)
     return new_idxs
 
-def make_grad_convolve(argnum, ans, A, B, axes=None, dot_axes=[(),()], mode='full'):
+def grad_convolve(argnum, g, ans, A, B, axes=None, dot_axes=[(),()], mode='full'):
     assert mode in ['valid', 'full'], "Grad for mode {0} not yet implemented".format(mode)
     axes, shapes = parse_axes(A.shape, B.shape, axes, dot_axes, mode)
     if argnum == 0:
@@ -128,12 +128,11 @@ def make_grad_convolve(argnum, ans, A, B, axes=None, dot_axes=[(),()], mode='ful
         else:
             new_mode = 'valid'
 
-    def grad_fun(g):
-        result = convolve(g, Y[flipped_idxs(Y.ndim, axes[_Y_]['conv'])],
-                          axes     = [axes['out']['conv'],   axes[_Y_]['conv']],
-                          dot_axes = [axes['out'][ignore_Y], axes[_Y_]['ignore']],
-                          mode     = new_mode)
-        new_order = npo.argsort(axes[_X_]['ignore'] + axes[_X_]['dot'] + axes[_X_]['conv'])
-        return np.transpose(result, new_order)
-    return grad_fun
-convolve.defgrads(make_grad_convolve, [0, 1])
+    result = convolve(g, Y[flipped_idxs(Y.ndim, axes[_Y_]['conv'])],
+                      axes     = [axes['out']['conv'],   axes[_Y_]['conv']],
+                      dot_axes = [axes['out'][ignore_Y], axes[_Y_]['ignore']],
+                      mode     = new_mode)
+    new_order = npo.argsort(axes[_X_]['ignore'] + axes[_X_]['dot'] + axes[_X_]['conv'])
+    return np.transpose(result, new_order)
+
+convolve.defgrads(grad_convolve, [0, 1])

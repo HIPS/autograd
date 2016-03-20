@@ -10,16 +10,16 @@ wrap_namespace(ffto.__dict__, globals())
 # TODO: make fft gradient work for a repeated axis,
 # e.g. by replacing fftn with repeated calls to 1d fft along each axis
 def fft_defgrad(fft_fun):
-    def fft_grad(ans, x, *args, **kwargs):
+    def fft_grad(g, ans, x, *args, **kwargs):
         check_no_repeated_axes(*args, **kwargs)
-        return lambda g: truncate_pad(fft_fun(g, *args, **kwargs), x.shape)
+        return truncate_pad(fft_fun(g, *args, **kwargs), x.shape)
     fft_fun.defgrad(fft_grad)
 
 for fft_fun in (fft, ifft, fft2, ifft2, fftn, ifftn):
     fft_defgrad(fft_fun)
 
-fftshift.defgrad( lambda ans, x, axes=None : lambda g : anp.conj(ifftshift(anp.conj(g), axes)))
-ifftshift.defgrad(lambda ans, x, axes=None : lambda g : anp.conj(fftshift(anp.conj(g), axes)))
+fftshift.defgrad( lambda g, ans, x, axes=None : anp.conj(ifftshift(anp.conj(g), axes)))
+ifftshift.defgrad(lambda g, ans, x, axes=None : anp.conj(fftshift(anp.conj(g), axes)))
 
 @primitive
 def truncate_pad(x, shape):
@@ -28,7 +28,7 @@ def truncate_pad(x, shape):
     pads = list(zip(anp.zeros(len(shape), dtype=int),
                anp.maximum(0, anp.array(shape) - anp.array(x.shape))))
     return anp.pad(x, pads, 'constant')[slices]
-truncate_pad.defgrad(lambda ans, x, shape: lambda g: truncate_pad(g, x.shape))
+truncate_pad.defgrad(lambda g, ans, x, shape: truncate_pad(g, x.shape))
 
 ## TODO: could be made less stringent, to fail only when repeated axis has different values of s
 def check_no_repeated_axes(*args, **kwargs):

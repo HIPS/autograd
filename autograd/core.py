@@ -39,9 +39,8 @@ def backward_pass(g, end_node, tape):
         assert_type_match(cur_outgrad, node)
         function, args, kwargs, parents = node.recipe
         for argnum, parent in parents:
-            gradfun = function.gradmaker(argnum, node, args, kwargs)
-            outgrads[parent].append(cast_like(parent, gradfun(cur_outgrad)))
-
+            raw_outgrad = function.grad(argnum, cur_outgrad, node, args, kwargs)
+            outgrads[parent].append(cast_like(parent, raw_outgrad))
     return cur_outgrad
 
 class primitive(object):
@@ -72,19 +71,20 @@ class primitive(object):
         else:
             return result_value
 
-    def gradmaker(self, argnum, ans, args, kwargs):
+    def grad(self, argnum, outgrad, ans, args, kwargs):
         try:
-            return self.grads[argnum](ans, *args, **kwargs)
+            return self.grads[argnum](outgrad, ans, *args, **kwargs)
         except KeyError:
-            def error(*args, **kwargs):
-                if self.grads == {}:
-                    errstr = "Gradient of {0} not yet implemented."
-                else:
-                    errstr = "Gradient of {0} w.r.t. arg number {1} not yet implemented."
-                raise NotImplementedError(errstr.format(self.fun.__name__, argnum))
-            return error
+            if self.grads == {}:
+                errstr = "Gradient of {0} not yet implemented."
+            else:
+                errstr = "Gradient of {0} w.r.t. arg number {1} not yet implemented."
+            raise NotImplementedError(errstr.format(self.fun.__name__, argnum))
+        except TypeError:
+            raise TypeError("Function {} failed".format(self.grads[argnum]))
 
     def defgrad(self, gradmaker, argnum=0):
+        gradmaker.__name__ = "VJP_{}_of_{}".format(argnum, self.__name__)
         self.grads[argnum] = gradmaker
 
     def defgrads(self, gradmaker, argnums):
@@ -117,7 +117,7 @@ def add_tape(x, tape):
 
 @primitive
 def identity(x) : return x
-identity.defgrad(lambda ans, x : lambda g : g)
+identity.defgrad(lambda g, ans, x : g)
 
 def zeros_like(value):
     return node_type(value).zeros_like(value)
@@ -157,8 +157,8 @@ def register_node_type(ntype):
 def node_type(x):
     try:
         return type_mappings[type(x)](x)
-    except TypeError:
-        TypeError("Can't differentiate w.r.t. type {}".format(type(x)))
+    except KeyError:
+        raise TypeError("Can't differentiate w.r.t. type {}".format(type(x)))
 
 def cast_like(node, x):
     if node_type(x) is not type(node):
@@ -173,7 +173,7 @@ def assert_type_match(x, node):
 @primitive
 def cast(value, caster):
     return caster(value)
-cast.defgrad(lambda *args: I)
+cast.defgrad(lambda g, *args: g)
 
 def isnode(x): return type(x) in node_types
 getval = lambda x : x.value if isnode(x) else x
@@ -232,7 +232,7 @@ nondifferentiable_ops = ['__eq__', '__ne__', '__gt__', '__ge__', '__lt__', '__le
 for float_op in differentiable_ops + nondifferentiable_ops:
     setattr(FloatNode, float_op, primitive(getattr(float, float_op)))
 
-FloatNode.__dict__['__neg__'].defgrad(lambda ans, x : op.neg)
+FloatNode.__dict__['__neg__'].defgrad(lambda g, ans, x : -g)
 
 
 for comp_op in nondifferentiable_ops:
@@ -240,29 +240,29 @@ for comp_op in nondifferentiable_ops:
 
 # These functions will get clobbered when autograd.numpy is imported.
 # They're here to allow the use of autograd without numpy.
-I = lambda g: g
-FloatNode.__dict__['__add__'].defgrad(lambda ans, x, y : I)
-FloatNode.__dict__['__add__'].defgrad(lambda ans, x, y : I, argnum=1)
-FloatNode.__dict__['__mul__'].defgrad(lambda ans, x, y : lambda g : y * g)
-FloatNode.__dict__['__mul__'].defgrad(lambda ans, x, y : lambda g : x * g, argnum=1)
-FloatNode.__dict__['__sub__'].defgrad(lambda ans, x, y : I)
-FloatNode.__dict__['__sub__'].defgrad(lambda ans, x, y : op.neg, argnum=1)
-FloatNode.__dict__[DIV].defgrad(lambda ans, x, y : lambda g : g / y)
-FloatNode.__dict__[DIV].defgrad(lambda ans, x, y : lambda g : - g * x / y**2, argnum=1)
-FloatNode.__dict__['__pow__'].defgrad(lambda ans, x, y : lambda g : g * y * x ** (y - 1))
-FloatNode.__dict__['__pow__'].defgrad(lambda ans, x, y : lambda g : g * log(x) * x ** y, argnum=1)
-FloatNode.__dict__['__mod__'].defgrad(lambda ans, x, y : I)
-FloatNode.__dict__['__mod__'].defgrad(lambda ans, x, y : lambda g : -g * floor(x/y), argnum=1)
+I = lambda g, *args: g
+FloatNode.__dict__['__add__'].defgrad(I)
+FloatNode.__dict__['__add__'].defgrad(I, argnum=1)
+FloatNode.__dict__['__mul__'].defgrad(lambda g, ans, x, y : y * g)
+FloatNode.__dict__['__mul__'].defgrad(lambda g, ans, x, y : x * g, argnum=1)
+FloatNode.__dict__['__sub__'].defgrad(I)
+FloatNode.__dict__['__sub__'].defgrad(lambda g, ans, x, y : -g, argnum=1)
+FloatNode.__dict__[DIV].defgrad(lambda g, ans, x, y : g / y)
+FloatNode.__dict__[DIV].defgrad(lambda g, ans, x, y : - g * x / y**2, argnum=1)
+FloatNode.__dict__['__pow__'].defgrad(lambda g, ans, x, y : g * y * x ** (y - 1))
+FloatNode.__dict__['__pow__'].defgrad(lambda g, ans, x, y : g * log(x) * x ** y, argnum=1)
+FloatNode.__dict__['__mod__'].defgrad(I)
+FloatNode.__dict__['__mod__'].defgrad(lambda g, ans, x, y : -g * floor(x/y), argnum=1)
 
 log = primitive(math.log)
-log.defgrad(lambda ans, x : lambda g : g / x)
+log.defgrad(lambda g, ans, x : g / x)
 floor = primitive(math.floor)
 floor.defgrad_is_zero()
 
 def swap_args(grads):
     grad_0, grad_1 = grads[1], grads[0]
-    return {0 : lambda ans, y, x : grad_0(ans, x, y),
-            1 : lambda ans, y, x : grad_1(ans, x, y)}
+    return {0 : lambda g, ans, y, x : grad_0(g, ans, x, y),
+            1 : lambda g, ans, y, x : grad_1(g, ans, x, y)}
 
 FloatNode.__dict__['__radd__'].grads = swap_args(FloatNode.__dict__['__add__'].grads)
 FloatNode.__dict__['__rmul__'].grads = swap_args(FloatNode.__dict__['__mul__'].grads)

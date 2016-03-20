@@ -34,4 +34,4 @@ for complex_type in [anp.complex64, anp.complex128]:
 @primitive
 def complex_arraycast(val):
     return anp.array(val, dtype=complex)
-complex_arraycast.defgrad(lambda ans, val: lambda g : g)
+complex_arraycast.defgrad(lambda g, ans, val: g)

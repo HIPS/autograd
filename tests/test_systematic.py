@@ -20,7 +20,7 @@ def test_std():  stat_check(np.std)
 
 # Unary ufunc tests
 
-def test_sin():     unary_ufunc_check(np.sin) 
+def test_sin():     unary_ufunc_check(np.sin)
 def test_abs():     unary_ufunc_check(np.abs, lims=[0.1, 4.0])
 def test_absolute():unary_ufunc_check(np.absolute, lims=[0.1, 4.0])
 def test_arccosh(): unary_ufunc_check(np.arccosh, lims=[1.1, 4.0])

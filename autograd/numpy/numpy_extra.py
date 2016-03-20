@@ -9,14 +9,14 @@ from . import numpy_wrapper as anp
 @primitive
 def take(A, idx):
     return A[idx]
-def make_grad_take(ans, A, idx):
-    return lambda g : untake(g, idx, A)
-take.defgrad(make_grad_take)
+def grad_take(g, ans, A, idx):
+    return untake(g, idx, A)
+take.defgrad(grad_take)
 
 @primitive
 def untake(x, idx, template):
     return array_dtype_mappings[template.dtype].new_sparse_array(template, idx, x)
-untake.defgrad(lambda ans, x, idx, template : lambda g : take(g, idx))
+untake.defgrad(lambda g, ans, x, idx, template : take(g, idx))
 untake.defgrad_is_zero(argnums=(1, 2))
 
 Node.__array_priority__ = 90.0
@@ -114,7 +114,7 @@ def arraycast(val):
         return anp.array(anp.real(val))
     else:
         raise TypeError("Can't cast type {0} to array".format(type(val)))
-arraycast.defgrad(lambda ans, val: lambda g : g)
+arraycast.defgrad(lambda g, ans, val: g)
 
 @primitive
 def primitive_sum_arrays(*arrays):
@@ -125,7 +125,7 @@ def primitive_sum_arrays(*arrays):
         else:
             new_array += array
     return new_array
-primitive_sum_arrays.gradmaker = lambda *args : lambda g : g
+primitive_sum_arrays.grad = lambda argnum, g, *args : g
 
 # These numpy.ndarray methods are just refs to an equivalent numpy function
 nondiff_methods = ['all', 'any', 'argmax', 'argmin', 'argpartition',
