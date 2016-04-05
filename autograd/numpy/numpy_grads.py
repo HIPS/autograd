@@ -260,7 +260,13 @@ anp.mean.defgrad(make_grad_np_mean)
 
 def make_grad_np_prod(ans, x, axis=None, keepdims=False): # TODO: Support tuples of axes.
     repeater, _ = repeat_to_match_shape(x, axis, keepdims)
-    return lambda g: repeater(g * ans) / x
+    # return lambda g: repeater(g * ans) / x  # doesn't work with zeroes, see #93
+    flip = lambda x, axis: x[[slice(None) if i is not axis else slice(None, None, -1)
+                              for i in range(x.ndim)]]
+    y1 = anp.cumprod(x, axis)
+    y2 = anp.cumprod(flip(x), axis)
+    y = y1 * y2  # TODO pad by ones or make strict cumprod
+
 anp.prod.defgrad(make_grad_np_prod)
 
 def make_grad_np_var(ans, x, axis=None, ddof=0, keepdims=False):
