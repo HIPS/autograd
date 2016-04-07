@@ -319,6 +319,10 @@ def make_grad_tensordot(argnum, ans, A, B, axes=2):
 
         assert len(axes[0]) == len(axes[1])  # required by tensordot
 
+    def convert_negative_indices(a, axes_list):
+        axes = range(anp.ndim(a))
+        return [axes[i] for i in axes_list]
+
     def gradfun(g):
         N_axes_summed = len(axes[0])
         if argnum == 0:
@@ -329,6 +333,9 @@ def make_grad_tensordot(argnum, ans, A, B, axes=2):
             X, Y = B, A
             X_axes_summed, Y_axes_summed = axes[::-1]
             g_axes_from_Y = list(range(anp.ndim(g)))[:(anp.ndim(Y) - N_axes_summed)]
+
+        X_axes_summed, Y_axes_summed = map(
+            convert_negative_indices, [X, Y], [X_axes_summed, Y_axes_summed])
 
         Y_axes_ignored = [i for i in range(anp.ndim(Y)) if i not in Y_axes_summed]
         result = anp.tensordot(g, Y, axes=[g_axes_from_Y, Y_axes_ignored])
