@@ -115,9 +115,8 @@ def test_tensordot_4(): combo_check(np.tensordot, [0, 1],
                                     [R(2, 2), R(4, 2, 2)],
                                     [R(2, 2), R(2, 2, 4)],
                                     axes=[1, 2])
-def test_tensordot_5(): combo_check(np.tensordot, [0, 1],
-                                    [R(4)], [R()],
-                                    axes=[0])
+def test_tensordot_5(): combo_check(np.tensordot, [0, 1], [R(4)], [R()], axes=[0])
+def test_tensordot_6(): combo_check(np.tensordot, [0, 1], [R(2,6)], [R(6,3)], axes=[[[-1], [0]]])
 
 # Need custom tests because gradient is undefined when arguments are identical.
 def test_maximum(): combo_check(np.maximum, [0, 1],
