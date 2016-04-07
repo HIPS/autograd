@@ -71,10 +71,10 @@ if __name__ == '__main__':
 
         # Plot data and functions.
         plt.cla()
-        ax.plot(inputs.ravel(), targets.ravel(), 'bx')
+        ax.plot(inputs.ravel(), targets.ravel(), 'bx', ms=12)
         plot_inputs = np.reshape(np.linspace(-7, 7, num=300), (300,1))
         outputs = predictions(params, plot_inputs)
-        ax.plot(plot_inputs, outputs)
+        ax.plot(plot_inputs, outputs, 'r', lw=3)
         ax.set_ylim([-1, 1])
         plt.draw()
         plt.pause(1.0/60.0)
