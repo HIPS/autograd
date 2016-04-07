@@ -459,6 +459,33 @@ def test_prod_4():
     check_grads(fun, mat)
     check_grads(d_fun, mat)
 
+def test_prod_5():
+    fun = lambda x: to_scalar(np.prod(x))
+    d_fun = lambda x: to_scalar(grad(fun)(x))
+    mat = npr.randn(7)**2 + 0.1
+    mat[0] = 0.
+    check_grads(fun, mat)
+    # check_grads(d_fun, mat)  # TODO implement grad of cumprod
+
+def test_prod_6():
+    fun = lambda x: to_scalar(np.prod(x, axis=0))
+    d_fun = lambda x: to_scalar(grad(fun)(x))
+    mat = npr.randn(7, 4)**2 + 0.1
+    mat[0,0] = 0.
+    mat[1,3] = 0.
+    check_grads(fun, mat)
+    # check_grads(d_fun, mat)  # TODO implement grad of cumprod
+
+def test_prod_7():
+    fun = lambda x: to_scalar(np.prod(x, axis=1))
+    d_fun = lambda x: to_scalar(grad(fun)(x))
+    mat = npr.randn(7, 4)**2 + 0.1
+    mat[0,0] = 0.
+    mat[0,1] = 0.
+    mat[1,3] = 0.
+    check_grads(fun, mat)
+    # check_grads(d_fun, mat)  # TODO implement grad of cumprod
+
 def test_1d_array():
     def fun(x):
         return to_scalar(np.array([x, x * 1.0, x + 2.5]))

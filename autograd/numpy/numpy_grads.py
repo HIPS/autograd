@@ -258,15 +258,48 @@ def make_grad_np_mean(ans, x, axis=None, keepdims=False):
     return lambda g: repeater(g) / num_reps
 anp.mean.defgrad(make_grad_np_mean)
 
-def make_grad_np_prod(ans, x, axis=None, keepdims=False): # TODO: Support tuples of axes.
-    repeater, _ = repeat_to_match_shape(x, axis, keepdims)
-    # return lambda g: repeater(g * ans) / x  # doesn't work with zeroes, see #93
-    flip = lambda x, axis: x[[slice(None) if i is not axis else slice(None, None, -1)
-                              for i in range(x.ndim)]]
-    y1 = anp.cumprod(x, axis)
-    y2 = anp.cumprod(flip(x), axis)
-    y = y1 * y2  # TODO pad by ones or make strict cumprod
+def strict_cumprod(x, axis):
+    butlast = lambda x: index_axis(x, axis, slice(None, -1))
 
+    def pad_ones(x):
+        shape = list(anp.shape(x))
+        shape[axis] = 1
+        return anp.concatenate((anp.ones(shape), x), axis)
+
+    return pad_ones(anp.cumprod(butlast(x), axis))
+
+def make_grad_np_prod(ans, x, axis=None, keepdims=False): # TODO: Support tuples of axes.
+    if not isinstance(axis, (int, type(None))):
+        raise ValueError, "Autograd prod currently only supports axis as an int or None"
+
+    repeater, _ = repeat_to_match_shape(x, axis, keepdims)
+
+    # let y be the array with the same shape as x such that each of y element is
+    # the product of all *other* corresponding elements in x (or all elements of
+    # x within slices along axis, when axis is not None)
+
+    # if there are no zeroes in x, we can compute y = broadcast(ans) / x
+    zeros = x == 0
+    if not anp.any(zeros):
+        return lambda g: repeater(g * ans) / x
+
+    # if x has more than one zero (or more than one zero in all slices along
+    # axis), then the result is always zero
+    zero_counts = anp.sum(zeros, axis=axis)
+    if anp.all(zero_counts > 1):
+        return lambda g: anp.zeros_like(x)
+
+    # if x has exactly one zero (or exactly one zero in some slices along axis)
+    # then we do the fully general thing
+    shape = x.shape
+    if axis is None:
+        x, axis = anp.ravel(x), 0
+
+    flip = lambda x: reverse_axis(x, axis)
+    y1, y2 = strict_cumprod(x, axis), flip(strict_cumprod(flip(x), axis))
+    y = anp.reshape(y1 * y2, shape)
+
+    return lambda g: repeater(g) * y
 anp.prod.defgrad(make_grad_np_prod)
 
 def make_grad_np_var(ans, x, axis=None, ddof=0, keepdims=False):
@@ -294,10 +327,12 @@ anp.min.defgrad(make_grad_chooser)
 anp.amax.defgrad(make_grad_chooser)
 anp.amin.defgrad(make_grad_chooser)
 
-def reverse_axis(x, axis):
+def index_axis(x, axis, idx):
     x = x.swapaxes(axis, 0)
-    x = x[::-1,...]
+    x = x[idx, ...]
     return x.swapaxes(0, axis)
+
+reverse_axis = lambda x, axis: index_axis(x, axis, slice(None, None, -1))
 
 def make_grad_np_cumsum(ans, x, axis=None):
     if axis:
