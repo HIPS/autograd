@@ -270,7 +270,7 @@ def strict_cumprod(x, axis):
 
 def make_grad_np_prod(ans, x, axis=None, keepdims=False): # TODO: Support tuples of axes.
     if not isinstance(axis, (int, type(None))):
-        raise ValueError, "Autograd prod currently only supports axis as an int or None"
+        raise ValueError("Autograd prod currently only supports axis as an int or None")
 
     repeater, _ = repeat_to_match_shape(x, axis, keepdims)
 
