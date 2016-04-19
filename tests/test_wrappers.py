@@ -9,6 +9,16 @@ from builtins import range
 
 npr.seed(1)
 
+def test_return_both():
+    fun = lambda x : 3.0 * x**3.2
+    d_fun = grad(fun)
+    f_and_d_fun = value_and_grad(fun)
+
+    test_x = 1.7
+    f, d = f_and_d_fun(test_x)
+    assert f == fun(test_x)
+    assert d == d_fun(test_x)
+
 def test_value_and_grad():
     fun = lambda x: np.sum(np.sin(x)**2)
     dfun = grad(fun)
