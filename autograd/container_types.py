@@ -1,25 +1,26 @@
 from __future__ import absolute_import
-from autograd.core import primitive, Node, register_node_type, getval, zeros_like, cast
+from autograd.core import (primitive, Node, VSpace, register_node, vspace,
+                           register_vspace, getval, cast, zeros_like)
 from builtins import zip
 from future.utils import iteritems
 
 class TupleNode(Node):
     __slots__ = []
-    value_types = [tuple]
     def __getitem__(self, idx):
         return tuple_take(self, idx)
     def __len__(self):
         return len(self.value)
 
-    @staticmethod
-    def zeros_like(value):
-        return tuple([zeros_like(item) for item in getval(value)])
-
-    @staticmethod
-    def sum_outgrads(outgrads):
+class TupleVSpace(VSpace):
+    def __init__(self, value):
+        self.shape = tuple(vspace(x) for x in value)
+    def zeros(self):
+        return tuple(x.zeros() for x in self.shape)
+    def sum_outgrads(self, outgrads):
         return primitive_sum_tuples(*outgrads)
 
-register_node_type(TupleNode)
+register_node(TupleNode, tuple)
+register_vspace(TupleVSpace, tuple)
 
 @primitive
 def primitive_sum_tuples(*tuples):
@@ -48,25 +49,23 @@ make_tuple.grad = lambda argnum, g, *args: g[argnum]
 
 class ListNode(Node):
     __slots__ = []
-    value_types = [list]
     def __getitem__(self, idx):
         return list_take(self, idx)
     def __len__(self):
         return len(self.value)
 
-    @staticmethod
-    def zeros_like(value):
-        return [zeros_like(item) for item in getval(value)]
-
-    @staticmethod
-    def sum_outgrads(outgrads):
+class ListVSpace(VSpace):
+    def __init__(self, value):
+        self.shape = [vspace(x) for x in value]
+    def zeros(self):
+        return [x.zeros() for x in self.shape]
+    def sum_outgrads(self, outgrads):
         return primitive_sum_lists(*outgrads)
-
-    @staticmethod
-    def cast(value, example):
+    def cast(self, value):
         return cast(value, cast_to_list)
 
-register_node_type(ListNode)
+register_node(ListNode, list)
+register_vspace(ListVSpace, list)
 
 def cast_to_list(x):
     return list(x)
@@ -93,7 +92,6 @@ list_untake.defgrad_is_zero(argnums=(1, 2))
 
 class DictNode(Node):
     __slots__ = []
-    value_types = [dict]
     def __getitem__(self, idx):
         return dict_take(self, idx)
     def __len__(self):
@@ -101,22 +99,21 @@ class DictNode(Node):
     def __iter__(self):
         return self.value.__iter__()
 
-    @staticmethod
-    def zeros_like(self):
-        return {k : zeros_like(v) for k, v in iteritems(getval(self))}
-
-    @staticmethod
-    def sum_outgrads(outgrads):
+class DictVSpace(VSpace):
+    def __init__(self, value):
+        self.shape = {k : vspace(v) for k, v in value.iteritems()}
+    def zeros(self):
+        return {k : v.zeros() for k, v in iteritems(self.shape)}
+    def sum_outgrads(self, outgrads):
         return primitive_sum_dicts(*outgrads)
-
-    @staticmethod
-    def cast(value, example):
+    def cast(self, value):
         return cast(value, cast_to_dict)
 
 def cast_to_dict(x):
     return dict(x)
 
-register_node_type(DictNode)
+register_node(DictNode, dict)
+register_vspace(DictVSpace, dict)
 
 @primitive
 def primitive_sum_dicts(*dicts):

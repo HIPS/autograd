@@ -16,7 +16,7 @@ def make_jvp(fun, argnum=0):
         tape.active = False
         if not isnode(end_node) or tape not in end_node.tapes:
             warnings.warn("Output seems independent of input.")
-            return lambda g : zeros_like(start_node), end_node
+            return lambda g : start_node.vspace.zeros(), end_node
 
         return lambda g : backward_pass(g, end_node, tape), end_node
     return jvp
@@ -32,15 +32,15 @@ def forward_pass(fun, args, kwargs, argnum=0):
 
 def backward_pass(g, end_node, tape):
     outgrads = defaultdict(list)
-    outgrads[end_node] = [cast_like(end_node, g)]
+    outgrads[end_node] = [cast_like(end_node.vspace, g)]
     for node in tape[::-1]:
         if node not in outgrads: continue
-        cur_outgrad = node.sum_outgrads(outgrads[node])
+        cur_outgrad = node.vspace.sum_outgrads(outgrads[node])
         assert_type_match(cur_outgrad, node)
         function, args, kwargs, parents = node.recipe
         for argnum, parent in parents:
             raw_outgrad = function.grad(argnum, cur_outgrad, node, args, kwargs)
-            outgrads[parent].append(cast_like(parent, raw_outgrad))
+            outgrads[parent].append(cast_like(parent.vspace, raw_outgrad))
     return cur_outgrad
 
 class primitive(object):
@@ -67,7 +67,7 @@ class primitive(object):
 
         result_value = self.fun(*argvals, **kwargs)
         if tapes:
-            return node_type(result_value)(result_value, (self, args, kwargs, parents), tapes)
+            return new_node(result_value, (self, args, kwargs, parents), tapes)
         else:
             return result_value
 
@@ -80,8 +80,6 @@ class primitive(object):
             else:
                 errstr = "Gradient of {0} w.r.t. arg number {1} not yet implemented."
             raise NotImplementedError(errstr.format(self.fun.__name__, argnum))
-        except TypeError:
-            raise TypeError("Function {} failed".format(self.grads[argnum]))
 
     def defgrad(self, gradmaker, argnum=0):
         gradmaker.__name__ = "VJP_{}_of_{}".format(argnum, self.__name__)
@@ -111,63 +109,79 @@ def add_tape(x, tape):
     all_tapes = set([tape])
     if isnode(x):
         all_tapes.update(x.tapes)
-        return node_type(x)(x.value, (identity, (x,), {}, [(0, x)]), all_tapes)
+        return new_node(x.value, (identity, (x,), {}, [(0, x)]), all_tapes)
     else:
-        return node_type(x)(x,       (identity, (x,), {}, []      ), all_tapes)
+        return new_node(x,       (identity, (x,), {}, []      ), all_tapes)
 
 @primitive
 def identity(x) : return x
 identity.defgrad(lambda g, ans, x : g)
 
-def zeros_like(value):
-    return node_type(value).zeros_like(value)
-
 class Node(object):
-    __slots__ = ['value', 'recipe', 'tapes']
-    value_types = []
+    __slots__ = ['value', 'recipe', 'tapes', 'vspace']
     def __init__(self, value, recipe, tapes):
         self.value = value
         self.recipe = recipe
         self.tapes = tapes
         for tape in tapes:
             tape.append(self)
+        self.vspace = vspace(value)
 
     def __bool__(self):
         return bool(self.value)
 
     __nonzero__ = __bool__
 
-    @staticmethod
-    def sum_outgrads(outgrads):
-        return sum(outgrads[1:], outgrads[0])
-
     def __str__(self):
         return "Autograd {0} with value {1} and {2} tape(s)".format(
             type(self).__name__, str(self.value), len(self.tapes))
 
-type_mappings = {}
+class VSpace(object):
+    __slots__ = []
+    def __init__(self, value):
+        pass
+
+    def zeros(self):
+        assert False
+
+    def sum_outgrads(self, outgrads):
+        return sum(outgrads[1:], outgrads[0])
+
+    def __eq__(self, other):
+        return type(self) == type(other) and self.__dict__ == other.__dict__
+
+node_type_mappings = {}
+vspace_mappings = {}
 node_types = set()
-return_this = lambda t : lambda x : t
-def register_node_type(ntype):
-    node_types.add(ntype)
-    type_mappings[ntype] = return_this(ntype)
-    for vtype in ntype.value_types:
-        type_mappings[vtype] = return_this(ntype)
+def register_node(node_type, value_type):
+    node_types.add(node_type)
+    node_type_mappings[value_type] = node_type
+    node_type_mappings[node_type] = node_type
 
-def node_type(x):
+def register_vspace(vspace_maker, value_type):
+    vspace_mappings[value_type] = vspace_maker
+
+def new_node(value, recipe, tapes):
     try:
-        return type_mappings[type(x)](x)
+        return node_type_mappings[type(value)](value, recipe, tapes)
     except KeyError:
-        raise TypeError("Can't differentiate w.r.t. type {}".format(type(x)))
+        raise TypeError("Can't differentiate w.r.t. type {}".format(type(value)))
 
-def cast_like(node, x):
-    if node_type(x) is not type(node):
-        return node.cast(x, node)
-    else:
+def vspace(raw_value):
+    value = getval(raw_value)
+    return vspace_mappings[type(value)](value)
+
+def zeros_like(value):
+    return vspace(value).zeros()
+
+def cast_like(target_vspace, x):
+    if target_vspace == vspace(x):
         return x
+    else:
+        return target_vspace.cast(x)
 
 def assert_type_match(x, node):
-    assert node_type(x) is  type(node), \
+    assert type(new_node(x, None, [])) is  type(node), \
         "Type is {}. Should be like {}".format(type(x), type(node))
 
 @primitive
@@ -185,31 +199,34 @@ class CalculationTape(list):
     def __hash__(self):
         return id(self)
 
-class FloatNode(Node):
-    __slots__ = []
-    value_types = [float]
-    @staticmethod
-    def zeros_like(value):
-        return 0.0
-    @staticmethod
-    def cast(value, example):
-        return cast(value, cast_to_float)
-register_node_type(FloatNode)
+class FloatNode(Node): pass
+
+register_node(FloatNode, float)
+register_node(FloatNode, complex)
 
 def cast_to_float(x):
     if np.iscomplexobj(x):
         x = np.real(x)
     return float(x)
 
-class ComplexNode(FloatNode):
+class FloatVSpace(VSpace):
+    def zeros(self):
+        return 0.0
+
+    def cast(self, value):
+        return cast(value, cast_to_float)
+
+register_vspace(FloatVSpace, float)
+
+class ComplexVSpace(VSpace):
     value_types = [complex]
-    @staticmethod
-    def zeros_like(value):
-        return 0.0 + 0.0j
-    @staticmethod
-    def cast(value, example):
+    def zeros(self):
+        return 0.0j
+
+    def cast(self, value):
         return cast(value, cast_to_complex)
-register_node_type(ComplexNode)
+
+register_vspace(ComplexVSpace, complex)
 
 def cast_to_complex(value):
     if isinstance(value, np.ndarray):

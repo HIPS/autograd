@@ -1,9 +1,9 @@
 from __future__ import absolute_import
 import numpy as np
 
-from autograd.core import (Node, FloatNode, primitive, cast, type_mappings,
-                           register_node_type, differentiable_ops,
-                           nondifferentiable_ops, getval, return_this, zeros_like)
+from autograd.core import (Node, FloatNode, VSpace, FloatVSpace, primitive, cast,
+                           register_node, register_vspace, zeros_like,
+                           differentiable_ops, nondifferentiable_ops, getval)
 from . import numpy_wrapper as anp
 
 @primitive
@@ -35,7 +35,6 @@ class ArrayNode(Node):
     __getitem__ = take
     __array_priority__ = 100.0
 
-    value_types = [SparseArray]
     # Constants w.r.t float data just pass though
     shape = property(lambda self: self.value.shape)
     ndim  = property(lambda self: self.value.ndim)
@@ -45,28 +44,6 @@ class ArrayNode(Node):
 
     def __len__(self):
         return len(self.value)
-
-    @staticmethod
-    def zeros_like(value):
-        return anp.zeros(value.shape)
-
-    @staticmethod
-    def sum_outgrads(outgrads):
-        if len(outgrads) is 1 and not isinstance(getval(outgrads[0]), SparseArray):
-            return outgrads[0]
-        else:
-            return primitive_sum_arrays(*outgrads)
-
-    @staticmethod
-    def cast(value, example):
-        result = arraycast(value)
-        if result.shape != example.shape:
-            result = result.reshape(example.shape)
-        return result
-
-    @staticmethod
-    def new_sparse_array(template, idx, x):
-        return SparseArray(template, idx, x)
 
     def __neg__(self): return anp.negative(self)
     def __add__(self, other): return anp.add(     self, other)
@@ -90,21 +67,47 @@ class ArrayNode(Node):
     def __lt__(self, other): return anp.less(self, other)
     def __le__(self, other): return anp.less_equal(self, other)
 
-register_node_type(ArrayNode)
+class ArrayVSpace(VSpace):
+    def __init__(self, value):
+        self.shape = value.shape
 
-def array_node_type(value):
+    def zeros(self):
+        return anp.zeros(self.shape)
+
+    def sum_outgrads(self, outgrads):
+        if len(outgrads) is 1 and not isinstance(getval(outgrads[0]), SparseArray):
+            return outgrads[0]
+        else:
+            return primitive_sum_arrays(*outgrads)
+
+    def cast(self, value):
+        result = arraycast(value)
+        if result.shape != self.shape:
+            result = result.reshape(self.shape)
+        return result
+
+    @staticmethod
+    def new_sparse_array(template, idx, x):
+        return SparseArray(template, idx, x)
+
+def array_vspace(value):
     try:
-        return array_dtype_mappings[value.dtype]
+        return array_dtype_mappings[value.dtype](value)
     except KeyError:
         raise TypeError("Can't differentiate wrt numpy arrays of dtype {0}".format(value.dtype))
 
-type_mappings[anp.ndarray] = array_node_type
+register_node(ArrayNode, np.ndarray)
+register_node(ArrayNode, SparseArray)
+register_vspace(array_vspace, np.ndarray)
+register_vspace(array_vspace, SparseArray)
+
 array_types = set([anp.ndarray, SparseArray, ArrayNode])
 
 array_dtype_mappings = {}
 for float_type in [anp.float64, anp.float32, anp.float16]:
-    array_dtype_mappings[anp.dtype(float_type)] = ArrayNode
-    type_mappings[float_type] = return_this(FloatNode)
+    array_dtype_mappings[anp.dtype(float_type)] = ArrayVSpace
+    register_node(FloatNode, float_type)
+    register_vspace(FloatVSpace, float_type)
 
 @primitive
 def arraycast(val):

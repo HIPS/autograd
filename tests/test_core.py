@@ -2,7 +2,9 @@
    on basic operations even without numpy."""
 from __future__ import absolute_import
 import warnings
-from autograd.core import make_jvp
+import sys
+sys.path.append('autograd')
+from core import make_jvp
 
 def grad(fun, argnum=0):
     def gradfun(*args,**kwargs):

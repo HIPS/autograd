@@ -1,35 +1,32 @@
 from __future__ import absolute_import
-from autograd.core import (Node, ComplexNode, primitive, cast, getval,
-                           register_node_type, type_mappings, return_this)
+from autograd.core import (Node, FloatNode, VSpace, ComplexVSpace,
+                           primitive, cast, getval,
+                           register_node, register_vspace)
 from . import numpy_wrapper as anp
-from .numpy_extra import ArrayNode, array_dtype_mappings, SparseArray, array_types
+from .numpy_extra import (ArrayNode, ArrayVSpace, array_dtype_mappings,
+                          SparseArray, array_types)
 
 class ComplexSparseArray(SparseArray):
     pass
 
-class ComplexArrayNode(ArrayNode):
-    value_types = [ComplexSparseArray]
-    @staticmethod
-    def zeros_like(value):
-        return anp.zeros(value.shape) + 0.0j
+class ComplexArrayVSpace(ArrayVSpace):
+    def zeros(self):
+        return anp.zeros(self.shape) + 0.0j
 
-    @staticmethod
-    def cast(value, example):
+    def cast(self, value):
         result = complex_arraycast(value)
-        if result.shape != example.shape:
-            result = result.reshape(example.shape)
+        if result.shape != self.shape:
+            result = result.reshape(self.shape)
         return result
 
     @staticmethod
     def new_sparse_array(template, idx, x):
         return ComplexSparseArray(template, idx, x)
 
-register_node_type(ComplexArrayNode)
-array_types.update([ComplexArrayNode, ComplexSparseArray])
-
 for complex_type in [anp.complex64, anp.complex128]:
-    array_dtype_mappings[anp.dtype(complex_type)] = ComplexArrayNode
-    type_mappings[complex_type] = return_this(ComplexNode)
+    array_dtype_mappings[anp.dtype(complex_type)] = ComplexArrayVSpace
+    register_node(FloatNode, complex_type)
+    register_vspace(ComplexVSpace, complex_type)
 
 @primitive
 def complex_arraycast(val):
