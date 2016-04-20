@@ -167,21 +167,23 @@ def new_node(value, recipe, tapes):
     except KeyError:
         raise TypeError("Can't differentiate w.r.t. type {}".format(type(value)))
 
-def vspace(raw_value):
-    value = getval(raw_value)
-    return vspace_mappings[type(value)](value)
+def vspace(value):
+    try:
+        return vspace_mappings[type(value)](value)
+    except KeyError:
+        raise TypeError("Can't find vspace for type {}".format(type(value)))
 
 def zeros_like(value):
     return vspace(value).zeros()
 
 def cast_like(target_vspace, x):
-    if target_vspace == vspace(x):
+    if target_vspace == vspace(getval(x)):
         return x
     else:
         return target_vspace.cast(x)
 
 def assert_type_match(x, node):
-    assert type(new_node(x, None, [])) is  type(node), \
+    assert type(new_node(getval(x), None, [])) is  type(node), \
         "Type is {}. Should be like {}".format(type(x), type(node))
 
 @primitive
