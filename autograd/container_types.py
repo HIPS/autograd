@@ -17,15 +17,11 @@ class TupleVSpace(VSpace):
     def zeros(self):
         return tuple(x.zeros() for x in self.shape)
     def sum_outgrads(self, outgrads):
-        return primitive_sum_tuples(*outgrads)
+        return tuple(xs[0].sum_outgrads(xs[1:])
+                     for xs in zip(self.shape, *outgrads))
 
 register_node(TupleNode, tuple)
 register_vspace(TupleVSpace, tuple)
-
-@primitive
-def primitive_sum_tuples(*tuples):
-    return tuple([primitive_sum(elements) for elements in zip(*tuples)])
-primitive_sum_tuples.grad = lambda argnum, g, *args : g
 
 @primitive
 def tuple_take(A, idx):
@@ -60,7 +56,9 @@ class ListVSpace(VSpace):
     def zeros(self):
         return [x.zeros() for x in self.shape]
     def sum_outgrads(self, outgrads):
-        return primitive_sum_lists(*outgrads)
+        return [xs[0].sum_outgrads(xs[1:])
+                for xs in zip(self.shape, *outgrads)]
+
     def cast(self, value):
         return cast(value, cast_to_list)
 
@@ -69,11 +67,6 @@ register_vspace(ListVSpace, list)
 
 def cast_to_list(x):
     return list(x)
-
-@primitive
-def primitive_sum_lists(*lists):
-    return [primitive_sum(elements) for elements in zip(*lists)]
-primitive_sum_lists.grad = lambda argnum, g, *args : g
 
 @primitive
 def list_take(A, idx):
@@ -105,7 +98,8 @@ class DictVSpace(VSpace):
     def zeros(self):
         return {k : v.zeros() for k, v in iteritems(self.shape)}
     def sum_outgrads(self, outgrads):
-        return primitive_sum_dicts(*outgrads)
+        return {k : v.sum_outgrads([og[k] for og in outgrads])
+                for k, v in self.shape.iteritems()}
     def cast(self, value):
         return cast(value, cast_to_dict)
 
@@ -114,15 +108,6 @@ def cast_to_dict(x):
 
 register_node(DictNode, dict)
 register_vspace(DictVSpace, dict)
-
-@primitive
-def primitive_sum_dicts(*dicts):
-    """Takes a list of dicts having identical keys.
-       Returns a new dict whose values are the sum over all input dicts."""
-    # assert set(dicts[0]) == set(dicts[0]).intersection(*dicts)
-    keys = dicts[0]
-    return {k : primitive_sum([dict[k] for dict in dicts]) for k in keys}
-primitive_sum_dicts.grad = lambda argnum, g, *args : g
 
 @primitive
 def dict_take(A, idx):
@@ -138,15 +123,3 @@ def dict_untake(x, idx, template):
     return result
 dict_untake.defgrad(lambda g, ans, x, idx, template : dict_take(g, idx))
 dict_untake.defgrad_is_zero(argnums=(1, 2))
-
-primitive_summers = {
-    list: primitive_sum_lists,
-    tuple: primitive_sum_tuples,
-    dict: primitive_sum_dicts,
-}
-
-def primitive_sum(container):
-    thetype = type(container[0])
-    if thetype in primitive_summers:
-        return primitive_summers[thetype](*container)
-    return sum(container[1:], container[0])

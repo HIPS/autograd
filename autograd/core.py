@@ -35,7 +35,7 @@ def backward_pass(g, end_node, tape):
     outgrads[end_node] = [cast_like(end_node.vspace, g)]
     for node in tape[::-1]:
         if node not in outgrads: continue
-        cur_outgrad = node.vspace.sum_outgrads(outgrads[node])
+        cur_outgrad = vsum(node.vspace, *outgrads[node])
         assert_vspace_match(cur_outgrad, node)
         function, args, kwargs, parents = node.recipe
         for argnum, parent in parents:
@@ -112,6 +112,11 @@ def add_tape(x, tape):
         return new_node(x.value, (identity, (x,), {}, [(0, x)]), all_tapes)
     else:
         return new_node(x,       (identity, (x,), {}, []      ), all_tapes)
+
+@primitive
+def vsum(vspace, *args):
+    return vspace.sum_outgrads(args)
+vsum.grad = lambda arg, g, *args : g
 
 @primitive
 def identity(x) : return x

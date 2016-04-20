@@ -75,10 +75,10 @@ class ArrayVSpace(VSpace):
         return anp.zeros(self.shape)
 
     def sum_outgrads(self, outgrads):
-        if len(outgrads) is 1 and not isinstance(getval(outgrads[0]), SparseArray):
+        if len(outgrads) is 1 and not isinstance(outgrads[0], SparseArray):
             return outgrads[0]
         else:
-            return primitive_sum_arrays(*outgrads)
+            return sum_arrays(*outgrads)
 
     def cast(self, value):
         result = arraycast(value)
@@ -119,8 +119,7 @@ def arraycast(val):
         raise TypeError("Can't cast type {0} to array".format(type(val)))
 arraycast.defgrad(lambda g, ans, val: g)
 
-@primitive
-def primitive_sum_arrays(*arrays):
+def sum_arrays(*arrays):
     new_array = zeros_like(arrays[0]) # TODO: simplify this
     for array in arrays:
         if isinstance(array, SparseArray):
@@ -128,7 +127,6 @@ def primitive_sum_arrays(*arrays):
         else:
             new_array += array
     return new_array
-primitive_sum_arrays.grad = lambda argnum, g, *args : g
 
 # These numpy.ndarray methods are just refs to an equivalent numpy function
 nondiff_methods = ['all', 'any', 'argmax', 'argmin', 'argpartition',
