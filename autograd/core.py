@@ -36,7 +36,7 @@ def backward_pass(g, end_node, tape):
     for node in tape[::-1]:
         if node not in outgrads: continue
         cur_outgrad = node.vspace.sum_outgrads(outgrads[node])
-        assert_type_match(cur_outgrad, node)
+        assert_vspace_match(cur_outgrad, node)
         function, args, kwargs, parents = node.recipe
         for argnum, parent in parents:
             raw_outgrad = function.grad(argnum, cur_outgrad, node, args, kwargs)
@@ -182,9 +182,9 @@ def cast_like(target_vspace, x):
     else:
         return target_vspace.cast(x)
 
-def assert_type_match(x, node):
-    assert type(new_node(getval(x), None, [])) is  type(node), \
-        "Type is {}. Should be like {}".format(type(x), type(node))
+def assert_vspace_match(x, node):
+    assert node.vspace == vspace(getval(x)), \
+        "Type is {}. Should be like {}".format(type(x), type(node.value))
 
 @primitive
 def cast(value, caster):
