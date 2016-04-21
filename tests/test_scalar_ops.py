@@ -10,8 +10,10 @@ def test_abs():
     d_fun = grad(fun)
     check_grads(fun, 1.1)
     check_grads(fun, -1.1)
+    check_grads(fun, 0.)
     check_grads(d_fun, 1.1)
     check_grads(d_fun, -1.1)
+    check_grads(d_fun, 0.)
 
 def test_sin():
     fun = lambda x : 3.0 * np.sin(x)
