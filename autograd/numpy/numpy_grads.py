@@ -93,7 +93,12 @@ anp.remainder.defgrad(lambda ans, x, y : unbroadcast(ans, y, lambda g : -g * anp
 # ----- Simple grads -----
 
 anp.negative.defgrad(lambda ans, x: op.neg)
-anp.abs.defgrad(     lambda ans, x : lambda g : g * anp.conj(x) / ans)
+def abs_grad(ans, x):
+    replace_zero = lambda x, val: anp.where(x, x, val)
+    return lambda g: g * replace_zero(anp.conj(x), 0.) / replace_zero(ans, 1.)
+anp.abs.defgrad(abs_grad)
+
+# anp.abs.defgrad(     lambda ans, x : lambda g : g * anp.conj(x) / anp.where(ans, ans, 1.))
 anp.fabs.defgrad(    lambda ans, x : lambda g : anp.sign(x) * g)  # fabs doesn't take complex numbers.
 anp.absolute.defgrad(lambda ans, x : lambda g : g * anp.conj(x) / ans)
 anp.reciprocal.defgrad(lambda ans, x : lambda g : - g / x**2)

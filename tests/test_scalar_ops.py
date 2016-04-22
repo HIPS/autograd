@@ -13,7 +13,7 @@ def test_abs():
     check_grads(fun, 0.)
     check_grads(d_fun, 1.1)
     check_grads(d_fun, -1.1)
-    check_grads(d_fun, 0.)
+    # check_grads(d_fun, 0.)  # higher-order numerical check doesn't work at non-diffable point
 
 def test_sin():
     fun = lambda x : 3.0 * np.sin(x)
