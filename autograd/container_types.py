@@ -16,9 +16,8 @@ class TupleVSpace(VSpace):
         self.shape = tuple(vspace(x) for x in value)
     def zeros(self):
         return tuple(x.zeros() for x in self.shape)
-    def sum_outgrads(self, outgrads):
-        return tuple(xs[0].sum_outgrads(xs[1:])
-                     for xs in zip(self.shape, *outgrads))
+    def mut_add(self, xs, ys):
+        return tuple(vs.mut_add(x, y) for vs, x, y in zip(self.shape, xs, ys))
 
 register_node(TupleNode, tuple)
 register_vspace(TupleVSpace, tuple)
@@ -55,10 +54,8 @@ class ListVSpace(VSpace):
         self.shape = [vspace(x) for x in value]
     def zeros(self):
         return [x.zeros() for x in self.shape]
-    def sum_outgrads(self, outgrads):
-        return [xs[0].sum_outgrads(xs[1:])
-                for xs in zip(self.shape, *outgrads)]
-
+    def mut_add(self, xs, ys):
+        return [vs.mut_add(x, y) for vs, x, y in zip(self.shape, xs, ys)]
     def cast(self, value):
         return cast(value, cast_to_list)
 
@@ -97,8 +94,8 @@ class DictVSpace(VSpace):
         self.shape = {k : vspace(v) for k, v in value.iteritems()}
     def zeros(self):
         return {k : v.zeros() for k, v in iteritems(self.shape)}
-    def sum_outgrads(self, outgrads):
-        return {k : v.sum_outgrads([og[k] for og in outgrads])
+    def mut_add(self, xs, ys):
+        return {k : v.mut_add(xs[k], ys[k])
                 for k, v in self.shape.iteritems()}
     def cast(self, value):
         return cast(value, cast_to_dict)

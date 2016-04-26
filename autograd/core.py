@@ -115,7 +115,10 @@ def add_tape(x, tape):
 
 @primitive
 def vsum(vspace, *args):
-    return vspace.sum_outgrads(args)
+    ans = vspace.zeros()
+    for arg in args:
+        ans = vspace.mut_add(ans, arg)
+    return ans
 vsum.grad = lambda arg, g, *args : g
 
 @primitive
@@ -149,8 +152,9 @@ class VSpace(object):
     def zeros(self):
         assert False
 
-    def sum_outgrads(self, outgrads):
-        return sum(outgrads[1:], outgrads[0])
+    def mut_add(self, x, y):
+        x += y
+        return x
 
     def __eq__(self, other):
         return type(self) == type(other) and self.__dict__ == other.__dict__
