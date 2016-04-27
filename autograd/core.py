@@ -169,6 +169,9 @@ class VSpace(object):
     def __eq__(self, other):
         return type(self) == type(other) and self.__dict__ == other.__dict__
 
+    def __repr__(self):
+        return "{}___{}".format(type(self), self.__dict__)
+
 node_type_mappings = {}
 vspace_mappings = {}
 node_types = set()
@@ -200,9 +203,6 @@ class SparseObject(object):
 
 register_vspace(lambda x : x.vs, SparseObject)
 register_node(Node, SparseObject)
-
-def zeros_like(value):
-    return vspace(value).zeros()
 
 def cast_like(target_vspace, x):
     if target_vspace == vspace(getval(x)):

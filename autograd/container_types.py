@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from autograd.core import (primitive, Node, VSpace, register_node, vspace,
-                           register_vspace, getval, cast, zeros_like)
+                           register_vspace, getval, cast, SparseObject)
 from builtins import zip
 from future.utils import iteritems
 
@@ -31,9 +31,12 @@ tuple_take.defgrad(grad_tuple_take)
 
 @primitive
 def tuple_untake(x, idx, template):
-    result = list(zeros_like(template))
-    result[idx] = x
-    return tuple(result)
+    def mut_add(A):
+        result = list(A)
+        result[idx] = vs.shape[idx].mut_add(result[idx], x)
+        return tuple(result)
+    vs = vspace(template)
+    return SparseObject(vs, mut_add)
 tuple_untake.defgrad(lambda g, ans, x, idx, template : tuple_take(g, idx))
 tuple_untake.defgrad_is_zero(argnums=(1, 2))
 
@@ -74,9 +77,11 @@ list_take.defgrad(grad_list_take)
 
 @primitive
 def list_untake(x, idx, template):
-    result = list(zeros_like(template))
-    result[idx] = x
-    return result
+    def mut_add(A):
+         A[idx] = vs.shape[idx].mut_add(A[idx], x)
+         return A
+    vs = vspace(template)
+    return SparseObject(vs, mut_add)
 list_untake.defgrad(lambda g, ans, x, idx, template : list_take(g, idx))
 list_untake.defgrad_is_zero(argnums=(1, 2))
 
@@ -115,8 +120,10 @@ dict_take.defgrad(grad_dict_take)
 
 @primitive
 def dict_untake(x, idx, template):
-    result = dict(zeros_like(template))
-    result[idx] = x
-    return result
+    def mut_add(A):
+         A[idx] = vs.shape[idx].mut_add(A[idx], x)
+         return A
+    vs = vspace(template)
+    return SparseObject(vs, mut_add)
 dict_untake.defgrad(lambda g, ans, x, idx, template : dict_take(g, idx))
 dict_untake.defgrad_is_zero(argnums=(1, 2))

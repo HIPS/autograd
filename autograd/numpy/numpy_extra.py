@@ -3,7 +3,7 @@ import numpy as np
 
 from autograd.core import (Node, FloatNode, VSpace, FloatVSpace,
                            SparseObject, primitive, cast, vspace,
-                           register_node, register_vspace, zeros_like,
+                           register_node, register_vspace,
                            differentiable_ops, nondifferentiable_ops, getval)
 from . import numpy_wrapper as anp
 
