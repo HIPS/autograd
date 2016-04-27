@@ -113,8 +113,15 @@ def add_tape(x, tape):
     else:
         return new_node(x,       (identity, (x,), {}, []      ), all_tapes)
 
-@primitive
+
 def vsum(vspace, *args):
+    if len(args) == 1 and type(getval(args[0])) != SparseObject:
+        return args[0]
+    else:
+        return primitive_vsum(vspace, *args)
+
+@primitive
+def primitive_vsum(vspace, *args):
     ans = vspace.zeros()
     for arg in args:
         if type(arg) == SparseObject:
@@ -122,7 +129,7 @@ def vsum(vspace, *args):
         else:
             ans = vspace.mut_add(ans, arg)
     return ans
-vsum.grad = lambda arg, g, *args : g
+primitive_vsum.grad = lambda arg, g, *args : g
 
 @primitive
 def identity(x) : return x
