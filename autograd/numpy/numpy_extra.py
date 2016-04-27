@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 import numpy as np
 
-from autograd.core import (Node, FloatNode, VSpace, FloatVSpace,
+from autograd.core import (Node, FloatNode, VSpace, FloatVSpace, ComplexVSpace,
                            SparseObject, primitive, cast, vspace,
                            register_node, register_vspace,
                            differentiable_ops, nondifferentiable_ops, getval)
@@ -80,10 +80,12 @@ register_node(ArrayNode, np.ndarray)
 register_vspace(ArrayVSpace, np.ndarray)
 array_types = set([anp.ndarray, ArrayNode])
 
-array_dtype_mappings = {}
 for float_type in [anp.float64, anp.float32, anp.float16]:
     register_node(FloatNode, float_type)
     register_vspace(FloatVSpace, float_type)
+for complex_type in [anp.complex64, anp.complex128]:
+    register_node(FloatNode, complex_type)
+    register_vspace(ComplexVSpace, complex_type)
 
 @primitive
 def arraycast(val, dtype):

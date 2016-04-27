@@ -2,7 +2,6 @@ from __future__ import absolute_import
 from . import numpy_wrapper
 from . import numpy_grads
 from . import numpy_extra
-from . import complex_array_node
 from .numpy_wrapper import *
 from . import linalg
 from . import fft
