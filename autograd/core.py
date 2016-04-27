@@ -117,7 +117,10 @@ def add_tape(x, tape):
 def vsum(vspace, *args):
     ans = vspace.zeros()
     for arg in args:
-        ans = vspace.mut_add(ans, arg)
+        if type(arg) == SparseObject:
+            ans = arg.mut_add(ans)
+        else:
+            ans = vspace.mut_add(ans, arg)
     return ans
 vsum.grad = lambda arg, g, *args : g
 
@@ -182,6 +185,15 @@ def vspace(value):
     except KeyError:
         raise TypeError("Can't find vspace for type {}".format(type(value)))
 
+class SparseObject(object):
+    __slots__ = ['vs', 'mut_add']
+    def __init__(self, vs, mut_add):
+        self.vs = vs
+        self.mut_add = mut_add
+
+register_vspace(lambda x : x.vs, SparseObject)
+register_node(Node, SparseObject)
+
 def zeros_like(value):
     return vspace(value).zeros()
 
@@ -193,7 +205,8 @@ def cast_like(target_vspace, x):
 
 def assert_vspace_match(x, node):
     assert node.vspace == vspace(getval(x)), \
-        "Type is {}. Should be like {}".format(type(x), type(node.value))
+        "Type is {} (vspace {}). Should be like {} (vspace {})".format(
+            type(x), vspace(getval(x)), type(node.value), node.vspace)
 
 @primitive
 def cast(value, caster):

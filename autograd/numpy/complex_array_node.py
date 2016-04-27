@@ -3,11 +3,7 @@ from autograd.core import (Node, FloatNode, VSpace, ComplexVSpace,
                            primitive, cast, getval,
                            register_node, register_vspace)
 from . import numpy_wrapper as anp
-from .numpy_extra import (ArrayNode, ArrayVSpace, array_dtype_mappings,
-                          SparseArray, array_types)
-
-class ComplexSparseArray(SparseArray):
-    pass
+from .numpy_extra import ArrayNode, ArrayVSpace, array_dtype_mappings, array_types
 
 class ComplexArrayVSpace(ArrayVSpace):
     def zeros(self):
@@ -18,10 +14,6 @@ class ComplexArrayVSpace(ArrayVSpace):
         if result.shape != self.shape:
             result = result.reshape(self.shape)
         return result
-
-    @staticmethod
-    def new_sparse_array(template, idx, x):
-        return ComplexSparseArray(template, idx, x)
 
 for complex_type in [anp.complex64, anp.complex128]:
     array_dtype_mappings[anp.dtype(complex_type)] = ComplexArrayVSpace

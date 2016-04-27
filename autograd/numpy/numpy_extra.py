@@ -1,7 +1,8 @@
 from __future__ import absolute_import
 import numpy as np
 
-from autograd.core import (Node, FloatNode, VSpace, FloatVSpace, primitive, cast,
+from autograd.core import (Node, FloatNode, VSpace, FloatVSpace,
+                           SparseObject, primitive, cast, vspace,
                            register_node, register_vspace, zeros_like,
                            differentiable_ops, nondifferentiable_ops, getval)
 from . import numpy_wrapper as anp
@@ -15,20 +16,14 @@ take.defgrad(grad_take)
 
 @primitive
 def untake(x, idx, template):
-    return array_dtype_mappings[template.dtype].new_sparse_array(template, idx, x)
+    def mut_add(A):
+        np.add.at(A, idx, x)
+        return A
+    return SparseObject(vspace(template), mut_add)
 untake.defgrad(lambda g, ans, x, idx, template : take(g, idx))
 untake.defgrad_is_zero(argnums=(1, 2))
 
 Node.__array_priority__ = 90.0
-
-class SparseArray(object):
-    # Special type for efficient grads through indexing
-    __array_priority__ = 150.0
-    def __init__(self, template, idx, val):
-        self.shape = template.shape
-        self.idx = idx
-        self.val = val
-        self.dtype = template.dtype
 
 class ArrayNode(Node):
     __slots__ = []
@@ -80,10 +75,6 @@ class ArrayVSpace(VSpace):
             result = result.reshape(self.shape)
         return result
 
-    @staticmethod
-    def new_sparse_array(template, idx, x):
-        return SparseArray(template, idx, x)
-
 def array_vspace(value):
     try:
         return array_dtype_mappings[value.dtype](value)
@@ -91,11 +82,8 @@ def array_vspace(value):
         raise TypeError("Can't differentiate wrt numpy arrays of dtype {0}".format(value.dtype))
 
 register_node(ArrayNode, np.ndarray)
-register_node(ArrayNode, SparseArray)
 register_vspace(array_vspace, np.ndarray)
-register_vspace(array_vspace, SparseArray)
-
-array_types = set([anp.ndarray, SparseArray, ArrayNode])
+array_types = set([anp.ndarray, ArrayNode])
 
 array_dtype_mappings = {}
 for float_type in [anp.float64, anp.float32, anp.float16]:
@@ -110,7 +98,8 @@ def arraycast(val):
     elif anp.iscomplexobj(val):
         return anp.array(anp.real(val))
     else:
-        raise TypeError("Can't cast type {0} to array".format(type(val)))
+        raise TypeError("Can't cast type {0} (vspace {1}) to array".format(
+            type(val), vspace(val)))
 arraycast.defgrad(lambda g, ans, val: g)
 
 # These numpy.ndarray methods are just refs to an equivalent numpy function
