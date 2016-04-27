@@ -65,42 +65,30 @@ class ArrayNode(Node):
 class ArrayVSpace(VSpace):
     def __init__(self, value):
         self.shape = value.shape
+        self.dtype = value.dtype
 
     def zeros(self):
-        return anp.zeros(self.shape)
+        return anp.zeros(self.shape, dtype=self.dtype)
 
     def cast(self, value):
-        result = arraycast(value)
+        result = arraycast(value, self.dtype)
         if result.shape != self.shape:
             result = result.reshape(self.shape)
         return result
 
-def array_vspace(value):
-    try:
-        return array_dtype_mappings[value.dtype](value)
-    except KeyError:
-        raise TypeError("Can't differentiate wrt numpy arrays of dtype {0}".format(value.dtype))
-
 register_node(ArrayNode, np.ndarray)
-register_vspace(array_vspace, np.ndarray)
+register_vspace(ArrayVSpace, np.ndarray)
 array_types = set([anp.ndarray, ArrayNode])
 
 array_dtype_mappings = {}
 for float_type in [anp.float64, anp.float32, anp.float16]:
-    array_dtype_mappings[anp.dtype(float_type)] = ArrayVSpace
     register_node(FloatNode, float_type)
     register_vspace(FloatVSpace, float_type)
 
 @primitive
-def arraycast(val):
-    if isinstance(val, float):
-        return anp.array(val)
-    elif anp.iscomplexobj(val):
-        return anp.array(anp.real(val))
-    else:
-        raise TypeError("Can't cast type {0} (vspace {1}) to array".format(
-            type(val), vspace(val)))
-arraycast.defgrad(lambda g, ans, val: g)
+def arraycast(val, dtype):
+    return anp.array(val, dtype=dtype)
+arraycast.defgrad(lambda g, ans, val, dtype: g)
 
 # These numpy.ndarray methods are just refs to an equivalent numpy function
 nondiff_methods = ['all', 'any', 'argmax', 'argmin', 'argpartition',

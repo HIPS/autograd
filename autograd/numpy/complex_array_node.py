@@ -5,22 +5,6 @@ from autograd.core import (Node, FloatNode, VSpace, ComplexVSpace,
 from . import numpy_wrapper as anp
 from .numpy_extra import ArrayNode, ArrayVSpace, array_dtype_mappings, array_types
 
-class ComplexArrayVSpace(ArrayVSpace):
-    def zeros(self):
-        return anp.zeros(self.shape) + 0.0j
-
-    def cast(self, value):
-        result = complex_arraycast(value)
-        if result.shape != self.shape:
-            result = result.reshape(self.shape)
-        return result
-
 for complex_type in [anp.complex64, anp.complex128]:
-    array_dtype_mappings[anp.dtype(complex_type)] = ComplexArrayVSpace
     register_node(FloatNode, complex_type)
     register_vspace(ComplexVSpace, complex_type)
-
-@primitive
-def complex_arraycast(val):
-    return anp.array(val, dtype=complex)
-complex_arraycast.defgrad(lambda g, ans, val: g)
