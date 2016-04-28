@@ -50,9 +50,7 @@ def backward_pass(start_node, end_node, tape):
     end_node.tapes[tape].outgrads = [1.0]
 
     tape.complete = True
-    tape = copy.copy(tape)
-    while tape:
-        node = tape.pop()
+    for node in tape[::-1]:
         if node.outgrads:
             cur_outgrad = node.sum_outgrads()
             assert type(new_node(getval(cur_outgrad))) == node.node_type, \
