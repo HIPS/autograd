@@ -81,6 +81,26 @@ def select(condlist, choicelist, default=0):
     raw_array = np.select(list(condlist), list(choicelist), default=default)
     return array(list(raw_array.ravel())).reshape(raw_array.shape)
 
+def stack(arrays, axis=0):
+    # this code is basically copied from numpy/core/shape_base.py's stack
+
+    arrays = [array(arr) for arr in arrays]
+    if not arrays:
+        raise ValueErrpr('need at least one array to stack')
+
+    shapes = set(arr.shape for arr in arrays)
+    if len(shapes) != 1:
+        raise ValueError('all input arrays must have the same shape')
+
+    result_ndim = arrays[0].ndim + 1
+    if not -result_ndim <= axis < result_ndim:
+        raise IndexError('axis {0} out of bounds [-{1}, {1})'.format(axis, result_ndim))
+    if axis < 0:
+        axis += result_ndim
+
+    sl = (slice(None),) * axis + (None,)
+    return concatenate([arr[sl] for arr in arrays], axis=axis)
+
 # ----- Enable functions called using [] ----
 
 class r_class():
