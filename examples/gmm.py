@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 import autograd.numpy as np
 import autograd.numpy.random as npr
-from autograd import value_and_grad
+from autograd import grad, hessian_vector_product
 from scipy.optimize import minimize
 from autograd.scipy.misc import logsumexp
 import autograd.scipy.stats.multivariate_normal as mvn
@@ -74,5 +74,8 @@ if __name__ == '__main__':
         plt.draw()
         plt.pause(1.0/60.0)
 
-    minimize(value_and_grad(flattened_obj), flattened_init_params,
-             jac=True, method='CG', callback=callback)
+    minimize(flattened_obj, flattened_init_params,
+             jac=grad(flattened_obj),
+             hessp=hessian_vector_product(flattened_obj),
+             method='Newton-CG', callback=callback)
+

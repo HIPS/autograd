@@ -16,12 +16,12 @@ def probability_of_improvement(mean, std, max_so_far):
     return norm.cdf(max_so_far, mean, std)
 
 def expected_new_max(mean, std, max_so_far):
-    return max_so_far + \
+    return max_so_far - \
            (mean - max_so_far) * norm.cdf(mean, max_so_far, std) \
                          + std * norm.pdf(mean, max_so_far, std)
 
-def init_covariance_params(num_params, rs = npr.RandomState(0)):
-    return 0.1 * rs.randn(num_params) - 1
+def init_covariance_params(num_params):
+    return np.zeros(num_params)
 
 def defaultmax(x, default=-np.inf):
     if x.size == 0:
@@ -38,7 +38,8 @@ def bayesian_optimize(func, domain_min, domain_max, num_iters=20, callback=None)
     model_params = init_covariance_params(num_params)
 
     def optimize_gp_params(init_params, X, y):
-        objective = lambda params: -log_marginal_likelihood(params, X, y)
+        log_hyperprior = lambda params: np.sum(norm.logpdf(params, 0., 100.))
+        objective = lambda params: -log_marginal_likelihood(params, X, y) -log_hyperprior(params)
         return minimize(value_and_grad(objective), init_params, jac=True, method='CG').x
 
     def choose_next_point(domain_min, domain_max, acquisition_function, num_tries=15, rs=npr.RandomState(0)):
@@ -64,7 +65,7 @@ def bayesian_optimize(func, domain_min, domain_max, num_iters=20, callback=None)
     y = np.concatenate((y, np.reshape(np.array(func(X)), (1,))))
 
     for i in range(num_iters):
-        if i > 2:
+        if i > 1:
             print("Optimizing model parameters...")
             model_params = optimize_gp_params(model_params, X, y)
 

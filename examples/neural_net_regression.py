@@ -80,7 +80,7 @@ if __name__ == '__main__':
         plt.pause(1.0/60.0)
 
     rs = npr.RandomState(0)
-    init_params = 0.1 * rs.randn(num_weights)
+    init_params = 0.02 * rs.randn(num_weights)
 
     print("Optimizing network parameters...")
     optimized_params = adam(grad(objective), init_params,
