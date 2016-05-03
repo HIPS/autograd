@@ -149,10 +149,8 @@ def flatten(value):
         return np.concatenate((flattened_first, flattened_rest)), unflatten
 
     elif isinstance(getval(value), list):
-
         if not value:
             return np.array([]), lambda x : []
-
         flattened_first, unflatten_first = flatten(value[0])
         flattened_rest, unflatten_rest = flatten(value[1:])
         def unflatten(vector):
@@ -166,7 +164,7 @@ def flatten(value):
         unflatteners = []
         lengths = []
         keys = []
-        for k, v in value.iteritems():
+        for k, v in iteritems(value):
             cur_flattened, cur_unflatten = flatten(v)
             flattened.append(cur_flattened)
             unflatteners.append(cur_unflatten)
@@ -176,10 +174,10 @@ def flatten(value):
         def unflatten(vector):
             split_ixs = np.cumsum(lengths)
             pieces = np.split(vector, split_ixs)
-            unflattened = {key: unflattener(piece) for piece, unflattener, key in zip(pieces, unflatteners, keys)}
-            return unflattened
-        return np.concatenate(flattened), unflatten
+            return {key: unflattener(piece)
+                    for piece, unflattener, key in zip(pieces, unflatteners, keys)}
 
+        return np.concatenate(flattened), unflatten
 
     else:
         raise Exception("Don't know how to flatten type {}".format(type(value)))
