@@ -24,7 +24,7 @@ def sgd(grad, init_params, callback=None, num_iters=200, step_size=0.1, mass=0.9
         if callback: callback(unflatten(x), i, unflatten(g))
         velocity = mass * velocity - (1.0 - mass) * g
         x = x + step_size * velocity
-    return x
+    return unflatten(x)
 
 def rmsprop(grad, init_params, callback=None, num_iters=100,
             step_size=0.1, gamma=0.9, eps=10**-8):
@@ -37,7 +37,7 @@ def rmsprop(grad, init_params, callback=None, num_iters=100,
         if callback: callback(unflatten(x), i, unflatten(g))
         avg_sq_grad = avg_sq_grad * gamma + g**2 * (1 - gamma)
         x = x - step_size * g/(np.sqrt(avg_sq_grad) + eps)
-    return x
+    return unflatten(x)
 
 def adam(grad, init_params, callback=None, num_iters=100,
          step_size=0.001, b1=0.9, b2=0.999, eps=10**-8):
@@ -55,4 +55,4 @@ def adam(grad, init_params, callback=None, num_iters=100,
         mhat = m / (1 - b1**(i + 1))    # Bias correction.
         vhat = v / (1 - b2**(i + 1))
         x = x - step_size*mhat/(np.sqrt(vhat) + eps)
-    return x
+    return unflatten(x)

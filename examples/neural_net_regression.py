@@ -56,7 +56,7 @@ if __name__ == '__main__':
 
     # Implement a 3-hidden layer neural network.
     num_weights, predictions, logprob = \
-        make_nn_funs(layer_sizes=[1, 20, 20, 20, 1], nonlinearity=rbf)
+        make_nn_funs(layer_sizes=[1, 20, 20, 1], nonlinearity=rbf)
 
     inputs, targets = build_toy_dataset()
     objective = lambda weights, t: -logprob(weights, inputs, targets)

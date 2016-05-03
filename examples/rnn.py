@@ -1,77 +1,63 @@
+"""Implements the long-short term memory character model.
+This version vectorizes over multiple examples, but each string
+has a fixed length."""
+
 from __future__ import absolute_import
 from __future__ import print_function
 import autograd.numpy as np
 import autograd.numpy.random as npr
-from autograd import value_and_grad
-from autograd.util import quick_grad_check
-from scipy.optimize import minimize
+from autograd import grad
+from autograd.scipy.misc import logsumexp
 from os.path import dirname, join
 from builtins import range
+from optimizers import adam
 
-lstm_filename = join(dirname(__file__), 'lstm.py')
 
-class WeightsParser(object):
-    """A helper class to index into a parameter vector."""
-    def __init__(self):
-        self.idxs_and_shapes = {}
-        self.num_weights = 0
-
-    def add_shape(self, name, shape):
-        start = self.num_weights
-        self.num_weights += np.prod(shape)
-        self.idxs_and_shapes[name] = (slice(start, self.num_weights), shape)
-
-    def get(self, vect, name):
-        idxs, shape = self.idxs_and_shapes[name]
-        return np.reshape(vect[idxs], shape)
+### Helper functions #################
 
 def sigmoid(x):
     return 0.5*(np.tanh(x) + 1.0)   # Output ranges from 0 to 1.
 
-def activations(weights, *args):
-    cat_state = np.concatenate(args + (np.ones((args[0].shape[0],1)),), axis=1)
+def concat_and_multiply(weights, *args):
+    cat_state = np.hstack(args + (np.ones((args[0].shape[0], 1)),))
     return np.dot(cat_state, weights)
 
-def logsumexp(X, axis=1):
-    max_X = np.max(X)
-    return max_X + np.log(np.sum(np.exp(X - max_X), axis=axis, keepdims=True))
 
-def build_rnn(input_size, state_size, output_size):
-    """Builds functions to compute the output of an RNN."""
-    parser = WeightsParser()
-    parser.add_shape('init_hiddens', (1, state_size))
-    parser.add_shape('change',  (input_size + state_size + 1, state_size))
-    parser.add_shape('predict', (state_size + 1, output_size))
+### Define recurrent neural net #######
 
-    def update(input, hiddens, change_weights):
-        return np.tanh(activations(change_weights, input, hiddens))
+def create_rnn_params(input_size, state_size, output_size,
+                      param_scale=0.01, rs=npr.RandomState(0)):
+    return {'init hiddens': rs.randn(1, state_size) * param_scale,
+            'change':       rs.randn(input_size + state_size + 1, state_size) * param_scale,
+            'predict':      rs.randn(state_size + 1, output_size) * param_scale}
 
-    def hiddens_to_output_probs(predict_weights, hiddens):
-        output = activations(predict_weights, hiddens)
-        return output - logsumexp(output)     # Normalize log-probs.
+def rnn_predict(params, inputs):
+    def update_rnn(input, hiddens):
+        return np.tanh(concat_and_multiply(params['change'], input, hiddens))
 
-    def outputs(weights, inputs):
-        """Goes from right to left, updating the state."""
-        num_sequences = inputs.shape[1]
-        hiddens = np.repeat(parser.get(weights, 'init_hiddens'), num_sequences, axis=0)
-        change_weights    = parser.get(weights, 'change')
-        predict_weights   = parser.get(weights, 'predict')
+    def hiddens_to_output_probs(hiddens):
+        output = concat_and_multiply(params['predict'], hiddens)
+        return output - logsumexp(output, axis=1, keepdims=True)     # Normalize log-probs.
 
-        output = [hiddens_to_output_probs(predict_weights, hiddens)]
-        for input in inputs:  # Iterate over time steps.
-            hiddens = update(input, hiddens, change_weights)
-            output.append(hiddens_to_output_probs(predict_weights, hiddens))
-        return output
+    num_sequences = inputs.shape[1]
+    hiddens = np.repeat(params['init hiddens'], num_sequences, axis=0)
+    output = [hiddens_to_output_probs(hiddens)]
 
-    def log_likelihood(weights, inputs, targets):
-        logprobs = outputs(weights, inputs)
-        loglik = 0.0
-        num_time_steps, num_examples, _ = inputs.shape
-        for t in range(num_time_steps):
-            loglik += np.sum(logprobs[t] * targets[t])
-        return loglik / (num_time_steps * num_examples)
+    for input in inputs:  # Iterate over time steps.
+        hiddens = update_rnn(input, hiddens)
+        output.append(hiddens_to_output_probs(hiddens))
+    return output
 
-    return outputs, log_likelihood, parser.num_weights
+def rnn_log_likelihood(params, inputs, targets):
+    logprobs = rnn_predict(params, inputs)
+    loglik = 0.0
+    num_time_steps, num_examples, _ = inputs.shape
+    for t in range(num_time_steps):
+        loglik += np.sum(logprobs[t] * targets[t])
+    return loglik / (num_time_steps * num_examples)
+
+
+### Dataset setup ##################
 
 def string_to_one_hot(string, maxchar):
     """Converts an ASCII string to a one-of-k encoding."""
@@ -93,46 +79,41 @@ def build_dataset(filename, sequence_length, alphabet_size, max_lines=-1):
         seqs[:, ix, :] = string_to_one_hot(padded_line, alphabet_size)
     return seqs
 
+
 if __name__ == '__main__':
-    npr.seed(1)
-    input_size = output_size = 128   # The first 128 ASCII characters are the common ones.
-    state_size = 40
-    seq_length = 30
-    param_scale = 0.01
-    train_iters = 100
+    num_chars = 128
 
     # Learn to predict our own source code.
-    train_inputs = build_dataset(lstm_filename, seq_length, input_size, max_lines=60)
+    text_filename = join(dirname(__file__), 'rnn.py')
+    train_inputs = build_dataset(text_filename, sequence_length=30,
+                                 alphabet_size=num_chars, max_lines=60)
 
-    pred_fun, loglike_fun, num_weights = build_rnn(input_size, state_size, output_size)
+    init_params = create_rnn_params(input_size=128, output_size=128,
+                                    state_size=40, param_scale=0.01)
 
     def print_training_prediction(weights):
         print("Training text                         Predicted text")
-        logprobs = np.asarray(pred_fun(weights, train_inputs))
+        logprobs = np.asarray(rnn_predict(weights, train_inputs))
         for t in range(logprobs.shape[1]):
             training_text  = one_hot_to_string(train_inputs[:,t,:])
             predicted_text = one_hot_to_string(logprobs[:,t,:])
-            print(training_text.replace('\n', ' ') + "|" + predicted_text.replace('\n', ' '))
+            print(training_text.replace('\n', ' ') + "|" +
+                  predicted_text.replace('\n', ' '))
 
-    # Wrap function to only have one argument, for scipy.minimize.
-    def training_loss(weights):
-        return -loglike_fun(weights, train_inputs, train_inputs)
+    def training_loss(params, iter):
+        return -rnn_log_likelihood(params, train_inputs, train_inputs)
 
-    def callback(weights):
-        print("Train loss:", training_loss(weights))
-        print_training_prediction(weights)
+    def callback(weights, iter, gradient):
+        if iter % 10 == 0:
+            print("Iteration", iter, "Train loss:", training_loss(weights, 0))
+            print_training_prediction(weights)
 
-   # Build gradient of loss function using autograd.
-    training_loss_and_grad = value_and_grad(training_loss)
+    # Build gradient of loss function using autograd.
+    training_loss_grad = grad(training_loss)
 
-    init_weights = npr.randn(num_weights) * param_scale
-    # Check the gradients numerically, just to be safe
-    quick_grad_check(training_loss, init_weights)
-
-    print("Training LSTM...")
-    result = minimize(training_loss_and_grad, init_weights, jac=True, method='CG',
-                      options={'maxiter':train_iters}, callback=callback)
-    trained_weights = result.x
+    print("Training RNN...")
+    trained_params = adam(training_loss_grad, init_params, step_size=0.1,
+                          num_iters=1000, callback=callback)
 
     print()
     print("Generating text from RNN...")
@@ -140,7 +121,7 @@ if __name__ == '__main__':
     for t in range(20):
         text = ""
         for i in range(num_letters):
-            seqs = string_to_one_hot(text, output_size)[:, np.newaxis, :]
-            logprobs = pred_fun(trained_weights, seqs)[-1].ravel()
+            seqs = string_to_one_hot(text, num_chars)[:, np.newaxis, :]
+            logprobs = rnn_predict(trained_params, seqs)[-1].ravel()
             text += chr(npr.choice(len(logprobs), p=np.exp(logprobs)))
         print(text)

@@ -17,7 +17,7 @@ def make_gp_funs(cov_func, num_cov_params):
     def unpack_kernel_params(params):
         mean        = params[0]
         cov_params  = params[2:]
-        noise_scale = np.exp(params[1]) + 0.001
+        noise_scale = np.exp(params[1]) + 0.0001
         return mean, cov_params, noise_scale
 
     def predict(params, x, y, xstar):
