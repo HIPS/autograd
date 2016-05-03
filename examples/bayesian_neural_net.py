@@ -56,11 +56,11 @@ def build_toy_dataset(n_data=40, noise_std=0.1):
 if __name__ == '__main__':
 
     # Specify inference problem by its unnormalized log-posterior.
-    rbf = lambda x: norm.pdf(x, 0, 1)
-    sq = lambda x: np.sin(x)
+    rbf = lambda x: np.exp(-x**2)
+    relu = lambda x: np.maximum(x, 0.)
     num_weights, predictions, logprob = \
-        make_nn_funs(layer_sizes=[1, 10, 10, 1], L2_reg=0.01,
-                     noise_variance = 0.01, nonlinearity=rbf)
+        make_nn_funs(layer_sizes=[1, 20, 20, 1], L2_reg=0.1,
+                     noise_variance=0.01, nonlinearity=rbf)
 
     inputs, targets = build_toy_dataset()
     log_posterior = lambda weights, t: logprob(weights, inputs, targets)
@@ -71,7 +71,7 @@ if __name__ == '__main__':
                                         num_samples=20)
 
     # Set up figure.
-    fig = plt.figure(figsize=(8,8), facecolor='white')
+    fig = plt.figure(figsize=(12, 8), facecolor='white')
     ax = fig.add_subplot(111, frameon=False)
     plt.ion()
     plt.show(block=False)

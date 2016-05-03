@@ -56,7 +56,7 @@ if __name__ == '__main__':
 
     # Implement a 3-hidden layer neural network.
     num_weights, predictions, logprob = \
-        make_nn_funs(layer_sizes=[1, 20, 20, 20, 1], nonlinearity=rbf)
+        make_nn_funs(layer_sizes=[1, 20, 20, 1], nonlinearity=rbf)
 
     inputs, targets = build_toy_dataset()
     objective = lambda weights, t: -logprob(weights, inputs, targets)
@@ -80,7 +80,7 @@ if __name__ == '__main__':
         plt.pause(1.0/60.0)
 
     rs = npr.RandomState(0)
-    init_params = 0.1 * rs.randn(num_weights)
+    init_params = 0.02 * rs.randn(num_weights)
 
     print("Optimizing network parameters...")
     optimized_params = adam(grad(objective), init_params,

@@ -6,7 +6,6 @@ from autograd.convenience_wrappers import value_and_grad as vgrad
 from functools import partial
 from os.path import join, dirname
 import string
-import sys
 
 
 def EM(init_params, data, callback=None):

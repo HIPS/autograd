@@ -6,6 +6,8 @@
 # In this example, we optimize X and the hyperparameters of the GP, but
 # we integrate over all possible functions f.
 #
+# Normally the observed data would be high-dimensional.
+#
 # David Duvenaud (duvenaud@gmail.com)
 
 
@@ -20,19 +22,7 @@ from scipy.optimize import minimize
 from autograd.scipy.stats import norm
 
 from gaussian_process import make_gp_funs, rbf_covariance
-
-
-def make_pinwheel_data(num_classes, num_per_class, rate=2.0, noise_std=0.001):
-    spoke_angles = np.linspace(0, 2*np.pi, num_classes+1)[:-1]
-
-    rs = npr.RandomState(0)
-    x = np.linspace(0.1, 1, num_per_class)
-    xs = np.concatenate([rate *x * np.cos(angle + x * rate) + noise_std * rs.randn(num_per_class)
-                         for angle in spoke_angles])
-    ys = np.concatenate([rate *x * np.sin(angle + x * rate) + noise_std * rs.randn(num_per_class)
-                         for angle in spoke_angles])
-    return np.concatenate([np.expand_dims(xs, 1), np.expand_dims(ys,1)], axis=1)
-
+from data import make_pinwheel
 
 if __name__ == '__main__':
 
@@ -44,7 +34,8 @@ if __name__ == '__main__':
         make_gp_funs(rbf_covariance, num_cov_params=latent_dimension + 1)
     total_gp_params = data_dimension * params_per_gp
 
-    data = make_pinwheel_data(5, 40)
+    data = make_pinwheel(radial_std=0.3, tangential_std=0.05, num_classes=3,
+                         num_per_class=30, rate=0.4)
     datalen = data.shape[0]
 
     num_latent_params = datalen * latent_dimension

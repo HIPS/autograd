@@ -2,7 +2,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 import autograd.numpy as np
 import itertools as it
-from autograd.core import grad, safe_type
+from autograd.core import grad, safe_type, getval
 from copy import copy
 from autograd.numpy.use_gpu_numpy import use_gpu_numpy
 from autograd.container_types import ListNode, TupleNode, make_tuple
@@ -125,3 +125,72 @@ def base_class(t):
         return equivalence_class[t]
     else:
         return t
+
+def flatten(value):
+    """value can be any nesting of tuples, arrays, dicts.
+       returns 1D numpy array and an unflatten function."""
+    if isinstance(getval(value), np.ndarray):
+        def unflatten(vector):
+            return np.reshape(vector, value.shape)
+        return np.ravel(value), unflatten
+
+    elif isinstance(getval(value), float):
+        return np.array([value]), lambda x : x[0]
+
+    elif isinstance(getval(value), tuple):
+        if not value:
+            return np.array([]), lambda x : ()
+        flattened_first, unflatten_first = flatten(value[0])
+        flattened_rest, unflatten_rest = flatten(value[1:])
+        def unflatten(vector):
+            N = len(flattened_first)
+            return (unflatten_first(vector[:N]),) + unflatten_rest(vector[N:])
+
+        return np.concatenate((flattened_first, flattened_rest)), unflatten
+
+    elif isinstance(getval(value), list):
+
+        if not value:
+            return np.array([]), lambda x : []
+
+        flattened_first, unflatten_first = flatten(value[0])
+        flattened_rest, unflatten_rest = flatten(value[1:])
+        def unflatten(vector):
+            N = len(flattened_first)
+            return [unflatten_first(vector[:N])] + unflatten_rest(vector[N:])
+
+        return np.concatenate((flattened_first, flattened_rest)), unflatten
+
+    elif isinstance(getval(value), dict):
+        flattened = []
+        unflatteners = []
+        lengths = []
+        keys = []
+        for k, v in value.iteritems():
+            cur_flattened, cur_unflatten = flatten(v)
+            flattened.append(cur_flattened)
+            unflatteners.append(cur_unflatten)
+            lengths.append(len(cur_flattened))
+            keys.append(k)
+
+        def unflatten(vector):
+            split_ixs = np.cumsum(lengths)
+            pieces = np.split(vector, split_ixs)
+            unflattened = {key: unflattener(piece) for piece, unflattener, key in zip(pieces, unflatteners, keys)}
+            return unflattened
+        return np.concatenate(flattened), unflatten
+
+
+    else:
+        raise Exception("Don't know how to flatten type {}".format(type(value)))
+
+
+def flatten_func(func, example):
+    """Flattens both the inputs to a function, and the outputs."""
+    flattened_example, unflatten = flatten(example)
+
+    def flattened_func(flattened_params, *args, **kwargs):
+        output = func(unflatten(flattened_params), *args, **kwargs)
+        flattened_output, _ = flatten(output)
+        return flattened_output
+    return flattened_func, unflatten, flattened_example
