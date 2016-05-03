@@ -12,28 +12,28 @@ import warnings
 
 def make_jvp(fun, argnum=0):
     def jvp(*args, **kwargs):
-        start_node, end_node, tape = forward_pass(fun, args, kwargs, argnum)
-        tape.active = False
-        if not isnode(end_node) or tape not in end_node.tapes:
+        start_node, end_node = forward_pass(fun, args, kwargs, argnum)
+        start_node.active = False
+        if not isnode(end_node) or start_node not in end_node.progenitors:
             warnings.warn("Output seems independent of input.")
             return lambda g : start_node.vspace.zeros(), end_node
 
-        return lambda g : backward_pass(g, end_node, tape), end_node
+        return lambda g : backward_pass(g, end_node, start_node), end_node
     return jvp
 
 def forward_pass(fun, args, kwargs, argnum=0):
-    tape = CalculationTape()
     args = list(args)
-    start_node = add_tape(args[argnum], tape)
+    start_node = new_progenitor(args[argnum])
     args[argnum] = start_node
     try: end_node = fun(*args, **kwargs)
     except Exception as e: add_extra_error_message(e)
-    return start_node, end_node, tape
+    return start_node, end_node
 
-def backward_pass(g, end_node, tape):
+def backward_pass(g, end_node, start_node):
     outgrads = defaultdict(list)
     outgrads[end_node] = [cast_like(end_node.vspace, g)]
-    for node in tape[::-1]:
+    tape = toposort(end_node, start_node)
+    for node in tape:
         if node not in outgrads: continue
         cur_outgrad = vsum(node.vspace, *outgrads[node])
         assert_vspace_match(cur_outgrad, node)
@@ -56,18 +56,18 @@ class primitive(object):
 
     def __call__(self, *args, **kwargs):
         argvals = list(args)
-        tapes = set()
+        progenitors = set()
         parents = []
         for argnum, arg in enumerate(args):
             if isnode(arg):
                 argvals[argnum] = arg.value
                 if argnum in self.zero_grads: continue
                 parents.append((argnum, arg))
-                tapes.update(t for t in arg.tapes if t.active)
+                progenitors.update(t for t in arg.progenitors if t.active)
 
         result_value = self.fun(*argvals, **kwargs)
-        if tapes:
-            return new_node(result_value, (self, args, kwargs, parents), tapes)
+        if progenitors:
+            return new_node(result_value, (self, args, kwargs, parents), progenitors)
         else:
             return result_value
 
@@ -105,14 +105,13 @@ class nograd_primitive(primitive):
         argvals = map(getval, args)
         return self.fun(*argvals, **kwargs)
 
-def add_tape(x, tape):
-    all_tapes = set([tape])
+def new_progenitor(x):
     if isnode(x):
-        all_tapes.update(x.tapes)
-        return new_node(x.value, (identity, (x,), {}, [(0, x)]), all_tapes)
+        node = new_node(x.value, (identity, (x,), {}, [(0, x)]), x.progenitors)
     else:
-        return new_node(x,       (identity, (x,), {}, []      ), all_tapes)
-
+        node = new_node(x,       (identity, (x,), {}, []      ), set())
+    node.progenitors = node.progenitors | {node}
+    return node
 
 def vsum(vspace, *args):
     if len(args) == 1 and type(getval(args[0])) != SparseObject:
@@ -136,14 +135,13 @@ def identity(x) : return x
 identity.defgrad(lambda g, ans, x : g)
 
 class Node(object):
-    __slots__ = ['value', 'recipe', 'tapes', 'vspace']
-    def __init__(self, value, recipe, tapes):
+    __slots__ = ['value', 'recipe', 'progenitors', 'vspace', 'active']
+    def __init__(self, value, recipe, progenitors):
         self.value = value
         self.recipe = recipe
-        self.tapes = tapes
-        for tape in tapes:
-            tape.append(self)
+        self.progenitors = progenitors
         self.vspace = vspace(value)
+        self.active = True
 
     def __bool__(self):
         return bool(self.value)
@@ -151,8 +149,36 @@ class Node(object):
     __nonzero__ = __bool__
 
     def __str__(self):
-        return "Autograd {0} with value {1} and {2} tape(s)".format(
-            type(self).__name__, str(self.value), len(self.tapes))
+        return "Autograd {0} with value {1} and {2} progenitors(s)".format(
+            type(self).__name__, str(self.value), len(self.progenitors))
+
+
+def toposort(end_node, start_node):
+    def relevant_parents(node):
+        return [parent for _, parent in node.recipe[3] if start_node in parent.progenitors]
+
+    child_counts = {}
+    stack = [end_node]
+    while stack:
+        node = stack.pop()
+        if node in child_counts:
+            child_counts[node] += 1
+        else:
+            child_counts[node] = 1
+            stack.extend(relevant_parents(node))
+
+    sorted_nodes = []
+    childless_nodes = [end_node]
+    while childless_nodes:
+        node = childless_nodes.pop()
+        sorted_nodes.append(node)
+        for parent in relevant_parents(node):
+            if child_counts[parent] == 1:
+                childless_nodes.append(parent)
+            else:
+                child_counts[parent] -= 1
+
+    return sorted_nodes
 
 class VSpace(object):
     __slots__ = []
@@ -183,9 +209,9 @@ def register_node(node_type, value_type):
 def register_vspace(vspace_maker, value_type):
     vspace_mappings[value_type] = vspace_maker
 
-def new_node(value, recipe, tapes):
+def new_node(value, recipe, progenitors):
     try:
-        return node_type_mappings[type(value)](value, recipe, tapes)
+        return node_type_mappings[type(value)](value, recipe, progenitors)
     except KeyError:
         raise TypeError("Can't differentiate w.r.t. type {}".format(type(value)))
 
@@ -222,13 +248,6 @@ cast.defgrad(lambda g, *args: g)
 
 def isnode(x): return type(x) in node_types
 getval = lambda x : x.value if isnode(x) else x
-
-class CalculationTape(list):
-    def __init__(self):
-        self.active = True
-
-    def __hash__(self):
-        return id(self)
 
 class FloatNode(Node): pass
 
