@@ -1,7 +1,6 @@
-from flatten import flatten
 import autograd.numpy as np
 import autograd.numpy.random as npr
-
+from autograd.util import flatten
 
 def test_flatten():
     val = (npr.randn(4), [npr.randn(3,4), 2.5], (), (2.0, [1.0, npr.randn(2)]))
