@@ -33,15 +33,17 @@ def forward_pass(fun, args, kwargs, argnum=0):
 def backward_pass(g, end_node, start_node):
     outgrads = defaultdict(list)
     outgrads[end_node] = [cast_like(end_node.vspace, g)]
+    assert_vspace_match(outgrads[end_node][0], end_node.vspace, None)
     tape = toposort(end_node, start_node)
     for node in tape:
         if node not in outgrads: continue
         cur_outgrad = vsum(node.vspace, *outgrads[node])
-        assert_vspace_match(cur_outgrad, node)
         function, args, kwargs, parents = node.recipe
         for argnum, parent in parents:
             raw_outgrad = function.grad(argnum, cur_outgrad, node, args, kwargs)
-            outgrads[parent].append(cast_like(parent.vspace, raw_outgrad))
+            outgrad = cast_like(parent.vspace, raw_outgrad)
+            outgrads[parent].append(outgrad)
+            assert_vspace_match(outgrad, parent.vspace, function)
     return cur_outgrad
 
 active_progenitors = set()
@@ -96,6 +98,9 @@ class primitive(object):
     def defgrad_is_zero(self, argnums=(0,)):
         for argnum in argnums:
             self.zero_grads.add(argnum)
+
+    def __repr__(self):
+        return self.__name__
 
     if sys.version_info >= (3,):
         def __get__(self, obj, objtype):
@@ -199,7 +204,7 @@ class VSpace(object):
         return type(self) == type(other) and self.__dict__ == other.__dict__
 
     def __repr__(self):
-        return "{}___{}".format(type(self), self.__dict__)
+        return "{}_{}".format(type(self).__name__, self.__dict__)
 
 node_type_mappings = {}
 vspace_mappings = {}
@@ -239,10 +244,11 @@ def cast_like(target_vspace, x):
     else:
         return target_vspace.cast(x)
 
-def assert_vspace_match(x, node):
-    assert node.vspace == vspace(getval(x)), \
-        "Type is {} (vspace {}). Should be like {} (vspace {})".format(
-            type(x), vspace(getval(x)), type(node.value), node.vspace)
+def assert_vspace_match(x, expected_vspace, fun):
+    assert expected_vspace == vspace(getval(x)), \
+        "\nGrad of {} returned unexpected vector space" \
+        "\nVector space is {}" \
+        "\nExpected        {}".format(fun, vspace(getval(x)), expected_vspace)
 
 @primitive
 def cast(value, caster):
