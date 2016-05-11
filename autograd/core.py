@@ -206,6 +206,9 @@ class VSpace(object):
     def __repr__(self):
         return "{}_{}".format(type(self).__name__, self.__dict__)
 
+def flatten(value):
+    return vspace(value).flatten(value)
+
 node_type_mappings = {}
 vspace_mappings = {}
 node_types = set()
@@ -269,11 +272,19 @@ def cast_to_float(x):
     return float(x)
 
 class FloatVSpace(VSpace):
+    size = 1
+
     def zeros(self):
         return 0.0
 
     def cast(self, value):
         return cast(value, cast_to_float)
+
+    def flatten(self, value):
+        return np.array([value])
+
+    def unflatten(self, value):
+        return value[0]
 
 register_vspace(FloatVSpace, float)
 
