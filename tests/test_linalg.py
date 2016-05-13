@@ -201,6 +201,17 @@ def test_eigvalh_upper_broadcasting():
     check_symmetric_matrix_grads(fun, hmat)
     check_symmetric_matrix_grads(d_fun, hmat)
 
+def test_eigvalh_complex():
+    def fun(x):
+        w, v = np.linalg.eigh(x)
+        return to_scalar(w) + to_scalar(v)
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    D = 6
+    mat = npr.randn(D, D) + npr.randn(D, D)*1j
+    hmat = np.dot(mat.T, mat)
+    check_symmetric_matrix_grads(fun, hmat)
+    check_symmetric_matrix_grads(d_fun, hmat)
+
 def test_cholesky():
     fun = lambda A: to_scalar(np.linalg.cholesky(A))
     fun2 = lambda A: to_scalar(grad(fun)(A))
