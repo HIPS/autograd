@@ -10,7 +10,10 @@ def test_flatten():
     assert np.all(vect == vect_2)
 
 def test_flatten_dict():
-    val = {'k':npr.random((10,10)), 'k2':npr.random((10,10)), 'k3':3.0, 'k4':[1.0, 4.0, 7.0, 9.0]}
+    val = {'k':  npr.random((4, 4)),
+           'k2': npr.random((3, 3)),
+           'k3': 3.0,
+           'k4': [1.0, 4.0, 7.0, 9.0]}
 
     vect, unflatten = flatten(val)
     val_recovered = unflatten(vect)

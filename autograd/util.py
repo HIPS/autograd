@@ -1,13 +1,16 @@
 from __future__ import absolute_import
 from __future__ import print_function
-import autograd.numpy as np
-import itertools as it
-from autograd.core import grad, safe_type, getval
 from copy import copy
+import itertools as it
+from operator import itemgetter
+from future.utils import iteritems
+from builtins import map, range, zip
+
+import autograd.numpy as np
+from autograd.core import grad, safe_type, getval
 from autograd.numpy.use_gpu_numpy import use_gpu_numpy
 from autograd.container_types import ListNode, TupleNode, make_tuple
-from builtins import map, range, zip
-from future.utils import iteritems
+
 
 if use_gpu_numpy():
     garray_obj = np.garray
@@ -164,7 +167,7 @@ def flatten(value):
         unflatteners = []
         lengths = []
         keys = []
-        for k, v in iteritems(value):
+        for k, v in sorted(iteritems(value), key=itemgetter(0)):
             cur_flattened, cur_unflatten = flatten(v)
             flattened.append(cur_flattened)
             unflatteners.append(cur_unflatten)
