@@ -192,5 +192,10 @@ def test_hstack_3d(): combo_check(np.hstack, [0], [R(2, 3, 4), (R(2, 1, 4), R(2,
 
 def test_stack_1d():  combo_check(np.stack,  [0], [(R(2),), (R(2), R(2))], axis=[0, 1])
 
+def test_row_stack_1d(): combo_check(np.row_stack, [0], [R(2), (R(2), R(2))])
+def test_row_stack_2d(): combo_check(np.row_stack, [0], [R(2, 3), (R(2, 4), R(1, 4))])
+def test_column_stack_1d(): combo_check(np.column_stack, [0], [R(2), (R(2), R(2))])
+def test_column_stack_2d(): combo_check(np.column_stack, [0], [R(2, 2), (R(2, 2), R(2, 2))])
+
 def test_select(): combo_check(np.select, [1], [[R(3,4,5) > 0, R(3,4,5) > 0, R(3,4,5) > 0]],
                                                [[R(3,4,5),     R(3,4,5),     R(3,4,5)]], default=[0.0, 1.1])

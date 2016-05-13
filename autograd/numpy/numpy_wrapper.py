@@ -46,12 +46,21 @@ wrap_namespace(np.__dict__, globals())
 def concatenate_args(axis, *args):
     return np.concatenate(args, axis).view(ndarray)
 concatenate = lambda arr_list, axis=0 : concatenate_args(axis, *arr_list)
-vstack = lambda tup: concatenate([atleast_2d(_m) for _m in tup], axis=0)
+vstack = row_stack = lambda tup: concatenate([atleast_2d(_m) for _m in tup], axis=0)
 def hstack(tup):
     arrs = [atleast_1d(_m) for _m in tup]
     if arrs[0].ndim == 1:
         return concatenate(arrs, 0)
     return concatenate(arrs, 1)
+
+def column_stack(tup):
+    arrays = []
+    for v in tup:
+        arr = array(v)
+        if arr.ndim < 2:
+            arr = array(arr, ndmin=2).T
+        arrays.append(arr)
+    return concatenate(arrays, 1)
 
 def array(A, *args, **kwargs):
     if isinstance(A, np.ndarray):
