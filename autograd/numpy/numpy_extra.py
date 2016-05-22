@@ -79,6 +79,7 @@ class ArrayNode(Node):
     def __ge__(self, other): return anp.greater_equal(self, other)
     def __lt__(self, other): return anp.less(self, other)
     def __le__(self, other): return anp.less_equal(self, other)
+    def __abs__(self): return anp.abs(self)
 
 def new_array_node(value, tapes):
     try:

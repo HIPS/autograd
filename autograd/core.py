@@ -301,7 +301,7 @@ else:
 
 differentiable_ops = ['__add__', '__sub__', '__mul__', '__pow__', '__mod__',
                       '__neg__', '__radd__', '__rsub__', '__rmul__', '__rpow__',
-                      '__rmod__', DIV, RDIV]
+                      '__rmod__', '__abs__', DIV, RDIV]
 
 nondifferentiable_ops = ['__eq__', '__ne__', '__gt__', '__ge__', '__lt__', '__le__',]
 for float_op in differentiable_ops + nondifferentiable_ops:
@@ -328,6 +328,9 @@ FloatNode.__dict__['__pow__'].defgrad(lambda ans, x, y : lambda g : g * y * x **
 FloatNode.__dict__['__pow__'].defgrad(lambda ans, x, y : lambda g : g * log(x) * x ** y, argnum=1)
 FloatNode.__dict__['__mod__'].defgrad(lambda ans, x, y : I)
 FloatNode.__dict__['__mod__'].defgrad(lambda ans, x, y : lambda g : -g * floor(x/y), argnum=1)
+replace_zero = lambda x, val: anp.where(x, x, val)
+FloatNode.__dict__['__abs__'].defgrad(
+    lambda ans, x: lambda g: replace_zero(anp.conj(x), 0.) / replace_zero(ans, 1.))
 
 log = primitive(math.log)
 log.defgrad(lambda ans, x : lambda g : g / x)
