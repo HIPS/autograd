@@ -306,6 +306,14 @@ def make_grad_np_cumsum(ans, x, axis=None):
         return lambda g: anp.reshape(anp.cumsum(g[::-1], axis)[::-1], shape)
 anp.cumsum.defgrad(make_grad_np_cumsum)
 
+def make_grad_inner(argnum, ans, A, B):
+    if anp.ndim(A) == 0 or anp.ndim(B) == 0:
+        axes = ([], [])
+    else:
+        axes = ([A.ndim - 1], [B.ndim - 1])
+    return make_grad_tensordot(argnum, ans, A, B, axes=axes)
+anp.inner.defgrads(make_grad_inner, [0, 1])
+
 def make_grad_dot(argnum, ans, A, B):
     if anp.ndim(A) == 0 or anp.ndim(B) == 0:
         axes = ([], [])
