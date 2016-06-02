@@ -322,6 +322,20 @@ def make_grad_dot(argnum, ans, A, B):
     return make_grad_tensordot(argnum, ans, A, B, axes=axes)
 anp.dot.defgrads(make_grad_dot, [0, 1])
 
+def make_grad_matmul(argnum, ans, A, B):
+    if anp.ndim(A) == 0 or anp.ndim(B) == 0:
+        raise ValueError("Scalar operands are not allowed, use '*' instead")
+    elif anp.ndim(A) == 1 or anp.ndim(B) == 1:
+        axes = ([A.ndim - 1], [max(0, B.ndim - 2)])
+        return make_grad_tensordot(argnum, ans, A, B, axes=axes)
+    else:
+        #TODO: Remove this after einsum() broadcasting is implemented
+        if anp.ndim(A) != anp.ndim(B) or A.shape[:-2] != B.shape[:-2]:
+            raise ValueError("matmul() broadcasting is not implemented")
+
+        return make_grad_einsum(argnum + 1, ans, ("...ij,...jk->...ik", A, B), None)
+anp.matmul.defgrads(make_grad_matmul, [0, 1])
+
 def make_grad_tensordot(argnum, ans, A, B, axes=2):
     if type(axes) is int:
         if axes > 0:

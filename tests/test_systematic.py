@@ -101,8 +101,15 @@ def test_inner(): combo_check(np.inner, [0, 1],
                             [1.5, R(3), R(2, 3)],
                             [0.3, R(3), R(4, 3)])
 def test_dot(): combo_check(np.dot, [0, 1],
-                            [1.5, R(3), R(2, 3)],
-                            [0.3, R(3), R(3, 4)])
+                            [1.5, R(3), R(2, 3), R(2, 2, 3)],
+                            [0.3, R(3), R(3, 4), R(2, 3, 4)])
+#TODO: Merge test_matmul_1 and test_matmul_2 after einsum() broadcasting is implemented
+def test_matmul_1(): combo_check(np.matmul, [0, 1],
+                                 [R(3), R(2, 3)],
+                                 [R(3), R(3, 4)])
+def test_matmul_2(): combo_check(np.matmul, [0, 1],
+                                 [R(2, 2, 3)],
+                                 [R(2, 3, 4)])
 def test_tensordot_1(): combo_check(np.tensordot, [0, 1],
                                     [R(1, 3), R(2, 3, 2)],
                                     [R(3),    R(3, 1),    R(3, 4, 2)],
