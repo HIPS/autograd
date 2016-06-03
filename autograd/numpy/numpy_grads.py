@@ -329,10 +329,6 @@ def make_grad_matmul(argnum, ans, A, B):
         axes = ([A.ndim - 1], [max(0, B.ndim - 2)])
         return make_grad_tensordot(argnum, ans, A, B, axes=axes)
     else:
-        #TODO: Remove this after einsum() broadcasting is implemented
-        if anp.ndim(A) != anp.ndim(B) or A.shape[:-2] != B.shape[:-2]:
-            raise ValueError("matmul() broadcasting is not implemented")
-
         return make_grad_einsum(argnum + 1, ans, ("...ij,...jk->...ik", A, B), None)
 anp.matmul.defgrads(make_grad_matmul, [0, 1])
 
@@ -443,13 +439,17 @@ def make_grad_einsum(argnum, ans, operands, kwargs):
         rest_of_ops = operands[:op_num] + operands[op_num + 1:]
         rest_of_subs = input_subs_list[:op_num] + input_subs_list[op_num + 1:]
         new_subscripts = ','.join([output_subs] + rest_of_subs) + '->' + subs_wrt
-        return lambda g: anp.einsum(new_subscripts, *((g,) + rest_of_ops))
+        return unbroadcast_einsum(ans, operands[op_num],
+                                  lambda g: anp.einsum(new_subscripts, *((g,) + rest_of_ops)),
+                                  subs_wrt)
     else:  # Using (op0, sublist0, op1, sublist1..., sublistout) convention.
         if len(operands) % 2 == 0:
             raise NotImplementedError("Need sublistout argument")
         operands = list(operands)
         rest_of_ops = [operands[-1]] + operands[:argnum] + operands[(argnum+2):-1] + [operands[argnum+1]]
-        return lambda g: anp.einsum(g, *rest_of_ops)
+        return unbroadcast_einsum(ans, operands[argnum],
+                                  lambda g: anp.einsum(g, *rest_of_ops),
+                                  operands[argnum + 1])
 
 anp.einsum.gradmaker = make_grad_einsum
 
@@ -479,14 +479,14 @@ anp.make_diagonal.defgrad(
 
 # ----- Handle broadcasting -----
 
-def unbroadcast(ans, x, gradfun):
+def unbroadcast(ans, x, gradfun, broadcast_idx=0):
     # x is the argument that we're differentiating with respect to.
     if isarray(x):
         shape = x.shape
         def new_fun(g):
             result = gradfun(g)
             while anp.ndim(result) > len(shape):
-                result = anp.sum(result, axis=0)
+                result = anp.sum(result, axis=broadcast_idx)
             for axis, size in enumerate(shape):
                 if size == 1:
                     result = anp.sum(result, axis=axis, keepdims=True)
@@ -498,3 +498,19 @@ def unbroadcast(ans, x, gradfun):
         return gradfun
     new_fun.__name__ = "unbroadcast_{0}".format(gradfun.__name__)
     return new_fun
+
+def unbroadcast_einsum(ans, x, gradfun, subscript):
+    if isinstance(subscript, string_types):
+        if '...' not in subscript:
+            return gradfun
+        elif subscript.endswith('...'):
+            return unbroadcast(ans, x, gradfun, -1)
+        else:
+            return unbroadcast(ans, x, gradfun, subscript.index('...'))
+    else:
+        if Ellipsis not in subscript:
+            return gradfun
+        elif subscript[-1] == Ellipsis:
+            return unbroadcast(ans, x, gradfun, -1)
+        else:
+            return unbroadcast(ans, x, gradfun, subscript.index(Ellipsis))
