@@ -503,6 +503,8 @@ def unbroadcast_einsum(ans, x, gradfun, subscript):
     if isinstance(subscript, string_types):
         if '...' not in subscript:
             return gradfun
+        elif subscript.startswith('...'):
+            return unbroadcast(ans, x, gradfun, 0)
         elif subscript.endswith('...'):
             return unbroadcast(ans, x, gradfun, -1)
         else:
@@ -510,6 +512,8 @@ def unbroadcast_einsum(ans, x, gradfun, subscript):
     else:
         if Ellipsis not in subscript:
             return gradfun
+        elif subscript[0] == Ellipsis:
+            return unbroadcast(ans, x, gradfun, 0)
         elif subscript[-1] == Ellipsis:
             return unbroadcast(ans, x, gradfun, -1)
         else:
