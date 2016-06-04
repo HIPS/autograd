@@ -103,13 +103,9 @@ def test_inner(): combo_check(np.inner, [0, 1],
 def test_dot(): combo_check(np.dot, [0, 1],
                             [1.5, R(3), R(2, 3), R(2, 2, 3)],
                             [0.3, R(3), R(3, 4), R(2, 3, 4)])
-#TODO: Merge test_matmul_1 and test_matmul_2 after einsum() broadcasting is implemented
-def test_matmul_1(): combo_check(np.matmul, [0, 1],
-                                 [R(3), R(2, 3)],
-                                 [R(3), R(3, 4)])
-def test_matmul_2(): combo_check(np.matmul, [0, 1],
-                                 [R(2, 2, 3)],
-                                 [R(2, 3, 4)])
+def test_matmul(): combo_check(np.matmul, [0, 1],
+                               [R(3), R(2, 3), R(2, 2, 3)],
+                               [R(3), R(3, 4), R(2, 3, 4)])
 def test_tensordot_1(): combo_check(np.tensordot, [0, 1],
                                     [R(1, 3), R(2, 3, 2)],
                                     [R(3),    R(3, 1),    R(3, 4, 2)],
@@ -150,14 +146,28 @@ def test_atleast_3d(): combo_check(np.atleast_3d, [0], [1.2, R(1), R(7), R(1,4),
 
 def test_einsum_transpose():  combo_check(np.einsum, [1],    ['ij->ji'], [R(1, 1), R(4,4), R(3,4)])
 def test_einsum_matmult():    combo_check(np.einsum, [1, 2], ['ij,jk->ik'], [R(2, 3)], [R(3,4)])
+def test_einsum_matmult_broadcast(): combo_check(np.einsum, [1, 2], ['...ij,...jk->...ik'],
+                                                 [R(2, 3), R(2, 2, 3)],
+                                                 [R(3, 4), R(2, 3, 4)])
 def test_einsum_covsum():     combo_check(np.einsum, [1, 2], ['ijk,lji->lki'], [R(3, 4, 4)], [R(4, 4, 3)])
-def test_einsum_ellipses():   combo_check(np.einsum, [1, 2], ['...jk,...lj->...lk',
-                                                              '...,...->...'], [R(3, 4, 4)], [R(3, 4, 4)])
+def test_einsum_ellipses(): combo_check(np.einsum, [1, 2], ['...jk,...lj->...lk', '...,...->...'],
+                                        [R(4, 4), R(3, 4, 4)],
+                                        [R(4, 4), R(3, 4, 4)])
+def test_einsum_ellipses_tail(): combo_check(np.einsum, [1, 2], ['jk...,lj...->lk...'],
+                                             [R(3, 2), R(3, 2, 4)],
+                                             [R(2, 3), R(2, 3, 4)])
+def test_einsum_ellipses_center(): combo_check(np.einsum, [1, 2], ['j...k,lj...->lk...'],
+                                               [R(2, 2), R(2, 2, 2)],
+                                               [R(2, 2), R(2, 2, 2)])
 def test_einsum_three_args(): combo_check(np.einsum, [1, 2], ['ijk,lji,lli->lki'],
                                           [R(3, 4, 4)], [R(4, 4, 3)], [R(4, 4, 3)])
 
 def test_einsum2_transpose():  combo_check(np.einsum, [0], [R(1, 1), R(4,4), R(3,4)], [(0,1)], [(1,0)])
 def test_einsum2_matmult():    combo_check(np.einsum, [0, 2], [R(2, 3)], [(0,1)], [R(3,4)], [(1,2)], [(0,2)])
+def test_einsum2_matmult_broadcast(): combo_check(np.einsum, [0, 2],
+                                                  [R(2, 3), R(2, 2, 3)], [(Ellipsis, 0, 1)],
+                                                  [R(3, 4), R(2, 3, 4)], [(Ellipsis, 1, 2)],
+                                                  [(Ellipsis, 0, 2)])
 def test_einsum2_covsum():     combo_check(np.einsum, [0, 2], [R(3, 4, 4)], [(0,1,2)], [R(4, 4, 3)], [(3,1,0)], [(3,2,0)])
 def test_einsum2_three_args(): combo_check(np.einsum, [0, 2],
                                           [R(3, 4, 4)], [(0,1,2)], [R(4, 4, 3)], [(3,1,0)], [R(4, 4, 3)], [(3,3,0)], [(3,2,0)])
