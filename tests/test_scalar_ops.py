@@ -150,11 +150,17 @@ def test_sqrt():
     check_grads(d_fun, 10.0*npr.rand())
 
 def test_power_arg0():
-    y = npr.randn()**2 + 1.0
-    fun = lambda x : np.power(x, y)
+    # the +1.'s here are to avoid regimes where numerical diffs fail
+    make_fun = lambda y: lambda x: np.power(x, y)
+    fun = make_fun(npr.randn()**2 + 1.)
     d_fun = grad(fun)
-    check_grads(fun, npr.rand()**2)
-    check_grads(d_fun, npr.rand()**2)
+    check_grads(fun, npr.rand()**2 + 1.)
+    check_grads(d_fun, npr.rand()**2 + 1.)
+
+    # test y == 0. as a special case, c.f. #116
+    fun = make_fun(0.)
+    assert grad(fun)(0.) == 0.
+    assert grad(grad(fun))(0.) == 0.
 
 def test_power_arg1():
     x = npr.randn()**2
