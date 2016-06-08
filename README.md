@@ -82,7 +82,7 @@ Just run `pip install autograd`
 ## Authors
 
 Autograd was written by [Dougal Maclaurin](http://users.physics.harvard.edu/~maclaurin/),
-[David Duvenaud](http://people.seas.harvard.edu/~dduvenaud/)
+[David Duvenaud](http://www.cs.toronto.edu/~duvenaud/)
 and [Matt Johnson](http://www.mit.edu/~mattjj/),
 and we're actively
 developing it. Please feel free to submit any bugs or feature requests.
