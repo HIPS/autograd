@@ -131,10 +131,16 @@ def test_tensordot_6(): combo_check(np.tensordot, [0, 1], [R(2,6)], [R(6,3)], ax
 def test_maximum(): combo_check(np.maximum, [0, 1],
                                [R(1), R(1,4), R(3, 4)],
                                [R(1), R(1,4), R(3, 4)])
+def test_fmax(): combo_check(np.fmax, [0, 1],
+                            [R(1), R(1,4), R(3, 4)],
+                            [R(1), R(1,4), R(3, 4)])
 
 def test_minimum(): combo_check(np.minimum, [0, 1],
                                [R(1), R(1,4), R(3, 4)],
                                [R(1), R(1,4), R(3, 4)])
+def test_fmin(): combo_check(np.fmin, [0, 1],
+                            [R(1), R(1,4), R(3, 4)],
+                            [R(1), R(1,4), R(3, 4)])
 
 def test_sort():       combo_check(np.sort, [0], [R(1), R(7)])
 def test_msort():     combo_check(np.msort, [0], [R(1), R(7)])
