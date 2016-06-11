@@ -89,6 +89,10 @@ anp.mod.defgrad(      lambda ans, x, y : unbroadcast(ans, x, I))
 anp.remainder.defgrad(lambda ans, x, y : unbroadcast(ans, x, I))
 anp.mod.defgrad(      lambda ans, x, y : unbroadcast(ans, y, lambda g : -g * anp.floor(x/y)), argnum=1)
 anp.remainder.defgrad(lambda ans, x, y : unbroadcast(ans, y, lambda g : -g * anp.floor(x/y)), argnum=1)
+anp.hypot.defgrad(lambda ans, x, y : unbroadcast(ans, x, lambda g : g * x / ans))
+anp.hypot.defgrad(lambda ans, x, y : unbroadcast(ans, y, lambda g : g * y / ans), argnum=1)
+anp.arctan2.defgrad(lambda ans, y, x : unbroadcast(ans, y, lambda g : g * x / (x ** 2 + y ** 2)))
+anp.arctan2.defgrad(lambda ans, y, x : unbroadcast(ans, x, lambda g : -g * y / (x ** 2 + y ** 2)), argnum=1)
 
 # ----- Simple grads -----
 
