@@ -72,6 +72,7 @@ def test_arctan2(): binary_ufunc_check(np.arctan2, test_complex=False)
 def test_ldexp(): unary_ufunc_check(lambda x: np.ldexp(x, 3), test_complex=False)
 def test_ldexp_neg(): unary_ufunc_check(lambda x: np.ldexp(x, -2), test_complex=False)
 def test_copysign(): binary_ufunc_check(np.copysign, test_complex=False)
+def test_nextafter(): binary_ufunc_check(np.nextafter, test_complex=False)
 
 def test_op_mul(): binary_ufunc_check(op.mul)
 def test_op_add(): binary_ufunc_check(op.add)

@@ -103,6 +103,8 @@ anp.arctan2.defgrad(lambda ans, y, x : unbroadcast(ans, x, lambda g : -g * y / (
 anp.ldexp.defgrad(lambda ans, x, y : unbroadcast(ans, x, lambda g : g * 2 ** y))
 anp.copysign.defgrad(lambda ans, x, y : unbroadcast(ans, x, lambda g : g * anp.sign(x * y)))
 anp.copysign.defgrad_is_zero(argnums=(1,))
+anp.nextafter.defgrad(lambda ans, x, y : unbroadcast(ans, x, I))
+anp.nextafter.defgrad_is_zero(argnums=(1,))
 
 # ----- Simple grads -----
 
