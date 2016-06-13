@@ -60,7 +60,8 @@ anp.isreal.defgrad_is_zero()
 anp.zeros_like.defgrad_is_zero()
 anp.ones_like.defgrad_is_zero()
 anp.rollaxis.defgrad_is_zero(argnums=(1,2))
-anp.nan_to_num.defgrad(lambda ans, x: lambda g: anp.where(anp.isfinite(x), g, 0.))
+anp.copysign.defgrad_is_zero(argnums=(1,))
+anp.nextafter.defgrad_is_zero(argnums=(1,))
 
 # ----- Binary ufuncs -----
 
@@ -91,20 +92,19 @@ anp.true_divide.defgrad(lambda ans, x, y : unbroadcast(ans, x, lambda g : g / y)
 anp.true_divide.defgrad(lambda ans, x, y : unbroadcast(ans, y, lambda g : - g * x / y**2), argnum=1)
 anp.mod.defgrad(      lambda ans, x, y : unbroadcast(ans, x, I))
 anp.remainder.defgrad(lambda ans, x, y : unbroadcast(ans, x, I))
-anp.fmod.defgrad(lambda ans, x, y : unbroadcast(ans, x, I))
+anp.fmod.defgrad(     lambda ans, x, y : unbroadcast(ans, x, I))
 anp.mod.defgrad(      lambda ans, x, y : unbroadcast(ans, y, lambda g : -g * anp.floor(x/y)), argnum=1)
 anp.remainder.defgrad(lambda ans, x, y : unbroadcast(ans, y, lambda g : -g * anp.floor(x/y)), argnum=1)
-anp.fmod.defgrad(lambda ans, x, y : unbroadcast(ans, y, lambda g : -g * anp.fix(x/y)), argnum=1)
-anp.hypot.defgrad(lambda ans, x, y : unbroadcast(ans, x, lambda g : g * x / ans))
-anp.hypot.defgrad(lambda ans, x, y : unbroadcast(ans, y, lambda g : g * y / ans), argnum=1)
-anp.arctan2.defgrad(lambda ans, y, x : unbroadcast(ans, y, lambda g : g * x / (x ** 2 + y ** 2)))
-anp.arctan2.defgrad(lambda ans, y, x : unbroadcast(ans, x, lambda g : -g * y / (x ** 2 + y ** 2)), argnum=1)
-# ldexp second argument must be an integer
-anp.ldexp.defgrad(lambda ans, x, y : unbroadcast(ans, x, lambda g : g * 2 ** y))
-anp.copysign.defgrad(lambda ans, x, y : unbroadcast(ans, x, lambda g : g * anp.sign(x * y)))
-anp.copysign.defgrad_is_zero(argnums=(1,))
+anp.fmod.defgrad(     lambda ans, x, y : unbroadcast(ans, y, lambda g : -g * anp.fix(x/y)), argnum=1)
+anp.hypot.defgrad(    lambda ans, x, y : unbroadcast(ans, x, lambda g : g * x / ans))
+anp.hypot.defgrad(    lambda ans, x, y : unbroadcast(ans, y, lambda g : g * y / ans), argnum=1)
+anp.arctan2.defgrad(  lambda ans, y, x : unbroadcast(ans, y, lambda g : g * x / (x ** 2 + y ** 2)))
+anp.arctan2.defgrad(  lambda ans, y, x : unbroadcast(ans, x, lambda g : -g * y / (x ** 2 + y ** 2)), argnum=1)
+anp.ldexp.defgrad(    lambda ans, x, y : unbroadcast(ans, x, lambda g : g * 2 ** y))
+anp.copysign.defgrad( lambda ans, x, y : unbroadcast(ans, x, lambda g : g * anp.sign(x * y)))
 anp.nextafter.defgrad(lambda ans, x, y : unbroadcast(ans, x, I))
-anp.nextafter.defgrad_is_zero(argnums=(1,))
+anp.nan_to_num.defgrad(lambda ans, x: lambda g: anp.where(anp.isfinite(x), g, 0.))
+
 
 # ----- Simple grads -----
 
