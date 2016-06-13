@@ -761,22 +761,6 @@ def test_index_dot_slices():
 #    check_grads(fun, A)
 #    check_grads(d_fun, A)
 
-#def test_cross_arg0():
-#    def fun(x, y): return to_scalar(np.cross(x, y))
-#    d_fun = lambda x : to_scalar(grad(fun)(x))
-#    x = npr.randn(5, 3)
-#    y = npr.randn(5, 3)
-#    check_grads(fun, x, y)
-#    check_grads(d_fun, x, y)
-
-#def test_cross_arg1():
-#    def fun(x, y): return to_scalar(np.cross(x, y))
-#    d_fun = lambda x : to_scalar(grad(fun, 1)(x))
-#    x = npr.randn(5, 3)
-#    y = npr.randn(5, 3)
-#    check_grads(fun, x, y)
-#    check_grads(d_fun, x, y)
-
 # TODO:
 # getitem
 
@@ -829,3 +813,10 @@ def test_nan_to_num():
 
     x = np.random.randn(4)
     check_grads(fun, x)
+
+def test_frexp():
+    fun = lambda x: to_scalar(np.frexp(x)[0])
+    d_fun = lambda x: to_scalar(grad(fun)(x))
+    A = 1.2 #np.random.rand(4,3) * 0.8 + 2.1
+    check_grads(fun, A)
+    #check_grads(d_fun, A)

@@ -60,7 +60,8 @@ anp.isreal.defgrad_is_zero()
 anp.zeros_like.defgrad_is_zero()
 anp.ones_like.defgrad_is_zero()
 anp.rollaxis.defgrad_is_zero(argnums=(1,2))
-anp.nan_to_num.defgrad(lambda ans, x: lambda g: anp.where(anp.isfinite(x), g, 0.))
+anp.copysign.defgrad_is_zero(argnums=(1,))
+anp.nextafter.defgrad_is_zero(argnums=(1,))
 
 # ----- Binary ufuncs -----
 
@@ -79,6 +80,10 @@ anp.maximum.defgrad(lambda ans, x, y : unbroadcast(ans, x, lambda g : g * (x == 
 anp.maximum.defgrad(lambda ans, x, y : unbroadcast(ans, y, lambda g : g * (y == ans)), argnum=1)
 anp.minimum.defgrad(lambda ans, x, y : unbroadcast(ans, x, lambda g : g * (x == ans)))
 anp.minimum.defgrad(lambda ans, x, y : unbroadcast(ans, y, lambda g : g * (y == ans)), argnum=1)
+anp.fmax.defgrad(lambda ans, x, y : unbroadcast(ans, x, lambda g : g * (x == ans)))
+anp.fmax.defgrad(lambda ans, x, y : unbroadcast(ans, y, lambda g : g * (y == ans)), argnum=1)
+anp.fmin.defgrad(lambda ans, x, y : unbroadcast(ans, x, lambda g : g * (x == ans)))
+anp.fmin.defgrad(lambda ans, x, y : unbroadcast(ans, y, lambda g : g * (y == ans)), argnum=1)
 anp.logaddexp.defgrad(lambda ans, x, y : unbroadcast(ans, x, lambda g : g * anp.exp(x-ans)))
 anp.logaddexp.defgrad(lambda ans, x, y : unbroadcast(ans, y, lambda g : g * anp.exp(y-ans)), argnum=1)
 anp.logaddexp2.defgrad(lambda ans, x, y : unbroadcast(ans, x, lambda g : g * 2**(x-ans)))
@@ -87,8 +92,19 @@ anp.true_divide.defgrad(lambda ans, x, y : unbroadcast(ans, x, lambda g : g / y)
 anp.true_divide.defgrad(lambda ans, x, y : unbroadcast(ans, y, lambda g : - g * x / y**2), argnum=1)
 anp.mod.defgrad(      lambda ans, x, y : unbroadcast(ans, x, I))
 anp.remainder.defgrad(lambda ans, x, y : unbroadcast(ans, x, I))
+anp.fmod.defgrad(     lambda ans, x, y : unbroadcast(ans, x, I))
 anp.mod.defgrad(      lambda ans, x, y : unbroadcast(ans, y, lambda g : -g * anp.floor(x/y)), argnum=1)
 anp.remainder.defgrad(lambda ans, x, y : unbroadcast(ans, y, lambda g : -g * anp.floor(x/y)), argnum=1)
+anp.fmod.defgrad(     lambda ans, x, y : unbroadcast(ans, y, lambda g : -g * anp.fix(x/y)), argnum=1)
+anp.hypot.defgrad(    lambda ans, x, y : unbroadcast(ans, x, lambda g : g * x / ans))
+anp.hypot.defgrad(    lambda ans, x, y : unbroadcast(ans, y, lambda g : g * y / ans), argnum=1)
+anp.arctan2.defgrad(  lambda ans, y, x : unbroadcast(ans, y, lambda g : g * x / (x ** 2 + y ** 2)))
+anp.arctan2.defgrad(  lambda ans, y, x : unbroadcast(ans, x, lambda g : -g * y / (x ** 2 + y ** 2)), argnum=1)
+anp.ldexp.defgrad(    lambda ans, x, y : unbroadcast(ans, x, lambda g : g * 2 ** y))
+anp.copysign.defgrad( lambda ans, x, y : unbroadcast(ans, x, lambda g : g * anp.sign(x * y)))
+anp.nextafter.defgrad(lambda ans, x, y : unbroadcast(ans, x, I))
+anp.nan_to_num.defgrad(lambda ans, x: lambda g: anp.where(anp.isfinite(x), g, 0.))
+
 
 # ----- Simple grads -----
 
@@ -151,14 +167,17 @@ anp.swapaxes.defgrad(lambda ans, x, axis1, axis2: lambda g : anp.swapaxes(g, axi
 anp.rollaxis.defgrad(lambda ans, a, axis, start=0: (lambda g : anp.rollaxis(g, start - 1, axis)) if start > axis
                                               else (lambda g : anp.rollaxis(g, start, axis + 1)))
 anp.real_if_close.defgrad(lambda ans, x : lambda g : g)
-anp.real.defgrad(  lambda ans, x   : lambda g : g)
-anp.imag.defgrad(  lambda ans, x   : lambda g : -1j * g)
-anp.conj.defgrad(  lambda ans, x   : lambda g : anp.conj(g))
-anp.angle.defgrad( lambda ans, x   : lambda g : g * anp.conj(x * 1j) / anp.abs(x)**2)
-anp.where.defgrad( lambda ans, c, x=None, y=None : lambda g : anp.where(c, g, anp.zeros(g.shape)), argnum=1)
-anp.where.defgrad( lambda ans, c, x=None, y=None : lambda g : anp.where(c, anp.zeros(g.shape), g), argnum=2)
-anp.cross.defgrad(lambda ans, a, b, axisa=-1, axisb=-1, axisc=-1, axis=None : lambda g : anp.cross(b, g, axisb, axisc, axisa, axis), argnum=0)
-anp.cross.defgrad(lambda ans, a, b, axisa=-1, axisb=-1, axisc=-1, axis=None : lambda g : anp.cross(g, a, axisc, axisa, axisb, axis), argnum=1)
+anp.real.defgrad( lambda ans, x   : lambda g : g)
+anp.imag.defgrad( lambda ans, x   : lambda g : -1j * g)
+anp.conj.defgrad( lambda ans, x   : lambda g : anp.conj(g))
+anp.angle.defgrad(lambda ans, x   : lambda g : g * anp.conj(x * 1j) / anp.abs(x)**2)
+anp.where.defgrad(lambda ans, c, x=None, y=None : lambda g : anp.where(c, g, anp.zeros(g.shape)), argnum=1)
+anp.where.defgrad(lambda ans, c, x=None, y=None : lambda g : anp.where(c, anp.zeros(g.shape), g), argnum=2)
+anp.cross.defgrad(lambda ans, a, b, axisa=-1, axisb=-1, axisc=-1, axis=None:
+                  lambda g : anp.cross(b, g, axisb, axisc, axisa, axis), argnum=0)
+anp.cross.defgrad(lambda ans, a, b, axisa=-1, axisb=-1, axisc=-1, axis=None:
+                  lambda g : anp.cross(g, a, axisc, axisa, axisb, axis), argnum=1)
+anp.frexp.defgrad(lambda ans, x: lambda g : g[0] * 2.0 ** -ans[1])
 
 # ----- Trickier grads -----
 
