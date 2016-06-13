@@ -167,14 +167,17 @@ anp.swapaxes.defgrad(lambda ans, x, axis1, axis2: lambda g : anp.swapaxes(g, axi
 anp.rollaxis.defgrad(lambda ans, a, axis, start=0: (lambda g : anp.rollaxis(g, start - 1, axis)) if start > axis
                                               else (lambda g : anp.rollaxis(g, start, axis + 1)))
 anp.real_if_close.defgrad(lambda ans, x : lambda g : g)
-anp.real.defgrad(  lambda ans, x   : lambda g : g)
-anp.imag.defgrad(  lambda ans, x   : lambda g : -1j * g)
-anp.conj.defgrad(  lambda ans, x   : lambda g : anp.conj(g))
-anp.angle.defgrad( lambda ans, x   : lambda g : g * anp.conj(x * 1j) / anp.abs(x)**2)
-anp.where.defgrad( lambda ans, c, x=None, y=None : lambda g : anp.where(c, g, anp.zeros(g.shape)), argnum=1)
-anp.where.defgrad( lambda ans, c, x=None, y=None : lambda g : anp.where(c, anp.zeros(g.shape), g), argnum=2)
-anp.cross.defgrad(lambda ans, a, b, axisa=-1, axisb=-1, axisc=-1, axis=None : lambda g : anp.cross(b, g, axisb, axisc, axisa, axis), argnum=0)
-anp.cross.defgrad(lambda ans, a, b, axisa=-1, axisb=-1, axisc=-1, axis=None : lambda g : anp.cross(g, a, axisc, axisa, axisb, axis), argnum=1)
+anp.real.defgrad( lambda ans, x   : lambda g : g)
+anp.imag.defgrad( lambda ans, x   : lambda g : -1j * g)
+anp.conj.defgrad( lambda ans, x   : lambda g : anp.conj(g))
+anp.angle.defgrad(lambda ans, x   : lambda g : g * anp.conj(x * 1j) / anp.abs(x)**2)
+anp.where.defgrad(lambda ans, c, x=None, y=None : lambda g : anp.where(c, g, anp.zeros(g.shape)), argnum=1)
+anp.where.defgrad(lambda ans, c, x=None, y=None : lambda g : anp.where(c, anp.zeros(g.shape), g), argnum=2)
+anp.cross.defgrad(lambda ans, a, b, axisa=-1, axisb=-1, axisc=-1, axis=None:
+                  lambda g : anp.cross(b, g, axisb, axisc, axisa, axis), argnum=0)
+anp.cross.defgrad(lambda ans, a, b, axisa=-1, axisb=-1, axisc=-1, axis=None:
+                  lambda g : anp.cross(g, a, axisc, axisa, axisb, axis), argnum=1)
+anp.frexp.defgrad(lambda ans, x: lambda g : g[0] * 2.0 ** -ans[1])
 
 # ----- Trickier grads -----
 
