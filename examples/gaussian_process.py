@@ -35,7 +35,7 @@ def make_gp_funs(cov_func, num_cov_params):
         mean, cov_params, noise_scale = unpack_kernel_params(params)
         cov_y_y = cov_func(cov_params, x, x) + noise_scale * np.eye(len(y))
         prior_mean = mean * np.ones(len(y))
-        return mvn.logpdf(y, prior_mean, cov_y_y)
+        return mvn.logpdf(y, prior_mean, cov_y_y, True)
 
     return num_cov_params + 2, predict, log_marginal_likelihood
 
