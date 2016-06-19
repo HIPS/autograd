@@ -66,7 +66,7 @@ if __name__ == '__main__':
 
     rs = npr.RandomState(0)
     true_weights = np.zeros((observed_dimension, latent_dimension))
-    for i in xrange(latent_dimension):
+    for i in range(latent_dimension):
         true_weights[:,i] = np.sin(np.linspace(0,4 + i*3.2, observed_dimension))
 
     true_latents, data = sample(true_weights, n_samples, true_noise_var, rs)

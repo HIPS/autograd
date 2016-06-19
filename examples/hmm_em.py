@@ -10,10 +10,10 @@ import string
 
 def EM(init_params, data, callback=None):
     def EM_update(params):
-        natural_params = map(np.log, params)
+        natural_params = list(map(np.log, params))
         loglike, E_stats = vgrad(log_partition_function)(natural_params, data)  # E step
         if callback: callback(loglike, params)
-        return map(normalize, E_stats)                                          # M step
+        return list(map(normalize, E_stats))                                    # M step
 
     def fixed_point(f, x0):
         x1 = f(x0)
@@ -56,7 +56,7 @@ def initialize_hmm_parameters(num_states, num_outputs):
 
 def build_dataset(filename, max_lines=-1):
     """Loads a text file, and turns each line into an encoded sequence."""
-    encodings = dict(map(reversed, enumerate(string.printable)))
+    encodings = dict(list(map(reversed, enumerate(string.printable))))
     digitize = lambda char: encodings[char] if char in encodings else len(encodings)
     encode_line = lambda line: np.array(list(map(digitize, line)))
     nonblank_line = lambda line: len(line) > 2
@@ -64,7 +64,7 @@ def build_dataset(filename, max_lines=-1):
     with open(filename) as f:
         lines = f.readlines()
 
-    encoded_lines = map(encode_line, filter(nonblank_line, lines)[:max_lines])
+    encoded_lines = list(map(encode_line, list(filter(nonblank_line, lines))[:max_lines]))
     num_outputs = len(encodings) + 1
 
     return encoded_lines, num_outputs
