@@ -8,6 +8,7 @@ import autograd.numpy.random as npr
 import autograd.scipy.signal
 from autograd import grad
 from builtins import range
+import data_mnist
 
 convolve = autograd.scipy.signal.convolve
 
@@ -161,13 +162,10 @@ if __name__ == '__main__':
 
     # Load and process MNIST data (borrowing from Kayak)
     print("Loading training data...")
-    import imp, urllib
+    import imp
     add_color_channel = lambda x : x.reshape((x.shape[0], 1, x.shape[1], x.shape[2]))
     one_hot = lambda x, K : np.array(x[:,None] == np.arange(K)[None, :], dtype=int)
-    source, _ = urllib.urlretrieve(
-        'https://raw.githubusercontent.com/HIPS/Kayak/master/examples/data.py')
-    data = imp.load_source('data', source).mnist()
-    train_images, train_labels, test_images, test_labels = data
+    train_images, train_labels, test_images, test_labels = data_mnist.mnist()
     train_images = add_color_channel(train_images) / 255.0
     test_images  = add_color_channel(test_images)  / 255.0
     train_labels = one_hot(train_labels, 10)

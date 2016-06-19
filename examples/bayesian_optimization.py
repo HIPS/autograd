@@ -50,9 +50,9 @@ def bayesian_optimize(func, domain_min, domain_max, num_iters=20, callback=None)
         def optimize_point(init_point):
             print('.', end='')
             result = minimize(grad_obj, x0=init_point, jac=True, method='L-BFGS-B',
-                              options={'maxiter': 10}, bounds=zip(domain_min, domain_max))
+                              options={'maxiter': 10}, bounds=list(zip(domain_min, domain_max)))
             return result.x, acquisition_function(result.x)
-        optimzed_points, optimized_values = zip(*map(optimize_point, init_points))
+        optimzed_points, optimized_values = list(zip(*list(map(optimize_point, init_points))))
         print()
         best_ix = np.argmax(optimized_values)
         return np.atleast_2d(optimzed_points[best_ix])

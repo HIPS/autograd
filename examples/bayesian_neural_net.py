@@ -13,7 +13,7 @@ from optimizers import adam
 def make_nn_funs(layer_sizes, L2_reg, noise_variance, nonlinearity=np.tanh):
     """These functions implement a standard multi-layer perceptron,
     vectorized over both training examples and weight samples."""
-    shapes = zip(layer_sizes[:-1], layer_sizes[1:])
+    shapes = list(zip(layer_sizes[:-1], layer_sizes[1:]))
     num_weights = sum((m+1)*n for m, n in shapes)
 
     def unpack_layers(weights):
