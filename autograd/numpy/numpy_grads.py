@@ -344,7 +344,7 @@ anp.dot.defgrads(make_grad_dot, [0, 1])
 def make_grad_matmul(argnum, ans, A, B):
     if anp.ndim(A) == 0 or anp.ndim(B) == 0:
         raise ValueError("Scalar operands are not allowed, use '*' instead")
-    elif anp.ndim(A) == 1 or anp.ndim(B) == 1:
+    elif anp.ndim(A) == 1 or anp.ndim(B) == 1 or (anp.ndim(A) == 2 and anp.ndim(B) == 2):
         axes = ([A.ndim - 1], [max(0, B.ndim - 2)])
         return make_grad_tensordot(argnum, ans, A, B, axes=axes)
     else:
