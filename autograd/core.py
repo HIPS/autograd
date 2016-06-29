@@ -66,7 +66,7 @@ def attach_name_and_doc(fun, argnum, opname):
         argnum=argnum)
     docstr = "{op} of function {fun} with respect to argument number {argnum}. " \
         "Has the same arguments as {fun} but the return value has type of " \
-        "argument {argnum}".format(op=opname, fun=getattr(fun, '__name__',
+        "argument {argnum}.".format(op=opname, fun=getattr(fun, '__name__',
         '[unknown name]'), argnum=argnum)
 
     def wrap(gradfun):
