@@ -160,9 +160,8 @@ if __name__ == '__main__':
     batch_size = 256
     num_epochs = 50
 
-    # Load and process MNIST data (borrowing from Kayak)
+    # Load and process MNIST data
     print("Loading training data...")
-    import imp
     add_color_channel = lambda x : x.reshape((x.shape[0], 1, x.shape[1], x.shape[2]))
     one_hot = lambda x, K : np.array(x[:,None] == np.arange(K)[None, :], dtype=int)
     train_images, train_labels, test_images, test_labels = data_mnist.mnist()
