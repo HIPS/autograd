@@ -1,4 +1,7 @@
 from __future__ import absolute_import
+import matplotlib.pyplot as plt
+import matplotlib.image
+
 import autograd.numpy as np
 import autograd.numpy.random as npr
 import data_mnist
@@ -14,6 +17,37 @@ def load_mnist():
     N_data = train_images.shape[0]
 
     return N_data, train_images, train_labels, test_images, test_labels
+
+
+def plot_images(images, ax, ims_per_row=5, padding=5, digit_dimensions=(28, 28),
+                cmap=matplotlib.cm.binary, vmin=None):
+    """Images should be a (N_images x pixels) matrix."""
+    N_images = images.shape[0]
+    N_rows = np.ceil(float(N_images) / ims_per_row)
+    pad_value = np.min(images.ravel())
+    concat_images = np.full(((digit_dimensions[0] + padding) * N_rows + padding,
+                             (digit_dimensions[1] + padding) * ims_per_row + padding), pad_value)
+    for i in range(N_images):
+        cur_image = np.reshape(images[i, :], digit_dimensions)
+        row_ix = i // ims_per_row
+        col_ix = i % ims_per_row
+        row_start = padding + (padding + digit_dimensions[0]) * row_ix
+        col_start = padding + (padding + digit_dimensions[1]) * col_ix
+        concat_images[row_start: row_start + digit_dimensions[0],
+                      col_start: col_start + digit_dimensions[1]] = cur_image
+    cax = ax.matshow(concat_images, cmap=cmap, vmin=vmin)
+    plt.xticks(np.array([]))
+    plt.yticks(np.array([]))
+    return cax
+
+def save_images(images, filename):
+    fig = plt.figure(1)
+    fig.clf()
+    ax = fig.add_subplot(111)
+    plot_images(images, ax)
+    fig.patch.set_visible(False)
+    ax.patch.set_visible(False)
+    plt.savefig(filename)
 
 
 def make_pinwheel(radial_std, tangential_std, num_classes, num_per_class, rate,
