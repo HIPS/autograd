@@ -39,19 +39,17 @@ def black_box_variational_inference(logprob, D, num_samples):
 
 if __name__ == '__main__':
 
-    # Specify an inference problem by its unnormalized log-posterior.
+    # Specify an inference problem by its unnormalized log-density.
     D = 2
-    def log_posterior(x, t):
-        """An example 2D intractable distribution:
-        a Gaussian evaluated at zero with a Gaussian prior on the log-variance."""
+    def log_density(x):
         mu, log_sigma = x[:, 0], x[:, 1]
-        prior       = norm.logpdf(log_sigma, 0, 1.35)
-        likelihood  = norm.logpdf(mu,        0, np.exp(log_sigma))
-        return prior + likelihood
+        sigma_density = norm.logpdf(log_sigma, 0, 1.35)
+        mu_density = norm.logpdf(mu, 0, np.exp(log_sigma))
+        return sigma_density + mu_density
 
     # Build variational objective.
     objective, gradient, unpack_params = \
-        black_box_variational_inference(log_posterior, D, num_samples=2000)
+        black_box_variational_inference(log_density, D, num_samples=2000)
 
     # Set up plotting code
     def plot_isocontours(ax, func, xlimits=[-2, 2], ylimits=[-4, 2], numticks=101):
@@ -74,7 +72,7 @@ if __name__ == '__main__':
         print("Iteration {} lower bound {}".format(t, -objective(params, t)))
 
         plt.cla()
-        target_distribution = lambda x : np.exp(log_posterior(x, t))
+        target_distribution = lambda x : np.exp(log_density(x, t))
         plot_isocontours(ax, target_distribution)
 
         mean, log_std = unpack_params(params)
