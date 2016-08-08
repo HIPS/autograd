@@ -10,7 +10,7 @@ from optimizers import adam
 from data import load_mnist
 
 
-def init_random_params(scale, rs=npr.RandomState(0)):
+def init_random_params(scale, layer_sizes, rs=npr.RandomState(0)):
     """Build a list of (weights, biases) tuples,
        one for each layer in the net."""
     return [(scale * rs.randn(m, n),   # weight matrix
@@ -57,7 +57,7 @@ if __name__ == '__main__':
     print("Loading training data...")
     N, train_images, train_labels, test_images,  test_labels = load_mnist()
 
-    init_params = init_random_params(param_scale)
+    init_params = init_random_params(param_scale, layer_sizes)
 
     num_batches = int(np.ceil(len(train_images) / batch_size))
     def batch_indices(iter):
