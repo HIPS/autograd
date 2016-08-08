@@ -1,5 +1,8 @@
 # Implements black-box variational inference, where the variational
 # distribution is a mixture of Gaussians.
+#
+# This trick was written up by Alex Graves in this note:
+# http://arxiv.org/abs/1607.05690
 
 from __future__ import absolute_import
 from __future__ import print_function
