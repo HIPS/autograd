@@ -113,8 +113,12 @@ if __name__ == '__main__':
     def log_density(x, t):
         mu, log_sigma = x[:, 0], x[:, 1]
         sigma_density = norm.logpdf(log_sigma, 0, 1.35)
-        mu_density = norm.logpdf(mu, 0, np.exp(log_sigma))
-        return sigma_density + mu_density
+        mu_density = norm.logpdf(mu, -0.5, np.exp(log_sigma))
+        sigma_density2 = norm.logpdf(log_sigma, 0.1, 1.35)
+        mu_density2 = norm.logpdf(mu, 0.5, np.exp(log_sigma))
+        return np.logaddexp(sigma_density + mu_density,
+                            sigma_density2 + mu_density2)
+
 
     init_var_params, elbo, variational_log_density, variational_sampler = \
         build_mog_bbsvi(log_density, num_samples=40, k=10)
