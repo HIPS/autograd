@@ -255,3 +255,12 @@ def test_solve_triangular_arg2_2d():
         def fun(B):
             return to_scalar(spla.solve_triangular(A, B, trans=trans, lower=lower))
         yield check_grads, fun, npr.randn(D, D-1)
+
+def test_svd_wide_2d():
+    def fun(x):
+        u, s, v = np.linalg.svd(x)
+        return to_scalar(u) + to_scalar(s) + to_scalar(v)
+    m = 3
+    n = 5
+    mat = npr.randn(m, n)
+    check_grads(fun, mat)

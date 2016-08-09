@@ -101,3 +101,51 @@ def make_grad_cholesky(L, A):
 
     return cholesky_grad
 cholesky.defgrad(make_grad_cholesky)
+
+
+def make_grad_svd(usv, a, full_matrices=True, compute_uv=True):
+    dot = anp.dot if a.ndim == 2 else partial(anp.einsum, '...ij,...jk->...ik')
+
+    u = usv[0]
+    s = usv[1]
+    v = T(usv[2])
+
+    m, n = a.shape[-2:]
+
+    if m < n and full_matrices:
+        # Shapes:
+        # a: wide (m, n)
+        # u: square (m, m)
+        # v: square (n, n)
+        assert u.shape == a.shape[:-2] + (m, m)
+        assert v.shape == a.shape[:-2] + (n, n)
+
+        # break off the 'redundant' columns of v
+        v_perp = v[..., :, m:]
+        v = v[..., :, :m]
+
+        # broadcastable identity array with shape [..., m, m]
+        i = anp.reshape(anp.eye(m), anp.concatenate((anp.ones(a.ndim - 2, dtype=int), (m, m))))
+
+        f = 1 / (s[..., anp.newaxis, :]**2 - s[..., :, anp.newaxis]**2 + i)
+
+        def svd_grad(g):
+            gu = g[0]
+            gs = g[1]
+            gv = T(g[2])[..., :, :m]
+
+            utgu = dot(T(u), gu)
+            vtgv = dot(T(v), gv)
+
+            t1 = (f * (utgu - T(utgu))) * s[..., anp.newaxis, :]
+            t1[..., range(m), range(m)] = gs
+            t2 = s[..., :, anp.newaxis] * (f * (vtgv - T(vtgv)))
+
+            t1 = dot(dot(u, t1 + t2), T(v))
+
+            t1 = t1 + dot(dot(dot(u / s[..., anp.newaxis, :], T(gv)), v_perp), T(v_perp))
+
+            return t1
+
+        return svd_grad
+svd.defgrad(make_grad_svd)
