@@ -118,13 +118,19 @@ else:
             raise TypeError("Can't cast type {0} to array".format(type(val)))
 arraycast.defgrad(lambda ans, val: lambda g : g)
 
+def _is_basic(idx):
+    return isinstance(idx, (int, slice)) or idx in [np.newaxis, Ellipsis]
+
 @primitive
 def primitive_sum_arrays(*arrays):
     new_array = type(new_array_node(arrays[0], [])).zeros_like(arrays[0]) # TODO: simplify this
     for array in arrays:
         if isinstance(array, SparseArray):
-            new_array[array.idx] += array.val
-            #np.add.at(new_array, array.idx, array.val)
+            if (_is_basic(array.idx) or 
+                isinstance(array.idx, tuple) and all(_is_basic(i) for i in array.idx)):
+                new_array[array.idx] += array.val
+            else:
+                np.add.at(new_array, array.idx, array.val)
         else:
             new_array += array
     return new_array
