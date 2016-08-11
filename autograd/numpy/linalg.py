@@ -5,7 +5,6 @@ from .numpy_wrapper import wrap_namespace
 from . import numpy_wrapper as anp
 from ..core import primitive
 from builtins import range
-import numpy.testing
 
 wrap_namespace(npla.__dict__, globals())
 
@@ -107,49 +106,93 @@ cholesky.defgrad(make_grad_cholesky)
 def make_grad_svd(usv, a, full_matrices=True, compute_uv=True):
     dot = anp.dot if a.ndim == 2 else partial(anp.einsum, '...ij,...jk->...ik')
 
-    u = usv[0]
-    s = usv[1]
-    v = T(usv[2])
+    if full_matrices:
+        return None
 
-    m, n = a.shape[-2:]
+    if compute_uv:
+        u = usv[0]
+        s = usv[1]
+        v = T(usv[2])
 
-    if m < n and not full_matrices:
-        # Shapes:
-        # a: wide (m, n)
-        # u: square (m, m)
-        # v: square (n, n)
-        assert u.shape[-2] == m and u.shape[-1] == m
-        assert v.shape[-2] == n and v.shape[-1] == m
+        m, n = a.shape[-2:]
 
-        # break off the 'redundant' columns of v
-        v = v[..., :, :m]
-        assert v.shape[-2] == n and v.shape[-1] == m
-
-        # broadcastable identity array with shape (1, 1, ..., 1, m, m)
-        i = anp.reshape(anp.eye(m), anp.concatenate((anp.ones(a.ndim - 2, dtype=int), (m, m))))
+        k = anp.min((m, n))
+        # broadcastable identity array with shape (1, 1, ..., 1, k, k)
+        i = anp.reshape(anp.eye(k), anp.concatenate((anp.ones(a.ndim - 2, dtype=int), (k, k))))
 
         f = 1 / (s[..., anp.newaxis, :]**2 - s[..., :, anp.newaxis]**2 + i)
 
+        if m < n:
+            def svd_grad(g):
+                gu = g[0]
+                gs = g[1]
+                gv = T(g[2])
+
+                utgu = dot(T(u), gu)
+                vtgv = dot(T(v), gv)
+
+                i_minus_vvt = (anp.reshape(anp.eye(n), anp.concatenate((anp.ones(a.ndim - 2, dtype=int), (n, n)))) -
+                               dot(v, T(v)))
+
+                t1 = (f * (utgu - T(utgu))) * s[..., anp.newaxis, :]
+                t1 = t1 + i * gs[..., :, anp.newaxis]
+                t1 = t1 + s[..., :, anp.newaxis] * (f * (vtgv - T(vtgv)))
+
+                t1 = dot(dot(u, t1), T(v))
+
+                t1 = t1 + dot(dot(u / s[..., anp.newaxis, :], T(gv)), i_minus_vvt)
+
+                return t1
+
+        elif m == n:
+            def svd_grad(g):
+                gu = g[0]
+                gs = g[1]
+                gv = T(g[2])
+
+                utgu = dot(T(u), gu)
+                vtgv = dot(T(v), gv)
+
+                t1 = (f * (utgu - T(utgu))) * s[..., anp.newaxis, :]
+                t1 = t1 + i * gs[..., :, anp.newaxis]
+                t1 = t1 + s[..., :, anp.newaxis] * (f * (vtgv - T(vtgv)))
+
+                t1 = dot(dot(u, t1), T(v))
+
+                return t1
+
+        elif m > n:
+            def svd_grad(g):
+                gu = g[0]
+                gs = g[1]
+                gv = T(g[2])
+
+                utgu = dot(T(u), gu)
+                vtgv = dot(T(v), gv)
+
+                i_minus_uut = (anp.reshape(anp.eye(m), anp.concatenate((anp.ones(a.ndim - 2, dtype=int), (m, m)))) -
+                               dot(u, T(u)))
+
+                t1 = (f * (utgu - T(utgu))) * s[..., anp.newaxis, :]
+                t1 = t1 + i * gs[..., :, anp.newaxis]
+                t1 = t1 + s[..., :, anp.newaxis] * (f * (vtgv - T(vtgv)))
+
+                t1 = dot(dot(u, t1), T(v))
+
+                t1 = t1 + dot(i_minus_uut, dot(gu, T(v) / s[..., :, anp.newaxis]))
+
+                return t1
+
+    else:
+        s = usv
+
+        # Need U and V so do the whole svd anyway...
+        usv = svd(a, full_matrices=False)
+        u = usv[0]
+        v = T(usv[2])
+
         def svd_grad(g):
-            gu = g[0]
-            gs = g[1]
-            gv = T(g[2])[..., :, :m]
+            return dot(u * g[..., anp.newaxis, :], T(v))
 
-            utgu = dot(T(u), gu)
-            vtgv = dot(T(v), gv)
-
-            i_minus_vvt = (anp.reshape(anp.eye(n), anp.concatenate((anp.ones(a.ndim - 2, dtype=int), (n, n)))) -
-                             dot(v, T(v)))
-
-            t1 = (f * (utgu - T(utgu))) * s[..., anp.newaxis, :]
-            t1 = t1 + i * gs[..., :, anp.newaxis]
-            t1 = t1 + s[..., :, anp.newaxis] * (f * (vtgv - T(vtgv)))
-
-            t1 = dot(dot(u, t1), T(v))
-
-            t1 = t1 + dot(dot(u / s[..., anp.newaxis, :], T(gv)), i_minus_vvt)
-
-            return t1
-
-        return svd_grad
+    return svd_grad
 svd.defgrad(make_grad_svd)
