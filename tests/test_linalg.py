@@ -8,7 +8,7 @@ from autograd import grad
 from builtins import range
 from functools import partial
 
-npr.seed(1)
+npr.seed(0)
 
 def check_symmetric_matrix_grads(fun, *args):
     def symmetrize(A):
@@ -258,7 +258,7 @@ def test_solve_triangular_arg2_2d():
 
 def test_svd_wide_2d():
     def fun(x):
-        u, s, v = np.linalg.svd(x)
+        u, s, v = np.linalg.svd(x, full_matrices=False)
         return to_scalar(u) + to_scalar(s) + to_scalar(v)
     m = 3
     n = 5
