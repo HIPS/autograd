@@ -328,3 +328,15 @@ def test_svd_only_s_2d():
     n = 3
     mat = npr.randn(m, n)
     check_grads(fun, mat)
+
+def test_svd_only_s_3d():
+    def fun(x):
+        s = np.linalg.svd(x, full_matrices=False, compute_uv=False)
+        return to_scalar(s)
+
+    k = 4
+    m = 5
+    n = 3
+
+    mat = npr.randn(k, m, n)
+    check_grads(fun, mat)
