@@ -255,3 +255,88 @@ def test_solve_triangular_arg2_2d():
         def fun(B):
             return to_scalar(spla.solve_triangular(A, B, trans=trans, lower=lower))
         yield check_grads, fun, npr.randn(D, D-1)
+
+def test_svd_wide_2d():
+    def fun(x):
+        u, s, v = np.linalg.svd(x, full_matrices=False)
+        return to_scalar(u) + to_scalar(s) + to_scalar(v)
+    m = 3
+    n = 5
+    mat = npr.randn(m, n)
+    check_grads(fun, mat)
+
+def test_svd_wide_3d():
+    def fun(x):
+        u, s, v = np.linalg.svd(x, full_matrices=False)
+        return to_scalar(u) + to_scalar(s) + to_scalar(v)
+
+    k = 4
+    m = 3
+    n = 5
+
+    mat = npr.randn(k, m, n)
+    check_grads(fun, mat)
+
+def test_svd_square_2d():
+    def fun(x):
+        u, s, v = np.linalg.svd(x, full_matrices=False)
+        return to_scalar(u) + to_scalar(s) + to_scalar(v)
+    m = 4
+    n = 4
+    mat = npr.randn(m, n)
+    check_grads(fun, mat)
+
+def test_svd_square_3d():
+    def fun(x):
+        u, s, v = np.linalg.svd(x, full_matrices=False)
+        return to_scalar(u) + to_scalar(s) + to_scalar(v)
+
+    k = 3
+    m = 4
+    n = 4
+
+    mat = npr.randn(k, m, n)
+    check_grads(fun, mat)
+
+def test_svd_tall_2d():
+    def fun(x):
+        u, s, v = np.linalg.svd(x, full_matrices=False)
+        return to_scalar(u) + to_scalar(s) + to_scalar(v)
+    m = 5
+    n = 3
+    mat = npr.randn(m, n)
+    check_grads(fun, mat)
+
+def test_svd_tall_3d():
+    def fun(x):
+        u, s, v = np.linalg.svd(x, full_matrices=False)
+        return to_scalar(u) + to_scalar(s) + to_scalar(v)
+
+    k = 4
+    m = 5
+    n = 3
+
+    mat = npr.randn(k, m, n)
+    check_grads(fun, mat)
+
+def test_svd_only_s_2d():
+    def fun(x):
+        s = np.linalg.svd(x, full_matrices=False, compute_uv=False)
+        return to_scalar(s)
+
+    m = 5
+    n = 3
+    mat = npr.randn(m, n)
+    check_grads(fun, mat)
+
+def test_svd_only_s_3d():
+    def fun(x):
+        s = np.linalg.svd(x, full_matrices=False, compute_uv=False)
+        return to_scalar(s)
+
+    k = 4
+    m = 5
+    n = 3
+
+    mat = npr.randn(k, m, n)
+    check_grads(fun, mat)
