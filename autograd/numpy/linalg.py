@@ -106,10 +106,23 @@ cholesky.defgrad(make_grad_cholesky)
 def make_grad_svd(usv, a, full_matrices=True, compute_uv=True):
     dot = anp.dot if a.ndim == 2 else partial(anp.einsum, '...ij,...jk->...ik')
 
-    if full_matrices:
-        return None
+    if not compute_uv:
+        s = usv
 
-    if compute_uv:
+        # Need U and V so do the whole svd anyway...
+        usv = svd(a, full_matrices=False)
+        u = usv[0]
+        v = T(usv[2])
+
+        def svd_grad(g):
+            return dot(u * g[..., anp.newaxis, :], T(v))
+
+    elif full_matrices:
+        def svd_grad(g):
+            raise NotImplementedError("Gradient of svd not implemented for "
+                                      "full_matrices=True")
+
+    else:
         u = usv[0]
         s = usv[1]
         v = T(usv[2])
@@ -182,17 +195,6 @@ def make_grad_svd(usv, a, full_matrices=True, compute_uv=True):
                 t1 = t1 + dot(i_minus_uut, dot(gu, T(v) / s[..., :, anp.newaxis]))
 
                 return t1
-
-    else:
-        s = usv
-
-        # Need U and V so do the whole svd anyway...
-        usv = svd(a, full_matrices=False)
-        u = usv[0]
-        v = T(usv[2])
-
-        def svd_grad(g):
-            return dot(u * g[..., anp.newaxis, :], T(v))
 
     return svd_grad
 svd.defgrad(make_grad_svd)
