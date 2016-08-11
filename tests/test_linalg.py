@@ -8,7 +8,7 @@ from autograd import grad
 from builtins import range
 from functools import partial
 
-npr.seed(0)
+npr.seed(1)
 
 def check_symmetric_matrix_grads(fun, *args):
     def symmetrize(A):
