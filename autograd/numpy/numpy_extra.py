@@ -119,7 +119,9 @@ else:
 arraycast.defgrad(lambda ans, val: lambda g : g)
 
 def _is_basic(idx):
-    return isinstance(idx, (int, slice)) or idx in [np.newaxis, Ellipsis]
+    """Returns True iff idx is a single basic (i.e., not fancy) index (and
+    therefore doesn't have any repeated elements)."""
+    return isinstance(idx, (int, slice)) or idx is np.newaxis or idx is Ellipsis
 
 @primitive
 def primitive_sum_arrays(*arrays):
@@ -128,8 +130,10 @@ def primitive_sum_arrays(*arrays):
         if isinstance(array, SparseArray):
             if (_is_basic(array.idx) or 
                 isinstance(array.idx, tuple) and all(_is_basic(i) for i in array.idx)):
+                # Faster than np.add.at
                 new_array[array.idx] += array.val
             else:
+                # Safe even if array.idx has repeated elements
                 np.add.at(new_array, array.idx, array.val)
         else:
             new_array += array
