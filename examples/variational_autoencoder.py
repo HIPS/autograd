@@ -63,6 +63,8 @@ def p_images_given_latents(gen_params, images, latents):
     return bernoulli_log_density(images, preds)
 
 def vae_lower_bound(gen_params, rec_params, data, rs):
+    # We use a simple Monte Carlo estimate of the KL
+    # divergence from the prior.
     q_means, q_log_stds = nn_predict_gaussian(rec_params, data)
     latents = sample_diag_gaussian(q_means, q_log_stds, rs)
     q_latents = diag_gaussian_log_density(latents, q_means, q_log_stds)
@@ -75,8 +77,8 @@ if __name__ == '__main__':
     # Model hyper-parameters
     latent_dim = 10
     data_dim = 784
-    gen_layer_sizes = [latent_dim, 300, data_dim]
-    rec_layer_sizes = [data_dim, 300, latent_dim * 2]
+    gen_layer_sizes = [latent_dim, 300, 200, data_dim]
+    rec_layer_sizes = [data_dim, 200, 300, latent_dim * 2]
 
     # Training parameters
     param_scale = 0.01
@@ -118,9 +120,8 @@ if __name__ == '__main__':
 
             fake_data = generate_from_noise(gen_params, 20, latent_dim, seed)
             save_images(fake_data, 'vae_samples.png', vmin=0, vmax=1)
+
     # The optimizers provided can optimize lists, tuples, or dicts of parameters.
     optimized_params = adam(objective_grad, combined_init_params, step_size=step_size,
                             num_iters=num_epochs * num_batches, callback=print_perf)
-
-
 
