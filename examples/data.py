@@ -20,7 +20,7 @@ def load_mnist():
 
 
 def plot_images(images, ax, ims_per_row=5, padding=5, digit_dimensions=(28, 28),
-                cmap=matplotlib.cm.binary, vmin=None):
+                cmap=matplotlib.cm.binary, vmin=None, vmax=None):
     """Images should be a (N_images x pixels) matrix."""
     N_images = images.shape[0]
     N_rows = np.ceil(float(N_images) / ims_per_row)
@@ -35,16 +35,16 @@ def plot_images(images, ax, ims_per_row=5, padding=5, digit_dimensions=(28, 28),
         col_start = padding + (padding + digit_dimensions[1]) * col_ix
         concat_images[row_start: row_start + digit_dimensions[0],
                       col_start: col_start + digit_dimensions[1]] = cur_image
-    cax = ax.matshow(concat_images, cmap=cmap, vmin=vmin)
+    cax = ax.matshow(concat_images, cmap=cmap, vmin=vmin, vmax=vmax)
     plt.xticks(np.array([]))
     plt.yticks(np.array([]))
     return cax
 
-def save_images(images, filename):
+def save_images(images, filename, **kwargs):
     fig = plt.figure(1)
     fig.clf()
     ax = fig.add_subplot(111)
-    plot_images(images, ax)
+    plot_images(images, ax, **kwargs)
     fig.patch.set_visible(False)
     ax.patch.set_visible(False)
     plt.savefig(filename)
