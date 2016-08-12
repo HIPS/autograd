@@ -118,12 +118,23 @@ else:
             raise TypeError("Can't cast type {0} to array".format(type(val)))
 arraycast.defgrad(lambda ans, val: lambda g : g)
 
+def _is_basic(idx):
+    """Returns True iff idx is a single basic (i.e., not fancy) index (and
+    therefore doesn't have any repeated elements)."""
+    return isinstance(idx, (int, slice)) or idx is np.newaxis or idx is Ellipsis
+
 @primitive
 def primitive_sum_arrays(*arrays):
     new_array = type(new_array_node(arrays[0], [])).zeros_like(arrays[0]) # TODO: simplify this
     for array in arrays:
         if isinstance(array, SparseArray):
-            np.add.at(new_array, array.idx, array.val)
+            if (_is_basic(array.idx) or 
+                isinstance(array.idx, tuple) and all(_is_basic(i) for i in array.idx)):
+                # Faster than np.add.at
+                new_array[array.idx] += array.val
+            else:
+                # Safe even if array.idx has repeated elements
+                np.add.at(new_array, array.idx, array.val)
         else:
             new_array += array
     return new_array
