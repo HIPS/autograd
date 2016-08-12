@@ -15,8 +15,9 @@ from data import load_mnist, save_images
 
 ### Define geneerator, discriminator, and objective ###
 
-def relu(x):    return np.maximum(0, x)
-def sigmoid(x): return 0.5 * (np.tanh(x) + 1.0)
+def relu(x):       return np.maximum(0, x)
+def sigmoid(x):    return 0.5 * (np.tanh(x) + 1.0)
+def logsigmoid(x): return x - np.logaddexp(0, x)
 
 def init_random_params(scale, layer_sizes, rs=npr.RandomState(0)):
     """Build a list of (weights, biases) tuples,
@@ -25,23 +26,29 @@ def init_random_params(scale, layer_sizes, rs=npr.RandomState(0)):
              scale * rs.randn(n))      # bias vector
             for m, n in zip(layer_sizes[:-1], layer_sizes[1:])]
 
+def batch_normalize(activations):
+    mbmean = np.mean(activations, axis=0, keepdims=True)
+    return (activations - mbmean) / (np.std(activations, axis=0, keepdims=True) + 1)
+
 def neural_net_predict(params, inputs):
     """Params is a list of (weights, bias) tuples.
        inputs is an (N x D) matrix."""
-    for W, b in params:
-        outputs = np.dot(inputs, W) + b
+    for W, b in params[:-1]:
+        outputs = batch_normalize(np.dot(inputs, W) + b)
         inputs = relu(outputs)
+    outW, outb = params[-1]
+    outputs = np.dot(inputs, outW) + outb
     return outputs
 
 def generate_from_noise(gen_params, num_samples, noise_dim, rs):
-    noise = rs.randn(num_samples, noise_dim)
+    noise = rs.rand(num_samples, noise_dim)
     samples = neural_net_predict(gen_params, noise)
     return sigmoid(samples)
 
 def gan_objective(gen_params, dsc_params, real_data, num_samples, noise_dim, rs):
     fake_data = generate_from_noise(gen_params, num_samples, noise_dim, rs)
-    logprobs_fake = neural_net_predict(dsc_params, fake_data)
-    logprobs_real = neural_net_predict(dsc_params, real_data)
+    logprobs_fake = logsigmoid(neural_net_predict(dsc_params, fake_data))
+    logprobs_real = logsigmoid(neural_net_predict(dsc_params, real_data))
     return np.mean(logprobs_real) - np.mean(logprobs_fake)
 
 
@@ -67,18 +74,18 @@ def adam_minimax(grad_both, init_params_max, init_params_min, callback=None, num
 
         if callback: callback(unflatten_max(x_max), unflatten_min(x_min), i,
                               unflatten_max(g_max), unflatten_min(g_min))
-        if i % 5 == 0:
-            m_max = (1 - b1) * g_max      + b1 * m_max  # First  moment estimate.
-            v_max = (1 - b2) * (g_max**2) + b2 * v_max  # Second moment estimate.
-            mhat_max = m_max / (1 - b1**(i + 1))    # Bias correction.
-            vhat_max = v_max / (1 - b2**(i + 1))
-            x_max = x_max + step_size_max*mhat_max/(np.sqrt(vhat_max) + eps)
+
+        m_max = (1 - b1) * g_max      + b1 * m_max  # First  moment estimate.
+        v_max = (1 - b2) * (g_max**2) + b2 * v_max  # Second moment estimate.
+        mhat_max = m_max / (1 - b1**(i + 1))    # Bias correction.
+        vhat_max = v_max / (1 - b2**(i + 1))
+        x_max = x_max + step_size_max * mhat_max / (np.sqrt(vhat_max) + eps)
 
         m_min = (1 - b1) * g_min      + b1 * m_min  # First  moment estimate.
         v_min = (1 - b2) * (g_min**2) + b2 * v_min  # Second moment estimate.
         mhat_min = m_min / (1 - b1**(i + 1))    # Bias correction.
         vhat_min = v_min / (1 - b2**(i + 1))
-        x_min = x_min - step_size_min*mhat_min/(np.sqrt(vhat_min) + eps)
+        x_min = x_min - step_size_min * mhat_min / (np.sqrt(vhat_min) + eps)
     return unflatten_max(x_max), unflatten_min(x_min)
 
 
@@ -86,16 +93,16 @@ def adam_minimax(grad_both, init_params_max, init_params_min, callback=None, num
 
 if __name__ == '__main__':
     # Model hyper-parameters
-    noise_dim = 25
-    gen_layer_sizes = [noise_dim, 50, 100, 784]
-    dsc_layer_sizes = [784, 100, 50, 1]
+    noise_dim = 10
+    gen_layer_sizes = [noise_dim, 200, 784]
+    dsc_layer_sizes = [784, 200, 1]
 
     # Training parameters
-    param_scale = 0.01
-    batch_size = 200
+    param_scale = 0.001
+    batch_size = 100
     num_epochs = 50
-    step_size_max = 0.0001
-    step_size_min = 0.0001
+    step_size_max = 0.01
+    step_size_min = 0.01
 
     print("Loading training data...")
     N, train_images, _, test_images, _ = load_mnist()
@@ -127,13 +134,10 @@ if __name__ == '__main__':
             probs_fake = np.mean(sigmoid(neural_net_predict(dsc_params, fake_data)))
             probs_real = np.mean(sigmoid(neural_net_predict(dsc_params, real_data)))
             print("{:15}|{:20}|{:20}|{:20}".format(iter//num_batches, ability, probs_fake, probs_real))
-            save_images(fake_data, 'samples.png')
+            save_images(fake_data, 'gan_samples.png', vmin=0, vmax=1)
 
     # The optimizers provided can optimize lists, tuples, or dicts of parameters.
     optimized_params = adam_minimax(both_objective_grad,
                                     init_gen_params, init_dsc_params,
                                     step_size_max=step_size_max, step_size_min=step_size_min,
                                     num_iters=num_epochs * num_batches, callback=print_perf)
-
-
-
