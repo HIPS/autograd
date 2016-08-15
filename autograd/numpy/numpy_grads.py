@@ -306,6 +306,15 @@ def make_grad_chooser(ans, x, axis=None, keepdims=None):
     """Builds gradient of functions that choose a single item, such as min or max."""
     repeater, _ = repeat_to_match_shape(x, axis, keepdims)
     argmax_locations = x == repeater(ans)
+    idx = onp.argwhere(argmax_locations)
+    idx_ignore_axis = idx.copy()
+    idx_ignore_axis[:, axis] = 0
+    have_seen = set()
+    for i in range(len(idx)):
+        if tuple(idx_ignore_axis[i]) in have_seen:
+            argmax_locations[tuple(idx[i])] = False
+        else:
+            have_seen.add(tuple(idx_ignore_axis[i]))
     return lambda g: repeater(g) * argmax_locations
 anp.max.defgrad(make_grad_chooser)
 anp.min.defgrad(make_grad_chooser)
