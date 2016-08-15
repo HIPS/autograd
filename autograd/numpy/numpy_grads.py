@@ -307,11 +307,14 @@ def make_grad_chooser(ans, x, axis=None, keepdims=None):
     repeater, _ = repeat_to_match_shape(x, axis, keepdims)
     argmax_locations = x == repeater(ans)
     idx = onp.argwhere(argmax_locations)
-    for i in range(len(idx) - 1):
-        for j in range(i + 1, len(idx)):
-            diff = onp.argwhere(idx[i] != idx[j])
-            if len(diff) == 1 and diff[0] == axis:
-                argmax_locations[tuple(idx[j])] = False
+    idx_ignore_axis = idx.copy()
+    idx_ignore_axis[:, axis] = 0
+    have_seen = set()
+    for i in range(len(idx)):
+        if tuple(idx_ignore_axis[i]) in have_seen:
+            argmax_locations[tuple(idx[i])] = False
+        else:
+            have_seen.add(tuple(idx_ignore_axis[i]))
     return lambda g: repeater(g) * argmax_locations
 anp.max.defgrad(make_grad_chooser)
 anp.min.defgrad(make_grad_chooser)
