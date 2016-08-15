@@ -349,6 +349,15 @@ def test_concatenate_axis_1_unnamed():
     check_grads(fun, A)
     check_grads(d_fun, A)
 
+def test_concatenate_max():
+    def fun(x):
+        x = np.concatenate((x.max(axis=0).reshape((1, 1)), x))
+        x = np.concatenate((x.max(axis=0).reshape((1, 1)), x))
+        return np.sum(x)
+
+    mat = np.array([[1.]])
+    check_grads(fun, mat)
+
 def test_trace():
     def fun(x): return np.trace(x, offset=offset)
     d_fun = lambda x : to_scalar(grad(fun)(x))
