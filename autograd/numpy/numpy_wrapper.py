@@ -78,6 +78,9 @@ def wrap_if_nodes_inside(raw_array, slow_op_name=None):
     else:
         return raw_array
 
+def copy(a, order='K'):
+    return array(a, order=order)
+
 @primitive
 def array_from_args(*args):
     return np.array(args)

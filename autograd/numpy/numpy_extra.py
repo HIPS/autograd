@@ -36,6 +36,9 @@ class ArrayNode(Node):
     def __len__(self):
         return len(self.value)
 
+    def copy(self, order='C'):
+        return anp.array(self, order=order)
+
     @staticmethod
     def zeros_like(value):
         return anp.zeros(value.shape)
