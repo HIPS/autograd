@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 import warnings
 
+import numpy as onp
 import autograd.numpy as np
 import autograd.numpy.random as npr
 from autograd.util import *
@@ -348,6 +349,16 @@ def test_concatenate_axis_1_unnamed():
     d_fun = lambda x : to_scalar(grad(fun)(x))
     check_grads(fun, A)
     check_grads(d_fun, A)
+
+def test_pad():
+    for mode in ("constant", "edge", "linear_ramp", "maximum", "mean", "minimum", "reflect", "symmetric", "wrap"):
+        def fun(x): return to_scalar(np.lib.pad(x, ((1, 2), (2, 0)), mode))
+        d_fun = lambda x : to_scalar(grad(fun)(x))
+        mat = npr.randn(4, 3)
+        if not np.allclose(np.lib.pad(mat, ((1, 2), (2, 0)), mode), onp.lib.pad(mat, ((1, 2), (2, 0)), mode)):
+            raise ValueError()
+        check_grads(fun, mat)
+        check_grads(d_fun, mat)
 
 def test_trace():
     def fun(x): return np.trace(x, offset=offset)

@@ -13,3 +13,4 @@ from . import linalg
 from . import fft
 from . import random
 from . import compat
+from . import lib
