@@ -835,3 +835,23 @@ def test_max_equal_values_2d():
     check_grads(d_fun, 1.0)
     check_grads(fun, -1.0)
     check_grads(d_fun, -1.0)
+
+def test_maximum_equal_values():
+    def fun(x): return to_scalar(np.maximum(x, x))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    check_grads(fun, 1.0)
+    check_grads(d_fun, 1.0)
+
+def test_maximum_equal_values_2d():
+    def fun(x): return to_scalar(np.maximum(
+            np.array( [x,   x, 0.5]),
+            np.array([[x, 0.5,   x],
+                      [x,   x, 0.5]])))
+
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    check_grads(fun, 1.0)
+    check_grads(d_fun, 1.0)
+    check_grads(fun, -1.0)
+    check_grads(d_fun, -1.0)
+    check_grads(fun, 2.0)
+    check_grads(d_fun, 2.0)
