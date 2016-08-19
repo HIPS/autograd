@@ -820,3 +820,18 @@ def test_frexp():
     A = 1.2 #np.random.rand(4,3) * 0.8 + 2.1
     check_grads(fun, A)
     #check_grads(d_fun, A)
+
+def test_max_equal_values():
+    def fun(x): return to_scalar(np.max(np.array([x, x])))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    check_grads(fun, 1.0)
+    check_grads(d_fun, 1.0)
+
+def test_max_equal_values_2d():
+    def fun(x): return to_scalar(np.max(np.array([[x, x  ],
+                                                  [x, 0.5]]), axis=1))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    check_grads(fun, 1.0)
+    check_grads(d_fun, 1.0)
+    check_grads(fun, -1.0)
+    check_grads(d_fun, -1.0)
