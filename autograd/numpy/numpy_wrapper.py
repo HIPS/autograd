@@ -3,6 +3,7 @@ from __future__ import print_function
 import types
 from .use_gpu_numpy import use_gpu_numpy
 from future.utils import iteritems
+from . import compat
 
 
 if use_gpu_numpy():
