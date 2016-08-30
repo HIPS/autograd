@@ -95,7 +95,7 @@ def stack(arrays, axis=0):
 
     arrays = [array(arr) for arr in arrays]
     if not arrays:
-        raise ValueErrpr('need at least one array to stack')
+        raise ValueError('need at least one array to stack')
 
     shapes = set(arr.shape for arr in arrays)
     if len(shapes) != 1:
