@@ -868,7 +868,9 @@ def test_maximum_equal_values_2d():
     check_grads(d_fun, 2.0)
 
 def test_astype():
+    set_eps_rtol_atol(1e-3, 1e-3, 1e-3)
     for dtype in (np.bool8, np.int32, np.int64, np.float32, np.float64):
         def fun(x): return to_scalar(x.astype(dtype))
         mat = npr.randn(10, 11)
         check_grads(fun, mat)
+    reset_eps_rtol_atol()
