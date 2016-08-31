@@ -19,7 +19,7 @@ if use_gpu_numpy():
 else:
     garray_obj = ()
     array_types = (np.ndarray,)
-    EPS, RTOL, ATOL = 1e-4, 1e-4, 1e-6
+    EPS, RTOL, ATOL = 1e-3, 1e-3, 1e-3
 
 def nd(f, *args):
     unary_f = lambda x : f(*x)

@@ -254,6 +254,24 @@ class CalculationTape(list):
     def __hash__(self):
         return id(self)
 
+class BoolNode(Node):
+    __slots__ = []
+    @staticmethod
+    def zeros_like(value):
+        return False
+    @staticmethod
+    def cast(value, example):
+        return cast(value, cast_to_bool)
+
+class IntNode(Node):
+    __slots__ = []
+    @staticmethod
+    def zeros_like(value):
+        return 0
+    @staticmethod
+    def cast(value, example):
+        return cast(value, cast_to_int)
+
 class FloatNode(Node):
     __slots__ = []
     @staticmethod
@@ -263,7 +281,19 @@ class FloatNode(Node):
     def cast(value, example):
         return cast(value, cast_to_float)
 
+Node.type_mappings[bool] = BoolNode
+Node.type_mappings[int] = IntNode
 Node.type_mappings[float] = FloatNode
+
+def cast_to_bool(x):
+    if np.iscomplexobj(x):
+        x = np.real(x)
+    return bool(x)
+
+def cast_to_int(x):
+    if np.iscomplexobj(x):
+        x = np.real(x)
+    return int(x)
 
 def cast_to_float(x):
     if np.iscomplexobj(x):
