@@ -140,6 +140,14 @@ def test_frobenius_norm():
     check_grads(fun, mat)
     check_grads(d_fun, mat)
 
+def test_frobenius_norm_axis():
+    def fun(x): return to_scalar(np.linalg.norm(x, axis=(0, 1)))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    D = 6
+    mat = npr.randn(D, D-1, D-2)
+    check_grads(fun, mat)
+    check_grads(d_fun, mat)
+
 def test_vector_norm_ord():
     def helper(size, ord):
         def fun(x): return np.linalg.norm(x, ord=ord)

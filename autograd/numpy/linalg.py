@@ -52,7 +52,16 @@ def make_grad_norm(ans, x, ord=None, axis=None):
             raise NotImplementedError('Gradient of norm not '
                                       'implemented for ord={}'.format(ord))
 
-    expand = lambda a: a if axis is None else anp.expand_dims(a, axis=axis)
+    if axis is None:
+        expand = lambda a: a
+    elif isinstance(axis, tuple):
+        row_axis, col_axis = axis
+        if row_axis > col_axis:
+            row_axis = row_axis - 1
+        expand = lambda a: anp.expand_dims(anp.expand_dims(a,
+                                                   row_axis), col_axis)
+    else:
+        expand = lambda a: anp.expand_dims(a, axis=axis)
 
     if ord == 'nuc':
         if axis is None:
@@ -69,8 +78,6 @@ def make_grad_norm(ans, x, ord=None, axis=None):
             # Roll matrix axes to their original position
             unroll = lambda a: anp.rollaxis(anp.rollaxis(a, a.ndim-2, row_axis),
                                             a.ndim-1, col_axis)
-            expand_matrix = lambda a: anp.expand_dims(anp.expand_dims(a,
-                                                      row_axis), col_axis)
 
     def norm_grad(g):
         check_implemented()
@@ -82,7 +89,7 @@ def make_grad_norm(ans, x, ord=None, axis=None):
             uvt_rolled = dot(u, vt)
             # Roll the matrix axes back to their correct positions
             uvt = unroll(uvt_rolled)
-            g = expand_matrix(g)
+            g = expand(g)
             return g * uvt
         else:
             # see https://en.wikipedia.org/wiki/Norm_(mathematics)#p-norm
