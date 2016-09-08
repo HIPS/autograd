@@ -65,7 +65,7 @@ def make_grad_norm(ans, x, ord=None, axis=None):
                 row_axis = row_axis - 1
             # Roll matrix axes to the back
             roll = lambda a: anp.rollaxis(anp.rollaxis(a, col_axis, a.ndim),
-                                          row_axis, -1)
+                                          row_axis, a.ndim-1)
             # Roll matrix axes to their original position
             unroll = lambda a: anp.rollaxis(anp.rollaxis(a, a.ndim-2, row_axis),
                                             a.ndim-1, col_axis)
@@ -80,6 +80,7 @@ def make_grad_norm(ans, x, ord=None, axis=None):
             x_rolled = roll(x)
             u, s, vt = svd(x_rolled, full_matrices=False)
             uvt_rolled = dot(u, vt)
+            print(uvt_rolled.shape)
             # Roll the matrix axes back to their correct positions
             uvt = unroll(uvt_rolled)
             g = expand_matrix(g)
