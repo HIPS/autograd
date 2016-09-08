@@ -156,6 +156,22 @@ def test_norm_axis():
     for axis in range(3):
         yield helper, (6,5,4), axis
 
+def test_norm_nuclear():
+    def fun(x): return to_scalar(np.linalg.norm(x, ord='nuc'))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    D = 6
+    mat = npr.randn(D, D-1)
+    check_grads(fun, mat)
+    check_grads(d_fun, mat)
+
+def test_norm_nuclear_axis():
+    def fun(x): return to_scalar(np.linalg.norm(x, ord='nuc', axis=(0, 1)))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    D = 6
+    mat = npr.randn(D, D-1, D-2)
+    check_grads(fun, mat)
+    check_grads(d_fun, mat)
+
 def test_eigvalh_lower():
     def fun(x):
         w, v = np.linalg.eigh(x)
