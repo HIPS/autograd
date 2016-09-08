@@ -67,7 +67,6 @@ def make_grad_norm(ans, x, ord=None, axis=None):
         if axis is None:
             roll = lambda a: a
             unroll = lambda a: a
-            expand_matrix = lambda a: a
         else:
             row_axis, col_axis = axis
             if row_axis > col_axis:
