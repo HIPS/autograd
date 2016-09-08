@@ -80,7 +80,6 @@ def make_grad_norm(ans, x, ord=None, axis=None):
             x_rolled = roll(x)
             u, s, vt = svd(x_rolled, full_matrices=False)
             uvt_rolled = dot(u, vt)
-            print(uvt_rolled.shape)
             # Roll the matrix axes back to their correct positions
             uvt = unroll(uvt_rolled)
             g = expand_matrix(g)
