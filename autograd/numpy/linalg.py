@@ -39,24 +39,57 @@ def make_grad_solve(argnum, ans, a, b):
 solve.defgrads(make_grad_solve, [0, 1])
 
 def make_grad_norm(ans, x, ord=None, axis=None):
+    dot = anp.dot if x.ndim == 2 else partial(anp.einsum, '...ij,...jk->...ik')
+
     def check_implemented():
-        matrix_norm = (x.ndim==2 and axis is None) or isinstance(axis, tuple)
-        frobenius_norm = ord is None or ord == 'fro'
-        diffable_pnorm = ord is None or ord > 1
+        matrix_norm = (x.ndim == 2 and axis is None) or isinstance(axis, tuple)
 
-        if matrix_norm and not frobenius_norm:
-            raise NotImplementedError(
-                'Gradient of matrix norm not implemented for ord={}'.format(ord))
-        if not diffable_pnorm:
-            raise NotImplementedError(
-                'Gradient of norm not implemented for ord={}'.format(ord))
+        if matrix_norm:
+            if not (ord is None or ord == 'fro' or ord == 'nuc'):
+                raise NotImplementedError('Gradient of matrix norm not '
+                                          'implemented for ord={}'.format(ord))
+        elif not (ord is None or ord > 1):
+            raise NotImplementedError('Gradient of norm not '
+                                      'implemented for ord={}'.format(ord))
 
-    expand = lambda a: a if axis is None else anp.expand_dims(a, axis=axis)
+    if axis is None:
+        expand = lambda a: a
+    elif isinstance(axis, tuple):
+        row_axis, col_axis = axis
+        if row_axis > col_axis:
+            row_axis = row_axis - 1
+        expand = lambda a: anp.expand_dims(anp.expand_dims(a,
+                                                   row_axis), col_axis)
+    else:
+        expand = lambda a: anp.expand_dims(a, axis=axis)
+
+    if ord == 'nuc':
+        if axis is None:
+            roll = lambda a: a
+            unroll = lambda a: a
+        else:
+            row_axis, col_axis = axis
+            if row_axis > col_axis:
+                row_axis = row_axis - 1
+            # Roll matrix axes to the back
+            roll = lambda a: anp.rollaxis(anp.rollaxis(a, col_axis, a.ndim),
+                                          row_axis, a.ndim-1)
+            # Roll matrix axes to their original position
+            unroll = lambda a: anp.rollaxis(anp.rollaxis(a, a.ndim-2, row_axis),
+                                            a.ndim-1, col_axis)
 
     def norm_grad(g):
         check_implemented()
         if ord is None or ord == 2 or ord is 'fro':
             return expand(g / ans) * x
+        elif ord == 'nuc':
+            x_rolled = roll(x)
+            u, s, vt = svd(x_rolled, full_matrices=False)
+            uvt_rolled = dot(u, vt)
+            # Roll the matrix axes back to their correct positions
+            uvt = unroll(uvt_rolled)
+            g = expand(g)
+            return g * uvt
         else:
             # see https://en.wikipedia.org/wiki/Norm_(mathematics)#p-norm
             return expand(g / ans**(ord-1)) * x * anp.abs(x)**(ord-2)

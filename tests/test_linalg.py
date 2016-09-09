@@ -140,6 +140,14 @@ def test_frobenius_norm():
     check_grads(fun, mat)
     check_grads(d_fun, mat)
 
+def test_frobenius_norm_axis():
+    def fun(x): return to_scalar(np.linalg.norm(x, axis=(0, 1)))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    D = 6
+    mat = npr.randn(D, D-1, D-2)
+    check_grads(fun, mat)
+    check_grads(d_fun, mat)
+
 def test_vector_norm_ord():
     def helper(size, ord):
         def fun(x): return np.linalg.norm(x, ord=ord)
@@ -155,6 +163,22 @@ def test_norm_axis():
         check_grads(fun, arr)
     for axis in range(3):
         yield helper, (6,5,4), axis
+
+def test_norm_nuclear():
+    def fun(x): return to_scalar(np.linalg.norm(x, ord='nuc'))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    D = 6
+    mat = npr.randn(D, D-1)
+    check_grads(fun, mat)
+    check_grads(d_fun, mat)
+
+def test_norm_nuclear_axis():
+    def fun(x): return to_scalar(np.linalg.norm(x, ord='nuc', axis=(0, 1)))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    D = 6
+    mat = npr.randn(D, D-1, D-2)
+    check_grads(fun, mat)
+    check_grads(d_fun, mat)
 
 def test_eigvalh_lower():
     def fun(x):
@@ -260,15 +284,20 @@ def test_svd_wide_2d():
     def fun(x):
         u, s, v = np.linalg.svd(x, full_matrices=False)
         return to_scalar(u) + to_scalar(s) + to_scalar(v)
+    def d_fun(x):
+        return to_scalar(grad(fun)(x))
     m = 3
     n = 5
     mat = npr.randn(m, n)
     check_grads(fun, mat)
+    check_grads(d_fun, mat)
 
 def test_svd_wide_3d():
     def fun(x):
         u, s, v = np.linalg.svd(x, full_matrices=False)
         return to_scalar(u) + to_scalar(s) + to_scalar(v)
+    def d_fun(x):
+        return to_scalar(grad(fun)(x))
 
     k = 4
     m = 3
@@ -276,20 +305,26 @@ def test_svd_wide_3d():
 
     mat = npr.randn(k, m, n)
     check_grads(fun, mat)
+    check_grads(d_fun, mat)
 
 def test_svd_square_2d():
     def fun(x):
         u, s, v = np.linalg.svd(x, full_matrices=False)
         return to_scalar(u) + to_scalar(s) + to_scalar(v)
+    def d_fun(x):
+        return to_scalar(grad(fun)(x))
     m = 4
     n = 4
     mat = npr.randn(m, n)
     check_grads(fun, mat)
+    check_grads(d_fun, mat)
 
 def test_svd_square_3d():
     def fun(x):
         u, s, v = np.linalg.svd(x, full_matrices=False)
         return to_scalar(u) + to_scalar(s) + to_scalar(v)
+    def d_fun(x):
+        return to_scalar(grad(fun)(x))
 
     k = 3
     m = 4
@@ -297,20 +332,26 @@ def test_svd_square_3d():
 
     mat = npr.randn(k, m, n)
     check_grads(fun, mat)
+    check_grads(d_fun, mat)
 
 def test_svd_tall_2d():
     def fun(x):
         u, s, v = np.linalg.svd(x, full_matrices=False)
         return to_scalar(u) + to_scalar(s) + to_scalar(v)
+    def d_fun(x):
+        return to_scalar(grad(fun)(x))
     m = 5
     n = 3
     mat = npr.randn(m, n)
     check_grads(fun, mat)
+    check_grads(d_fun, mat)
 
 def test_svd_tall_3d():
     def fun(x):
         u, s, v = np.linalg.svd(x, full_matrices=False)
         return to_scalar(u) + to_scalar(s) + to_scalar(v)
+    def d_fun(x):
+        return to_scalar(grad(fun)(x))
 
     k = 4
     m = 5
@@ -318,21 +359,27 @@ def test_svd_tall_3d():
 
     mat = npr.randn(k, m, n)
     check_grads(fun, mat)
+    check_grads(d_fun, mat)
 
 def test_svd_only_s_2d():
     def fun(x):
         s = np.linalg.svd(x, full_matrices=False, compute_uv=False)
         return to_scalar(s)
+    def d_fun(x):
+        return to_scalar(grad(fun)(x))
 
     m = 5
     n = 3
     mat = npr.randn(m, n)
     check_grads(fun, mat)
+    check_grads(d_fun, mat)
 
 def test_svd_only_s_3d():
     def fun(x):
         s = np.linalg.svd(x, full_matrices=False, compute_uv=False)
         return to_scalar(s)
+    def d_fun(x):
+        return to_scalar(grad(fun)(x))
 
     k = 4
     m = 5
@@ -340,3 +387,4 @@ def test_svd_only_s_3d():
 
     mat = npr.randn(k, m, n)
     check_grads(fun, mat)
+    check_grads(d_fun, mat)
