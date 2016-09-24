@@ -169,6 +169,12 @@ def test_power_arg1():
     check_grads(fun, npr.rand()**2)
     check_grads(d_fun, npr.rand()**2)
 
+def test_power_arg1_zero():
+    fun = lambda y : np.power(0., y)
+    d_fun = grad(fun)
+    check_grads(fun, npr.rand()**2)
+    check_grads(d_fun, npr.rand()**2)
+
 def test_mod_arg0():
     fun = lambda x, y : np.mod(x, y)
     d_fun = grad(fun)

@@ -75,7 +75,9 @@ anp.subtract.defgrad(lambda ans, x, y : unbroadcast(ans, y, op.neg), argnum=1)
 anp.divide.defgrad(lambda ans, x, y : unbroadcast(ans, x, lambda g :   g / y))
 anp.divide.defgrad(lambda ans, x, y : unbroadcast(ans, y, lambda g : - g * x / y**2), argnum=1)
 anp.power.defgrad(lambda ans, x, y : unbroadcast(ans, x, lambda g : g * y * x ** (anp.where(y, y - 1, 1.))))
-anp.power.defgrad(lambda ans, x, y : unbroadcast(ans, y, lambda g : g * anp.log(x) * x ** y), argnum=1)
+anp.power.defgrad(
+    lambda ans, x, y :
+    unbroadcast(ans, y, lambda g : g * anp.log(anp.where(x, x, 1.)) * x ** y), argnum=1)
 anp.maximum.defgrad(lambda ans, x, y : unbroadcast(ans, x, lambda g : g * balanced_eq(x, ans, y)))
 anp.maximum.defgrad(lambda ans, x, y : unbroadcast(ans, y, lambda g : g * balanced_eq(y, ans, x)), argnum=1)
 anp.minimum.defgrad(lambda ans, x, y : unbroadcast(ans, x, lambda g : g * balanced_eq(x, ans, y)))
