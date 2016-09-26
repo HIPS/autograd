@@ -28,7 +28,7 @@ def neural_net_predict(params, inputs):
     return outputs - logsumexp(outputs, axis=1, keepdims=True)
 
 def l2_norm(params):
-    """Computes l2 norm of params by flattening them into a vector."""
+    """Computes squared l2 norm of params by flattening them into a vector."""
     flattened, _ = flatten(params)
     return np.dot(flattened, flattened)
 
