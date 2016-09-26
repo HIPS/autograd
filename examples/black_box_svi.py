@@ -41,7 +41,7 @@ if __name__ == '__main__':
 
     # Specify an inference problem by its unnormalized log-density.
     D = 2
-    def log_density(x):
+    def log_density(x, t):
         mu, log_sigma = x[:, 0], x[:, 1]
         sigma_density = norm.logpdf(log_sigma, 0, 1.35)
         mu_density = norm.logpdf(mu, 0, np.exp(log_sigma))
