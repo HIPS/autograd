@@ -28,7 +28,7 @@ def mlp(params, inputs):
 
 def softmax(inputs):
     '''Log softmax, the canonical link function for logistic regression.'''
-    return inputs - logsumexp(inputs, axis=1, kepdims=True)
+    return inputs - logsumexp(inputs, axis=1, keepdims=True)
 
 def init_random_params(scale, layer_sizes):
     """Build a list of (weights, biases) tuples,
@@ -70,8 +70,8 @@ def neural_net_predict_and_activations(extra_biases, params, inputs):
     return logprobs, all_activations[:-1]
 
 def model_predictive_log_likelihood(extra_biases, params, inputs):
-    '''Computes log_likelihood on targets sampled from the model.
-       Also returns all computed activations.'''
+    '''Computes Monte Carlo estimate of log_likelihood on targets sampled from
+       the model. Also returns all computed activations.'''
     logprobs, activations = neural_net_predict_and_activations(
         extra_biases, params, inputs)
     model_sampled_targets = sample_discrete_from_log(getval(logprobs))
@@ -209,18 +209,36 @@ def kfac(objective, get_batch, layer_sizes, init_params, step_size, num_iters,
 ### testing
 
 def exact_fisher(num_layers, params, inputs):
+    '''Computes the exact Fisher information on the last num_layers layers.'''
     flat_params, unflatten = flatten(params[-num_layers:])
     flat_mlp = lambda flat_params, inputs: \
         mlp(params[:-num_layers] + unflatten(flat_params), inputs)
+    mlp_outputs = flat_mlp(flat_params, inputs)
 
     F = np.zeros(2*(flat_params.shape[0],))
-    for x, z in zip(inputs, mlp(params, inputs)):
+    for x, z in zip(inputs, mlp_outputs):
         J_f = jacobian(flat_mlp)(flat_params, x)
         F_R = hessian(logsumexp)(z)
         F += np.dot(J_f.T, np.dot(F_R, J_f))
 
     return F / inputs.shape[0]
 
+def montecarlo_fisher(num_samples, num_layers, params, inputs):
+    '''Estimates the Fisher information on the last num_layers layers
+       using Monte Carlo to estimate the covariance of the gradients.'''
+    flat_params, unflatten = flatten(params[-num_layers:])
+    flat_loglike = lambda flat_params, inputs, targets: \
+        log_likelihood(params[:-num_layers] + unflatten(flat_params),
+                       inputs, targets)
+    random_targets = lambda: \
+        sample_discrete_from_log(neural_net_predict(params, inputs))
+
+    F = np.zeros(2*(flat_params.shape[0],))
+    for i in range(num_samples):
+        g = grad(flat_loglike)(flat_params, inputs, random_targets())
+        F += np.outer(g, g) / inputs.shape[0]
+
+    return F / num_samples
 
 ### script
 
@@ -267,7 +285,6 @@ if __name__ == '__main__':
 # and hence the Fisher is rank-deficient (all-ones is in its null space). The
 # left factor can also blow up because of the background in the images.
 
-# TODO test against true Fisher
 # TODO get regular sgd working in this file just like in other file
 # TODO maybe fix overparameterization of last layer
 
