@@ -36,6 +36,10 @@ def sample_discrete_from_log(logprobs):
 # gradients, we use an autograd trick: we add extra bias terms (set to zero)
 # and compute gradients with respect to them.
 
+# NOTE: this implementation currently does two forward passes on each minibatch
+# while only one is necessary; the forward pass used to compute the training
+# objective can be reused with the model-generated targets.
+
 def neural_net_predict_and_activations(extra_biases, params, inputs):
     '''Like the neural_net_predict function in neural_net.py, but
        (1) adds extra biases and (2) also returns all computed activations.'''
@@ -96,7 +100,7 @@ def estimate_block_factors(all_samples, append_homog=False):
         sum(map(sumsq, map(homog, layer_samples))) / num_samples
     return map(layer_sumsq, all_samples)
 
-def update_factor_estimates(old_estimates, samples, eps=0.05):
+def update_factor_estimates(old_estimates, samples, eps):
     As, Gs = old_estimates
     a_samples, g_samples = samples
     Ahats = estimate_block_factors(a_samples, append_homog=True)
@@ -113,8 +117,9 @@ def init_factor_estimates(layer_sizes):
 # These functions compute the inverses of the Kronecker factors and apply the
 # K-FAC preconditioner to parameter updates.
 
-def compute_inverse(factor_estimates):
-    layer_inv = lambda layer_factors: map(np.linalg.inv, layer_factors)
+def compute_precond(factor_estimates, lmbda):
+    inv = lambda X: np.linalg.inv(X + lmbda*np.eye(X.shape[0]))
+    layer_inv = lambda layer_factors: map(inv, layer_factors)
     return map(layer_inv, factor_estimates)
 
 def apply_preconditioner(precond, gradient):
@@ -126,6 +131,56 @@ def apply_preconditioner(precond, gradient):
     factors = zip(*precond)
     return [apply_block(A, G, W, b) for (A,G), (W,b) in zip(factors, gradient)]
 
+### K-FAC-pre (simplified preconditioned SGD version)
+
+# K-FAC is specific to fully-connected layers, so its interface needs to know
+# more than the other optimizers in optimizers.py. In particular, it only works
+# when the parameters are a list of weights and biases, it needs to know the
+# layer sizes, and it needs to have direct access to the training data.
+
+# TODO adapt lmbda
+
+def kfac(objective_grad, get_batch, layer_sizes, init_params, step_size, num_iters,
+         sample_period=1, reestimate_period=10, update_precond_period=100,
+         lmbda=100., eps=0.05):
+
+    ## initialize
+
+    samples = init_sample_lists(layer_sizes)
+    factors = init_factor_estimates(layer_sizes)
+    precond = compute_precond(factors, lmbda=0.)
+
+    ## helper functions
+
+    def collect_samples(params, i):
+        new_samples = collect_activations_and_grad_samples(params, get_batch(i))
+        map(append_samples, samples, new_samples)
+
+    def update_params(params, natgrad, step_size):
+      return [(W - step_size*dW, b - step_size*db)
+              for (W, b), (dW, db) in zip(params, natgrad)]
+
+    ## main loop
+
+    params = init_params
+    for i in range(num_iters):
+        gradient = objective_grad(params, i)
+
+        if (i+1) % sample_period == 0:
+            collect_samples(params, i)
+
+        if (i+1) % reestimate_period == 0:
+            factors = update_factor_estimates(factors, samples, eps)
+            samples = init_sample_lists(layer_sizes)
+
+        if (i+1) % update_precond_period == 0:
+            precond = compute_precond(factors, lmbda=lmbda)
+
+        natgrad = apply_preconditioner(precond, gradient)
+        params = update_params(params, natgrad, step_size)
+
+    return params
+
 ### script
 
 if __name__ == '__main__':
@@ -134,42 +189,33 @@ if __name__ == '__main__':
 
     # Training parameters
     param_scale = 0.1
-    batch_size = 256
+    batch_size = 512
 
+    # Load data
     N, train_images, train_labels, test_images,  test_labels = load_mnist()
 
-    params = init_random_params(param_scale, layer_sizes)
+    # initialize parameters
+    init_params = init_random_params(param_scale, layer_sizes)
 
+    # Divide data into batches
     num_batches = int(np.ceil(len(train_images) / batch_size))
+
     def batch_indices(itr):
         idx = itr % num_batches
         return slice(idx * batch_size, (idx+1) * batch_size)
 
+    get_batch = lambda itr: train_images[batch_indices(itr)]
+
     # Define training objective
     def objective(params, itr):
         idx = batch_indices(itr)
-        return -log_likelihood(params, train_images[idx], train_labels[idx])[0]
+        # TODO put this back
+        val = -log_likelihood(params, train_images[idx], train_labels[idx])
+        print val
+        return val
 
-    # TODO in-progress stuff below, just for testing
+    objective_grad = grad(objective)
 
-    def collect_samples(params, itr):
-        batch = train_images[batch_indices(itr)]
-        new_samples = collect_activations_and_grad_samples(params, batch)
-        map(append_samples, all_samples, new_samples)
-
-
-    # initialize K-FAC side info
-    all_samples = init_sample_lists(layer_sizes)
-    factor_estimates = init_factor_estimates(layer_sizes)
-
-    # collect new samples
-    for itr in range(5):
-      collect_samples(params, itr)
-
-    # update factor estimates
-    factor_estimates = update_factor_estimates(factor_estimates, all_samples)
-    all_samples = init_sample_lists(layer_sizes)
-
-    # apply precond
-    precond = compute_inverse(factor_estimates)
-    apply_preconditioner(precond, params)  # TODO should be grad, but same shape
+    # Optimize!
+    optimized_params = kfac(objective_grad, get_batch, layer_sizes,
+                            init_params, step_size=1e-3, num_iters=1000)
