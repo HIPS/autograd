@@ -3,9 +3,13 @@ import autograd.numpy as np
 import autograd.numpy.random as npr
 from autograd import grad
 from autograd.scipy.misc import logsumexp
+from autograd.scipy.linalg import block_diag
 from autograd import hessian, jacobian, grad_and_aux, value_and_grad
 from autograd.util import getval, flatten
 from data import load_mnist
+
+import matplotlib.pyplot as plt
+from scipy.stats import scoreatpercentile
 
 
 ### Vanilla neural net functions
@@ -77,7 +81,7 @@ def model_predictive_log_likelihood(extra_biases, params, inputs):
     model_sampled_targets = sample_discrete_from_log(getval(logprobs))
     return np.sum(logprobs * model_sampled_targets), activations
 
-def collect_activations_and_grad_samples(params, inputs, num_samples):
+def activation_and_grad_samples(params, inputs, num_samples):
     '''Collects the statistics necessary to estimate the approximate Fisher
        information matrix used in K-FAC.'''
     inputs = inputs[npr.choice(inputs.shape[0], size=num_samples)]
@@ -145,7 +149,7 @@ def compute_precond(factor_estimates, lmbda):
 def apply_preconditioner(precond, gradient):
     def apply_block(Ainv, Ginv, W_grad, b_grad):
         Wb_grad = np.vstack((W_grad, b_grad))
-        Wb_natgrad = np.dot(Ainv, np.dot(Wb_grad, Ginv))
+        Wb_natgrad = np.dot(Ainv, np.dot(Wb_grad, Ginv.T))
         return Wb_natgrad[:-1], Wb_natgrad[-1]
 
     factors = zip(*precond)
@@ -172,7 +176,7 @@ def kfac(objective, get_batch, layer_sizes, init_params, step_size, num_iters,
     ## helper functions
 
     def collect_samples(params, i):
-        new_samples = collect_activations_and_grad_samples(
+        new_samples = activation_and_grad_samples(
             params, get_batch(i), num_samples)
         map(append_samples, samples, new_samples)
 
@@ -208,11 +212,12 @@ def kfac(objective, get_batch, layer_sizes, init_params, step_size, num_iters,
 
 ### testing
 
-def exact_fisher(num_layers, params, inputs):
+def exact_fisher(params, inputs, start_layer, stop_layer):
     '''Computes the exact Fisher information on the last num_layers layers.'''
-    flat_params, unflatten = flatten(params[-num_layers:])
-    flat_mlp = lambda flat_params, inputs: \
-        mlp(params[:-num_layers] + unflatten(flat_params), inputs)
+    flat_params, unflatten = flatten(params[start_layer:stop_layer])
+    merge_params = lambda flat_params: \
+        params[:start_layer] + unflatten(flat_params) + params[stop_layer:]
+    flat_mlp = lambda flat_params, inputs: mlp(merge_params(flat_params), inputs)
     mlp_outputs = flat_mlp(flat_params, inputs)
 
     F = np.zeros(2*(flat_params.shape[0],))
@@ -223,13 +228,14 @@ def exact_fisher(num_layers, params, inputs):
 
     return F / inputs.shape[0]
 
-def montecarlo_fisher(num_samples, num_layers, params, inputs):
+def montecarlo_fisher(num_samples, params, inputs, start_layer, stop_layer):
     '''Estimates the Fisher information on the last num_layers layers
        using Monte Carlo to estimate the covariance of the gradients.'''
-    flat_params, unflatten = flatten(params[-num_layers:])
+    flat_params, unflatten = flatten(params[start_layer:stop_layer])
+    merge_params = lambda flat_params: \
+        params[:start_layer] + unflatten(flat_params) + params[stop_layer:]
     flat_loglike = lambda flat_params, inputs, targets: \
-        log_likelihood(params[:-num_layers] + unflatten(flat_params),
-                       inputs, targets)
+        log_likelihood(merge_params(flat_params), inputs, targets)
     random_targets = lambda: \
         sample_discrete_from_log(neural_net_predict(params, inputs))
 
@@ -239,6 +245,18 @@ def montecarlo_fisher(num_samples, num_layers, params, inputs):
         F += np.outer(g, g) / inputs.shape[0]
 
     return F / num_samples
+
+def kfac_approx_fisher(sample_factor, params, inputs, start_layer, stop_layer):
+    layer_sizes = [W.shape[0] for W, _ in params] + [params[-1][0].shape[1]]
+
+    samples = init_sample_lists(layer_sizes)
+    new_samples = activation_and_grad_samples(
+        params, inputs, sample_factor*inputs.shape[0])
+    map(append_samples, samples, new_samples)
+
+    As, Gs = update_factor_estimates(init_factor_estimates(layer_sizes), samples, 0.)
+    sl = slice(start_layer, stop_layer)
+    return block_diag(*map(np.kron, As[sl], Gs[sl]))
 
 ### script
 
@@ -279,6 +297,17 @@ if __name__ == '__main__':
     #     objective, get_batch, layer_sizes, init_params, step_size=1e-3,
     #     num_iters=1000, lmbda=0., eps=0.05, num_samples=10*batch_size,
     #     sample_period=1e4, reestimate_period=1e4, update_precond_period=1e4)
+
+    # Make Fisher comparison figure!
+    F_approx = kfac_approx_fisher(25, init_params, train_images[:100], 2, 5)
+    F = exact_fisher(init_params, train_images[:100], 2, 5)
+
+    def matshow(X, filename):
+      plt.matshow(X, vmax=scoreatpercentile(X.ravel(), 90), cmap=plt.cm.gray_r)
+      plt.savefig(filename)
+
+    matshow(np.hstack((F_approx, F)), 'raw.pdf')
+    matshow(np.abs(F - F_approx), 'residual.pdf')
 
 
 # NOTE: right factor can blow up because we have an over-parameterized logistic
