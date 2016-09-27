@@ -3,8 +3,8 @@ import autograd.numpy as np
 import autograd.numpy.random as npr
 from autograd import grad
 from autograd.scipy.misc import logsumexp
-from autograd import grad_and_aux, val_and_grad
-from autograd.util import getval
+from autograd import hessian, jacobian, grad_and_aux, value_and_grad
+from autograd.util import getval, flatten
 from data import load_mnist
 
 
@@ -180,7 +180,7 @@ def kfac(objective, get_batch, layer_sizes, init_params, step_size, num_iters,
       return [(W - step_size*dW, b - step_size*db)
               for (W, b), (dW, db) in zip(params, natgrad)]
 
-    objective_grad = val_and_grad(objective)
+    objective_grad = value_and_grad(objective)
 
     ## main loop
 
@@ -206,13 +206,29 @@ def kfac(objective, get_batch, layer_sizes, init_params, step_size, num_iters,
 
     return params
 
+### testing
+
+def exact_fisher(num_layers, params, inputs):
+    flat_params, unflatten = flatten(params[-num_layers:])
+    flat_mlp = lambda flat_params, inputs: \
+        mlp(params[:-num_layers] + unflatten(flat_params), inputs)
+
+    F = np.zeros(2*(flat_params.shape[0],))
+    for x, z in zip(inputs, mlp(params, inputs)):
+        J_f = jacobian(flat_mlp)(flat_params, x)
+        F_R = hessian(logsumexp)(z)
+        F += np.dot(J_f.T, np.dot(F_R, J_f))
+
+    return F / inputs.shape[0]
+
+
 ### script
 
 if __name__ == '__main__':
     npr.seed(0)
 
     # Model parameters
-    layer_sizes = [784, 200, 100, 10]
+    layer_sizes = [784, 256, 20, 20, 20, 20, 20, 10]
 
     # Training parameters
     param_scale = 0.1
@@ -241,10 +257,10 @@ if __name__ == '__main__':
         return -log_likelihood(params, train_images[idx], train_labels[idx])
 
     # Optimize!
-    optimized_params = kfac(
-        objective, get_batch, layer_sizes, init_params, step_size=1e-3,
-        num_iters=1000, lmbda=0., eps=0.05, num_samples=10*batch_size,
-        sample_period=1e4, reestimate_period=1e4, update_precond_period=1e4)
+    # optimized_params = kfac(
+    #     objective, get_batch, layer_sizes, init_params, step_size=1e-3,
+    #     num_iters=1000, lmbda=0., eps=0.05, num_samples=10*batch_size,
+    #     sample_period=1e4, reestimate_period=1e4, update_precond_period=1e4)
 
 
 # NOTE: right factor can blow up because we have an over-parameterized logistic
