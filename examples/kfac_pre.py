@@ -7,15 +7,34 @@ from autograd import grad_and_aux, val_and_grad
 from autograd.util import getval
 from data import load_mnist
 
-from neural_net import init_random_params, neural_net_predict
-
 
 ### Vanilla neural net functions
+
+def neural_net_predict(params, inputs):
+    '''Deep neural network with muliticlass logistic predictions.'''
+    return softmax(mlp(params, inputs))
 
 def log_likelihood(params, inputs, targets):
     '''Like log_posterior in neural_net.py, but no prior (regularizer) term.'''
     logprobs = neural_net_predict(params, inputs)
     return np.sum(logprobs * targets)
+
+def mlp(params, inputs):
+    '''A multi-layer perceptron with a linear last layer.'''
+    for W, b in params:
+        outputs = np.dot(inputs, W) + b
+        inputs = np.tanh(outputs)
+    return outputs
+
+def softmax(inputs):
+    '''Log softmax, the canonical link function for logistic regression.'''
+    return inputs - logsumexp(inputs, axis=1, kepdims=True)
+
+def init_random_params(scale, layer_sizes):
+    """Build a list of (weights, biases) tuples,
+       one for each layer in the net."""
+    return [(scale * npr.randn(m, n), scale * npr.randn(n))
+            for m, n in zip(layer_sizes[:-1], layer_sizes[1:])]
 
 ### General utility functions
 
