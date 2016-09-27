@@ -3,7 +3,7 @@ import autograd.numpy as np
 import autograd.numpy.random as npr
 from autograd import grad
 from autograd.scipy.misc import logsumexp
-from autograd import grad, grad_and_aux
+from autograd import grad_and_aux, val_and_grad
 from autograd.util import getval
 from data import load_mnist
 
@@ -58,9 +58,10 @@ def model_predictive_log_likelihood(extra_biases, params, inputs):
     model_sampled_targets = sample_discrete_from_log(getval(logprobs))
     return np.sum(logprobs * model_sampled_targets), activations
 
-def collect_activations_and_grad_samples(params, inputs):
+def collect_activations_and_grad_samples(params, inputs, num_samples):
     '''Collects the statistics necessary to estimate the approximate Fisher
        information matrix used in K-FAC.'''
+    inputs = inputs[npr.choice(inputs.shape[0], size=num_samples)]
     extra_biases = [np.zeros((inputs.shape[0], b.shape[0])) for W, b in params]
     gradfun = grad_and_aux(model_predictive_log_likelihood)
     g_samples, a_samples = gradfun(extra_biases, params, inputs)
@@ -136,35 +137,37 @@ def apply_preconditioner(precond, gradient):
 # K-FAC is specific to fully-connected layers, so its interface needs to know
 # more than the other optimizers in optimizers.py. In particular, it only works
 # when the parameters are a list of weights and biases, it needs to know the
-# layer sizes, and it needs to have direct access to the training data.
+# layer sizes, it needs ot know the likelihood model on the last layer (logistic
+# regression here), and it needs to have direct access to the training data.
 
-# TODO adapt lmbda
-
-def kfac(objective_grad, get_batch, layer_sizes, init_params, step_size, num_iters,
-         sample_period=1, reestimate_period=10, update_precond_period=100,
-         lmbda=100., eps=0.05):
+def kfac(objective, get_batch, layer_sizes, init_params, step_size, num_iters,
+         num_samples, sample_period, reestimate_period, update_precond_period,
+         lmbda, eps):
 
     ## initialize
 
     samples = init_sample_lists(layer_sizes)
     factors = init_factor_estimates(layer_sizes)
-    precond = compute_precond(factors, lmbda=0.)
+    precond = compute_precond(factors, lmbda=lmbda)
 
     ## helper functions
 
     def collect_samples(params, i):
-        new_samples = collect_activations_and_grad_samples(params, get_batch(i))
+        new_samples = collect_activations_and_grad_samples(
+            params, get_batch(i), num_samples)
         map(append_samples, samples, new_samples)
 
     def update_params(params, natgrad, step_size):
       return [(W - step_size*dW, b - step_size*db)
               for (W, b), (dW, db) in zip(params, natgrad)]
 
+    objective_grad = val_and_grad(objective)
+
     ## main loop
 
     params = init_params
     for i in range(num_iters):
-        gradient = objective_grad(params, i)
+        val, gradient = objective_grad(params, i)
 
         if (i+1) % sample_period == 0:
             collect_samples(params, i)
@@ -176,6 +179,9 @@ def kfac(objective_grad, get_batch, layer_sizes, init_params, step_size, num_ite
         if (i+1) % update_precond_period == 0:
             precond = compute_precond(factors, lmbda=lmbda)
 
+        cond = lambda X: np.linalg.cond(X + lmbda * np.eye(X.shape[0]))
+        print map(lambda lst: map(cond, lst), factors)
+
         natgrad = apply_preconditioner(precond, gradient)
         params = update_params(params, natgrad, step_size)
 
@@ -184,15 +190,19 @@ def kfac(objective_grad, get_batch, layer_sizes, init_params, step_size, num_ite
 ### script
 
 if __name__ == '__main__':
+    npr.seed(0)
+
     # Model parameters
     layer_sizes = [784, 200, 100, 10]
 
     # Training parameters
     param_scale = 0.1
-    batch_size = 512
+    batch_size = 1024
 
     # Load data
     N, train_images, train_labels, test_images,  test_labels = load_mnist()
+    train_images = npr.permutation(train_images)
+    train_images += 1e-2 * npr.randn(*train_images.shape)
 
     # initialize parameters
     init_params = init_random_params(param_scale, layer_sizes)
@@ -209,13 +219,23 @@ if __name__ == '__main__':
     # Define training objective
     def objective(params, itr):
         idx = batch_indices(itr)
-        # TODO put this back
-        val = -log_likelihood(params, train_images[idx], train_labels[idx])
-        print val
-        return val
-
-    objective_grad = grad(objective)
+        return -log_likelihood(params, train_images[idx], train_labels[idx])
 
     # Optimize!
-    optimized_params = kfac(objective_grad, get_batch, layer_sizes,
-                            init_params, step_size=1e-3, num_iters=1000)
+    optimized_params = kfac(
+        objective, get_batch, layer_sizes, init_params, step_size=1e-3,
+        num_iters=1000, lmbda=0., eps=0.05, num_samples=10*batch_size,
+        sample_period=1e4, reestimate_period=1e4, update_precond_period=1e4)
+
+
+# NOTE: right factor can blow up because we have an over-parameterized logistic
+# and hence the Fisher is rank-deficient (all-ones is in its null space). The
+# left factor can also blow up because of the background in the images.
+
+# TODO test against true Fisher
+# TODO get regular sgd working in this file just like in other file
+# TODO maybe fix overparameterization of last layer
+
+# TODO handle other likelihoods
+# TODO adapt lmbda
+# TODO add num_samples
