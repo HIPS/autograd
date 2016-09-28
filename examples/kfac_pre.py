@@ -213,7 +213,7 @@ def kfac(objective, get_batch, layer_sizes, init_params, step_size, num_iters,
 ### testing
 
 def exact_fisher(params, inputs, start_layer, stop_layer):
-    '''Computes the exact Fisher information on the last num_layers layers.'''
+    '''Computes the exact Fisher information from start_layer to stop_layer.'''
     flat_params, unflatten = flatten(params[start_layer:stop_layer])
     merge_params = lambda flat_params: \
         params[:start_layer] + unflatten(flat_params) + params[stop_layer:]
@@ -229,7 +229,7 @@ def exact_fisher(params, inputs, start_layer, stop_layer):
     return F / inputs.shape[0]
 
 def montecarlo_fisher(num_samples, params, inputs, start_layer, stop_layer):
-    '''Estimates the Fisher information on the last num_layers layers
+    '''Estimates the Fisher information from start_layer to stop_layer
        using Monte Carlo to estimate the covariance of the gradients.'''
     flat_params, unflatten = flatten(params[start_layer:stop_layer])
     merge_params = lambda flat_params: \
@@ -299,15 +299,18 @@ if __name__ == '__main__':
     #     sample_period=1e4, reestimate_period=1e4, update_precond_period=1e4)
 
     # Make Fisher comparison figure!
-    F_approx = kfac_approx_fisher(25, init_params, train_images[:100], 2, 5)
-    F = exact_fisher(init_params, train_images[:100], 2, 5)
+    F_approx = kfac_approx_fisher(100, init_params, train_images[:100], 2, 6)
+    F = exact_fisher(init_params, train_images[:100], 2, 6)
 
-    def matshow(X, filename):
-      plt.matshow(X, vmax=scoreatpercentile(X.ravel(), 90), cmap=plt.cm.gray_r)
+    def matshow(X, filename, percentile=90):
+      vmax = scoreatpercentile(X.ravel(), percentile)
+      plt.matshow(X, vmax=vmax, cmap=plt.cm.gray_r)
+      plt.colorbar()
       plt.savefig(filename)
 
-    matshow(np.hstack((F_approx, F)), 'raw.pdf')
+    matshow(np.abs(np.hstack((F_approx, F))), 'raw.pdf', percentile=50)
     matshow(np.abs(F - F_approx), 'residual.pdf')
+    matshow(np.abs(F - F_approx) / np.abs(F), 'relative.pdf')
 
 
 # NOTE: right factor can blow up because we have an over-parameterized logistic
