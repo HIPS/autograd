@@ -247,6 +247,7 @@ def montecarlo_fisher(num_samples, params, inputs, start_layer, stop_layer):
     return F / num_samples
 
 def kfac_approx_fisher(sample_factor, params, inputs, start_layer, stop_layer):
+    '''Estimate the K-FAC approximate Fisher using Monte Carlo samples.'''
     layer_sizes = [W.shape[0] for W, _ in params] + [params[-1][0].shape[1]]
 
     samples = init_sample_lists(layer_sizes)
@@ -257,6 +258,19 @@ def kfac_approx_fisher(sample_factor, params, inputs, start_layer, stop_layer):
     As, Gs = update_factor_estimates(init_factor_estimates(layer_sizes), samples, 0.)
     sl = slice(start_layer, stop_layer)
     return block_diag(*map(np.kron, As[sl], Gs[sl]))
+
+def kron_svd(A, Bshape):
+    '''Solves arg min_{B, C} || A - kron(B, C) ||_{Fro}'''
+    blocks = map(lambda blockcol: np.split(blockcol, Bshape[0], 0),
+                                  np.split(A,        Bshape[1], 1))
+    Atilde = np.vstack([block.ravel() for blockcol in blocks
+                                      for block in blockcol])
+    U, s, V = np.linalg.svd(Atilde)
+    Cshape = A.shape[0] // Bshape[0], A.shape[1] // Bshape[1]
+    idx = np.argmax(s)
+    B = np.sqrt(s[idx]) * U[:,idx].reshape(Bshape)
+    C = np.sqrt(s[idx]) * V[idx,:].reshape(Cshape)
+    return B, C
 
 ### script
 
