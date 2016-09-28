@@ -268,7 +268,7 @@ def kron_svd(A, Bshape):
     U, s, V = np.linalg.svd(Atilde)
     Cshape = A.shape[0] // Bshape[0], A.shape[1] // Bshape[1]
     idx = np.argmax(s)
-    B = np.sqrt(s[idx]) * U[:,idx].reshape(Bshape)
+    B = np.sqrt(s[idx]) * U[:,idx].reshape(Bshape).T
     C = np.sqrt(s[idx]) * V[idx,:].reshape(Cshape)
     return B, C
 
