@@ -234,6 +234,25 @@ def make_grad_tile(ans, x, reps):
     return tile_grad
 anp.tile.defgrad(make_grad_tile)
 
+def make_grad_kron(argnum, ans, operands, kwargs):
+    A = kwargs['a'] if 'a' in kwargs else operands[0]
+    B = kwargs['b'] if 'b' in kwargs else operands[1]
+    def blocks(G):
+        return map(lambda blockrow: anp.split(blockrow, A.shape[1], 1),
+                                    anp.split(G,        A.shape[0], 0))
+    flat = lambda lst: [item for sublist in lst for item in sublist]
+
+    if argnum == 0:
+        Bflat = anp.ravel(B)
+        return lambda G: \
+            anp.array([[anp.dot(Bflat, anp.ravel(Gij)) for Gij in Gi]
+                       for Gi in blocks(G)])
+    else:
+        Aflat = anp.ravel(A)
+        return lambda G: \
+            sum(aij * Gij for aij, Gij in zip(Aflat, flat(blocks(G))))
+anp.kron.gradmaker = make_grad_kron
+
 def make_grad_transpose(ans, x, axes=None):
     if axes is not None:
         axes = anp.argsort(axes)
