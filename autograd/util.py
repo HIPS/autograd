@@ -130,57 +130,43 @@ def base_class(t):
         return t
 
 def flatten(value):
-    """value can be any nesting of tuples, arrays, dicts.
-       returns 1D numpy array and an unflatten function."""
+    """Flattens any nesting of tuples, arrays, or dicts.
+       Returns 1D numpy array and an unflatten function.
+       Doesn't preserve mixed numeric types (e.g. floats and ints).
+       Assumes dict keys are sortable."""
     if isinstance(getval(value), np.ndarray):
+        shape = value.shape
         def unflatten(vector):
-            return np.reshape(vector, value.shape)
+            return np.reshape(vector, shape)
         return np.ravel(value), unflatten
 
-    elif isinstance(getval(value), float):
+    elif isinstance(getval(value), (float, int)):
         return np.array([value]), lambda x : x[0]
 
-    elif isinstance(getval(value), tuple):
+    elif isinstance(getval(value), (tuple, list)):
+        constructor = type(getval(value))
         if not value:
-            return np.array([]), lambda x : ()
-        flattened_first, unflatten_first = flatten(value[0])
-        flattened_rest, unflatten_rest = flatten(value[1:])
+            return np.array([]), lambda x : constructor()
+        flat_pieces, unflatteners = zip(*map(flatten, value))
+        split_indices = np.cumsum([len(vec) for vec in flat_pieces])
+
         def unflatten(vector):
-            N = len(flattened_first)
-            return (unflatten_first(vector[:N]),) + unflatten_rest(vector[N:])
+            pieces = np.split(vector, split_indices)
+            return constructor(unflatten(v) for unflatten, v in zip(unflatteners, pieces))
 
-        return np.concatenate((flattened_first, flattened_rest)), unflatten
-
-    elif isinstance(getval(value), list):
-        if not value:
-            return np.array([]), lambda x : []
-        flattened_first, unflatten_first = flatten(value[0])
-        flattened_rest, unflatten_rest = flatten(value[1:])
-        def unflatten(vector):
-            N = len(flattened_first)
-            return [unflatten_first(vector[:N])] + unflatten_rest(vector[N:])
-
-        return np.concatenate((flattened_first, flattened_rest)), unflatten
+        return np.concatenate(flat_pieces), unflatten
 
     elif isinstance(getval(value), dict):
-        flattened = []
-        unflatteners = []
-        lengths = []
-        keys = []
-        for k, v in sorted(iteritems(value), key=itemgetter(0)):
-            cur_flattened, cur_unflatten = flatten(v)
-            flattened.append(cur_flattened)
-            unflatteners.append(cur_unflatten)
-            lengths.append(len(cur_flattened))
-            keys.append(k)
+        items = sorted(iteritems(value), key=itemgetter(0))
+        keys, flat_pieces, unflatteners = zip(*[(k,) + flatten(v) for k, v in items])
+        split_indices = np.cumsum([len(vec) for vec in flat_pieces])
 
         def unflatten(vector):
-            split_ixs = np.cumsum(lengths)
-            pieces = np.split(vector, split_ixs)
+            pieces = np.split(vector, split_indices)
             return {key: unflattener(piece)
                     for piece, unflattener, key in zip(pieces, unflatteners, keys)}
 
-        return np.concatenate(flattened), unflatten
+        return np.concatenate(flat_pieces), unflatten
 
     else:
         raise Exception("Don't know how to flatten type {}".format(type(value)))
