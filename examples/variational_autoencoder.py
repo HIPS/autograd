@@ -7,7 +7,7 @@ import autograd.numpy.random as npr
 import autograd.scipy.stats.norm as norm
 
 from autograd import grad
-from optimizers import adam
+from autograd.optimizers import adam
 from data import load_mnist, save_images
 
 def diag_gaussian_log_density(x, mu, log_std):

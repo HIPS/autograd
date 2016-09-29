@@ -7,7 +7,7 @@ import autograd.numpy.random as npr
 import autograd.scipy.stats.norm as norm
 
 from black_box_svi import black_box_variational_inference
-from optimizers import adam
+from autograd.optimizers import adam
 
 
 def make_nn_funs(layer_sizes, L2_reg, noise_variance, nonlinearity=np.tanh):
