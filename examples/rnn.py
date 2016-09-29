@@ -10,7 +10,7 @@ from autograd import grad
 from autograd.scipy.misc import logsumexp
 from os.path import dirname, join
 from builtins import range
-from optimizers import adam
+from autograd.optimizers import adam
 
 
 ### Helper functions #################

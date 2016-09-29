@@ -7,7 +7,7 @@ import autograd.numpy.random as npr
 import autograd.scipy.stats.norm as norm
 from autograd import grad
 
-from optimizers import adam
+from autograd.optimizers import adam
 
 
 def make_nn_funs(layer_sizes, weight_scale=10.0, noise_scale=0.1, nonlinearity=np.tanh):
