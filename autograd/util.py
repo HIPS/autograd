@@ -148,7 +148,7 @@ def flatten(value):
         if not value:
             return np.array([]), lambda x : constructor()
         flat_pieces, unflatteners = zip(*map(flatten, value))
-        split_indices = np.cumsum([len(vec) for vec in flat_pieces])
+        split_indices = np.cumsum([len(vec) for vec in flat_pieces[:-1]])
 
         def unflatten(vector):
             pieces = np.split(vector, split_indices)
@@ -159,7 +159,7 @@ def flatten(value):
     elif isinstance(getval(value), dict):
         items = sorted(iteritems(value), key=itemgetter(0))
         keys, flat_pieces, unflatteners = zip(*[(k,) + flatten(v) for k, v in items])
-        split_indices = np.cumsum([len(vec) for vec in flat_pieces])
+        split_indices = np.cumsum([len(vec) for vec in flat_pieces[:-1]])
 
         def unflatten(vector):
             pieces = np.split(vector, split_indices)
