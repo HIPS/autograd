@@ -122,8 +122,8 @@ def compute_precond(factor_estimates, lmbda):
 
 def apply_preconditioner(precond, gradient):
     stack = lambda W, b: np.vstack((W, b))
-    split = lambda Wb: W[:-1], b[-1]
-    kronp = lambda Ainv, Ginv, Wb: np.dot(Ainv, Wb, Ginv.T)
+    split = lambda Wb: (Wb[:-1], Wb[-1])
+    kronp = lambda Ainv, Ginv, Wb: np.dot(Ainv, np.dot(Wb, Ginv.T))
     return [split(kronp(Ainv, Ginv, stack(dW, db)))
             for (Ainv, Ginv), (dW, db) in zip(precond, gradient)]
 
@@ -234,6 +234,7 @@ if __name__ == '__main__':
     N, train_images, train_labels, test_images,  test_labels = load_mnist()
     train_images = npr.permutation(train_images)
     train_images += 1e-2 * npr.randn(*train_images.shape)
+    num_datapoints = train_images.shape[0]
 
     # initialize parameters
     init_params = init_random_params(param_scale, layer_sizes)
@@ -250,27 +251,28 @@ if __name__ == '__main__':
     # Define training objective
     def objective(params, itr):
         idx = batch_indices(itr)
-        return -log_likelihood(params, train_images[idx], train_labels[idx])
+        ll = -log_likelihood(params, train_images[idx], train_labels[idx])
+        return ll / num_datapoints
 
     # Optimize!
-    # optimized_params = kfac(
-    #     objective, get_batch, layer_sizes, init_params, step_size=1e-3,
-    #     num_iters=1000, lmbda=0., eps=0.05, num_samples=10*batch_size,
-    #     sample_period=1e4, reestimate_period=1e4, update_precond_period=1e4)
+    optimized_params = kfac(
+        objective, get_batch, layer_sizes, init_params, step_size=1e-3,
+        num_iters=1000, lmbda=0., eps=0.05, num_samples=10*batch_size,
+        sample_period=1e4, reestimate_period=1e4, update_precond_period=1e4)
 
-    # Make Fisher comparison figure!
-    F_approx = kfac_approx_fisher(100, init_params, train_images[:100], 2, 6)
-    F = exact_fisher(init_params, train_images[:100], 2, 6)
+    # # Make Fisher comparison figure!
+    # F_approx = kfac_approx_fisher(100, init_params, train_images[:100], 2, 6)
+    # F = exact_fisher(init_params, train_images[:100], 2, 6)
 
-    def matshow(X, filename, percentile=90):
-      vmax = scoreatpercentile(X.ravel(), percentile)
-      plt.matshow(X, vmax=vmax, cmap=plt.cm.gray_r)
-      plt.colorbar()
-      plt.savefig(filename)
+    # def matshow(X, filename, percentile=90):
+    #   vmax = scoreatpercentile(X.ravel(), percentile)
+    #   plt.matshow(X, vmax=vmax, cmap=plt.cm.gray_r)
+    #   plt.colorbar()
+    #   plt.savefig(filename)
 
-    matshow(np.abs(np.hstack((F_approx, F))), 'raw.pdf', percentile=50)
-    matshow(np.abs(F - F_approx), 'residual.pdf')
-    matshow(np.abs(F - F_approx) / np.abs(F), 'relative.pdf')
+    # matshow(np.abs(np.hstack((F_approx, F))), 'raw.pdf', percentile=50)
+    # matshow(np.abs(F - F_approx), 'residual.pdf')
+    # matshow(np.abs(F - F_approx) / np.abs(F), 'relative.pdf')
 
 
 # NOTE: right factor can blow up because we have an over-parameterized logistic
@@ -282,4 +284,3 @@ if __name__ == '__main__':
 
 # TODO handle other likelihoods
 # TODO adapt lmbda
-# TODO add num_samples
