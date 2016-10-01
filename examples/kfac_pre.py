@@ -7,6 +7,7 @@ from autograd.scipy.linalg import block_diag
 from autograd import hessian, jacobian, grad_and_aux, value_and_grad
 from autograd.util import getval, flatten
 from data import load_mnist
+from operator import add
 
 import matplotlib.pyplot as plt
 from scipy.stats import scoreatpercentile
@@ -41,6 +42,8 @@ def init_random_params(scale, layer_sizes):
             for m, n in zip(layer_sizes[:-1], layer_sizes[1:])]
 
 ### General utility functions
+
+homog = lambda X: np.hstack((X, np.ones(X.shape[0])[:,None]))
 
 def sample_discrete_from_log(logprobs):
     '''Given an NxD array where each row stores the log probabilities of a
@@ -81,79 +84,48 @@ def model_predictive_log_likelihood(extra_biases, params, inputs):
     model_sampled_targets = sample_discrete_from_log(getval(logprobs))
     return np.sum(logprobs * model_sampled_targets), activations
 
-def activation_and_grad_samples(params, inputs, num_samples):
+def activation_and_grad_stats(params, inputs, num_samples):
     '''Collects the statistics necessary to estimate the approximate Fisher
        information matrix used in K-FAC.'''
     inputs = inputs[npr.choice(inputs.shape[0], size=num_samples)]
     extra_biases = [np.zeros((inputs.shape[0], b.shape[0])) for W, b in params]
     gradfun = grad_and_aux(model_predictive_log_likelihood)
     g_samples, a_samples = gradfun(extra_biases, params, inputs)
-    return a_samples, g_samples
+    outer = lambda X: np.dot(X.T, X)
+    return [(outer(homog(A)), outer(G), len(A))
+            for A, G in zip(a_samples, g_samples)]
 
-### Bookkeeping for samples
+### Bookkeeping
 
-# These functions are just to help collect samples across multiple iterations.
+def update_stats(stats, new_stats):
+    return [map(add, s1, s2) for s1, s2 in zip(stats, new_stats)]
 
-def append_samples(all_samples, new_samples):
-    '''Appends the newly-collected layerwise samples to the rest of the samples.
-       Both all_samples and new_samples are lists of length num_layers,
-       all_samples[0] is a list of all the samples for layer 0,
-       all_samples[1] is a list of all the samples for layer 1, etc.
-    '''
-    for layer_samples, new_layer_samples in zip(all_samples, new_samples):
-        layer_samples.append(new_layer_samples)
+def init_stats(layer_sizes):
+    return [(np.zeros((d_in, d_out)), np.zeros((d_out, d_out)), 0)
+            for d_in, d_out in zip(layer_sizes[:-1], layer_sizes[1:])]
 
-def init_sample_lists(layer_sizes):
-    return [[[] for _ in layer_sizes[:-1]] for _ in range(2)]
-
-### Bookkeeping for kron factor estimates
-
-# These functions are for turning the collected samples into estimates of the
-# Kronecker factors that we use to define the K-FAC preconditioner.
-
-append_homog_coord = lambda x: np.hstack((x, np.ones((x.shape[0], 1))))
-identity = lambda x: x
-
-def estimate_block_factors(all_samples, append_homog=False):
-    '''Given a list of samples for each layer, estimates the second moment from
-       the samples.'''
-    num_samples = sum(samples.shape[0] for samples in all_samples[0])
-    homog = append_homog_coord if append_homog else identity
-    sumsq = lambda samples: np.dot(samples.T, samples)
-    layer_sumsq = lambda layer_samples: \
-        sum(map(sumsq, map(homog, layer_samples))) / num_samples
-    return map(layer_sumsq, all_samples)
-
-def update_factor_estimates(old_estimates, samples, eps):
-    As, Gs = old_estimates
-    a_samples, g_samples = samples
-    Ahats = estimate_block_factors(a_samples, append_homog=True)
-    Ghats = estimate_block_factors(g_samples)
-    update = lambda old, new: eps*old + (1.-eps)*new
-    return map(update, As, Ahats), map(update, Gs, Ghats)
+def update_factor_estimates(factors, stats, eps):
+    update = lambda X, Xhat: eps * X + (1-eps) * Xhat
+    return [(update(A, aaT / n), update(G, ggT / n))
+            for (A, G), (aaT, ggT, n) in zip(factors, stats)]
 
 def init_factor_estimates(layer_sizes):
     layer_sizes = np.array(layer_sizes)
-    return map(np.eye, layer_sizes[:-1] + 1), map(np.eye, layer_sizes[1:])
+    return [(np.eye(d_in+1), np.eye(d_out))
+            for d_in, d_out in zip(layer_sizes[:-1], layer_sizes[1:])]
 
 ### Computing and applying the preconditioner
 
-# These functions compute the inverses of the Kronecker factors and apply the
-# K-FAC preconditioner to parameter updates.
-
 def compute_precond(factor_estimates, lmbda):
     inv = lambda X: np.linalg.inv(X + lmbda*np.eye(X.shape[0]))
-    layer_inv = lambda layer_factors: map(inv, layer_factors)
-    return map(layer_inv, factor_estimates)
+    return [(inv(A), inv(G)) for A, G in factor_estimates]
 
 def apply_preconditioner(precond, gradient):
-    def apply_block(Ainv, Ginv, W_grad, b_grad):
-        Wb_grad = np.vstack((W_grad, b_grad))
-        Wb_natgrad = np.dot(Ainv, np.dot(Wb_grad, Ginv.T))
-        return Wb_natgrad[:-1], Wb_natgrad[-1]
-
-    factors = zip(*precond)
-    return [apply_block(A, G, W, b) for (A,G), (W,b) in zip(factors, gradient)]
+    stack = lambda W, b: np.vstack((W, b))
+    split = lambda Wb: W[:-1], b[-1]
+    kronp = lambda Ainv, Ginv, Wb: np.dot(Ainv, Wb, Ginv.T)
+    return [split(kronp(Ainv, Ginv, stack(dW, db)))
+            for (Ainv, Ginv), (dW, db) in zip(precond, gradient)]
 
 ### K-FAC-pre (simplified preconditioned SGD version)
 
@@ -169,16 +141,11 @@ def kfac(objective, get_batch, layer_sizes, init_params, step_size, num_iters,
 
     ## initialize
 
-    samples = init_sample_lists(layer_sizes)
+    stats   = init_stats(layer_sizes)
     factors = init_factor_estimates(layer_sizes)
     precond = compute_precond(factors, lmbda=lmbda)
 
     ## helper functions
-
-    def collect_samples(params, i):
-        new_samples = activation_and_grad_samples(
-            params, get_batch(i), num_samples)
-        map(append_samples, samples, new_samples)
 
     def update_params(params, natgrad, step_size):
       return [(W - step_size*dW, b - step_size*db)
@@ -193,17 +160,15 @@ def kfac(objective, get_batch, layer_sizes, init_params, step_size, num_iters,
         val, gradient = objective_grad(params, i)
 
         if (i+1) % sample_period == 0:
-            collect_samples(params, i)
+            new_stats = activation_and_grad_stats(params, get_batch(i), num_samples)
+            stats = update_stats(stats, new_stats)
 
         if (i+1) % reestimate_period == 0:
-            factors = update_factor_estimates(factors, samples, eps)
-            samples = init_sample_lists(layer_sizes)
+            factors = update_factor_estimates(factors, stats, eps)
+            stats = init_stats(layer_sizes)
 
         if (i+1) % update_precond_period == 0:
             precond = compute_precond(factors, lmbda=lmbda)
-
-        cond = lambda X: np.linalg.cond(X + lmbda * np.eye(X.shape[0]))
-        print map(lambda lst: map(cond, lst), factors)
 
         natgrad = apply_preconditioner(precond, gradient)
         params = update_params(params, natgrad, step_size)
@@ -249,28 +214,10 @@ def montecarlo_fisher(num_samples, params, inputs, start_layer, stop_layer):
 def kfac_approx_fisher(sample_factor, params, inputs, start_layer, stop_layer):
     '''Estimate the K-FAC approximate Fisher using Monte Carlo samples.'''
     layer_sizes = [W.shape[0] for W, _ in params] + [params[-1][0].shape[1]]
-
-    samples = init_sample_lists(layer_sizes)
-    new_samples = activation_and_grad_samples(
-        params, inputs, sample_factor*inputs.shape[0])
-    map(append_samples, samples, new_samples)
-
-    As, Gs = update_factor_estimates(init_factor_estimates(layer_sizes), samples, 0.)
-    sl = slice(start_layer, stop_layer)
-    return block_diag(*map(np.kron, As[sl], Gs[sl]))
-
-def kron_svd(A, Bshape):
-    '''Solves arg min_{B, C} || A - kron(B, C) ||_{Fro}'''
-    blocks = map(lambda blockcol: np.split(blockcol, Bshape[0], 0),
-                                  np.split(A,        Bshape[1], 1))
-    Atilde = np.vstack([block.ravel() for blockcol in blocks
-                                      for block in blockcol])
-    U, s, V = np.linalg.svd(Atilde)
-    Cshape = A.shape[0] // Bshape[0], A.shape[1] // Bshape[1]
-    idx = np.argmax(s)
-    B = np.sqrt(s[idx]) * U[:,idx].reshape(Bshape).T
-    C = np.sqrt(s[idx]) * V[idx,:].reshape(Cshape)
-    return B, C
+    stats = activation_and_grad_stats(params, inputs, sample_factor*inputs.shape[0])
+    factors = update_factor_estimates(init_factor_estimates(layer_sizes), stats, 0.)
+    precond = compute_precond(factors, lmbda=0.)
+    return block_diag(*[np.kron(A, G) for A, G in precond[start_layer:stop_layer]])
 
 ### script
 
