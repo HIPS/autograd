@@ -101,7 +101,7 @@ def update_stats(stats, new_stats):
     return [map(add, s1, s2) for s1, s2 in zip(stats, new_stats)]
 
 def init_stats(layer_sizes):
-    return [(np.zeros((d_in, d_out)), np.zeros((d_out, d_out)), 0)
+    return [(np.zeros((d_in+1, d_in+1)), np.zeros((d_out, d_out)), 0)
             for d_in, d_out in zip(layer_sizes[:-1], layer_sizes[1:])]
 
 def update_factor_estimates(factors, stats, eps):
@@ -170,6 +170,7 @@ def kfac(objective, get_batch, layer_sizes, init_params, step_size, num_iters,
         if (i+1) % update_precond_period == 0:
             precond = compute_precond(factors, lmbda=lmbda)
 
+        print val
         natgrad = apply_preconditioner(precond, gradient)
         params = update_params(params, natgrad, step_size)
 
@@ -224,7 +225,7 @@ if __name__ == '__main__':
     npr.seed(0)
 
     # Model parameters
-    layer_sizes = [784, 256, 20, 20, 20, 20, 20, 10]
+    layer_sizes = [784, 256, 20, 10]
 
     # Training parameters
     param_scale = 0.1
@@ -251,14 +252,13 @@ if __name__ == '__main__':
     # Define training objective
     def objective(params, itr):
         idx = batch_indices(itr)
-        ll = -log_likelihood(params, train_images[idx], train_labels[idx])
-        return ll / num_datapoints
+        return -log_likelihood(params, train_images[idx], train_labels[idx])
 
     # Optimize!
     optimized_params = kfac(
         objective, get_batch, layer_sizes, init_params, step_size=1e-3,
-        num_iters=1000, lmbda=0., eps=0.05, num_samples=10*batch_size,
-        sample_period=1e4, reestimate_period=1e4, update_precond_period=1e4)
+        num_iters=1000, lmbda=0., eps=0.05, num_samples=batch_size,
+        sample_period=1000, reestimate_period=1000, update_precond_period=1000)
 
     # # Make Fisher comparison figure!
     # F_approx = kfac_approx_fisher(100, init_params, train_images[:100], 2, 6)
