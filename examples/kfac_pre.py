@@ -105,7 +105,7 @@ def init_stats(layer_sizes):
             for d_in, d_out in zip(layer_sizes[:-1], layer_sizes[1:])]
 
 def update_factor_estimates(factors, stats, eps):
-    update = lambda X, Xhat: eps * X + (1-eps) * Xhat
+    update = lambda X, Xhat: eps * X + (1.-eps) * Xhat
     return [(update(A, aaT / n), update(G, ggT / n))
             for (A, G), (aaT, ggT, n) in zip(factors, stats)]
 
@@ -216,8 +216,7 @@ def kfac_approx_fisher(sample_factor, params, inputs, start_layer, stop_layer):
     layer_sizes = [W.shape[0] for W, _ in params] + [params[-1][0].shape[1]]
     stats = activation_and_grad_stats(params, inputs, sample_factor*inputs.shape[0])
     factors = update_factor_estimates(init_factor_estimates(layer_sizes), stats, 0.)
-    precond = compute_precond(factors, lmbda=0.)
-    return block_diag(*[np.kron(A, G) for A, G in precond[start_layer:stop_layer]])
+    return block_diag(*[np.kron(A, G) for A, G in factors[start_layer:stop_layer]])
 
 ### script
 
