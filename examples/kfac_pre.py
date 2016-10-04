@@ -16,28 +16,27 @@ from scipy.stats import scoreatpercentile
 ### Vanilla neural net functions
 
 def neural_net_predict(params, inputs):
-    '''Deep neural network with muliticlass logistic predictions.'''
     return softmax(mlp(params, inputs))
 
-def log_likelihood(params, inputs, targets):
-    '''Like log_posterior in neural_net.py, but no prior (regularizer) term.'''
-    logprobs = neural_net_predict(params, inputs)
-    return np.sum(logprobs * targets)
-
 def mlp(params, inputs):
-    '''A multi-layer perceptron with a linear last layer.'''
     for W, b in params:
         outputs = np.dot(inputs, W) + b
         inputs = np.tanh(outputs)
     return outputs
 
 def softmax(inputs):
-    '''Log softmax, the canonical link function for logistic regression.'''
     return inputs - logsumexp(inputs, axis=1, keepdims=True)
 
+def log_likelihood(params, inputs, targets):
+    logprobs = neural_net_predict(params, inputs)
+    return np.sum(logprobs * targets)
+
+def accuracy(params, inputs, targets):
+    target_class    = np.argmax(targets, axis=1)
+    predicted_class = np.argmax(neural_net_predict(params, inputs), axis=1)
+    return np.mean(predicted_class == target_class)
+
 def init_random_params(scale, layer_sizes):
-    """Build a list of (weights, biases) tuples,
-       one for each layer in the net."""
     return [(scale * npr.randn(m, n), scale * npr.randn(n))
             for m, n in zip(layer_sizes[:-1], layer_sizes[1:])]
 
@@ -46,9 +45,6 @@ def init_random_params(scale, layer_sizes):
 homog = lambda X: np.hstack((X, np.ones(X.shape[0])[:,None]))
 
 def sample_discrete_from_log(logprobs):
-    '''Given an NxD array where each row stores the log probabilities of a
-       finite density, return the NxD array of one-hot encoded samples from
-       those densities.'''
     probs = np.exp(logprobs)
     cumvals = np.cumsum(probs, axis=1)
     indices = np.sum(npr.rand(logprobs.shape[0], 1) > cumvals, axis=1)
@@ -137,7 +133,7 @@ def apply_preconditioner(precond, gradient):
 
 def kfac(objective, get_batch, layer_sizes, init_params, step_size, num_iters,
          num_samples, sample_period, reestimate_period, update_precond_period,
-         lmbda, eps):
+         lmbda, eps, callback=None):
 
     ## initialize
 
@@ -158,6 +154,7 @@ def kfac(objective, get_batch, layer_sizes, init_params, step_size, num_iters,
     params = init_params
     for i in range(num_iters):
         val, gradient = objective_grad(params, i)
+        if callback: callback(params, i, gradient)
 
         if (i+1) % sample_period == 0:
             new_stats = activation_and_grad_stats(params, get_batch(i), num_samples)
@@ -170,7 +167,6 @@ def kfac(objective, get_batch, layer_sizes, init_params, step_size, num_iters,
         if (i+1) % update_precond_period == 0:
             precond = compute_precond(factors, lmbda=lmbda)
 
-        print val
         natgrad = apply_preconditioner(precond, gradient)
         params = update_params(params, natgrad, step_size)
 
@@ -225,17 +221,16 @@ if __name__ == '__main__':
     npr.seed(0)
 
     # Model parameters
-    layer_sizes = [784, 256, 20, 10]
+    layer_sizes = [784, 200, 100, 10]
 
     # Training parameters
     param_scale = 0.1
-    batch_size = 1024
+    batch_size = 256
+    num_epochs = 50
 
     # Load data
+    print("Loading training data...")
     N, train_images, train_labels, test_images,  test_labels = load_mnist()
-    train_images = npr.permutation(train_images)
-    train_images += 1e-2 * npr.randn(*train_images.shape)
-    num_datapoints = train_images.shape[0]
 
     # initialize parameters
     init_params = init_random_params(param_scale, layer_sizes)
@@ -254,13 +249,23 @@ if __name__ == '__main__':
         idx = batch_indices(itr)
         return -log_likelihood(params, train_images[idx], train_labels[idx])
 
+    print("     Epoch     |    Train accuracy  |       Test accuracy  ")
+    def print_perf(params, i, gradient):
+        if i % num_batches == 0:
+            train_acc = accuracy(params, train_images, train_labels)
+            test_acc  = accuracy(params, test_images, test_labels)
+            print("{:15}|{:20}|{:20}".format(i//num_batches, train_acc, test_acc))
+
     # Optimize!
+    np.seterr(over='raise')
     optimized_params = kfac(
-        objective, get_batch, layer_sizes, init_params, step_size=1e-3,
-        num_iters=1000, lmbda=0., eps=0.05, num_samples=batch_size,
-        sample_period=1000, reestimate_period=1000, update_precond_period=1000)
+        objective, get_batch, layer_sizes, init_params, step_size=1e-2,
+        num_iters=num_epochs * num_batches, lmbda=1., eps=0.05, num_samples=batch_size,
+        sample_period=1, reestimate_period=5, update_precond_period=10,
+        callback=print_perf)
 
     # # Make Fisher comparison figure!
+    # # NOTE: only works for small layers (e.g. a sequence of size-20 layers)
     # F_approx = kfac_approx_fisher(100, init_params, train_images[:100], 2, 6)
     # F = exact_fisher(init_params, train_images[:100], 2, 6)
 
@@ -273,14 +278,3 @@ if __name__ == '__main__':
     # matshow(np.abs(np.hstack((F_approx, F))), 'raw.pdf', percentile=50)
     # matshow(np.abs(F - F_approx), 'residual.pdf')
     # matshow(np.abs(F - F_approx) / np.abs(F), 'relative.pdf')
-
-
-# NOTE: right factor can blow up because we have an over-parameterized logistic
-# and hence the Fisher is rank-deficient (all-ones is in its null space). The
-# left factor can also blow up because of the background in the images.
-
-# TODO get regular sgd working in this file just like in other file
-# TODO maybe fix overparameterization of last layer
-
-# TODO handle other likelihoods
-# TODO adapt lmbda

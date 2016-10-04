@@ -46,13 +46,13 @@ def accuracy(params, inputs, targets):
 if __name__ == '__main__':
     # Model parameters
     layer_sizes = [784, 200, 100, 10]
-    L2_reg = 1.0
+    L2_reg = 0.0
 
     # Training parameters
     param_scale = 0.1
     batch_size = 256
-    num_epochs = 5
-    step_size = 0.001
+    num_epochs = 50
+    step_size = 1e-2
 
     print("Loading training data...")
     N, train_images, train_labels, test_images,  test_labels = load_mnist()
