@@ -24,8 +24,8 @@ def mlp(params, inputs):
 def softmax(inputs):
     return inputs - logsumexp(inputs, axis=1, keepdims=True)
 
-def init_random_params(scale, layer_sizes):
-    return [(scale * npr.randn(m, n), scale * npr.randn(n))
+def init_random_params(scale, layer_sizes, rng=npr):
+    return [(scale * rng.randn(m, n), scale * rng.randn(n))
             for m, n in zip(layer_sizes[:-1], layer_sizes[1:])]
 
 def log_likelihood(params, inputs, targets):
@@ -222,10 +222,11 @@ def make_table(column_labels):
     lens = list(map(len, column_labels))
     print(' | '.join('{{:>{}}}'.format(l) for l in lens).format(*column_labels))
     row_format = ' | '.join(['{{:{}d}}'.format(lens[0])]
-                            + ['{{:{}.3f}}'.format(l) for l in lens[1:]])
+                            + ['{{:{}.4f}}'.format(l) for l in lens[1:]])
     def print_row(*vals):
         print(row_format.format(*vals))
     return print_row
+
 
 ### script
 
