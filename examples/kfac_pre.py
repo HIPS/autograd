@@ -6,12 +6,8 @@ from autograd.scipy.misc import logsumexp
 from autograd.scipy.linalg import block_diag
 from autograd import hessian, jacobian, grad_and_aux, value_and_grad
 from autograd.util import getval, flatten
-from autograd.optimizers import sgd, adam
 from data import load_mnist
 from operator import add
-
-import matplotlib.pyplot as plt
-from scipy.stats import scoreatpercentile
 
 
 ### Vanilla neural net functions
@@ -275,24 +271,8 @@ if __name__ == '__main__':
     init_params = init_random_params(param_scale, layer_sizes)
 
     # Optimize!
-    np.seterr(over='raise')
     optimized_params = kfac(
         objective, get_batch, layer_sizes, init_params, step_size=1e-2,
         num_iters=num_epochs * num_batches, lmbda=1., eps=0.05, num_samples=batch_size,
         sample_period=1, reestimate_period=5, update_precond_period=10,
         callback=print_perf)
-
-    # # Make Fisher comparison figure!
-    # # NOTE: only works for small layers (e.g. a sequence of size-20 layers)
-    # F_approx = kfac_approx_fisher(100, init_params, train_images[:100], 2, 6)
-    # F = exact_fisher(init_params, train_images[:100], 2, 6)
-
-    # def matshow(X, filename, percentile=90):
-    #   vmax = scoreatpercentile(X.ravel(), percentile)
-    #   plt.matshow(X, vmax=vmax, cmap=plt.cm.gray_r)
-    #   plt.colorbar()
-    #   plt.savefig(filename)
-
-    # matshow(np.abs(np.hstack((F_approx, F))), 'raw.pdf', percentile=50)
-    # matshow(np.abs(F - F_approx), 'residual.pdf')
-    # matshow(np.abs(F - F_approx) / np.abs(F), 'relative.pdf')
