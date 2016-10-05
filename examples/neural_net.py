@@ -72,7 +72,7 @@ if __name__ == '__main__':
     # Get gradient of objective using autograd.
     objective_grad = grad(objective)
 
-    print("     Epoch     |    Train accuracy  |       Test accuracy  ")
+    print('{:^15}|{:^20}|{:^20}'.format('Epoch', 'Train accuracy', 'Test accuracy'))
     def print_perf(params, iter, gradient):
         if iter % num_batches == 0:
             train_acc = accuracy(params, train_images, train_labels)
