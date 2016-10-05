@@ -19,6 +19,7 @@ if __name__ == '__main__':
     num_epochs = 50
     step_sizes = [1e-3, 1e-2]
     optimizers = [sgd, adam]
+    lambda_values = [1., 1e-1]
 
     # Load data
     print("Loading training data...")
@@ -67,12 +68,21 @@ if __name__ == '__main__':
             optimized_params = adam(grad(objective), init_params, step_size=step_size,
                                     num_iters=num_epochs * num_batches, callback=callback)
 
+    eps = 0.05
+    sample_period = 1
+    reestimate_period = 5
+    update_precond_period = 5
+    num_samples = batch_size
+    step_size = 1e-3
+    lmbda = 0.1
 
-    for step_size in step_sizes:
-        key = '{} {:.0e}'.format('kfac', step_size)
-        callback = make_callback(key)
-        init_params = initialize_params()
-        optimized_params = kfac(
-            objective, get_batch, layer_sizes, init_params, step_size=step_size,
-            num_iters=num_epochs * num_batches, lmbda=1., eps=0.05, num_samples=batch_size,
-            sample_period=1, reestimate_period=5, update_precond_period=10, callback=callback)
+    key = '{} {:.0e} {:.0e} {:.2f} {:d} {:d} {:d}'.format(
+        'kfac', step_size, lmbda, eps,
+        sample_period, reestimate_period, update_precond_period)
+    callback = make_callback(key)
+    init_params = initialize_params()
+    optimized_params = kfac(
+        objective, get_batch, layer_sizes, init_params, step_size=step_size,
+        num_iters=num_epochs*num_batches, lmbda=lmbda, eps=eps, num_samples=num_samples,
+        sample_period=sample_period, reestimate_period=reestimate_period,
+        update_precond_period=update_precond_period, callback=callback)
