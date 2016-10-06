@@ -132,7 +132,7 @@ def apply_preconditioner(precond, gradient):
 
 def kfac(objective, get_batch, layer_sizes, init_params, step_size, num_iters,
          num_samples, sample_period, reestimate_period, update_precond_period,
-         lmbda, eps, mu=0.0, callback=None):
+         lmbda, eps, mu=0.9, callback=None):
 
     ## initialize
 
@@ -162,9 +162,9 @@ def kfac(objective, get_batch, layer_sizes, init_params, step_size, num_iters,
         if (i+1) % update_precond_period == 0:
             precond = compute_precond(factors, lmbda=lmbda)
 
-        natgrad = apply_preconditioner(precond, gradient)
-        momentum = mu * momentum - step_size * flatten(natgrad)[0]
-        flat_params = flat_params + momentum
+        natgrad = flatten(apply_preconditioner(precond, gradient))[0]
+        momentum = mu * momentum - (1. - mu) * natgrad
+        flat_params = flat_params + step_size * momentum
         params = unflatten(flat_params)
 
     return params
