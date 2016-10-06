@@ -75,12 +75,12 @@ def neural_net_predict_and_activations(extra_biases, params, inputs):
 def model_predictive_log_likelihood(extra_biases, params, inputs):
     '''Computes Monte Carlo estimate of log_likelihood on targets sampled from
        the model. Also returns all computed activations.'''
-    logprobs, activations = neural_net_predict_and_activations(
-        extra_biases, params, inputs)
+    logprobs, activations = \
+        neural_net_predict_and_activations(extra_biases, params, inputs)
     model_sampled_targets = sample_discrete_from_log(getval(logprobs))
     return np.sum(logprobs * model_sampled_targets), activations
 
-def activation_and_grad_stats(params, inputs, num_samples):
+def collect_stats(params, inputs, num_samples):
     '''Collects the statistics necessary to estimate the approximate Fisher
        information matrix used in K-FAC.'''
     inputs = inputs[npr.choice(inputs.shape[0], size=num_samples)]
@@ -97,8 +97,8 @@ def update_stats(stats, new_stats):
     return [map(add, s1, s2) for s1, s2 in zip(stats, new_stats)]
 
 def init_stats(layer_sizes):
-    return [(np.zeros((d_in+1, d_in+1)), np.zeros((d_out, d_out)), 0)
-            for d_in, d_out in zip(layer_sizes[:-1], layer_sizes[1:])]
+    return [(np.zeros((m+1, m+1)), np.zeros((n, n)), 0)
+            for m, n in zip(layer_sizes[:-1], layer_sizes[1:])]
 
 def update_factor_estimates(factors, stats, eps):
     update = lambda X, Xhat: eps * X + (1.-eps) * Xhat
@@ -106,9 +106,8 @@ def update_factor_estimates(factors, stats, eps):
             for (A, G), (aaT, ggT, n) in zip(factors, stats)]
 
 def init_factor_estimates(layer_sizes):
-    layer_sizes = np.array(layer_sizes)
-    return [(np.eye(d_in+1), np.eye(d_out))
-            for d_in, d_out in zip(layer_sizes[:-1], layer_sizes[1:])]
+    return [(np.eye(m+1), np.eye(n))
+            for m, n in zip(layer_sizes[:-1], layer_sizes[1:])]
 
 ### Computing and applying the preconditioner
 
@@ -133,7 +132,7 @@ def apply_preconditioner(precond, gradient):
 
 def kfac(objective, get_batch, layer_sizes, init_params, step_size, num_iters,
          num_samples, sample_period, reestimate_period, update_precond_period,
-         lmbda, eps, callback=None):
+         lmbda, eps, mu=0.9, callback=None):
 
     ## initialize
 
@@ -141,34 +140,32 @@ def kfac(objective, get_batch, layer_sizes, init_params, step_size, num_iters,
     factors = init_factor_estimates(layer_sizes)
     precond = compute_precond(factors, lmbda=lmbda)
 
-    ## helper functions
-
-    def update_params(params, natgrad, step_size):
-      return [(W - step_size*dW, b - step_size*db)
-              for (W, b), (dW, db) in zip(params, natgrad)]
-
     objective_grad = value_and_grad(objective)
 
     ## main loop
 
     params = init_params
+    flat_params, unflatten = flatten(init_params)
+    momentum = np.zeros_like(flat_params)
     for i in range(num_iters):
         val, gradient = objective_grad(params, i)
         if callback: callback(params, i, gradient)
 
-        if (i+1) % sample_period == -1 % sample_period:
-            new_stats = activation_and_grad_stats(params, get_batch(i), num_samples)
+        if (i+1) % sample_period == 0:
+            new_stats = collect_stats(params, get_batch(i), num_samples)
             stats = update_stats(stats, new_stats)
 
-        if (i+1) % reestimate_period == -1 % reestimate_period:
+        if (i+1) % reestimate_period == 0:
             factors = update_factor_estimates(factors, stats, eps)
             stats = init_stats(layer_sizes)
 
-        if (i+1) % update_precond_period == -1 % update_precond_period:
+        if (i+1) % update_precond_period == 0:
             precond = compute_precond(factors, lmbda=lmbda)
 
         natgrad = apply_preconditioner(precond, gradient)
-        params = update_params(params, natgrad, step_size)
+        momentum = mu * momentum - step_size * flatten(natgrad)[0]
+        flat_params = flat_params + momentum
+        params = unflatten(flat_params)
 
     return params
 
@@ -211,7 +208,7 @@ def montecarlo_fisher(num_samples, params, inputs, start_layer, stop_layer):
 def kfac_approx_fisher(sample_factor, params, inputs, start_layer, stop_layer):
     '''Estimate the K-FAC approximate Fisher using Monte Carlo samples.'''
     layer_sizes = [W.shape[0] for W, _ in params] + [params[-1][0].shape[1]]
-    stats = activation_and_grad_stats(params, inputs, sample_factor*inputs.shape[0])
+    stats = collect_stats(params, inputs, sample_factor*inputs.shape[0])
     factors = update_factor_estimates(init_factor_estimates(layer_sizes), stats, 0.)
     return block_diag(*[np.kron(A, G) for A, G in factors[start_layer:stop_layer]])
 
@@ -273,7 +270,9 @@ if __name__ == '__main__':
 
     # Optimize!
     optimized_params = kfac(
-        objective, get_batch, layer_sizes, init_params, step_size=1e-2,
-        num_iters=num_epochs * num_batches, lmbda=1., eps=0.05, num_samples=batch_size,
-        sample_period=1, reestimate_period=5, update_precond_period=10,
+        objective, get_batch, layer_sizes, init_params, step_size=1e-3,
+        num_iters=num_epochs*num_batches, lmbda=0.1, eps=0.05, num_samples=batch_size,
+        sample_period=1, reestimate_period=5, update_precond_period=5,
         callback=print_perf)
+
+# TODO rename lmbda to gamma, make it follow the paper (i.e. compute \pi_\ell)

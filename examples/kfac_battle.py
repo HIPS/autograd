@@ -60,13 +60,13 @@ if __name__ == '__main__':
 
     initialize_params = lambda: init_random_params(param_scale, layer_sizes, npr.RandomState(0))
 
-    for optimizer in optimizers:
-        for step_size in step_sizes:
-            key = '{} {:.0e}'.format(optimizer.func_name, step_size)
-            callback = make_callback(key)
-            init_params = initialize_params()
-            optimized_params = adam(grad(objective), init_params, step_size=step_size,
-                                    num_iters=num_epochs * num_batches, callback=callback)
+#     for optimizer in optimizers:
+#         for step_size in step_sizes:
+#             key = '{} {:.0e}'.format(optimizer.func_name, step_size)
+#             callback = make_callback(key)
+#             init_params = initialize_params()
+#             optimized_params = adam(grad(objective), init_params, step_size=step_size,
+#                                     num_iters=num_epochs * num_batches, callback=callback)
 
     eps = 0.05
     sample_period = 1
