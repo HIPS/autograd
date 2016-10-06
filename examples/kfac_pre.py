@@ -132,7 +132,7 @@ def apply_preconditioner(precond, gradient):
 
 def kfac(objective, get_batch, layer_sizes, init_params, step_size, num_iters,
          num_samples, sample_period, reestimate_period, update_precond_period,
-         lmbda, eps, mu=0.9, callback=None):
+         lmbda, eps, mu=0.0, callback=None):
 
     ## initialize
 
