@@ -266,13 +266,13 @@ class TapedOp(object):
 
 class Node(object):
     __slots__ = ['value', 'tapes']
-    Rnode = TapedOp
+    TapedOp = TapedOp
     type_mappings = {}
     def __init__(self, value, tapes):
         self.value = value
         self.tapes = {}
         for tape in tapes:
-            new_rnode = self.Rnode(type(self), value)
+            new_rnode = self.TapedOp(type(self), value)
             tape.append(new_rnode)
             self.tapes[tape] = new_rnode
 
@@ -421,7 +421,7 @@ class NoDerivativeTapedOp(TapedOp):
 
 class NoDerivativeNode(FloatNode):
     # inherit from FloatNode so that numerical infix operators work
-    Rnode = NoDerivativeTapedOp
+    TapedOp = NoDerivativeTapedOp
 
     @staticmethod
     def cast(value, example):
