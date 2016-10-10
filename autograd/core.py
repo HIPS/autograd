@@ -11,18 +11,7 @@ from functools import partial
 from future.utils import iteritems, raise_from, raise_
 from collections import defaultdict
 
-def grad(fun, argnum=0):
-    """
-    Returns a function which computes the gradient of `fun` with respect to
-    positional argument number `argnum`. The returned function takes the same
-    arguments as `fun`, but returns the gradient instead. The function `fun`
-    should be scalar-valued. The gradient has the same type as the argument."""
-    @attach_name_and_doc(fun, argnum, 'Gradient')
-    def gradfun(*args,**kwargs):
-        return backward_pass(*forward_pass(fun,args,kwargs,argnum))
-    return gradfun
-
-def forward_pass(fun, args, kwargs, argnum=0):
+def tape_computation(fun, args, kwargs, argnum=0):
     tape = CalculationTape()
     arg_wrt = args[argnum]
     start_node = new_node(safe_type(getval(arg_wrt)), [tape])
@@ -32,7 +21,19 @@ def forward_pass(fun, args, kwargs, argnum=0):
     except Exception as e: add_extra_error_message(e)
     return start_node, end_node, tape
 
-def backward_pass(start_node, end_node, tape, preserve_tape=False):
+### reverse mode
+
+def grad(fun, argnum=0):
+    """Returns a function which computes the gradient of `fun` with respect to
+    positional argument number `argnum`. The returned function takes the same
+    arguments as `fun`, but returns the gradient instead. The function `fun`
+    should be scalar-valued. The gradient has the same type as the argument."""
+    @attach_name_and_doc(fun, argnum, 'Gradient')
+    def gradfun(*args,**kwargs):
+        return backward_pass(*tape_computation(fun,args,kwargs,argnum))
+    return gradfun
+
+def backward_pass(start_node, end_node, tape):
     if not isinstance(end_node, Node) or tape not in end_node.tapes:
         warnings.warn("Output seems independent of input. Returning zero gradient.")
         return zeros_like(start_node)
@@ -60,6 +61,29 @@ def backward_pass(start_node, end_node, tape, preserve_tape=False):
                 parent.outgrads.append(og)
 
     return cur_outgrad
+
+### forward mode
+
+def forward_mode_grad(fun, argnum=0):
+    def gradfun(*args, **kwargs):
+        return forward_pass(*tape_computation(fun,args,kwargs,argnum))
+    return gradfun
+
+def forward_pass(start_node, end_node, tape):
+    for node in tape:
+        node.ingrads = []
+    start_node.tapes[tape].ingrads = [1.]  # TODO should be np.eye(start_node_dim)
+
+    tape.complete = True
+    for node in tape:
+        if node.ingrads:
+            cur_ingrad = node.sum_ingrads()
+            for gradfun, child in node.child_grad_ops:
+                ig = cast_to_node_type(gradfun(cur_ingrad), child.node_type, child.node_value)
+                child.ingrads.append(ig)
+    return cur_ingrad
+
+### helper functions and classes
 
 def attach_name_and_doc(fun, argnum, opname):
     namestr = "{op}_{fun}_wrt_argnum_{argnum}".format(
@@ -91,6 +115,7 @@ class primitive(object):
     def __init__(self, fun):
         self.fun = fun
         self.grads = {}
+        self.forward_grads = {}
         self.zero_grads = set()
         self.__name__ = fun.__name__
         self.__doc__ = fun.__doc__
@@ -99,13 +124,22 @@ class primitive(object):
         try:
             return self.grads[argnum](ans, *args, **kwargs)
         except KeyError:
-            def error(*args, **kwargs):
-                if self.grads == {}:
-                    errstr = "Gradient of {0} not yet implemented."
-                else:
-                    errstr = "Gradient of {0} w.r.t. arg number {1} not yet implemented."
-                raise NotImplementedError(errstr.format(self.fun.__name__, argnum))
-            return error
+            return self.make_error('Reverse-mode', argnum)
+
+    def forward_gradmaker(self, argnum, ans, args, kwargs):
+        try:
+            return self.forward_grads[argnum](ans, *args, **kwargs)
+        except KeyError:
+            return self.make_error('Forward-mode', argnum)
+
+    def make_error(self, mode_str, argnum):
+        def error(*args, **kwargs):
+            if self.grads == {}:
+                errstr = "{0} gradient of {1} not yet implemented."
+            else:
+                errstr = "{0} gradient of {1} w.r.t. arg number {2} not yet implemented."
+            raise NotImplementedError(errstr.format(mode_str, self.fun.__name__, argnum))
+        return error
 
     def defgrad(self, gradmaker, argnum=0):
         self.grads[argnum] = gradmaker
@@ -117,6 +151,9 @@ class primitive(object):
     def defgrad_is_zero(self, argnums=(0,)):
         for argnum in argnums:
             self.zero_grads.add(argnum)
+
+    def defgrad_forward(self, gradmaker, argnum=0):
+        self.forward_grads[argnum] = gradmaker
 
     def __call__(self, *args, **kwargs):
         argvals = list(args)
@@ -135,10 +172,12 @@ class primitive(object):
         if result is NotImplemented: return result
         if ops:
             result = new_node(result, tapes)
-            for tape, argnum, parent in ops:
-                gradfun = self.gradmaker(argnum, result, args, kwargs)
+            for tape, argnum, parent_rnode in ops:
                 rnode = result.tapes[tape]
-                rnode.parent_grad_ops.append((gradfun, parent))
+                rev_gradfun = self.gradmaker(argnum, result, args, kwargs)
+                rnode.parent_grad_ops.append((rev_gradfun, parent_rnode))
+                fwd_gradfun = self.forward_gradmaker(argnum, result, args, kwargs)
+                parent_rnode.child_grad_ops.append((fwd_gradfun, rnode))
         return result
 
     if sys.version_info >= (3,):
@@ -192,6 +231,8 @@ class primitive_with_aux(primitive):
 def merge_tapes(x, y): return x
 merge_tapes.defgrad(lambda ans, x, y : lambda g : g)
 merge_tapes.defgrad(lambda ans, x, y : lambda g : g, argnum=1)
+merge_tapes.defgrad_forward(lambda ans, x, y: lambda g: g)
+merge_tapes.defgrad_forward(lambda ans, x, y: lambda g: zeros_like(ans), argnum=1)
 
 def new_node(value, tapes=[]):
     try:
@@ -205,20 +246,27 @@ def zeros_like(value):
     else:
         return new_node(value, []).zeros_like(value)
 
-class ReverseNode(object):
-    __slots__ = ['parent_grad_ops', 'outgrads', 'node_type', 'node_value']
+class RecordingNode(object):
+    __slots__ = ['parent_grad_ops', 'outgrads',
+                 'child_grad_ops', 'ingrads',
+                 'node_type', 'node_value']
     def __init__(self, node_type, node_value):
         self.parent_grad_ops = []
+        self.child_grad_ops = []
         self.outgrads = []
+        self.ingrads = []
         self.node_type = node_type
         self.node_value = node_value
 
     def sum_outgrads(self):
         return self.node_type.sum_outgrads(self.outgrads)
 
+    def sum_ingrads(self):
+        return self.node_type.sum_outgrads(self.ingrads)
+
 class Node(object):
     __slots__ = ['value', 'tapes']
-    Rnode = ReverseNode
+    Rnode = RecordingNode
     type_mappings = {}
     def __init__(self, value, tapes):
         self.value = value
@@ -240,6 +288,10 @@ class Node(object):
     def __str__(self):
         return "Autograd {0} with value {1} and {2} tape(s)".format(
             type(self).__name__, str(self.value), len(self.tapes))
+
+# TODO forward node
+# TODO make __call__ dispatch to (static/class method on) node
+# when multiple nodes, use dynamic context to decide?
 
 @primitive
 def cast(value, caster):
@@ -356,9 +408,9 @@ FloatNode.__dict__['__rmod__'].grads = swap_args(FloatNode.__dict__['__mod__'].g
 # reverse pass so that evaluating nondifferentiable functions that don't affect
 # the output don't cause problems (c.f. Issue #43).
 
-class NoDerivativeReverseNode(ReverseNode):
+class NoDerivativeRecordingNode(RecordingNode):
     def __init__(self, node_type, node_value):
-        super(NoDerivativeReverseNode,self).__init__(node_type, node_value)
+        super(NoDerivativeRecordingNode,self).__init__(node_type, node_value)
         self.type = type(node_value)
 
     def sum_outgrads(self):
@@ -366,7 +418,7 @@ class NoDerivativeReverseNode(ReverseNode):
 
 class NoDerivativeNode(FloatNode):
     # inherit from FloatNode so that numerical infix operators work
-    Rnode = NoDerivativeReverseNode
+    Rnode = NoDerivativeRecordingNode
 
     @staticmethod
     def cast(value, example):

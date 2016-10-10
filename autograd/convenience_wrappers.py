@@ -2,7 +2,7 @@
 from __future__ import absolute_import
 from functools import partial
 import autograd.numpy as np
-from autograd.core import grad, getval, forward_pass, backward_pass, attach_name_and_doc
+from autograd.core import grad, getval, tape_computation, backward_pass, attach_name_and_doc
 from collections import OrderedDict
 from inspect import getargspec
 

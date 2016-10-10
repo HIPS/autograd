@@ -78,6 +78,7 @@ anp.power.defgrad(lambda ans, x, y : unbroadcast(ans, x, lambda g : g * y * x **
 anp.power.defgrad(
     lambda ans, x, y :
     unbroadcast(ans, y, lambda g : g * anp.log(anp.where(x, x, 1.)) * x ** y), argnum=1)
+anp.power.defgrad_forward(lambda ans, x, y: lambda g: y * x**(anp.where(y, y-1, 1.)) * g)
 anp.maximum.defgrad(lambda ans, x, y : unbroadcast(ans, x, lambda g : g * balanced_eq(x, ans, y)))
 anp.maximum.defgrad(lambda ans, x, y : unbroadcast(ans, y, lambda g : g * balanced_eq(y, ans, x)), argnum=1)
 anp.minimum.defgrad(lambda ans, x, y : unbroadcast(ans, x, lambda g : g * balanced_eq(x, ans, y)))
