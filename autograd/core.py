@@ -246,7 +246,7 @@ def zeros_like(value):
     else:
         return new_node(value, []).zeros_like(value)
 
-class RecordingNode(object):
+class TapedOp(object):
     __slots__ = ['parent_grad_ops', 'outgrads',
                  'child_grad_ops', 'ingrads',
                  'node_type', 'node_value']
@@ -266,7 +266,7 @@ class RecordingNode(object):
 
 class Node(object):
     __slots__ = ['value', 'tapes']
-    Rnode = RecordingNode
+    Rnode = TapedOp
     type_mappings = {}
     def __init__(self, value, tapes):
         self.value = value
@@ -411,9 +411,9 @@ FloatNode.__dict__['__rmod__'].grads = swap_args(FloatNode.__dict__['__mod__'].g
 # reverse pass so that evaluating nondifferentiable functions that don't affect
 # the output don't cause problems (c.f. Issue #43).
 
-class NoDerivativeRecordingNode(RecordingNode):
+class NoDerivativeTapedOp(TapedOp):
     def __init__(self, node_type, node_value):
-        super(NoDerivativeRecordingNode,self).__init__(node_type, node_value)
+        super(NoDerivativeTapedOp,self).__init__(node_type, node_value)
         self.type = type(node_value)
 
     def sum_outgrads(self):
@@ -421,7 +421,7 @@ class NoDerivativeRecordingNode(RecordingNode):
 
 class NoDerivativeNode(FloatNode):
     # inherit from FloatNode so that numerical infix operators work
-    Rnode = NoDerivativeRecordingNode
+    Rnode = NoDerivativeTapedOp
 
     @staticmethod
     def cast(value, example):
