@@ -4,6 +4,7 @@ from functools import partial
 import autograd.numpy as np
 from autograd.core import grad, getval, forward_pass, backward_pass, attach_name_and_doc
 from collections import OrderedDict
+from inspect import getargspec
 
 def jacobian(fun, argnum=0):
     """
@@ -38,6 +39,12 @@ def jacobian(fun, argnum=0):
         shape = dummy.outshape + getshape(args[argnum])
         return np.reshape(concatenate(grads), shape) if shape else grads[0]
     return jacfun
+
+def grad_named(fun, argname):
+    '''Takes gradients with respect to a named argument.
+       Doesn't work on *args or **kwargs.'''
+    arg_index = getargspec(fun).args.index(argname)
+    return grad(fun, arg_index)
 
 def multigrad(fun, argnums=[0]):
     """Takes gradients wrt multiple arguments simultaneously."""
