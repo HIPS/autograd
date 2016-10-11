@@ -7,9 +7,9 @@ from future.utils import iteritems
 
 if use_gpu_numpy():
     print("Using GPU-supporting numpy wrapper")
-    import gpu_numpy as np
+    import gpu_numpy as _np
 else:
-    import numpy as np
+    import numpy as _np
 
 import warnings
 from autograd.core import primitive, getval
@@ -28,8 +28,8 @@ def wrap_intdtype(cls):
 
 def wrap_namespace(old, new):
     unchanged_types = {float, int, type(None), type}
-    int_types = {np.int, np.int8, np.int16, np.int32, np.int64, np.integer}
-    function_types = {np.ufunc, types.FunctionType, types.BuiltinFunctionType}
+    int_types = {_np.int, _np.int8, _np.int16, _np.int32, _np.int64, _np.integer}
+    function_types = {_np.ufunc, types.FunctionType, types.BuiltinFunctionType}
     for name, obj in iteritems(old):
         if type(obj) in function_types:
             new[name] = primitive(obj)
@@ -38,13 +38,13 @@ def wrap_namespace(old, new):
         elif type(obj) in unchanged_types:
             new[name] = obj
 
-wrap_namespace(np.__dict__, globals())
+wrap_namespace(_np.__dict__, globals())
 
 # ----- Special treatment of list-input functions -----
 
 @primitive
 def concatenate_args(axis, *args):
-    return np.concatenate(args, axis).view(ndarray)
+    return _np.concatenate(args, axis).view(ndarray)
 concatenate = lambda arr_list, axis=0 : concatenate_args(axis, *arr_list)
 vstack = row_stack = lambda tup: concatenate([atleast_2d(_m) for _m in tup], axis=0)
 def hstack(tup):
@@ -63,14 +63,14 @@ def column_stack(tup):
     return concatenate(arrays, 1)
 
 def array(A, *args, **kwargs):
-    if isinstance(A, np.ndarray):
-        return np.array(A, *args, **kwargs)
+    if isinstance(A, _np.ndarray):
+        return _np.array(A, *args, **kwargs)
     else:
-        raw_array = np.array(A, *args, **kwargs)
+        raw_array = _np.array(A, *args, **kwargs)
         return wrap_if_nodes_inside(raw_array)
 
 def wrap_if_nodes_inside(raw_array, slow_op_name=None):
-    if raw_array.dtype is np.dtype('O'):
+    if raw_array.dtype is _np.dtype('O'):
         if slow_op_name:
             warnings.warn("{0} is slow for array inputs. "
                           "np.concatenate() is faster.".format(slow_op_name))
@@ -80,14 +80,14 @@ def wrap_if_nodes_inside(raw_array, slow_op_name=None):
 
 @primitive
 def array_from_args(*args):
-    return np.array(args)
+    return _np.array(args)
 
 def array_from_args_gradmaker(argnum, ans, args, kwargs):
     return lambda g : g[argnum]
 array_from_args.gradmaker = array_from_args_gradmaker
 
 def select(condlist, choicelist, default=0):
-    raw_array = np.select(list(condlist), list(choicelist), default=default)
+    raw_array = _np.select(list(condlist), list(choicelist), default=default)
     return array(list(raw_array.ravel())).reshape(raw_array.shape)
 
 def stack(arrays, axis=0):
@@ -114,12 +114,12 @@ def stack(arrays, axis=0):
 
 class r_class():
     def __getitem__(self, args):
-        raw_array = np.r_[args]
+        raw_array = _np.r_[args]
         return wrap_if_nodes_inside(raw_array, slow_op_name = "r_")
 r_ = r_class()
 
 class c_class():
     def __getitem__(self, args):
-        raw_array = np.c_[args]
+        raw_array = _np.c_[args]
         return wrap_if_nodes_inside(raw_array, slow_op_name = "c_")
 c_ = c_class()
