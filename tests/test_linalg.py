@@ -208,7 +208,7 @@ def test_eigvalh_lower_broadcasting():
         w, v = np.linalg.eigh(x)
         return to_scalar(w) + to_scalar(v)
     d_fun = lambda x : to_scalar(grad(fun)(x))
-    D = 6
+    D = 2
     mat = npr.randn(2, 3, D, D)
     hmat = broadcast_dot_transpose(mat, mat)
     check_symmetric_matrix_grads(fun, hmat)
