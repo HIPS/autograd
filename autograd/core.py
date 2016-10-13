@@ -166,7 +166,7 @@ class primitive(object):
     def __call__(self, *args, **kwargs):
         argvals = list(args)
         ops = []
-        fwd_ops = []
+
         tapes = set()
         for i, arg in enumerate(args):
             if isinstance(arg, Node):
