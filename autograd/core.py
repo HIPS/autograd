@@ -118,7 +118,8 @@ def cast_to_node_type(x, node_type, example):
 class primitive(object):
     """
     Wraps a function so that its gradient can be specified and its invocation
-    can be recorded. For examples, see the docs."""
+    can be recorded. For examples, see the docs.
+    """
     def __init__(self, fun):
         self.fun = fun
         self.grads = {}
@@ -187,13 +188,14 @@ class primitive(object):
                     rnode.parent_grad_ops.append((rev_gradfun, parent_rnode))
                 elif isinstance(tape, ForwardTape):
                     parent = args[argnum]
+                    args[argnum].tapes.pop(tape)
                     # Here we actually do the forward derivative calculation.
-                    fwd_gradfun = self.forward_gradmaker(argnum, result, args,
-                                                         kwargs)
-                    # TODO: move this so that it isn't done multiple times:
-                    parent_fwd_grad = sum(parent.forward_derivatives[tape])
-
+                    fwd_gradfun = self.forward_gradmaker(argnum, result,
+                                                         args, kwargs)
+                    # TODO: move this so that the sum isn't done multiple times:
+                    parent_fwd_grad = parent.forward_derivatives[tape][0]
                     fwd_grad = fwd_gradfun(parent_fwd_grad)
+                    args[argnum].tapes[tape] = None
                     result.forward_derivatives[tape].append(fwd_grad)
         return result
 
@@ -241,7 +243,7 @@ class primitive_with_aux(primitive):
                     # Here we actually do the forward derivative calculation.
                     fwd_gradfun = self.forward_gradmaker(argnum, result, args,
                                                          kwargs)
-                    # TODO: move this so that it isn't done multiple times:
+                    # TODO: move this sum so that it isn't done multiple times:
                     parent_fwd_grad = sum(parent.forward_derivatives[tape])
                     fwd_grad = fwd_gradfun(args)(parent_fwd_grad)
                     result.ForwardDerivatives[tape].append(fwd_grad)
@@ -412,6 +414,8 @@ for comp_op in nondifferentiable_ops:
 I = lambda g: g
 FloatNode.__dict__['__add__'].defgrad(lambda ans, x, y : I)
 FloatNode.__dict__['__add__'].defgrad(lambda ans, x, y : I, argnum=1)
+FloatNode.__dict__['__add__'].defgrad_forward(lambda ans, x, y: lambda g: g + y)
+FloatNode.__dict__['__add__'].defgrad_forward(lambda ans, x, y: lambda g: x + g, argnum=1)
 FloatNode.__dict__['__mul__'].defgrad(lambda ans, x, y : lambda g : y * g)
 FloatNode.__dict__['__mul__'].defgrad(lambda ans, x, y : lambda g : x * g, argnum=1)
 FloatNode.__dict__['__mul__'].defgrad_forward(lambda ans, x, y : lambda g : g * y)
@@ -440,7 +444,9 @@ def swap_args(grads):
             1 : lambda ans, y, x : grad_1(ans, x, y)}
 
 FloatNode.__dict__['__radd__'].grads = swap_args(FloatNode.__dict__['__add__'].grads)
+FloatNode.__dict__['__radd__'].forward_grads = swap_args(FloatNode.__dict__['__add__'].forward_grads)
 FloatNode.__dict__['__rmul__'].grads = swap_args(FloatNode.__dict__['__mul__'].grads)
+FloatNode.__dict__['__rmul__'].forward_grads = swap_args(FloatNode.__dict__['__mul__'].forward_grads)
 FloatNode.__dict__['__rsub__'].grads = swap_args(FloatNode.__dict__['__sub__'].grads)
 FloatNode.__dict__[RDIV].grads = swap_args(FloatNode.__dict__[DIV].grads)
 FloatNode.__dict__['__rpow__'].grads = swap_args(FloatNode.__dict__['__pow__'].grads)
