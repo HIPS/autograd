@@ -24,7 +24,7 @@ def tape_computation(fun, args, kwargs, argnum=0, fwd=False):
     args[argnum] = merge_tapes(start_node, arg_wrt)
     try: end_node = fun(*args, **kwargs)
     except Exception as e: add_extra_error_message(e)
-    tape.complete = True
+
     return start_node, end_node, tape
 
 ### reverse mode
@@ -51,7 +51,8 @@ def backward_pass(start_node, end_node, tape, preserve_tape=False):
                 "Output type {} can't be cast to float. "
                 "Function grad requires a scalar-valued function. "
                 "Try jacobian or elementwise_grad.".format(type(end_node.value)))
-
+    # if not tape.complete:
+    #     print("Tape not complete")
     tape.complete = True
     end_node.tapes[tape].outgrads = [1.0]
     tape = tape[:] if preserve_tape else tape
@@ -74,21 +75,10 @@ def forward_mode_grad(fun, argnum=0):
     def gradfun(*args, **kwargs):
         start_node, end_node, tape = tape_computation(fun, args, kwargs,
                                                       argnum, fwd=True)
+        tape.complete = True
         return sum(end_node.forward_derivatives[tape])
     return gradfun
 
-def forward_pass(start_node, end_node, tape):
-    for node in tape:
-        node.ingrads = []
-    start_node.tapes[tape].ingrads = [1.]  # TODO should be np.eye(start_node_dim)
-
-    for node in tape:
-        if node.ingrads:
-            cur_ingrad = node.sum_ingrads()
-            for gradfun, child in node.child_grad_ops:
-                ig = cast_to_node_type(gradfun(cur_ingrad), child.node_type, child.node_value)
-                child.ingrads.append(ig)
-    return cur_ingrad
 
 ### helper functions and classes
 
@@ -193,7 +183,7 @@ class primitive(object):
                     fwd_gradfun = self.forward_gradmaker(argnum, result,
                                                          args, kwargs)
                     # TODO: move this so that the sum isn't done multiple times:
-                    parent_fwd_grad = parent.forward_derivatives[tape][0]
+                    parent_fwd_grad = parent.sum_grads(parent.forward_derivatives[tape])
                     fwd_grad = fwd_gradfun(parent_fwd_grad)
                     args[argnum].tapes[tape] = None
                     result.forward_derivatives[tape].append(fwd_grad)
@@ -235,18 +225,20 @@ class primitive_with_aux(primitive):
             result = new_node(result, tapes)
             for tape, argnum, parent in ops:
                 if isinstance(tape, CalculationTape):
-                    gradfun = self.gradmaker(argnum, aux, result, args, kwargs)
                     rnode = result.tapes[tape]
-                    rnode.parent_grad_ops.append((gradfun, parent))
+                    rev_gradfun = self.gradmaker(argnum, aux, result, args, kwargs)
+                    rnode.parent_grad_ops.append((rev_gradfun, parent_rnode))
                 elif isinstance(tape, ForwardTape):
                     parent = args[argnum]
+                    args[argnum].tapes.pop(tape)
                     # Here we actually do the forward derivative calculation.
-                    fwd_gradfun = self.forward_gradmaker(argnum, result, args,
-                                                         kwargs)
-                    # TODO: move this sum so that it isn't done multiple times:
-                    parent_fwd_grad = sum(parent.forward_derivatives[tape])
-                    fwd_grad = fwd_gradfun(args)(parent_fwd_grad)
-                    result.ForwardDerivatives[tape].append(fwd_grad)
+                    fwd_gradfun = self.forward_gradmaker(argnum, aux, result,
+                                                         args, kwargs)
+                    # TODO: move this so that the sum isn't done multiple times:
+                    parent_fwd_grad = parent.sum_grads(parent.forward_derivatives[tape])
+                    fwd_grad = fwd_gradfun(parent_fwd_grad)
+                    args[argnum].tapes[tape] = None
+                    result.forward_derivatives[tape].append(fwd_grad)
         return result
 
     def gradmaker(self, argnum, aux, ans, args, kwargs):
@@ -288,7 +280,7 @@ class ReverseDerivativeNode(object):
         self.node_value = node_value
 
     def sum_outgrads(self):
-        return self.node_type.sum_outgrads(self.outgrads)
+        return self.node_type.sum_grads(self.outgrads)
 
 
 class Node(object):
@@ -299,7 +291,8 @@ class Node(object):
     def __init__(self, value, tapes):
         self.value = value
         self.tapes = {}
-        self.forward_derivatives = {tape: [] for tape in tapes}
+        self.forward_derivatives = {tape: [] for tape in tapes if
+                                    isinstance(tape, ForwardTape)}
 
         for tape in tapes:
             if isinstance(tape, CalculationTape):
@@ -315,7 +308,7 @@ class Node(object):
     __nonzero__ = __bool__
 
     @staticmethod
-    def sum_outgrads(outgrads):
+    def sum_grads(outgrads):
         return sum(outgrads[1:], outgrads[0])
 
     def __str__(self):
@@ -414,8 +407,8 @@ for comp_op in nondifferentiable_ops:
 I = lambda g: g
 FloatNode.__dict__['__add__'].defgrad(lambda ans, x, y : I)
 FloatNode.__dict__['__add__'].defgrad(lambda ans, x, y : I, argnum=1)
-FloatNode.__dict__['__add__'].defgrad_forward(lambda ans, x, y: lambda g: g + y)
-FloatNode.__dict__['__add__'].defgrad_forward(lambda ans, x, y: lambda g: x + g, argnum=1)
+FloatNode.__dict__['__add__'].defgrad_forward(lambda ans, x, y: I)
+FloatNode.__dict__['__add__'].defgrad_forward(lambda ans, x, y: I, argnum=1)
 FloatNode.__dict__['__mul__'].defgrad(lambda ans, x, y : lambda g : y * g)
 FloatNode.__dict__['__mul__'].defgrad(lambda ans, x, y : lambda g : x * g, argnum=1)
 FloatNode.__dict__['__mul__'].defgrad_forward(lambda ans, x, y : lambda g : g * y)

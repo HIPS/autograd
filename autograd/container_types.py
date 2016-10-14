@@ -16,7 +16,7 @@ class TupleNode(Node):
         return tuple([zeros_like(item) for item in getval(value)])
 
     @staticmethod
-    def sum_outgrads(outgrads):
+    def sum_grads(outgrads):
         return primitive_sum_tuples(*outgrads)
 
 Node.type_mappings[tuple] = TupleNode
@@ -60,7 +60,7 @@ class ListNode(Node):
         return [zeros_like(item) for item in getval(value)]
 
     @staticmethod
-    def sum_outgrads(outgrads):
+    def sum_grads(outgrads):
         return primitive_sum_lists(*outgrads)
 
     @staticmethod
@@ -107,7 +107,7 @@ class DictNode(Node):
         return {k : zeros_like(v) for k, v in iteritems(getval(self))}
 
     @staticmethod
-    def sum_outgrads(outgrads):
+    def sum_grads(outgrads):
         return primitive_sum_dicts(*outgrads)
 
     @staticmethod

@@ -68,6 +68,8 @@ anp.nextafter.defgrad_is_zero(argnums=(1,))
 I = lambda x : x
 anp.add.defgrad(lambda ans, x, y : unbroadcast(ans, x, I))
 anp.add.defgrad(lambda ans, x, y : unbroadcast(ans, y, I), argnum=1)
+anp.add.defgrad_forward(lambda ans, x, y : I)
+anp.add.defgrad_forward(lambda ans, x, y : I, argnum=1)
 anp.multiply.defgrad(lambda ans, x, y : unbroadcast(ans, x, lambda g : y * g))
 anp.multiply.defgrad(lambda ans, x, y : unbroadcast(ans, y, lambda g : x * g), argnum=1)
 anp.multiply.defgrad_forward(lambda ans, x, y: lambda g: g * y)
