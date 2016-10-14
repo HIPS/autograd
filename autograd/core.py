@@ -33,7 +33,7 @@ def grad(fun, argnum=0):
         return backward_pass(*tape_computation(fun,args,kwargs,argnum))
     return gradfun
 
-def backward_pass(start_node, end_node, tape):
+def backward_pass(start_node, end_node, tape, preserve_tape=False):
     if not isinstance(end_node, Node) or tape not in end_node.tapes:
         warnings.warn("Output seems independent of input. Returning zero gradient.")
         return zeros_like(start_node)
