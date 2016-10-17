@@ -7,7 +7,7 @@ from future.utils import iteritems
 from builtins import map, range, zip
 
 import autograd.numpy as np
-from autograd.core import grad, safe_type, getval
+from autograd.core import grad, safe_type, getval, forward_mode_grad
 from autograd.numpy.use_gpu_numpy import use_gpu_numpy
 from autograd.container_types import ListNode, TupleNode, make_tuple
 
@@ -84,6 +84,13 @@ def check_grads(fun, *args):
     if not args:
         raise Exception("No args given")
     exact = tuple([grad(fun, i)(*args) for i in range(len(args))])
+    numeric = nd(fun, *args)
+    check_equivalent(exact, numeric)
+
+def check_forward_grads(fun, *args):
+    if not args:
+        raise Exception("No args given")
+    exact = tuple([forward_mode_grad(fun, i)(*args) for i in range(len(args))])
     numeric = nd(fun, *args)
     check_equivalent(exact, numeric)
 

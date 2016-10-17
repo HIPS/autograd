@@ -41,7 +41,7 @@ class ArrayNode(Node):
         return anp.zeros(value.shape)
 
     @staticmethod
-    def sum_outgrads(outgrads):
+    def sum_grads(outgrads):
         if len(outgrads) is 1 and not isinstance(getval(outgrads[0]), SparseArray):
             return outgrads[0]
         else:
@@ -128,7 +128,7 @@ def primitive_sum_arrays(*arrays):
     new_array = type(new_array_node(arrays[0], [])).zeros_like(arrays[0]) # TODO: simplify this
     for array in arrays:
         if isinstance(array, SparseArray):
-            if (_is_basic(array.idx) or 
+            if (_is_basic(array.idx) or
                 isinstance(array.idx, tuple) and all(_is_basic(i) for i in array.idx)):
                 # Faster than np.add.at
                 new_array[array.idx] += array.val
