@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='autograd',
-    version='1.1.6',
+    version='1.1.7',
     description='Efficiently computes derivatives of numpy code.',
     author='Dougal Maclaurin and David Duvenaud and Matthew Johnson',
     author_email="maclaurin@physics.harvard.edu, duvenaud@cs.toronto.edu, mattjj@csail.mit.edu",
