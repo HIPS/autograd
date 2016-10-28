@@ -394,6 +394,9 @@ common_errors = [
     ((TypeError, r"got an unexpected keyword argument '(?:dtype)|(?:out)'" ),
         "This error *might* be caused by importing numpy instead of autograd.numpy. \n"
         "Check that you have 'import autograd.numpy as np' instead of 'import numpy as np'."),
+    ((AttributeError, r"object has no attribute" ),
+        "This error *might* be caused by importing numpy instead of autograd.numpy. \n"
+        "Check that you have 'import autograd.numpy as np' instead of 'import numpy as np'."),
 ]
 
 def check_common_errors(error_type, error_message):
