@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 import numpy as np
 
-from autograd.core import (Node, FloatNode, primitive, cast,
+from autograd.core import (Node, BoolNode, IntNode, FloatNode, primitive, cast,
                            differentiable_ops, nondifferentiable_ops, getval)
 from . import numpy_wrapper as anp
 from .use_gpu_numpy import use_gpu_numpy
@@ -35,6 +35,9 @@ class ArrayNode(Node):
 
     def __len__(self):
         return len(self.value)
+
+    def copy(self, order='C'):
+        return anp.array(self, order=order)
 
     @staticmethod
     def zeros_like(value):
@@ -83,6 +86,9 @@ class ArrayNode(Node):
     def __le__(self, other): return anp.less_equal(self, other)
     def __abs__(self): return anp.abs(self)
 
+    def astype(self, dtype, order='K', casting='unsafe', subok=True, copy=True):
+        return anp.astype(self, dtype, order, casting, subok, copy)
+
 def new_array_node(value, tapes):
     try:
         return array_dtype_mappings[value.dtype](value, tapes)
@@ -91,6 +97,13 @@ def new_array_node(value, tapes):
 Node.type_mappings[anp.ndarray] = new_array_node
 
 array_dtype_mappings = {}
+for bool_type in [anp.bool8]:
+    array_dtype_mappings[anp.dtype(bool_type)] = ArrayNode
+    Node.type_mappings[bool_type] = BoolNode
+for int_type in [anp.int8, anp.int16, anp.int32, anp.int64,
+                 anp.uint8, anp.uint16, anp.uint32, anp.uint64]:
+    array_dtype_mappings[anp.dtype(int_type)] = ArrayNode
+    Node.type_mappings[int_type] = IntNode
 for float_type in [anp.float64, anp.float32, anp.float16]:
     array_dtype_mappings[anp.dtype(float_type)] = ArrayNode
     Node.type_mappings[float_type] = FloatNode

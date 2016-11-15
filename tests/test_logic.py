@@ -15,7 +15,7 @@ def test_nograd():
     fun = lambda x: np.allclose(x, (x*3.0)/3.0)
     try:
         grad(fun)(np.array([1., 2., 3.]))
-    except TypeError:
+    except NotImplementedError:
         pass
     else:
         raise Exception('Expected non-differentiability exception')

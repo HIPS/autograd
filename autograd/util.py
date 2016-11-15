@@ -15,15 +15,24 @@ from autograd.container_types import ListNode, TupleNode, make_tuple
 if use_gpu_numpy():
     garray_obj = np.garray
     array_types = (np.ndarray, garray_obj)
-    EPS, RTOL, ATOL = 1e-4, 1e-2, 1e-2
+    initial_eps_rtol_atol = 1e-4, 1e-2, 1e-2
 else:
     garray_obj = ()
     array_types = (np.ndarray,)
-    EPS, RTOL, ATOL = 1e-4, 1e-4, 1e-6
+    initial_eps_rtol_atol = 1e-4, 1e-4, 1e-6
+EPS, RTOL, ATOL = initial_eps_rtol_atol
+
+def set_eps_rtol_atol(eps, rtol, atol):
+    global EPS, RTOL, ATOL
+    EPS, RTOL, ATOL = eps, rtol, atol
+
+def reset_eps_rtol_atol():
+    global EPS, RTOL, ATOL
+    EPS, RTOL, ATOL = initial_eps_rtol_atol
 
 def nd(f, *args):
     unary_f = lambda x : f(*x)
-    return unary_nd(unary_f, args)
+    return unary_nd(unary_f, args, EPS)
 
 def unary_nd(f, x, eps=EPS):
     if isinstance(x, array_types):
@@ -34,15 +43,15 @@ def unary_nd(f, x, eps=EPS):
         else:
             nd_grad = np.zeros(x.shape)
         for dims in it.product(*list(map(range, x.shape))):
-            nd_grad[dims] = unary_nd(indexed_function(f, x, dims), x[dims])
+            nd_grad[dims] = unary_nd(indexed_function(f, x, dims), x[dims], eps)
         return nd_grad
     elif isinstance(x, tuple):
-        return tuple([unary_nd(indexed_function(f, tuple(x), i), x[i])
+        return tuple([unary_nd(indexed_function(f, tuple(x), i), x[i], eps)
                       for i in range(len(x))])
     elif isinstance(x, dict):
-        return {k : unary_nd(indexed_function(f, x, k), v) for k, v in iteritems(x)}
+        return {k : unary_nd(indexed_function(f, x, k), v, eps) for k, v in iteritems(x)}
     elif isinstance(x, list):
-        return [unary_nd(indexed_function(f, x, i), v) for i, v in enumerate(x)]
+        return [unary_nd(indexed_function(f, x, i), v, eps) for i, v in enumerate(x)]
     elif np.iscomplexobj(x):
         result = (f(x +    eps/2) - f(x -    eps/2)) / eps \
             - 1j*(f(x + 1j*eps/2) - f(x - 1j*eps/2)) / eps
@@ -66,10 +75,10 @@ def check_equivalent(A, B, rtol=RTOL, atol=ATOL):
     assert base_class(type(A)) is base_class(type(B)),\
         "Types are: {0} and {1}".format(type(A), type(B))
     if isinstance(A, (tuple, list)):
-        for a, b in zip(A, B): check_equivalent(a, b)
+        for a, b in zip(A, B): check_equivalent(a, b, rtol, atol)
     elif isinstance(A, dict):
         assert len(A) == len(B)
-        for k in A: check_equivalent(A[k], B[k])
+        for k in A: check_equivalent(A[k], B[k], rtol, atol)
     else:
         if isinstance(A, np.ndarray):
             assert A.shape == B.shape, "Shapes are analytic: {0} and numeric: {1}".format(
@@ -85,7 +94,7 @@ def check_grads(fun, *args):
         raise Exception("No args given")
     exact = tuple([grad(fun, i)(*args) for i in range(len(args))])
     numeric = nd(fun, *args)
-    check_equivalent(exact, numeric)
+    check_equivalent(exact, numeric, RTOL, ATOL)
 
 def to_scalar(x):
     if isinstance(x, list)  or isinstance(x, ListNode) or \

@@ -3,6 +3,7 @@ from __future__ import print_function
 import types
 from .use_gpu_numpy import use_gpu_numpy
 from future.utils import iteritems
+from . import compat
 
 
 if use_gpu_numpy():
@@ -77,6 +78,9 @@ def wrap_if_nodes_inside(raw_array, slow_op_name=None):
         return array_from_args(*raw_array.ravel()).reshape(raw_array.shape)
     else:
         return raw_array
+
+def copy(a, order='K'):
+    return array(a, order=order)
 
 @primitive
 def array_from_args(*args):

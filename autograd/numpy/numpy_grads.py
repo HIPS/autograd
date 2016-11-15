@@ -183,6 +183,19 @@ anp.frexp.defgrad(lambda ans, x: lambda g : g[0] * 2.0 ** -ans[1])
 
 # ----- Trickier grads -----
 
+@primitive
+def astype(ary, dtype, order='K', casting='unsafe', subok=True, copy=True):
+    return ary.astype(dtype, order, casting, subok, copy)
+def make_grad_astype(ans, ary, dtype, order='K', casting='unsafe', subok=True, copy=True):
+    if dtype in (anp.int8, anp.int16, anp.int32, anp.int64,
+                 anp.uint8, anp.uint16, anp.uint32, anp.uint64,
+                 anp.bool8):
+        return lambda g: anp.zeros(g.shape)
+    else:
+        return I
+anp.astype = astype
+anp.astype.defgrad(make_grad_astype)
+
 def make_grad_diff(ans, a, n=1, axis=-1):
     nd = len(a.shape)
     sl1 = [slice(None)]*nd
