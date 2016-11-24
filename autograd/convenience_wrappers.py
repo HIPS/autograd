@@ -2,7 +2,8 @@
 from __future__ import absolute_import
 from functools import partial
 import autograd.numpy as np
-from autograd.core import grad, getval, tape_computation, backward_pass, attach_name_and_doc
+from autograd.core import grad, getval, tape_computation, attach_name_and_doc
+from autograd.reverse_mode import ReverseModeTape, backward_pass
 from collections import OrderedDict
 from inspect import getargspec
 
@@ -32,7 +33,8 @@ def jacobian(fun, argnum=0):
 
     @attach_name_and_doc(fun, argnum, 'Jacobian')
     def jacfun(*args, **kwargs):
-        start_node, end_nodes, tape = tape_computation(list_fun, args, kwargs, argnum)
+        tape = ReverseModeTape()
+        start_node, end_nodes, tape = tape_computation(list_fun, args, kwargs, tape, argnum)
         run = partial(backward_pass, start_node, tape=tape, preserve_tape=True)
         grads = [run(end_node) for end_node in end_nodes]
         del tape[:]

@@ -36,6 +36,9 @@ class ArrayNode(Node):
     def __len__(self):
         return len(self.value)
 
+    def __hash__(self):
+        return id(self)
+
     @staticmethod
     def zeros_like(value):
         return anp.zeros(value.shape)

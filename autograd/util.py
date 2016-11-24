@@ -7,7 +7,8 @@ from future.utils import iteritems
 from builtins import map, range, zip
 
 import autograd.numpy as np
-from autograd.core import grad, safe_type, getval, forward_mode_grad
+from autograd.core import safe_type, getval, forward_mode_grad
+from autograd.reverse_mode import grad
 from autograd.numpy.use_gpu_numpy import use_gpu_numpy
 from autograd.container_types import ListNode, TupleNode, make_tuple
 
