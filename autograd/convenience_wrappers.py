@@ -2,8 +2,8 @@
 from __future__ import absolute_import
 from functools import partial
 import autograd.numpy as np
-from autograd.core import grad, getval, tape_computation, attach_name_and_doc
-from autograd.reverse_mode import ReverseModeTape, backward_pass
+from autograd.core import getval, tape_computation, attach_name_and_doc
+from autograd.reverse_mode import grad, ReverseModeTape, backward_pass
 from collections import OrderedDict
 from inspect import getargspec
 

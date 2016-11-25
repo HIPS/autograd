@@ -167,19 +167,14 @@ class primitive(object):
         result_value = self.fun(*argvals, **kwargs)
         if result_value is NotImplemented: return result_value
 
+        tapes = [tape for tape in tapes if tape.carry_forward(self, args,
+                                                              kwargs)]
+
         if tapes:
             result = new_node(result_value, tapes.copy())
             for tape in tapes:
-                remove_tape = tape.update(self, args, kwargs, result)
-                # This will happen if, for example, there is a zero gradient.
-                if remove_tape:
-                    result.tapes.remove(tape)
-            # If all of the tapes have been removed, then return just the
-            # result value.
-            if result.tapes:
-                return result
-            else:
-                return result_value
+                tape.update(self, args, kwargs, result)
+            return result
         else:
             return result_value
         # if ops:
@@ -280,20 +275,20 @@ def zeros_like(value):
     else:
         return new_node(value, []).zeros_like(value)
 
-class ReverseDerivativeNode(object):
-    """
-    This node is used to store data for the reverse mode.
-    """
-    __slots__ = ['parent_grad_ops', 'outgrads', 'child_grad_ops',
-                 'node_type', 'node_value']
-    def __init__(self, node_type, node_value):
-        self.parent_grad_ops = []
-        self.outgrads = []
-        self.node_type = node_type
-        self.node_value = node_value
-
-    def sum_outgrads(self):
-        return self.node_type.sum_grads(self.outgrads)
+# class ReverseDerivativeNode(object):
+#     """
+#     This node is used to store data for the reverse mode.
+#     """
+#     __slots__ = ['parent_grad_ops', 'outgrads', 'child_grad_ops',
+#                  'node_type', 'node_value']
+#     def __init__(self, node_type, node_value):
+#         self.parent_grad_ops = []
+#         self.outgrads = []
+#         self.node_type = node_type
+#         self.node_value = node_value
+#
+#     def sum_outgrads(self):
+#         return self.node_type.sum_grads(self.outgrads)
 
 
 class Node(object):
@@ -463,18 +458,16 @@ FloatNode.__dict__['__rmod__'].grads = swap_args(FloatNode.__dict__['__mod__'].g
 # reverse pass so that evaluating nondifferentiable functions that don't affect
 # the output don't cause problems (c.f. Issue #43).
 
-class NoDerivativeReverseDerivativeNode(ReverseDerivativeNode):
-    def __init__(self, node_type, node_value):
-        super(NoDerivativeReverseDerivativeNode,self).__init__(node_type, node_value)
-        self.type = type(node_value)
-
-    def sum_outgrads(self):
-        raise TypeError("Can't differentiate wrt {0}".format(self.type))
+# class NoDerivativeReverseDerivativeNode(ReverseDerivativeNode):
+#     def __init__(self, node_type, node_value):
+#         super(NoDerivativeReverseDerivativeNode,self).__init__(node_type, node_value)
+#         self.type = type(node_value)
+#
+#     def sum_outgrads(self):
+#         raise TypeError("Can't differentiate wrt {0}".format(self.type))
 
 class NoDerivativeNode(FloatNode):
     # inherit from FloatNode so that numerical infix operators work
-    ReverseDerivativeNode = NoDerivativeReverseDerivativeNode
-
     @staticmethod
     def cast(value, example):
         return example  # pass through so we can raise an error on reverse pass

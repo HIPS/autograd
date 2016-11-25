@@ -3,7 +3,7 @@ Module containing reverse mode functionality.
 """
 from autograd.core import (Node, FloatNode, tape_computation, zeros_like,
                            new_node, getval, attach_name_and_doc,
-                           cast_to_node_type)
+                           cast_to_node_type, NoDerivativeNode)
 import warnings
 
 
@@ -28,6 +28,15 @@ class ReverseModeTape(list):
     def stop_recording(self):
         self.recording = False
 
+    def carry_forward(self, primitive, args, kwargs):
+        # If any of the gradients are not zero then we need to carry this
+        # tape forward.
+        for i, arg in enumerate(args):
+            if isinstance(arg, Node) and self in arg.tapes:
+                if i not in primitive.zero_grads:
+                    return True
+        return False
+
     def update(self, primitive, args, kwargs, result):
         operations = []
 
@@ -40,7 +49,10 @@ class ReverseModeTape(list):
                 operations.append((gradfun, parent_reverse_node))
 
         if operations:
-            reverse_node = ReverseNode(operations)
+            if isinstance(result, NoDerivativeNode):
+                reverse_node = NoDerivativeReverseNode(operations)
+            else:
+                reverse_node = ReverseNode(operations)
             self.node_mappings[result] = reverse_node
             self.node_mappings[reverse_node] = result
             self.append(reverse_node)
@@ -67,6 +79,11 @@ class ReverseNode(object):
 
     def __hash__(self):
         return id(self)
+
+
+class NoDerivativeReverseNode(ReverseNode):
+    def __init__(self, operations=[]):
+        super(NoDerivativeReverseNode, self).__init__(operations)
 
 
 def grad(fun, argnum=0):
@@ -115,8 +132,12 @@ def backward_pass(start_node, end_node, tape, preserve_tape=False):
             position -= 1
         else:
             reverse_node = tape.pop()
+
         if reverse_node.outgrads:
             node = tape.node_mappings[reverse_node]
+            if isinstance(reverse_node, NoDerivativeReverseNode):
+                raise TypeError("Can't differentiate wrt {0}".
+                                format(type(node.value)))
             current_outgrad = (node.sum_grads(reverse_node.outgrads))
             reverse_node.outgrads = []
             assert type(new_node(getval(current_outgrad))) == type(node), \
