@@ -10,6 +10,7 @@ def test_assert():
         return np.sum(x)
     check_grads(fun, np.array([1.0, 2.0, 3.0]))
 
+# TODO(mattjj): failing test
 def test_nograd():
     # we want this to raise non-differentiability error
     fun = lambda x: np.allclose(x, (x*3.0)/3.0)

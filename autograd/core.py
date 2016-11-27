@@ -16,7 +16,6 @@ def make_jvp(fun, argnum=0):
         if not isnode(end_node) or start_node not in end_node.progenitors:
             warnings.warn("Output seems independent of input.")
             return lambda g : start_node.vspace.zeros(), end_node
-
         return lambda g : backward_pass(g, end_node, start_node), end_node
     return jvp
 
@@ -68,8 +67,7 @@ class primitive(object):
                 argvals[argnum] = arg.value
                 if argnum in self.zero_grads: continue
                 parents.append((argnum, arg))
-                progenitors.update(t for t in arg.progenitors
-                                   if t in active_progenitors)
+                progenitors.update(arg.progenitors & active_progenitors)
 
         result_value = self.fun(*argvals, **kwargs)
         if progenitors:

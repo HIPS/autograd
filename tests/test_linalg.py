@@ -185,7 +185,7 @@ def test_eigvalh_lower_broadcasting():
         return to_scalar(w) + to_scalar(v)
     d_fun = lambda x : to_scalar(grad(fun)(x))
     D = 6
-    mat = npr.randn(2, 3, D, D)
+    mat = npr.randn(2, 3, D, D) + 10 * np.eye(D)[None,None,...]
     hmat = broadcast_dot_transpose(mat, mat)
     check_symmetric_matrix_grads(fun, hmat)
     check_symmetric_matrix_grads(d_fun, hmat)
@@ -196,7 +196,7 @@ def test_eigvalh_upper_broadcasting():
         return to_scalar(w) + to_scalar(v)
     d_fun = lambda x : to_scalar(grad(fun)(x))
     D = 6
-    mat = npr.randn(2, 3, D, D)
+    mat = npr.randn(2, 3, D, D) + 10 * np.eye(D)[None,None,...]
     hmat = broadcast_dot_transpose(mat, mat)
     check_symmetric_matrix_grads(fun, hmat)
     check_symmetric_matrix_grads(d_fun, hmat)

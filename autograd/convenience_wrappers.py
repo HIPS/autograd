@@ -14,7 +14,7 @@ def grad(fun, argnum=0):
     arguments as `fun`, but returns the gradient instead. The function `fun`
     should be scalar-valued. The gradient has the same type as the argument."""
 
-    # TODO: make sure we continuet to raise these sort of errors, and write a test for
+    # TODO: make sure we continue to raise these sort of errors, and write a test for
     #         raise TypeError(
     #             "Output type {} can't be cast to float. "
     #             "Function grad requires a scalar-valued function. "
