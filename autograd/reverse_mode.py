@@ -28,14 +28,10 @@ class ReverseModeTape(list):
     def stop_recording(self):
         self.recording = False
 
-    def carry_forward(self, primitive, args, kwargs):
+    def carry_forward(self, primitive, argnum):
         # If any of the gradients are not zero then we need to carry this
         # tape forward.
-        for i, arg in enumerate(args):
-            if isinstance(arg, Node) and self in arg.tapes:
-                if i not in primitive.zero_grads:
-                    return True
-        return False
+        return self.recording and argnum not in primitive.zero_grads
 
     def update(self, primitive, args, kwargs, result):
         operations = []
@@ -56,9 +52,6 @@ class ReverseModeTape(list):
             self.node_mappings[result] = reverse_node
             self.node_mappings[reverse_node] = result
             self.append(reverse_node)
-        else:
-            # This tape doesn't need to be carried forward into the next Node.
-            return True
 
     def __hash__(self):
         return id(self)

@@ -155,23 +155,21 @@ class primitive(object):
 
     def __call__(self, *args, **kwargs):
         argvals = list(args)
-
         tapes = set()
+
         for i, arg in enumerate(args):
             if isinstance(arg, Node):
                 argvals[i] = arg.value
                 for tape in arg.tapes:
-                    if tape.recording:
+                    if tape.carry_forward(self, i):
                         tapes.add(tape)
 
         result_value = self.fun(*argvals, **kwargs)
-        if result_value is NotImplemented: return result_value
-
-        tapes = [tape for tape in tapes if tape.carry_forward(self, args,
-                                                              kwargs)]
+        if result_value is NotImplemented:
+            return result_value
 
         if tapes:
-            result = new_node(result_value, tapes.copy())
+            result = new_node(result_value, tapes)
             for tape in tapes:
                 tape.update(self, args, kwargs, result)
             return result
