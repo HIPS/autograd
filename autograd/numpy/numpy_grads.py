@@ -387,7 +387,7 @@ anp.make_diagonal.defgrad(
 def unbroadcast(ans, x, result):
     # x is the argument that we're differentiating with respect to.
     if isarray(x):
-        shape = x.shape
+        shape = anp.shape(x)
         while anp.ndim(result) > len(shape):
             result = anp.sum(result, axis=0)
         for axis, size in enumerate(shape):
