@@ -1,10 +1,9 @@
 from __future__ import absolute_import
 import numpy as np
 
-from autograd.core import (Node, FloatNode, VSpace,
+from autograd.core import (Node, VSpace,
                            SparseObject, primitive, vspace,
-                           register_node, register_vspace,
-                           differentiable_ops, nondifferentiable_ops, getval)
+                           register_node, register_vspace, getval)
 from . import numpy_wrapper as anp
 
 @primitive
@@ -108,7 +107,7 @@ array_types = set([anp.ndarray, ArrayNode])
 
 for type_ in [float, anp.float64, anp.float32, anp.float16,
               complex, anp.complex64, anp.complex128]:
-    register_node(FloatNode, type_)
+    register_node(ArrayNode, type_)
     register_vspace(ArrayVSpace, type_)
 
 # These numpy.ndarray methods are just refs to an equivalent numpy function
@@ -123,7 +122,3 @@ for method_name in nondiff_methods + diff_methods:
 
 # Flatten has no function, only a method.
 setattr(ArrayNode, 'flatten', anp.__dict__['ravel'])
-
-# Replace FloatNode operators with broadcastable versions
-for method_name in differentiable_ops + nondifferentiable_ops + ['__truediv__', '__rtruediv__']:
-    setattr(FloatNode, method_name, ArrayNode.__dict__[method_name])

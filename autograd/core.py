@@ -258,66 +258,6 @@ def assert_vspace_match(x, expected_vspace, fun):
 def isnode(x): return type(x) in node_types
 getval = lambda x : x.value if isnode(x) else x
 
-class FloatNode(Node): pass
-
-register_node(FloatNode, float)
-register_node(FloatNode, complex)
-
-
-if sys.version_info >= (3,):
-    DIV = '__truediv__'
-    RDIV = '__rtruediv__'
-else:
-    DIV = '__div__'
-    RDIV = '__rdiv__'
-
-differentiable_ops = ['__add__', '__sub__', '__mul__', '__pow__', '__mod__',
-                      '__neg__', '__radd__', '__rsub__', '__rmul__', '__rpow__',
-                      '__rmod__', DIV, RDIV]
-
-nondifferentiable_ops = ['__eq__', '__ne__', '__gt__', '__ge__', '__lt__', '__le__',]
-for float_op in differentiable_ops + nondifferentiable_ops:
-    setattr(FloatNode, float_op, primitive(getattr(float, float_op)))
-
-FloatNode.__dict__['__neg__'].defgrad(lambda g, ans, x : -g)
-
-
-for comp_op in nondifferentiable_ops:
-    FloatNode.__dict__[comp_op].defgrad_is_zero(argnums=(0, 1))
-
-# These functions will get clobbered when autograd.numpy is imported.
-# They're here to allow the use of autograd without numpy.
-I = lambda g, *args: g
-FloatNode.__dict__['__add__'].defgrad(I)
-FloatNode.__dict__['__add__'].defgrad(I, argnum=1)
-FloatNode.__dict__['__mul__'].defgrad(lambda g, ans, x, y : y * g)
-FloatNode.__dict__['__mul__'].defgrad(lambda g, ans, x, y : x * g, argnum=1)
-FloatNode.__dict__['__sub__'].defgrad(I)
-FloatNode.__dict__['__sub__'].defgrad(lambda g, ans, x, y : -g, argnum=1)
-FloatNode.__dict__[DIV].defgrad(lambda g, ans, x, y : g / y)
-FloatNode.__dict__[DIV].defgrad(lambda g, ans, x, y : - g * x / y**2, argnum=1)
-FloatNode.__dict__['__pow__'].defgrad(lambda g, ans, x, y : g * y * x ** (y - 1))
-FloatNode.__dict__['__pow__'].defgrad(lambda g, ans, x, y : g * log(x) * x ** y, argnum=1)
-FloatNode.__dict__['__mod__'].defgrad(I)
-FloatNode.__dict__['__mod__'].defgrad(lambda g, ans, x, y : -g * floor(x/y), argnum=1)
-
-log = primitive(math.log)
-log.defgrad(lambda g, ans, x : g / x)
-floor = primitive(math.floor)
-floor.defgrad_is_zero()
-
-def swap_args(grads):
-    grad_0, grad_1 = grads[1], grads[0]
-    return {0 : lambda g, ans, y, x : grad_0(g, ans, x, y),
-            1 : lambda g, ans, y, x : grad_1(g, ans, x, y)}
-
-FloatNode.__dict__['__radd__'].grads = swap_args(FloatNode.__dict__['__add__'].grads)
-FloatNode.__dict__['__rmul__'].grads = swap_args(FloatNode.__dict__['__mul__'].grads)
-FloatNode.__dict__['__rsub__'].grads = swap_args(FloatNode.__dict__['__sub__'].grads)
-FloatNode.__dict__[RDIV].grads = swap_args(FloatNode.__dict__[DIV].grads)
-FloatNode.__dict__['__rpow__'].grads = swap_args(FloatNode.__dict__['__pow__'].grads)
-FloatNode.__dict__['__rmod__'].grads = swap_args(FloatNode.__dict__['__mod__'].grads)
-
 class AutogradHint(Exception):
     def __init__(self, message, subexception_type=None, subexception_val=None):
         self.message = message
