@@ -2,7 +2,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 import autograd.numpy as np
 import itertools as it
-from autograd.convenience_wrappers import grad, safe_type
+from autograd.convenience_wrappers import grad
 from autograd.core import vspace, flatten, getval
 from copy import copy
 
@@ -50,6 +50,7 @@ def check_grads(fun, *args):
     if not args:
         raise Exception("No args given")
     exact = tuple([grad(fun, i)(*args) for i in range(len(args))])
+    args = [float(x) if isinstance(x, int) else x for x in args]
     numeric = nd(fun, *args)
     check_equivalent(exact, numeric)
 
