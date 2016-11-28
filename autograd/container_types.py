@@ -12,16 +12,7 @@ class TupleNode(Node):
     def __len__(self):
         return len(self.value)
 
-class TupleVSpace(VSpace):
-    def __init__(self, value):
-        self.shape = tuple(vspace(x) for x in value)
-    def zeros(self):
-        return tuple(x.zeros() for x in self.shape)
-    def mut_add(self, xs, ys):
-        return tuple(vs.mut_add(x, y) for vs, x, y in zip(self.shape, xs, ys))
-
 register_node(TupleNode, tuple)
-register_vspace(TupleVSpace, tuple)
 
 @primitive
 def tuple_take(A, idx):
@@ -53,37 +44,7 @@ class ListNode(Node):
     def __len__(self):
         return len(self.value)
 
-class ListVSpace(VSpace):
-    def __init__(self, value):
-        self.shape = [vspace(x) for x in value]
-        self.size = sum(s.size for s in self.shape)
-
-    def zeros(self):
-        return [x.zeros() for x in self.shape]
-    def mut_add(self, xs, ys):
-        return [vs.mut_add(x, y) for vs, x, y in zip(self.shape, xs, ys)]
-    def cast(self, value):
-        return cast(value, cast_to_list)
-
-    def flatten(self, value):
-        if self.shape:
-            return np.concatenate(
-                [s.flatten(v) for s, v in zip(self.shape, value)])
-        else:
-            return np.zeros((0,))
-
-    def unflatten(self, value):
-        result = []
-        start = 0
-        for s in self.shape:
-            N = s.size
-
-            result.append(s.unflatten(value[start:start + N]))
-            start += N
-        return result
-
 register_node(ListNode, list)
-register_vspace(ListVSpace, list)
 
 def cast_to_list(x):
     return list(x)
@@ -114,6 +75,60 @@ class DictNode(Node):
     def __iter__(self):
         return self.value.__iter__()
 
+def cast_to_dict(x):
+    return dict(x)
+
+register_node(DictNode, dict)
+
+@primitive
+def dict_take(A, idx):
+    return A[idx]
+def grad_dict_take(g, ans, A, idx):
+    return dict_untake(g, idx, A)
+dict_take.defgrad(grad_dict_take)
+
+@primitive
+def dict_untake(x, idx, template):
+    def mut_add(A):
+         A[idx] = vs.shape[idx].mut_add(A[idx], x)
+         return A
+    vs = vspace(template)
+    return SparseObject(vs, mut_add)
+dict_untake.defgrad(lambda g, ans, x, idx, template : dict_take(g, idx))
+dict_untake.defgrad_is_zero(argnums=(1, 2))
+
+class SequenceVSpace(VSpace):
+    def __init__(self, value):
+        self.shape = [vspace(x) for x in value]
+        self.size = sum(s.size for s in self.shape)
+        self.sequence_type = type(value)
+        assert self.sequence_type in (tuple, list)
+
+    def zeros(self):
+        return self.sequence_type(x.zeros() for x in self.shape)
+    def mut_add(self, xs, ys):
+        return self.sequence_type(vs.mut_add(x, y)
+                                  for vs, x, y in zip(self.shape, xs, ys))
+    def flatten(self, value):
+        if self.shape:
+            return np.concatenate(
+                [s.flatten(v) for s, v in zip(self.shape, value)])
+        else:
+            return np.zeros((0,))
+
+    def unflatten(self, value):
+        result = []
+        start = 0
+        for s in self.shape:
+            N = s.size
+
+            result.append(s.unflatten(value[start:start + N]))
+            start += N
+        return self.sequence_type(result)
+
+register_vspace(SequenceVSpace, list)
+register_vspace(SequenceVSpace, tuple)
+
 class DictVSpace(VSpace):
     def __init__(self, value):
         self.shape = {k : vspace(v) for k, v in value.iteritems()}
@@ -142,25 +157,4 @@ class DictVSpace(VSpace):
             start += N
         return result
 
-def cast_to_dict(x):
-    return dict(x)
-
-register_node(DictNode, dict)
 register_vspace(DictVSpace, dict)
-
-@primitive
-def dict_take(A, idx):
-    return A[idx]
-def grad_dict_take(g, ans, A, idx):
-    return dict_untake(g, idx, A)
-dict_take.defgrad(grad_dict_take)
-
-@primitive
-def dict_untake(x, idx, template):
-    def mut_add(A):
-         A[idx] = vs.shape[idx].mut_add(A[idx], x)
-         return A
-    vs = vspace(template)
-    return SparseObject(vs, mut_add)
-dict_untake.defgrad(lambda g, ans, x, idx, template : dict_take(g, idx))
-dict_untake.defgrad_is_zero(argnums=(1, 2))
