@@ -2,7 +2,7 @@ from __future__ import absolute_import
 import numpy as np
 
 from autograd.core import (Node, FloatNode, VSpace,
-                           SparseObject, primitive, cast, vspace,
+                           SparseObject, primitive, vspace,
                            register_node, register_vspace,
                            differentiable_ops, nondifferentiable_ops, getval)
 from . import numpy_wrapper as anp
@@ -110,11 +110,6 @@ for type_ in [float, anp.float64, anp.float32, anp.float16,
               complex, anp.complex64, anp.complex128]:
     register_node(FloatNode, type_)
     register_vspace(ArrayVSpace, type_)
-
-@primitive
-def arraycast(val, dtype):
-    return anp.array(val, dtype=dtype)
-arraycast.defgrad(lambda g, ans, val, dtype: g)
 
 # These numpy.ndarray methods are just refs to an equivalent numpy function
 nondiff_methods = ['all', 'any', 'argmax', 'argmin', 'argpartition',

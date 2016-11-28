@@ -32,7 +32,7 @@ def forward_pass(fun, args, kwargs, argnum=0):
 
 def backward_pass(g, end_node, start_node):
     outgrads = defaultdict(list)
-    outgrads[end_node] = [cast_like(end_node.vspace, g)]
+    outgrads[end_node] = [g]
     assert_vspace_match(outgrads[end_node][0], end_node.vspace, None)
     tape = toposort(end_node, start_node)
     for node in tape:
@@ -40,8 +40,7 @@ def backward_pass(g, end_node, start_node):
         cur_outgrad = vsum(node.vspace, *outgrads[node])
         function, args, kwargs, parents = node.recipe
         for argnum, parent in parents:
-            raw_outgrad = function.grad(argnum, cur_outgrad, node, args, kwargs)
-            outgrad = cast_like(parent.vspace, raw_outgrad)
+            outgrad = function.grad(argnum, cur_outgrad, node, args, kwargs)
             outgrads[parent].append(outgrad)
             assert_vspace_match(outgrad, parent.vspace, function)
     return cur_outgrad
@@ -249,22 +248,12 @@ class SparseObject(object):
 register_vspace(lambda x : x.vs, SparseObject)
 register_node(Node, SparseObject)
 
-def cast_like(target_vspace, x):
-    if target_vspace == vspace(getval(x)):
-        return x
-    else:
-        return target_vspace.cast(x)
-
 def assert_vspace_match(x, expected_vspace, fun):
     assert expected_vspace == vspace(getval(x)), \
         "\nGrad of {} returned unexpected vector space" \
         "\nVector space is {}" \
         "\nExpected        {}".format(fun, vspace(getval(x)), expected_vspace)
 
-@primitive
-def cast(value, caster):
-    return caster(value)
-cast.defgrad(lambda g, *args: g)
 
 def isnode(x): return type(x) in node_types
 getval = lambda x : x.value if isnode(x) else x
@@ -274,16 +263,6 @@ class FloatNode(Node): pass
 register_node(FloatNode, float)
 register_node(FloatNode, complex)
 
-def cast_to_float(x):
-    if np.iscomplexobj(x):
-        x = np.real(x)
-    return float(x)
-
-def cast_to_complex(value):
-    if isinstance(value, np.ndarray):
-        return complex(value[()])
-    else:
-        return complex(value)
 
 if sys.version_info >= (3,):
     DIV = '__truediv__'

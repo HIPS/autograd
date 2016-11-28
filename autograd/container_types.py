@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from autograd.core import (primitive, Node, VSpace, register_node, vspace,
-                           register_vspace, getval, cast, SparseObject)
+                           register_vspace, getval, SparseObject)
 from builtins import zip
 from future.utils import iteritems
 import numpy as np
@@ -46,9 +46,6 @@ class ListNode(Node):
 
 register_node(ListNode, list)
 
-def cast_to_list(x):
-    return list(x)
-
 @primitive
 def list_take(A, idx):
     return A[idx]
@@ -74,9 +71,6 @@ class DictNode(Node):
         return len(self.value)
     def __iter__(self):
         return self.value.__iter__()
-
-def cast_to_dict(x):
-    return dict(x)
 
 register_node(DictNode, dict)
 
@@ -138,8 +132,6 @@ class DictVSpace(VSpace):
     def mut_add(self, xs, ys):
         return {k : v.mut_add(xs[k], ys[k])
                 for k, v in self.shape.iteritems()}
-    def cast(self, value):
-        return cast(value, cast_to_dict)
     def flatten(self, value):
         if self.shape:
             return np.concatenate(
