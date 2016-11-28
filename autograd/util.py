@@ -3,6 +3,7 @@ from __future__ import print_function
 import autograd.numpy as np
 import itertools as it
 from autograd.convenience_wrappers import grad, safe_type
+from autograd.core import vspace, flatten
 from copy import copy
 from autograd.container_types import ListNode, TupleNode, make_tuple
 from builtins import map, range, zip
@@ -51,22 +52,15 @@ def indexed_function(fun, arg, index):
     return partial_function
 
 def check_equivalent(A, B, rtol=RTOL, atol=ATOL):
-    assert base_class(type(A)) is base_class(type(B)),\
-        "Types are: {0} and {1}".format(type(A), type(B))
-    if isinstance(A, (tuple, list)):
-        for a, b in zip(A, B): check_equivalent(a, b)
-    elif isinstance(A, dict):
-        assert len(A) == len(B)
-        for k in A: check_equivalent(A[k], B[k])
-    else:
-        if isinstance(A, np.ndarray):
-            assert A.shape == B.shape, "Shapes are analytic: {0} and numeric: {1}".format(
-                A.shape, B.shape)
-            assert A.dtype == B.dtype, "Types are  analytic: {0} and numeric: {1}".format(
-                A.dtype, B.dtype)
-
-        assert np.allclose(A, B, rtol=rtol, atol=atol), \
-            "Diffs are:\n{0}.\nanalytic is:\n{A}.\nnumeric is:\n{B}.".format(A - B, A=A, B=B)
+    A_vspace = vspace(A)
+    B_vspace = vspace(B)
+    A_flat = flatten(A)
+    B_flat = flatten(B)
+    assert A_vspace == B_vspace, \
+      "VSpace mismatch:\nanalytic: {}\nnumeric: {}".format(A_vspace, B_vspace)
+    assert np.allclose(flatten(A), flatten(B), rtol=rtol, atol=atol), \
+        "Diffs are:\n{}.\nanalytic is:\n{}.\nnumeric is:\n{}.".format(
+            A_flat - B_flat, A_flat, B_flat)
 
 def check_grads(fun, *args):
     if not args:
@@ -102,17 +96,5 @@ def quick_grad_check(fun, arg0, extra_args=(), kwargs={}, verbose=True,
         "Check failed! nd={0}, ad={1}".format(numeric_grad, analytic_grad)
 
     if verbose:
-        print("Gradient projection OK (numeric grad: {0}, analytic grad: {1})".format(
-            numeric_grad, analytic_grad))
-
-equivalence_class = {}
-for float_type in [np.float64, np.float32, np.float16]:
-    equivalence_class[float_type] = float
-for complex_type in [np.complex64, np.complex128]:
-    equivalence_class[complex_type] = complex
-
-def base_class(t):
-    if t in equivalence_class:
-        return equivalence_class[t]
-    else:
-        return t
+        print("Gradient projection OK (numeric grad: {0}, analytic grad: {1})".
+              format(numeric_grad, analytic_grad))
