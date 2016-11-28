@@ -3,12 +3,9 @@ from __future__ import print_function
 import autograd.numpy as np
 import itertools as it
 from autograd.convenience_wrappers import grad, safe_type
-from autograd.core import vspace, flatten
+from autograd.core import vspace, flatten, getval
 from copy import copy
-from builtins import map, range, zip
-from future.utils import iteritems
 
-array_types = (np.ndarray,)
 EPS, RTOL, ATOL = 1e-4, 1e-4, 1e-6
 
 def nd(f, *args):
@@ -16,27 +13,15 @@ def nd(f, *args):
     return unary_nd(unary_f, args)
 
 def unary_nd(f, x, eps=EPS):
-    if isinstance(x, array_types):
-        if np.iscomplexobj(x):
-            nd_grad = np.zeros(x.shape) + 0j
-        else:
-            nd_grad = np.zeros(x.shape)
-        for dims in it.product(*list(map(range, x.shape))):
-            nd_grad[dims] = unary_nd(indexed_function(f, x, dims), x[dims])
-        return nd_grad
-    elif isinstance(x, tuple):
-        return tuple([unary_nd(indexed_function(f, tuple(x), i), x[i])
-                      for i in range(len(x))])
-    elif isinstance(x, dict):
-        return {k : unary_nd(indexed_function(f, x, k), v) for k, v in iteritems(x)}
-    elif isinstance(x, list):
-        return [unary_nd(indexed_function(f, x, i), v) for i, v in enumerate(x)]
-    elif np.iscomplexobj(x):
-        result = (f(x +    eps/2) - f(x -    eps/2)) / eps \
-            - 1j*(f(x + 1j*eps/2) - f(x - 1j*eps/2)) / eps
-        return type(safe_type(x))(result)
-    else:
-        return type(safe_type(x))((f(x + eps/2) - f(x - eps/2)) / eps)
+    vs = vspace(x)
+    nd_grad = np.zeros(vs.size)
+    x_flat = vs.flatten(x)
+    for d in range(vs.size):
+        dx = np.zeros(vs.size)
+        dx[d] = eps/2
+        nd_grad[d] = (   f(vs.unflatten(x_flat + dx))
+                       - f(vs.unflatten(x_flat - dx))  ) / eps
+    return vs.unflatten(nd_grad)
 
 def indexed_function(fun, arg, index):
     def partial_function(x):
@@ -69,8 +54,7 @@ def check_grads(fun, *args):
     check_equivalent(exact, numeric)
 
 def to_scalar(x):
-    if isinstance(x, list)  or isinstance(x, ListNode) or \
-       isinstance(x, tuple) or isinstance(x, TupleNode):
+    if isinstance(getval(x), list)  or isinstance(getval(x), tuple):
         return sum([to_scalar(item) for item in x])
     return np.sum(np.real(np.sin(x)))
 
