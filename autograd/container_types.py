@@ -3,6 +3,7 @@ from autograd.core import (primitive, Node, VSpace, register_node, vspace,
                            register_vspace, getval, cast, SparseObject)
 from builtins import zip
 from future.utils import iteritems
+import numpy as np
 
 class TupleNode(Node):
     __slots__ = []
@@ -55,12 +56,31 @@ class ListNode(Node):
 class ListVSpace(VSpace):
     def __init__(self, value):
         self.shape = [vspace(x) for x in value]
+        self.size = sum(s.size for s in self.shape)
+
     def zeros(self):
         return [x.zeros() for x in self.shape]
     def mut_add(self, xs, ys):
         return [vs.mut_add(x, y) for vs, x, y in zip(self.shape, xs, ys)]
     def cast(self, value):
         return cast(value, cast_to_list)
+
+    def flatten(self, value):
+        if self.shape:
+            return np.concatenate(
+                [s.flatten(v) for s, v in zip(self.shape, value)])
+        else:
+            return np.zeros((0,))
+
+    def unflatten(self, value):
+        result = []
+        start = 0
+        for s in self.shape:
+            N = s.size
+
+            result.append(s.unflatten(value[start:start + N]))
+            start += N
+        return result
 
 register_node(ListNode, list)
 register_vspace(ListVSpace, list)
@@ -97,6 +117,7 @@ class DictNode(Node):
 class DictVSpace(VSpace):
     def __init__(self, value):
         self.shape = {k : vspace(v) for k, v in value.iteritems()}
+        self.size  = sum(s.size for s in self.shape.values())
     def zeros(self):
         return {k : v.zeros() for k, v in iteritems(self.shape)}
     def mut_add(self, xs, ys):
@@ -104,6 +125,22 @@ class DictVSpace(VSpace):
                 for k, v in self.shape.iteritems()}
     def cast(self, value):
         return cast(value, cast_to_dict)
+    def flatten(self, value):
+        if self.shape:
+            return np.concatenate(
+                [s.flatten(value[k])
+                 for k, s in sorted(self.shape.iteritems())])
+        else:
+            return np.zeros((0,))
+
+    def unflatten(self, value):
+        result = {}
+        start = 0
+        for k, s in sorted(self.shape.iteritems()):
+            N = s.size
+            result[k] = s.unflatten(value[start:start + N])
+            start += N
+        return result
 
 def cast_to_dict(x):
     return dict(x)

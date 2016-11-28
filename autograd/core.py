@@ -275,9 +275,6 @@ class FloatVSpace(VSpace):
     def zeros(self):
         return 0.0
 
-    def cast(self, value):
-        return cast(value, cast_to_float)
-
     def flatten(self, value):
         return np.array([value])
 
@@ -286,13 +283,17 @@ class FloatVSpace(VSpace):
 
 register_vspace(FloatVSpace, float)
 
-class ComplexVSpace(VSpace):
-    value_types = [complex]
+class ComplexVSpace(FloatVSpace):
+    size = 2
+
     def zeros(self):
         return 0.0j
 
-    def cast(self, value):
-        return cast(value, cast_to_complex)
+    def flatten(self, value):
+        return np.array([np.real(value), np.imag(value)])
+
+    def unflatten(self, value):
+        return value[0] + value[1] * 1j
 
 register_vspace(ComplexVSpace, complex)
 

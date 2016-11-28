@@ -66,15 +66,27 @@ class ArrayVSpace(VSpace):
     def __init__(self, value):
         self.shape = value.shape
         self.dtype = value.dtype
+        self.iscomplex = value.dtype == np.complex128
+        if self.iscomplex:
+            self.size  = 2 * value.size
+        else:
+            self.size  = value.size
 
     def zeros(self):
         return anp.zeros(self.shape, dtype=self.dtype)
 
-    def cast(self, value):
-        result = arraycast(value, self.dtype)
-        if result.shape != self.shape:
-            result = result.reshape(self.shape)
-        return result
+    def flatten(self, value):
+        if self.iscomplex:
+            return np.stack([np.real(value), np.imag(value)]).ravel()
+        else:
+            return value.ravel()
+
+    def unflatten(self, value):
+        if self.iscomplex:
+            reshaped = np.reshape(value, (2,) + self.shape)
+            return np.array(reshaped[0] + 1j * reshaped[1])
+        else:
+            return value.reshape(self.shape)
 
 register_node(ArrayNode, np.ndarray)
 register_vspace(ArrayVSpace, np.ndarray)
