@@ -3,6 +3,7 @@ from __future__ import print_function
 import autograd.numpy as np
 import autograd.numpy.random as npr
 from autograd.util import *
+from autograd.container_types import make_tuple
 from autograd import grad
 npr.seed(1)
 

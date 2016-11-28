@@ -3,93 +3,42 @@ from autograd.core import (primitive, Node, VSpace, register_node, vspace,
                            register_vspace, getval, SparseObject)
 from builtins import zip
 from future.utils import iteritems
+from functools import partial
 import numpy as np
 
-class TupleNode(Node):
+class SequenceNode(Node):
     __slots__ = []
     def __getitem__(self, idx):
-        return tuple_take(self, idx)
+        return sequence_take(self, idx)
     def __len__(self):
         return len(self.value)
 
-register_node(TupleNode, tuple)
+register_node(SequenceNode, tuple)
+register_node(SequenceNode, list)
 
 @primitive
-def tuple_take(A, idx):
+def sequence_take(A, idx):
     return A[idx]
-def grad_tuple_take(g, ans, A, idx):
-    return tuple_untake(g, idx, A)
-tuple_take.defgrad(grad_tuple_take)
+def grad_sequence_take(g, ans, A, idx):
+    return sequence_untake(g, idx, vspace(getval(A)))
+sequence_take.defgrad(grad_sequence_take)
 
 @primitive
-def tuple_untake(x, idx, template):
+def sequence_untake(x, idx, vs):
     def mut_add(A):
         result = list(A)
         result[idx] = vs.shape[idx].mut_add(result[idx], x)
-        return tuple(result)
-    vs = vspace(template)
+        return vs.sequence_type(result)
     return SparseObject(vs, mut_add)
-tuple_untake.defgrad(lambda g, ans, x, idx, template : tuple_take(g, idx))
-tuple_untake.defgrad_is_zero(argnums=(1, 2))
+sequence_untake.defgrad(lambda g, ans, x, idx, template : sequence_take(g, idx))
+sequence_untake.defgrad_is_zero(argnums=(1, 2))
 
 @primitive
-def make_tuple(*args):
-    return tuple(args)
-make_tuple.grad = lambda argnum, g, *args: g[argnum]
-
-class ListNode(Node):
-    __slots__ = []
-    def __getitem__(self, idx):
-        return list_take(self, idx)
-    def __len__(self):
-        return len(self.value)
-
-register_node(ListNode, list)
-
-@primitive
-def list_take(A, idx):
-    return A[idx]
-def grad_list_take(g, ans, A, idx):
-    return list_untake(g, idx, A)
-list_take.defgrad(grad_list_take)
-
-@primitive
-def list_untake(x, idx, template):
-    def mut_add(A):
-         A[idx] = vs.shape[idx].mut_add(A[idx], x)
-         return A
-    vs = vspace(template)
-    return SparseObject(vs, mut_add)
-list_untake.defgrad(lambda g, ans, x, idx, template : list_take(g, idx))
-list_untake.defgrad_is_zero(argnums=(1, 2))
-
-class DictNode(Node):
-    __slots__ = []
-    def __getitem__(self, idx):
-        return dict_take(self, idx)
-    def __len__(self):
-        return len(self.value)
-    def __iter__(self):
-        return self.value.__iter__()
-
-register_node(DictNode, dict)
-
-@primitive
-def dict_take(A, idx):
-    return A[idx]
-def grad_dict_take(g, ans, A, idx):
-    return dict_untake(g, idx, A)
-dict_take.defgrad(grad_dict_take)
-
-@primitive
-def dict_untake(x, idx, template):
-    def mut_add(A):
-         A[idx] = vs.shape[idx].mut_add(A[idx], x)
-         return A
-    vs = vspace(template)
-    return SparseObject(vs, mut_add)
-dict_untake.defgrad(lambda g, ans, x, idx, template : dict_take(g, idx))
-dict_untake.defgrad_is_zero(argnums=(1, 2))
+def make_sequence(sequence_type, *args):
+    return sequence_type(args)
+make_sequence.grad = lambda argnum, g, sequence_type, *args: g[argnum - 1]
+make_tuple = partial(make_sequence, tuple)
+make_list  = partial(make_sequence, list)
 
 class SequenceVSpace(VSpace):
     def __init__(self, value):
@@ -122,6 +71,34 @@ class SequenceVSpace(VSpace):
 
 register_vspace(SequenceVSpace, list)
 register_vspace(SequenceVSpace, tuple)
+
+class DictNode(Node):
+    __slots__ = []
+    def __getitem__(self, idx):
+        return dict_take(self, idx)
+    def __len__(self):
+        return len(self.value)
+    def __iter__(self):
+        return self.value.__iter__()
+
+register_node(DictNode, dict)
+
+@primitive
+def dict_take(A, idx):
+    return A[idx]
+def grad_dict_take(g, ans, A, idx):
+    return dict_untake(g, idx, A)
+dict_take.defgrad(grad_dict_take)
+
+@primitive
+def dict_untake(x, idx, template):
+    def mut_add(A):
+         A[idx] = vs.shape[idx].mut_add(A[idx], x)
+         return A
+    vs = vspace(template)
+    return SparseObject(vs, mut_add)
+dict_untake.defgrad(lambda g, ans, x, idx, template : dict_take(g, idx))
+dict_untake.defgrad_is_zero(argnums=(1, 2))
 
 class DictVSpace(VSpace):
     def __init__(self, value):

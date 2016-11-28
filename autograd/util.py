@@ -5,7 +5,6 @@ import itertools as it
 from autograd.convenience_wrappers import grad, safe_type
 from autograd.core import vspace, flatten
 from copy import copy
-from autograd.container_types import ListNode, TupleNode, make_tuple
 from builtins import map, range, zip
 from future.utils import iteritems
 
