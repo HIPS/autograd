@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 import numpy as np
 
-from autograd.core import (Node, FloatNode, VSpace, FloatVSpace, ComplexVSpace,
+from autograd.core import (Node, FloatNode, VSpace,
                            SparseObject, primitive, cast, vspace,
                            register_node, register_vspace,
                            differentiable_ops, nondifferentiable_ops, getval)
@@ -64,9 +64,10 @@ class ArrayNode(Node):
 
 class ArrayVSpace(VSpace):
     def __init__(self, value):
+        value = np.array(value)
         self.shape = value.shape
         self.dtype = value.dtype
-        self.iscomplex = value.dtype == np.complex128
+        self.iscomplex = np.iscomplexobj(value)
         if self.iscomplex:
             self.size  = 2 * value.size
         else:
@@ -92,12 +93,10 @@ register_node(ArrayNode, np.ndarray)
 register_vspace(ArrayVSpace, np.ndarray)
 array_types = set([anp.ndarray, ArrayNode])
 
-for float_type in [anp.float64, anp.float32, anp.float16]:
-    register_node(FloatNode, float_type)
-    register_vspace(FloatVSpace, float_type)
-for complex_type in [anp.complex64, anp.complex128]:
-    register_node(FloatNode, complex_type)
-    register_vspace(ComplexVSpace, complex_type)
+for type_ in [float, anp.float64, anp.float32, anp.float16,
+              complex, anp.complex64, anp.complex128]:
+    register_node(FloatNode, type_)
+    register_vspace(ArrayVSpace, type_)
 
 @primitive
 def arraycast(val, dtype):
