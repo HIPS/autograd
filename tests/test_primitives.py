@@ -10,14 +10,6 @@ EPS, RTOL, ATOL = 1e-4, 1e-4, 1e-6
 def concat(lists):
     return list(it.chain(*lists))
 
-def vspace_examples(vs):
-    N = vs.size
-    unit_vectors = list(np.eye(N))
-    rand_vectors = list(npr.randn(N, N))
-    return ([vs.zeros()] \
-            + map(vs.unflatten, unit_vectors)
-            + map(vs.unflatten, rand_vectors))
-
 def numerical_jacobian(fun, argnum, args, kwargs):
     def vector_fun(x):
         args_tmp = list(args)
@@ -42,7 +34,7 @@ def check_args(fun, argnum, args, kwargs):
     in_vspace  = vspace(args[argnum])
     ans_vspace = vspace(ans)
     jac = numerical_jacobian(fun, argnum, args, kwargs)
-    for outgrad in vspace_examples(ans_vspace):
+    for outgrad in ans_vspace.examples():
         result = fun.grads[argnum](outgrad, ans, *args, **kwargs)
         result_vspace = vspace(result)
         result_reals = flatten(result)
@@ -55,8 +47,8 @@ def check_args(fun, argnum, args, kwargs):
                               result_reals, nd_result_reals)
 
 def check_primitive(fun, argnums, vspace_instances, kwargs):
-    arg_sets = [concat(map(vspace_examples, vsi))
-                 for vsi in vspace_instances]
+    arg_sets = [concat([vs.examples() for vs in vsi])
+                for vsi in vspace_instances]
     for argnum, args in it.product(argnums, it.product(*arg_sets)):
         check_args(fun, argnum, args, kwargs)
 

@@ -5,6 +5,7 @@ import types
 import math
 import re
 import numpy as np
+import numpy.random as npr
 from functools import partial
 from future.utils import iteritems, raise_from, raise_
 from collections import defaultdict
@@ -203,6 +204,15 @@ class VSpace(object):
 
     def __repr__(self):
         return "{}_{}".format(type(self).__name__, self.__dict__)
+
+    def examples(self):
+        # Used for testing only
+        N = self.size
+        unit_vectors = list(np.eye(N))
+        rand_vectors = list(npr.randn(N, N))
+        return ([self.zeros()] \
+            + map(self.unflatten, unit_vectors)
+            + map(self.unflatten, rand_vectors))
 
 def flatten(value):
     return vspace(value).flatten(value)

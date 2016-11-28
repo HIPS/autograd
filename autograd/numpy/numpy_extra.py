@@ -78,9 +78,9 @@ class ArrayVSpace(VSpace):
 
     def flatten(self, value):
         if self.iscomplex:
-            return np.stack([np.real(value), np.imag(value)]).ravel()
+            return np.ravel(np.stack([np.real(value), np.imag(value)]))
         else:
-            return value.ravel()
+            return np.ravel(value)
 
     def unflatten(self, value):
         if self.iscomplex:
@@ -88,6 +88,19 @@ class ArrayVSpace(VSpace):
             return np.array(reshaped[0] + 1j * reshaped[1])
         else:
             return value.reshape(self.shape)
+
+    def examples(self):
+        # many possible instantiations
+        original_examples = super(ArrayVSpace, self).examples()
+        if self.shape == ():
+            np_scalar_examples = [ex[()] for ex in original_examples]
+            if self.iscomplex:
+                py_scalar_examples = map(complex, np_scalar_examples)
+            else:
+                py_scalar_examples = map(float, np_scalar_examples)
+            return original_examples + np_scalar_examples + py_scalar_examples
+        else:
+            return original_examples
 
 register_node(ArrayNode, np.ndarray)
 register_vspace(ArrayVSpace, np.ndarray)
