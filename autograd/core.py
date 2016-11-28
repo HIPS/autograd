@@ -119,10 +119,10 @@ class primitive(object):
         self.__doc__ = fun.__doc__
 
     def gradmaker(self, argnum, ans, args, kwargs):
-        try:
-            return self.grads[argnum](ans, *args, **kwargs)
-        except KeyError:
-            return self.make_error('Reverse-mode', argnum)
+        # try:
+        return self.grads[argnum](ans, *args, **kwargs)
+        # except KeyError:
+            # return self.make_error('Reverse-mode', argnum)
 
     def forward_gradmaker(self, argnum, ans, args, kwargs):
         try:
@@ -298,6 +298,8 @@ class Node(object):
         self.tapes = tapes
         self.forward_derivatives = {tape: [] for tape in tapes if
                                     isinstance(tape, ForwardTape)}
+        for tape in tapes:
+            tape.record_new_node(self)
 
         # for tape in tapes:
             # if isinstance(tape, CalculationTape):

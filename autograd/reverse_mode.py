@@ -33,6 +33,14 @@ class ReverseModeTape(list):
         # tape forward.
         return self.recording and argnum not in primitive.zero_grads
 
+    def record_new_node(self, node):
+        if isinstance(node, NoDerivativeNode):
+            reverse_node = NoDerivativeReverseNode()
+        else:
+            reverse_node = ReverseNode()
+        self.node_mappings[node] = reverse_node
+        self.node_mappings[reverse_node] = node
+
     def update(self, primitive, args, kwargs, result):
         operations = []
 
@@ -45,12 +53,8 @@ class ReverseModeTape(list):
                 operations.append((gradfun, parent_reverse_node))
 
         if operations:
-            if isinstance(result, NoDerivativeNode):
-                reverse_node = NoDerivativeReverseNode(operations)
-            else:
-                reverse_node = ReverseNode(operations)
-            self.node_mappings[result] = reverse_node
-            self.node_mappings[reverse_node] = result
+            reverse_node = self.node_mappings[result]
+            reverse_node.operations = operations
             self.append(reverse_node)
 
     def __hash__(self):
