@@ -1,15 +1,13 @@
 from __future__ import absolute_import
 import sys
-import operator as op
 import types
-import math
-import re
 import numpy as np
 import numpy.random as npr
 from functools import partial
-from future.utils import iteritems, raise_from, raise_
+from future.utils import iteritems
 from collections import defaultdict
 import warnings
+from .errors import add_extra_error_message
 
 def make_jvp(fun, argnum=0):
     def jvp(*args, **kwargs):
@@ -257,46 +255,3 @@ def assert_vspace_match(x, expected_vspace, fun):
 
 def isnode(x): return type(x) in node_types
 getval = lambda x : x.value if isnode(x) else x
-
-class AutogradHint(Exception):
-    def __init__(self, message, subexception_type=None, subexception_val=None):
-        self.message = message
-        self.subexception_type = subexception_type
-        self.subexception_val = subexception_val
-
-    def __str__(self):
-        if self.subexception_type:
-            return '{message}\nSub-exception:\n{name}: {str}'.format(
-                message=self.message,
-                name=self.subexception_type.__name__,
-                str=self.subexception_type(self.subexception_val))
-        else:
-            return self.message
-
-common_errors = [
-    ((TypeError, r'float() argument must be a string or a number'),
-        "This error *might* be caused by assigning into arrays, which autograd doesn't support."),
-    ((TypeError, r"got an unexpected keyword argument '(?:dtype)|(?:out)'" ),
-        "This error *might* be caused by importing numpy instead of autograd.numpy. \n"
-        "Check that you have 'import autograd.numpy as np' instead of 'import numpy as np'."),
-]
-
-def check_common_errors(error_type, error_message):
-    keys, vals = zip(*common_errors)
-    match = lambda key: error_type == key[0] and len(re.findall(key[1], error_message)) != 0
-    matches = map(match, keys)
-    num_matches = sum(matches)
-
-    if num_matches == 1:
-        return vals[matches.index(True)]
-
-def add_extra_error_message(e):
-    etype, value, traceback = sys.exc_info()
-    extra_message = check_common_errors(type(e), str(e))
-
-    if extra_message:
-        if sys.version_info >= (3,):
-            raise_from(AutogradHint(extra_message), e)
-        else:
-            raise_(AutogradHint, (extra_message, etype, value), traceback)
-    raise_(etype, value, traceback)
