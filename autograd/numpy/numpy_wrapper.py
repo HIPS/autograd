@@ -77,7 +77,7 @@ def wrap_if_nodes_inside(raw_array, slow_op_name=None):
 def array_from_args(*args):
     return np.array(args)
 
-def array_from_args_gradmaker(argnum, g, ans, args, kwargs):
+def array_from_args_gradmaker(argnum, g, ans, vs, gvs, args, kwargs):
     return g[argnum]
 array_from_args.grad = array_from_args_gradmaker
 

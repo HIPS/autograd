@@ -9,7 +9,7 @@ from . import numpy_wrapper as anp
 @primitive
 def take(A, idx):
     return A[idx]
-def grad_take(g, ans, A, idx):
+def grad_take(g, ans, vs, gvs, A, idx):
     return untake(g, idx, A)
 take.defgrad(grad_take)
 
@@ -19,7 +19,7 @@ def untake(x, idx, template):
         np.add.at(A, idx, x)
         return A
     return SparseObject(vspace(template), mut_add)
-untake.defgrad(lambda g, ans, x, idx, template : take(g, idx))
+untake.defgrad(lambda g, ans, vs, gvs, x, idx, template : take(g, idx))
 untake.defgrad_is_zero(argnums=(1, 2))
 
 Node.__array_priority__ = 90.0
