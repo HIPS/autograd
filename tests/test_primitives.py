@@ -14,21 +14,13 @@ def concat(lists):
 def numerical_jacobian(fun, argnum, args, kwargs):
     def vector_fun(x):
         args_tmp = list(args)
-        args_tmp[argnum] = vs.unflatten(vs.flatten(args[argnum]) + x)
-        result = fun(*args_tmp, **kwargs)
-        return vs.flatten(result)
+        args_tmp[argnum] = vs_in.unflatten(vs_in.flatten(args[argnum]) + x)
+        return vs_out.flatten(fun(*args_tmp, **kwargs))
 
-    vs = vspace(args[argnum])
-    N_in  = vs.size
-    N_out = vspace(fun(*args, **kwargs)).size
-    jac = np.zeros((N_out, N_in))
-
-    for i in range(N_in):
-        dx = np.zeros(N_in)
-        dx[i] = EPS / 2
-        jac[:, i] = (vector_fun(dx) - vector_fun(-dx)) / EPS
-
-    return jac
+    vs_in  = vspace(args[argnum])
+    vs_out = vspace(fun(*args, **kwargs))
+    return np.stack([(vector_fun(dx) - vector_fun(-dx)) / EPS
+                     for dx in np.eye(vs_in.size) * EPS / 2]).T
 
 def check_args(fun, argnum, args, kwargs):
     ans = fun(*args)
@@ -36,7 +28,8 @@ def check_args(fun, argnum, args, kwargs):
     ans_vspace = vspace(ans)
     jac = numerical_jacobian(fun, argnum, args, kwargs)
     for outgrad in ans_vspace.examples():
-        result = fun.grads[argnum](outgrad, ans, *args, **kwargs)
+        result = fun.grads[argnum](
+            outgrad, ans, in_vspace, ans_vspace, *args, **kwargs)
         result_vspace = vspace(result)
         result_reals = flatten(result, True)
         nd_result_reals = np.dot(flatten(outgrad, True), jac)
@@ -53,10 +46,10 @@ def check_primitive(fun, vspace_instances, kwargs={}, argnums=[0]):
     for argnum, args in it.product(argnums, it.product(*arg_sets)):
         check_args(fun, argnum, args, kwargs)
 
-array_shapes = [(), (1,), (1,1), (2,), (2,1), (1,2), (2,3), (2,3,4)]
+array_shapes = [(), (1,), (1,1), (2,), (3,1), (1,2), (3,2), (2,3,1)]
 real_arrays    = [vspace(np.zeros(s)               ) for s in array_shapes]
 complex_arrays = [vspace(np.zeros(s, dtype=complex)) for s in array_shapes]
-composite_values = [[], [0.0], [0.0, np.zeros((2,1))],
+composite_values = [[0.0], [0.0, np.zeros((2,1))],
                     [0.0, np.zeros((2,1)), [0.0]]]
 lists  = map(vspace, composite_values)
 tuples = map(vspace, map(tuple, composite_values))

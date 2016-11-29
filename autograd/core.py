@@ -38,7 +38,8 @@ def backward_pass(g, end_node, start_node):
         cur_outgrad = vsum(node.vspace, *outgrads[node])
         function, args, kwargs, parents = node.recipe
         for argnum, parent in parents:
-            outgrad = function.grad(argnum, cur_outgrad, node, args, kwargs)
+            outgrad = function.grad(argnum, cur_outgrad, node, args, kwargs,
+                                    parent.vspace, node.vspace)
             outgrads[parent].append(outgrad)
             assert_vspace_match(outgrad, parent.vspace, function)
     return cur_outgrad
@@ -73,9 +74,9 @@ class primitive(object):
         else:
             return result_value
 
-    def grad(self, argnum, outgrad, ans, args, kwargs):
+    def grad(self, argnum, outgrad, ans, args, kwargs, vs, gvs):
         try:
-            return self.grads[argnum](outgrad, ans, *args, **kwargs)
+            return self.grads[argnum](outgrad, ans, vs, gvs, *args, **kwargs)
         except KeyError:
             if self.grads == {}:
                 errstr = "Gradient of {0} not yet implemented."
@@ -137,7 +138,7 @@ primitive_vsum.grad = lambda arg, g, *args : g
 
 @primitive
 def identity(x) : return x
-identity.defgrad(lambda g, ans, x : g)
+identity.defgrad(lambda g, ans, vs, gvs, x : g)
 
 class Node(object):
     __slots__ = ['value', 'recipe', 'progenitors', 'vspace']

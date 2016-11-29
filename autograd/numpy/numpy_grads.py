@@ -15,8 +15,8 @@ anp.nan_to_num.defgrad(lambda g, ans, x: anp.where(anp.isfinite(x), g, 0.))
 
 # ----- Binary ufuncs -----
 
-anp.add.defgrad(        lambda g, ans, x, y : unbroadcast(ans, x, g))
-anp.add.defgrad(        lambda g, ans, x, y : unbroadcast(ans, y, g), argnum=1)
+anp.add.defgrad(        lambda g, ans, vs, gvs, x, y : unbroadcast(vs, gvs, g))
+anp.add.defgrad(        lambda g, ans, vs, gvs, x, y : unbroadcast(vs, gvs, g), argnum=1)
 anp.multiply.defgrad(   lambda g, ans, x, y : unbroadcast(ans, x, y * g))
 anp.multiply.defgrad(   lambda g, ans, x, y : unbroadcast(ans, y, x * g), argnum=1)
 anp.subtract.defgrad(   lambda g, ans, x, y : unbroadcast(ans, x, g))
@@ -54,7 +54,7 @@ anp.log.defgrad(   lambda g, ans, x : g / x)
 anp.log2.defgrad(  lambda g, ans, x : g / x / anp.log(2))
 anp.log10.defgrad( lambda g, ans, x : g / x / anp.log(10))
 anp.log1p.defgrad( lambda g, ans, x : g / (x + 1))
-anp.sin.defgrad(   lambda g, ans, x : g * anp.cos(x))
+anp.sin.defgrad(   lambda g, ans, vs, gvs, x : g * anp.cos(x))
 anp.cos.defgrad(   lambda g, ans, x : - g * anp.sin(x))
 anp.tan.defgrad(   lambda g, ans, x : g / anp.cos(x) **2)
 anp.arcsin.defgrad(lambda g, ans, x : g / anp.sqrt(1 - x**2))
@@ -384,18 +384,16 @@ anp.make_diagonal.defgrad(
 
 # ----- Handle broadcasting -----
 
-def unbroadcast(ans, x, result):
-    # x is the argument that we're differentiating with respect to.
-    if isarray(x):
-        shape = anp.shape(x)
-        while anp.ndim(result) > len(shape):
-            result = anp.sum(result, axis=0)
-        for axis, size in enumerate(shape):
-            if size == 1:
-                result = anp.sum(result, axis=axis, keepdims=True)
-        assert anp.shape(result) == shape
-        return result
-    elif isarray(ans):
-        return anp.sum(result)
+def match_complex(vs, gvs, result):
+    if gvs.iscomplex and not vs.iscomplex:
+        return anp.real(result)
     else:
         return result
+
+def unbroadcast(vs, gvs, result):
+    while anp.ndim(result) > len(vs.shape):
+        result = anp.sum(result, axis=0)
+    for axis, size in enumerate(vs.shape):
+        if size == 1:
+            result = anp.sum(result, axis=axis, keepdims=True)
+    return match_complex(vs, gvs, result)
