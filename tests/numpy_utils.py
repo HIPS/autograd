@@ -24,8 +24,12 @@ def check_fun_and_grads(fun, args, kwargs, argnums):
     wrt_args = [args[i] for i in argnums]
     try:
         if isinstance(fun, primitive):
-            check_equivalent(fun(*args, **kwargs),
-                             fun.fun(*args, **kwargs))
+            wrapped   = fun(*args, **kwargs)
+            unwrapped = fun.fun(*args, **kwargs)
+            try:
+                assert wrapped == unwrapped
+            except:
+                check_equivalent(wrapped, unwrapped)
     except:
         print("Value test failed! Args were", args, kwargs)
         raise
