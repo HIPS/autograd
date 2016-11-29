@@ -20,15 +20,15 @@ T = lambda x: anp.swapaxes(x, -1, -2)
 # add two dimensions to the end of x
 add2d = lambda x: anp.array(x)[...,None,None]
 
-det.defgrad(lambda g, ans, x: add2d(g) * add2d(ans) * T(inv(x)))
-slogdet.defgrad(lambda g, ans, x: add2d(g[1]) * T(inv(x)))
+det.defgrad(lambda g, ans, vs, gvs, x: add2d(g) * add2d(ans) * T(inv(x)))
+slogdet.defgrad(lambda g, ans, vs, gvs, x: add2d(g[1]) * T(inv(x)))
 
-def grad_inv(g, ans, x):
+def grad_inv(g, ans, vs, gvs, x):
     dot = anp.dot if ans.ndim == 2 else partial(anp.einsum, '...ij,...jk->...ik')
     return -dot(dot(T(ans), g), T(ans))
 inv.defgrad(grad_inv)
 
-def grad_solve(argnum, g, ans, a, b):
+def grad_solve(argnum, g, ans, vs, gvs, a, b):
     updim = lambda x: x if x.ndim == a.ndim else x[...,None]
     dot = anp.dot if a.ndim == 2 else partial(anp.einsum, '...ij,...jk->...ik')
     if argnum == 0:
@@ -37,7 +37,7 @@ def grad_solve(argnum, g, ans, a, b):
         return solve(T(a), g)
 solve.defgrads(grad_solve, [0, 1])
 
-def grad_norm(g, ans, x, ord=None, axis=None):
+def grad_norm(g, ans, vs, gvs, x, ord=None, axis=None):
     def check_implemented():
         matrix_norm = (x.ndim==2 and axis is None) or isinstance(axis, tuple)
         frobenius_norm = ord is None or ord == 'fro'
@@ -59,7 +59,7 @@ def grad_norm(g, ans, x, ord=None, axis=None):
         return expand(g / ans**(ord-1)) * x * anp.abs(x)**(ord-2)
 norm.defgrad(grad_norm)
 
-def grad_eigh(g, ans, x, UPLO='L'):
+def grad_eigh(g, ans, vs, gvs, x, UPLO='L'):
     """Gradient for eigenvalues and vectors of a symmetric matrix."""
     N = x.shape[-1]
     w, v = ans              # Eigenvalues, eigenvectors.
@@ -71,7 +71,7 @@ def grad_eigh(g, ans, x, UPLO='L'):
     return dot(v * wg[..., anp.newaxis, :] + dot(v, F * dot(T(v), vg)), T(v))
 eigh.defgrad(grad_eigh)
 
-def grad_cholesky(g, L, A):
+def grad_cholesky(g, L, vs, gvs, A):
     # Based on Iain Murray's note http://arxiv.org/abs/1602.07527
     # scipy's dtrtrs wrapper, solve_triangular, doesn't broadcast along leading
     # dimensions, so when A.ndim > 2 we just call a generic LU solve instead of

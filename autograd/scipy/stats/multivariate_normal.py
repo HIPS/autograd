@@ -39,14 +39,14 @@ def covgrad(x, mean, cov):
     solved = np.linalg.solve(cov, (x - mean).T).T
     return lower_half(np.linalg.inv(cov) - generalized_outer_product(solved))
 
-logpdf.defgrad(lambda g, ans, x, mean, cov: unbroadcast(ans, x,    -np.expand_dims(g, 1) * np.linalg.solve(cov, (x - mean).T).T), argnum=0)
-logpdf.defgrad(lambda g, ans, x, mean, cov: unbroadcast(ans, mean, np.expand_dims(g, 1) * np.linalg.solve(cov, (x - mean).T).T), argnum=1)
-logpdf.defgrad(lambda g, ans, x, mean, cov: unbroadcast(ans, cov,  -np.reshape(g, np.shape(g) + (1, 1)) * covgrad(x, mean, cov)), argnum=2)
+logpdf.defgrad(lambda g, ans, vs, gvs, x, mean, cov: unbroadcast(vs, gvs, -np.expand_dims(g, 1) * np.linalg.solve(cov, (x - mean).T).T), argnum=0)
+logpdf.defgrad(lambda g, ans, vs, gvs, x, mean, cov: unbroadcast(vs, gvs,  np.expand_dims(g, 1) * np.linalg.solve(cov, (x - mean).T).T), argnum=1)
+logpdf.defgrad(lambda g, ans, vs, gvs, x, mean, cov: unbroadcast(vs, gvs, -np.reshape(g, np.shape(g) + (1, 1)) * covgrad(x, mean, cov)), argnum=2)
 
 # Same as log pdf, but multiplied by the pdf (ans).
-pdf.defgrad(lambda g, ans, x, mean, cov: unbroadcast(ans, x,    -g * ans * np.linalg.solve(cov, x - mean)), argnum=0)
-pdf.defgrad(lambda g, ans, x, mean, cov: unbroadcast(ans, mean,  g * ans * np.linalg.solve(cov, x - mean)), argnum=1)
-pdf.defgrad(lambda g, ans, x, mean, cov: unbroadcast(ans, cov,  -g * ans * covgrad(x, mean, cov)),          argnum=2)
+pdf.defgrad(lambda g, ans, vs, gvs, x, mean, cov: unbroadcast(vs, gvs, -g * ans * np.linalg.solve(cov, x - mean)), argnum=0)
+pdf.defgrad(lambda g, ans, vs, gvs, x, mean, cov: unbroadcast(vs, gvs,  g * ans * np.linalg.solve(cov, x - mean)), argnum=1)
+pdf.defgrad(lambda g, ans, vs, gvs, x, mean, cov: unbroadcast(vs, gvs, -g * ans * covgrad(x, mean, cov)),          argnum=2)
 
 entropy.defgrad_is_zero(argnums=(0,))
-entropy.defgrad(lambda g, ans, mean, cov: unbroadcast(ans, cov, 0.5 * g * np.linalg.inv(cov).T), argnum=1)
+entropy.defgrad(lambda g, ans, vs, gvs, mean, cov: unbroadcast(vs, gvs, 0.5 * g * np.linalg.inv(cov).T), argnum=1)

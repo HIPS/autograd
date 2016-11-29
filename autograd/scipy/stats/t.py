@@ -25,19 +25,19 @@ def grad_tlogpdf_df(x, df, loc, scale):
     y = (x - loc)/scale
     return 0.5 * ((y**2 * (df+1))/(df * (y**2 + df)) - np.log(y**2 / df + 1) - 1.0/df -psi(df/2.0) + psi((df + 1)/2.0))
 
-pdf.defgrad(lambda g, ans, x, df, loc=0.0, scale=1.0: unbroadcast(ans, x,     g * ans * grad_tlogpdf_x(    x, df, loc, scale)), argnum=0)
-pdf.defgrad(lambda g, ans, x, df, loc=0.0, scale=1.0: unbroadcast(ans, df,    g * ans * grad_tlogpdf_df(   x, df, loc, scale)), argnum=1)
-pdf.defgrad(lambda g, ans, x, df, loc=0.0, scale=1.0: unbroadcast(ans, loc,   g * ans * grad_tlogpdf_loc(  x, df, loc, scale)), argnum=2)
-pdf.defgrad(lambda g, ans, x, df, loc=0.0, scale=1.0: unbroadcast(ans, scale, g * ans * grad_tlogpdf_scale(x, df, loc, scale)), argnum=3)
+pdf.defgrad(lambda g, ans, vs, gvs, x, df, loc=0.0, scale=1.0: unbroadcast(vs, gvs, g * ans * grad_tlogpdf_x(    x, df, loc, scale)), argnum=0)
+pdf.defgrad(lambda g, ans, vs, gvs, x, df, loc=0.0, scale=1.0: unbroadcast(vs, gvs, g * ans * grad_tlogpdf_df(   x, df, loc, scale)), argnum=1)
+pdf.defgrad(lambda g, ans, vs, gvs, x, df, loc=0.0, scale=1.0: unbroadcast(vs, gvs, g * ans * grad_tlogpdf_loc(  x, df, loc, scale)), argnum=2)
+pdf.defgrad(lambda g, ans, vs, gvs, x, df, loc=0.0, scale=1.0: unbroadcast(vs, gvs, g * ans * grad_tlogpdf_scale(x, df, loc, scale)), argnum=3)
 
-cdf.defgrad(lambda g, ans, x, df, loc=0.0, scale=1.0: unbroadcast(ans, x,      g * pdf(x, df, loc, scale)), argnum=0)
-cdf.defgrad(lambda g, ans, x, df, loc=0.0, scale=1.0: unbroadcast(ans, loc,   -g * pdf(x, df, loc, scale)), argnum=2)
+cdf.defgrad(lambda g, ans, vs, gvs, x, df, loc=0.0, scale=1.0: unbroadcast(vs, gvs,  g * pdf(x, df, loc, scale)), argnum=0)
+cdf.defgrad(lambda g, ans, vs, gvs, x, df, loc=0.0, scale=1.0: unbroadcast(vs, gvs, -g * pdf(x, df, loc, scale)), argnum=2)
 # What is the gradient of the cdf wrt the degrees of freedom or scale?  No one knows.
 
-logpdf.defgrad(lambda g, ans, x, df, loc=0.0, scale=1.0: unbroadcast(ans, x,     g * grad_tlogpdf_x(    x, df, loc, scale)), argnum=0)
-logpdf.defgrad(lambda g, ans, x, df, loc=0.0, scale=1.0: unbroadcast(ans, df,    g * grad_tlogpdf_df(   x, df, loc, scale)), argnum=1)
-logpdf.defgrad(lambda g, ans, x, df, loc=0.0, scale=1.0: unbroadcast(ans, loc,   g * grad_tlogpdf_loc(  x, df, loc, scale)), argnum=2)
-logpdf.defgrad(lambda g, ans, x, df, loc=0.0, scale=1.0: unbroadcast(ans, scale, g * grad_tlogpdf_scale(x, df, loc, scale)), argnum=3)
+logpdf.defgrad(lambda g, ans, vs, gvs, x, df, loc=0.0, scale=1.0: unbroadcast(vs, gvs, g * grad_tlogpdf_x(    x, df, loc, scale)), argnum=0)
+logpdf.defgrad(lambda g, ans, vs, gvs, x, df, loc=0.0, scale=1.0: unbroadcast(vs, gvs, g * grad_tlogpdf_df(   x, df, loc, scale)), argnum=1)
+logpdf.defgrad(lambda g, ans, vs, gvs, x, df, loc=0.0, scale=1.0: unbroadcast(vs, gvs, g * grad_tlogpdf_loc(  x, df, loc, scale)), argnum=2)
+logpdf.defgrad(lambda g, ans, vs, gvs, x, df, loc=0.0, scale=1.0: unbroadcast(vs, gvs, g * grad_tlogpdf_scale(x, df, loc, scale)), argnum=3)
 
-logcdf.defgrad(lambda g, ans, x, df, loc=0.0, scale=1.0: unbroadcast(ans, x,      g * np.exp(logpdf(x, df, loc, scale) - logcdf(x, df, loc, scale))), argnum=0)
-logcdf.defgrad(lambda g, ans, x, df, loc=0.0, scale=1.0: unbroadcast(ans, loc,   -g * np.exp(logpdf(x, df, loc, scale) - logcdf(x, df, loc, scale))), argnum=2)
+logcdf.defgrad(lambda g, ans, vs, gvs, x, df, loc=0.0, scale=1.0: unbroadcast(vs, gvs,  g * np.exp(logpdf(x, df, loc, scale) - logcdf(x, df, loc, scale))), argnum=0)
+logcdf.defgrad(lambda g, ans, vs, gvs, x, df, loc=0.0, scale=1.0: unbroadcast(vs, gvs, -g * np.exp(logpdf(x, df, loc, scale) - logcdf(x, df, loc, scale))), argnum=2)

@@ -106,7 +106,7 @@ def flipped_idxs(ndim, axes):
         new_idxs[ax] = slice(None, None, -1)
     return new_idxs
 
-def grad_convolve(argnum, g, ans, A, B, axes=None, dot_axes=[(),()], mode='full'):
+def grad_convolve(argnum, g, ans, vs, gvs, A, B, axes=None, dot_axes=[(),()], mode='full'):
     assert mode in ['valid', 'full'], "Grad for mode {0} not yet implemented".format(mode)
     axes, shapes = parse_axes(A.shape, B.shape, axes, dot_axes, mode)
     if argnum == 0:
