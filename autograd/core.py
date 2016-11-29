@@ -206,11 +206,11 @@ class VSpace(object):
     def examples(self):
         # Used for testing only
         N = self.size
-        unit_vectors = list(np.eye(N))
-        rand_vectors = list(npr.randn(N, N))
-        return ([self.zeros()] \
-            + map(self.unflatten, unit_vectors)
-            + map(self.unflatten, rand_vectors))
+        unit_vect = np.zeros(N)
+        unit_vect[npr.randint(N)] = 1.0
+        unit_vect = self.unflatten(unit_vect)
+        rand_vect = npr.randn(N)
+        return [self.zeros(), self.unflatten(npr.randn(N))]
 
 def flatten(value, covector=False):
     return vspace(value).flatten(value, covector)
