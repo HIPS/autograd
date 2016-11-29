@@ -1,9 +1,10 @@
-import numpy as np
-import numpy.random as npr
+import autograd.numpy as np
+import autograd.numpy.random as npr
 import itertools as it
 from autograd.core import vspace, flatten
 from functools import partial
 import autograd.core as agc
+import operator as op
 
 EPS, RTOL, ATOL = 1e-4, 1e-4, 1e-6
 
@@ -37,25 +38,23 @@ def check_args(fun, argnum, args, kwargs):
     for outgrad in ans_vspace.examples():
         result = fun.grads[argnum](outgrad, ans, *args, **kwargs)
         result_vspace = vspace(result)
-        result_reals = flatten(result)
-        nd_result_reals = np.dot(flatten(outgrad), jac)
+        result_reals = flatten(result, True)
+        nd_result_reals = np.dot(flatten(outgrad, True), jac)
         assert result_vspace == in_vspace, \
             report_mismatch(fun, argnum, args, kwargs, outgrad,
                             in_vspace, result_vspace)
         assert np.allclose(result_reals, nd_result_reals),\
             report_nd_failure(fun, argnum, args, kwargs, outgrad,
-                              result_reals, nd_result_reals)
+                              nd_result_reals, result_reals)
 
-def check_primitive(fun, argnums, vspace_instances, kwargs):
+def check_primitive(fun, vspace_instances, kwargs={}, argnums=[0]):
     arg_sets = [concat([vs.examples() for vs in vsi])
                 for vsi in vspace_instances]
     for argnum, args in it.product(argnums, it.product(*arg_sets)):
         check_args(fun, argnum, args, kwargs)
 
-scalars = [vspace(0.0)]
-complex_scalars = [vspace(0.0 + 0.0j)]
 array_shapes = [(), (1,), (1,1), (2,), (2,1), (1,2), (2,3), (2,3,4)]
-arrays  = [vspace(np.zeros(s)) for s in array_shapes]
+real_arrays    = [vspace(np.zeros(s)               ) for s in array_shapes]
 complex_arrays = [vspace(np.zeros(s, dtype=complex)) for s in array_shapes]
 composite_values = [[], [0.0], [0.0, np.zeros((2,1))],
                     [0.0, np.zeros((2,1)), [0.0]]]
@@ -63,9 +62,8 @@ lists  = map(vspace, composite_values)
 tuples = map(vspace, map(tuple, composite_values))
 dicts  = map(vspace, [dict(zip(it.count(), x)) for x in composite_values])
 
-all_scalars = scalars + complex_scalars
-all_arrays  = arrays + complex_arrays
-everything  = all_scalars + all_arrays + lists + dicts
+all_arrays  = real_arrays + complex_arrays
+everything  = all_arrays + lists + dicts
 
 report_mismatch = \
 '''
@@ -96,4 +94,6 @@ def test_flatten_unflatten():
         assert np.all(v2 == v), \
             report_flatten_unflatten(vs, v, v2)
 
-def test_identity(): check_primitive(agc.identity, [0], (everything,), {})
+def test_identity(): check_primitive(agc.identity, (everything,))
+def test_sin():      check_primitive(np.sin,       (all_arrays,))
+def test_np_sum():   check_primitive(np.add, (all_arrays, all_arrays), argnums=[0,1])

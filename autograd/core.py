@@ -211,8 +211,8 @@ class VSpace(object):
             + map(self.unflatten, unit_vectors)
             + map(self.unflatten, rand_vectors))
 
-def flatten(value):
-    return vspace(value).flatten(value)
+def flatten(value, covector=False):
+    return vspace(value).flatten(value, covector)
 
 node_type_mappings = {}
 vspace_mappings = {}

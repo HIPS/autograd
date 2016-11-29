@@ -65,50 +65,69 @@ class ArrayVSpace(VSpace):
     def __init__(self, value):
         value = np.array(value)
         self.shape = value.shape
-        self.dtype = value.dtype
-        self.iscomplex = np.iscomplexobj(value)
-        if self.iscomplex:
-            self.size  = 2 * value.size
-        else:
-            self.size  = value.size
+        self.size  = value.size
 
     def zeros(self):
-        return anp.zeros(self.shape, dtype=self.dtype)
+        return anp.zeros(self.shape)
 
-    def flatten(self, value):
-        if self.iscomplex:
-            return np.ravel(np.stack([np.real(value), np.imag(value)]))
-        else:
-            return np.ravel(value)
+    def flatten(self, value, covector=False):
+        return np.ravel(value)
 
     def unflatten(self, value):
-        if self.iscomplex:
-            reshaped = np.reshape(value, (2,) + self.shape)
-            return np.array(reshaped[0] + 1j * reshaped[1])
-        else:
-            return value.reshape(self.shape)
+        return value.reshape(self.shape)
 
     def examples(self):
         # many possible instantiations
         original_examples = super(ArrayVSpace, self).examples()
         if self.shape == ():
             np_scalar_examples = [ex[()] for ex in original_examples]
-            if self.iscomplex:
-                py_scalar_examples = map(complex, np_scalar_examples)
-            else:
-                py_scalar_examples = map(float, np_scalar_examples)
+            py_scalar_examples = map(float, np_scalar_examples)
+            return original_examples + np_scalar_examples + py_scalar_examples
+        else:
+            return original_examples
+
+class ComplexArrayVSpace(VSpace):
+    def __init__(self, value):
+        value = np.array(value)
+        self.shape = value.shape
+        self.size  = 2 * value.size
+
+    def zeros(self):
+        return anp.zeros(self.shape, dtype=complex)
+
+    def flatten(self, value, covector=False):
+        if covector:
+            return np.ravel(np.stack([np.real(value), - np.imag(value)]))
+        else:
+            return np.ravel(np.stack([np.real(value), np.imag(value)]))
+
+    def unflatten(self, value):
+        reshaped = np.reshape(value, (2,) + self.shape)
+        return np.array(reshaped[0] + 1j * reshaped[1])
+
+    def examples(self):
+        # many possible instantiations
+        original_examples = super(ComplexArrayVSpace, self).examples()
+        if self.shape == ():
+            np_scalar_examples = [ex[()] for ex in original_examples]
+            py_scalar_examples = map(complex, np_scalar_examples)
             return original_examples + np_scalar_examples + py_scalar_examples
         else:
             return original_examples
 
 register_node(ArrayNode, np.ndarray)
-register_vspace(ArrayVSpace, np.ndarray)
+register_vspace(lambda x: ComplexArrayVSpace(x)
+                if np.iscomplexobj(x)
+                else ArrayVSpace(x), np.ndarray)
 array_types = set([anp.ndarray, ArrayNode])
 
-for type_ in [float, anp.float64, anp.float32, anp.float16,
-              complex, anp.complex64, anp.complex128]:
+for type_ in [float, anp.float64, anp.float32, anp.float16]:
     register_node(ArrayNode, type_)
     register_vspace(ArrayVSpace, type_)
+
+for type_ in [complex, anp.complex64, anp.complex128]:
+    register_node(ArrayNode, type_)
+    register_vspace(ComplexArrayVSpace, type_)
 
 # These numpy.ndarray methods are just refs to an equivalent numpy function
 nondiff_methods = ['all', 'any', 'argmax', 'argmin', 'argpartition',

@@ -52,7 +52,7 @@ class SequenceVSpace(VSpace):
     def mut_add(self, xs, ys):
         return self.sequence_type(vs.mut_add(x, y)
                                   for vs, x, y in zip(self.shape, xs, ys))
-    def flatten(self, value):
+    def flatten(self, value, covector=False):
         if self.shape:
             return np.concatenate(
                 [s.flatten(v) for s, v in zip(self.shape, value)])
@@ -109,7 +109,7 @@ class DictVSpace(VSpace):
     def mut_add(self, xs, ys):
         return {k : v.mut_add(xs[k], ys[k])
                 for k, v in self.shape.iteritems()}
-    def flatten(self, value):
+    def flatten(self, value, covector=False):
         if self.shape:
             return np.concatenate(
                 [s.flatten(value[k])

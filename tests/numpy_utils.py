@@ -7,6 +7,7 @@ from autograd.util import check_equivalent, check_grads, to_scalar
 from builtins import range
 import warnings
 
+test_complex = False
 
 def combo_check(fun, argnums, *args, **kwargs):
     # Tests all combinations of args given.
@@ -50,7 +51,7 @@ def check_fun_and_grads(fun, args, kwargs, argnums):
             print("Second derivative test failed! Args were", args, kwargs)
             raise
 
-def stat_check(fun, test_complex=True):
+def stat_check(fun, test_complex=test_complex):
     # Tests functions that compute statistics, like sum, mean, etc
     x = 3.5
     A = npr.randn()
@@ -67,7 +68,7 @@ def stat_check(fun, test_complex=True):
         combo_check(fun, (0,), [B, C, D, E], axis=[None, 0],
                     keepdims=[True, False])
 
-def unary_ufunc_check(fun, lims=[-2, 2], test_complex=True):
+def unary_ufunc_check(fun, lims=[-2, 2], test_complex=test_complex):
     scalar_int = transform(lims, 1)
     scalar = transform(lims, 0.4)
     vector = transform(lims, npr.rand(2))
@@ -79,7 +80,7 @@ def unary_ufunc_check(fun, lims=[-2, 2], test_complex=True):
         matc = transform(lims, npr.rand(3, 2)) + 0.1j * npr.rand(3, 2)
         combo_check(fun, (0,), [comp, matc])
 
-def binary_ufunc_check(fun, lims_A=[-2, 2], lims_B=[-2, 2], test_complex=True):
+def binary_ufunc_check(fun, lims_A=[-2, 2], lims_B=[-2, 2], test_complex=test_complex):
     T_A = lambda x : transform(lims_A, x)
     T_B = lambda x : transform(lims_B, x)
     scalar_int = 1
@@ -95,7 +96,7 @@ def binary_ufunc_check(fun, lims_A=[-2, 2], lims_B=[-2, 2], test_complex=True):
         combo_check(fun, (0, 1), [T_A(scalar), T_A(comp), T_A(vector), T_A(matc),  T_A(mat2)],
                                  [T_B(scalar), T_B(comp), T_B(vector), T_B(matc), T_B(mat2)])
 
-def binary_ufunc_check_no_same_args(fun, lims_A=[-2, 2], lims_B=[-2, 2], test_complex=True):
+def binary_ufunc_check_no_same_args(fun, lims_A=[-2, 2], lims_B=[-2, 2], test_complex=test_complex):
     T_A = lambda x : transform(lims_A, x)
     T_B = lambda x : transform(lims_B, x)
     scalar_int1 = 2; scalar_int2 = 3
