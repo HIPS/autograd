@@ -161,17 +161,14 @@ anp.transpose.defgrad(grad_transpose)
 
 isarray = lambda x : type(x) in array_types
 
-def repeat_to_match_shape(g, x, axis, keepdims):
-    """Returns the array g repeated along axis to get a given shape.
+def repeat_to_match_shape(g, vs, axis, keepdims):
+    """Returns the array g repeated along axis to fit vector space vs.
        Also returns the number of repetitions of the array."""
-    assert isinstance(axis, (type(None), int, tuple))
-    if not isarray(x):
+    shape = vs.shape
+    if shape == ():
         return g, 1
-    shape = x.shape
-    if axis is None:
-        dtype=None
-        if anp.iscomplexobj(x):
-            dtype = getval(anp.array(x)).dtype   # np.full() has a bug for complex numbers
+    elif axis is None:
+        dtype = complex if vs.iscomplex else float
         if keepdims:
             return anp.full(shape, anp.sum(g), dtype=dtype), anp.prod(shape)
         else:
@@ -182,7 +179,7 @@ def repeat_to_match_shape(g, x, axis, keepdims):
         else:
             return anp.repeat(anp.expand_dims(g, axis),
                               shape[axis], axis), shape[axis]
-    else:
+    elif isinstance(axis, tuple):
         repeats  = [shape[i] if i in axis else 1 for i in range(len(shape))]
         expanded = [shape[i] if i not in axis else 1 for i in range(len(shape))]
         num_reps = anp.prod(anp.array(shape)[list(axis)])
@@ -190,13 +187,15 @@ def repeat_to_match_shape(g, x, axis, keepdims):
             return anp.tile(g, repeats), num_reps
         else:
             return anp.tile(anp.reshape(g, expanded), repeats), num_reps
+    else:
+        raise Exception('Axis type {} not valid'.format(type(axis)))
 
 def grad_np_sum(g, ans, vs, gvs, x, axis=None, keepdims=False):
-    return repeat_to_match_shape(g, x, axis, keepdims)[0]
+    return repeat_to_match_shape(g, vs, axis, keepdims)[0]
 anp.sum.defgrad(grad_np_sum)
 
 def grad_np_mean(g, ans, vs, gvs, x, axis=None, keepdims=False):
-    g_repeated, num_reps = repeat_to_match_shape(g, x, axis, keepdims)
+    g_repeated, num_reps = repeat_to_match_shape(g, vs, axis, keepdims)
     return g_repeated / num_reps
 anp.mean.defgrad(grad_np_mean)
 
@@ -206,13 +205,13 @@ def grad_np_prod(g, ans, vs, gvs, x, axis=None, keepdims=False): # TODO: Support
 anp.prod.defgrad(grad_np_prod)
 
 def grad_np_var(g, ans, vs, gvs, x, axis=None, ddof=0, keepdims=False):
-    g_repeated, num_reps = repeat_to_match_shape(g, x, axis, keepdims)
+    g_repeated, num_reps = repeat_to_match_shape(g, vs, axis, keepdims)
     x_minus_mean = anp.conj(x - anp.mean(x, axis=axis, keepdims=True))
     return 2.0 * g_repeated * x_minus_mean / (num_reps - ddof)
 anp.var.defgrad(grad_np_var)
 
 def make_grad_np_std(g, ans, vs, gvs, x, axis=None, ddof=0, keepdims=False):
-    g_repeated, num_reps = repeat_to_match_shape(g, x, axis, keepdims)  # Avoid division by zero.
+    g_repeated, num_reps = repeat_to_match_shape(g, vs, axis, keepdims)  # Avoid division by zero.
     if num_reps <= 1:
         return g_repeated * 0.0
     else:
@@ -223,7 +222,7 @@ anp.std.defgrad(make_grad_np_std)
 
 def grad_chooser(g, ans, vs, gvs, x, axis=None, keepdims=None):
     """Builds gradient of functions that choose a single item, such as min or max."""
-    g_repeated, _ = repeat_to_match_shape(g, x, axis, keepdims)
+    g_repeated, _ = repeat_to_match_shape(g, vs, axis, keepdims)
     argmax_locations = x == repeat_to_match_shape(ans, x, axis, keepdims)[0]
     return g_repeated * argmax_locations
 anp.max.defgrad(grad_chooser)
