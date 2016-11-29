@@ -21,7 +21,7 @@ def unary_nd(f, x, eps=EPS):
         dx[d] = eps/2
         nd_grad[d] = (   f(vs.unflatten(x_flat + dx))
                        - f(vs.unflatten(x_flat - dx))  ) / eps
-    return vs.unflatten(nd_grad)
+    return vs.unflatten(nd_grad, True)
 
 def indexed_function(fun, arg, index):
     def partial_function(x):
