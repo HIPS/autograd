@@ -2,7 +2,7 @@ from __future__ import absolute_import
 import numpy as onp
 import operator as op
 
-from autograd.core import getval, primitive
+from autograd.core import primitive
 from . import numpy_wrapper as anp
 from .numpy_extra import ArrayNode, take, array_types
 from builtins import range, zip
@@ -158,8 +158,6 @@ def grad_transpose(g, ans, vs, gvs, x, axes=None):
         axes = anp.argsort(axes)
     return anp.transpose(g, axes)
 anp.transpose.defgrad(grad_transpose)
-
-isarray = lambda x : type(x) in array_types
 
 def repeat_to_match_shape(g, vs, axis, keepdims):
     """Returns the array g repeated along axis to fit vector space vs.
