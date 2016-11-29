@@ -62,9 +62,6 @@ class ArrayNode(Node):
     def __le__(self, other): return anp.less_equal(self, other)
 
 class ArrayVSpace(VSpace):
-
-    iscomplex = False
-
     def __init__(self, value):
         value = np.array(value)
         self.shape = value.shape
@@ -92,9 +89,7 @@ class ArrayVSpace(VSpace):
             return original_examples
 
 class ComplexArrayVSpace(ArrayVSpace):
-
     iscomplex = True
-
     def __init__(self, value):
         super(ComplexArrayVSpace, self).__init__(value)
         self.size  = 2 * self.size

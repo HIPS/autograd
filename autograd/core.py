@@ -187,6 +187,7 @@ def toposort(end_node, start_node):
 
 class VSpace(object):
     __slots__ = []
+    iscomplex = False
     def __init__(self, value):
         pass
 
