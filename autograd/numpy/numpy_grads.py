@@ -168,25 +168,20 @@ def repeat_to_match_shape(g, vs, axis, keepdims):
     if shape == ():
         return g, 1
     elif axis is None:
-        dtype = complex if vs.iscomplex else float
         if keepdims:
-            return anp.full(shape, anp.sum(g), dtype=dtype), anp.prod(shape)
-        else:
-            return anp.full(shape, g, dtype=dtype), anp.prod(shape)
+            g = anp.sum(g)
+        return anp.full(shape, g, dtype=vs.dtype), anp.prod(shape)
     elif isinstance(axis, int):
-        if keepdims:
-            return anp.repeat(g, shape[axis], axis), shape[axis]
-        else:
-            return anp.repeat(anp.expand_dims(g, axis),
-                              shape[axis], axis), shape[axis]
+        if not keepdims:
+            g = anp.expand_dims(g, axis)
+        return anp.repeat(g, shape[axis], axis), shape[axis]
     elif isinstance(axis, tuple):
         repeats  = [shape[i] if i in axis else 1 for i in range(len(shape))]
         expanded = [shape[i] if i not in axis else 1 for i in range(len(shape))]
         num_reps = anp.prod(anp.array(shape)[list(axis)])
-        if keepdims:
-            return anp.tile(g, repeats), num_reps
-        else:
-            return anp.tile(anp.reshape(g, expanded), repeats), num_reps
+        if not keepdims:
+            g = anp.reshape(g, expanded)
+        return anp.tile(g, repeats), num_reps
     else:
         raise Exception('Axis type {} not valid'.format(type(axis)))
 
