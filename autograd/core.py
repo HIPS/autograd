@@ -254,6 +254,5 @@ def assert_vspace_match(x, expected_vspace, fun):
         "\nVector space is {}" \
         "\nExpected        {}".format(fun, vspace(getval(x)), expected_vspace)
 
-
 def isnode(x): return type(x) in node_types
 getval = lambda x : x.value if isnode(x) else x

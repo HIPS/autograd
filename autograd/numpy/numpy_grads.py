@@ -2,7 +2,7 @@ from __future__ import absolute_import
 import numpy as onp
 import operator as op
 
-from autograd.core import primitive
+from autograd.core import primitive, getval, vspace
 from . import numpy_wrapper as anp
 from .numpy_extra import ArrayNode, take, array_types
 from builtins import range, zip
@@ -96,11 +96,11 @@ anp.clip.defgrad(   lambda g, ans, vs, gvs, x, a_min, a_max : g * anp.logical_an
 anp.swapaxes.defgrad(lambda g, ans, vs, gvs, x, axis1, axis2: anp.swapaxes(g, axis2, axis1))
 anp.rollaxis.defgrad(lambda g, ans, vs, gvs, a, axis, start=0: anp.rollaxis(g, start - 1, axis) if start > axis
                                                  else anp.rollaxis(g, start, axis + 1))
-anp.real_if_close.defgrad(lambda g, ans, vs, gvs, x : g)
-anp.real.defgrad(  lambda g, ans, vs, gvs, x   : g)
-anp.imag.defgrad(  lambda g, ans, vs, gvs, x   : -1j * g)
+anp.real_if_close.defgrad(lambda g, ans, vs, gvs, x : match_complex(vs, g))
+anp.real.defgrad(  lambda g, ans, vs, gvs, x   : match_complex(vs, g))
+anp.imag.defgrad(  lambda g, ans, vs, gvs, x   : match_complex(vs, -1j * g))
 anp.conj.defgrad(  lambda g, ans, vs, gvs, x   : anp.conj(g))
-anp.angle.defgrad( lambda g, ans, vs, gvs, x   : g * anp.conj(x * 1j) / anp.abs(x)**2)
+anp.angle.defgrad( lambda g, ans, vs, gvs, x   : match_complex(vs, g * anp.conj(x * 1j) / anp.abs(x)**2))
 anp.where.defgrad( lambda g, ans, vs, gvs, c, x=None, y=None : anp.where(c, g, anp.zeros(g.shape)), argnum=1)
 anp.where.defgrad( lambda g, ans, vs, gvs, c, x=None, y=None : anp.where(c, anp.zeros(g.shape), g), argnum=2)
 anp.cross.defgrad(lambda g, ans, vs, gvs, a, b, axisa=-1, axisb=-1, axisc=-1, axis=None :
@@ -380,13 +380,14 @@ anp.make_diagonal.defgrad(
     lambda g, ans, vs, gvs, D, offset=0, axis1=0, axis2=1 :
     anp.diagonal(g, offset, axis1, axis2))
 
-# ----- Handle broadcasting -----
-
-def match_complex(vs, gvs, result):
-    if gvs.iscomplex and not vs.iscomplex:
-        return anp.real(result)
+def match_complex(vs, x):
+    x_iscomplex = vspace(getval(x)).iscomplex
+    if x_iscomplex and not vs.iscomplex:
+        return anp.real(x)
+    elif not x_iscomplex and vs.iscomplex:
+        return x + 0j
     else:
-        return result
+        return x
 
 def unbroadcast(vs, gvs, result):
     while anp.ndim(result) > len(vs.shape):
@@ -394,4 +395,6 @@ def unbroadcast(vs, gvs, result):
     for axis, size in enumerate(vs.shape):
         if size == 1:
             result = anp.sum(result, axis=axis, keepdims=True)
-    return match_complex(vs, gvs, result)
+    if gvs.iscomplex and not vs.iscomplex:
+        result = anp.real(result)
+    return result
