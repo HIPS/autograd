@@ -195,7 +195,7 @@ def grad_np_mean(g, ans, vs, gvs, x, axis=None, keepdims=False):
 anp.mean.defgrad(grad_np_mean)
 
 def grad_np_prod(g, ans, vs, gvs, x, axis=None, keepdims=False): # TODO: Support tuples of axes.
-    g_repeated, _ = repeat_to_match_shape(g * ans, x, axis, keepdims)
+    g_repeated, _ = repeat_to_match_shape(g * ans, vs, axis, keepdims)
     return g_repeated / x
 anp.prod.defgrad(grad_np_prod)
 
@@ -210,7 +210,7 @@ def make_grad_np_std(g, ans, vs, gvs, x, axis=None, ddof=0, keepdims=False):
     if num_reps <= 1:
         return g_repeated * 0.0
     else:
-        g_repeated, num_reps = repeat_to_match_shape(g / ans, x, axis, keepdims)
+        g_repeated, num_reps = repeat_to_match_shape(g / ans, vs, axis, keepdims)
         x_minus_mean = anp.conj(x - anp.mean(x, axis=axis, keepdims=True))
         return g_repeated * x_minus_mean / (num_reps - ddof)
 anp.std.defgrad(make_grad_np_std)
@@ -218,7 +218,7 @@ anp.std.defgrad(make_grad_np_std)
 def grad_chooser(g, ans, vs, gvs, x, axis=None, keepdims=None):
     """Builds gradient of functions that choose a single item, such as min or max."""
     g_repeated, _ = repeat_to_match_shape(g, vs, axis, keepdims)
-    argmax_locations = x == repeat_to_match_shape(ans, x, axis, keepdims)[0]
+    argmax_locations = x == repeat_to_match_shape(ans, vs, axis, keepdims)[0]
     return g_repeated * argmax_locations
 anp.max.defgrad(grad_chooser)
 anp.min.defgrad(grad_chooser)
