@@ -73,16 +73,16 @@ anp.radians.defgrad(lambda g, ans, vs, gvs, x : g * anp.pi / 180.0)
 anp.square.defgrad( lambda g, ans, vs, gvs, x : g * 2 * x)
 anp.sqrt.defgrad(   lambda g, ans, vs, gvs, x : g * 0.5 * x**-0.5)
 anp.sinc.defgrad(   lambda g, ans, vs, gvs, x : g * (anp.cos(anp.pi*x)*anp.pi*x - anp.sin(anp.pi*x))/(anp.pi*x**2))
-anp.reshape.defgrad(lambda g, ans, vs, gvs, x, shape, order=None : anp.reshape(g, anp.shape(x), order=order))
+anp.reshape.defgrad(lambda g, ans, vs, gvs, x, shape, order=None : anp.reshape(g, vs.shape, order=order))
 anp.roll.defgrad(   lambda g, ans, vs, gvs, x, shift, axis=None  : anp.roll(g, -shift, axis=axis))
 anp.array_split.defgrad(lambda g, ans, vs, gvs, ary, idxs, axis=0 : anp.concatenate(g, axis=axis))
 anp.split.defgrad(      lambda g, ans, vs, gvs, ary, idxs, axis=0 : anp.concatenate(g, axis=axis))
 anp.vsplit.defgrad(     lambda g, ans, vs, gvs, ary, idxs         : anp.concatenate(g, axis=0))
 anp.hsplit.defgrad(     lambda g, ans, vs, gvs, ary, idxs         : anp.concatenate(g, axis=1))
 anp.dsplit.defgrad(     lambda g, ans, vs, gvs, ary, idxs         : anp.concatenate(g, axis=2))
-anp.ravel.defgrad(  lambda g, ans, vs, gvs, x, order=None   : anp.reshape(g, anp.shape(x), order=order))
-anp.expand_dims.defgrad(lambda g, ans, vs, gvs, x, axis     : anp.reshape(g, anp.shape(x)))
-anp.squeeze.defgrad(lambda g, ans, vs, gvs, x, axis=None    : anp.reshape(g, anp.shape(x)))
+anp.ravel.defgrad(  lambda g, ans, vs, gvs, x, order=None   : anp.reshape(g, vs.shape, order=order))
+anp.expand_dims.defgrad(lambda g, ans, vs, gvs, x, axis     : anp.reshape(g, vs.shape))
+anp.squeeze.defgrad(lambda g, ans, vs, gvs, x, axis=None    : anp.reshape(g, vs.shape))
 anp.diag.defgrad(   lambda g, ans, vs, gvs, x, k=0          : anp.diag(g, k))
 anp.flipud.defgrad( lambda g, ans, vs, gvs, x,              : anp.flipud(g))
 anp.fliplr.defgrad( lambda g, ans, vs, gvs, x,              : anp.fliplr(g))
@@ -236,18 +236,22 @@ def grad_np_cumsum(g, ans, vs, gvs, x, axis=None):
 anp.cumsum.defgrad(grad_np_cumsum)
 
 def grad_dot(argnum, g, ans, vs, gvs, A, B):
-    if anp.ndim(A) == 0 or anp.ndim(B) == 0:
+    A_ndim, B_ndim = anp.ndim(A), anp.ndim(B)
+    if A_ndim == 0 or B_ndim == 0:
         axes = ([], [])
     else:
-        axes = ([A.ndim - 1], [max(0, B.ndim - 2)])
+        axes = ([A_ndim - 1], [max(0, B_ndim - 2)])
     return grad_tensordot(argnum, g, ans, vs, gvs, A, B, axes=axes)
 anp.dot.defgrads(grad_dot, [0, 1])
 
 def grad_tensordot(argnum, g, ans, vs, gvs, A, B, axes=2):
+    A_ndim = anp.ndim(A)
+    B_ndim = anp.ndim(B)
+    g_ndim = len(gvs.shape)
     if type(axes) is int:
         if axes > 0:
-            axes = (list(range(anp.ndim(A)))[-axes:],
-                    list(range(anp.ndim(B)))[:axes])
+            axes = (list(range(A_ndim))[-axes:],
+                    list(range(B_ndim))[:axes])
         else:
             axes = [(), ()] # summing over zero axes
 
@@ -256,17 +260,19 @@ def grad_tensordot(argnum, g, ans, vs, gvs, A, B, axes=2):
     N_axes_summed = len(axes[0])
     if argnum == 0:
         X, Y = A, B
+        X_ndim, Y_ndim = A_ndim, B_ndim
         X_axes_summed, Y_axes_summed = axes
-        g_axes_from_Y = list(range(anp.ndim(g)))[(anp.ndim(X) - N_axes_summed):]
+        g_axes_from_Y = list(range(g_ndim))[(X_ndim - N_axes_summed):]
     else:
         X, Y = B, A
+        X_ndim, Y_ndim = B_ndim, A_ndim
         X_axes_summed, Y_axes_summed = axes[::-1]
-        g_axes_from_Y = list(range(anp.ndim(g)))[:(anp.ndim(Y) - N_axes_summed)]
+        g_axes_from_Y = list(range(g_ndim))[:(Y_ndim - N_axes_summed)]
 
-    Y_axes_ignored = [i for i in range(anp.ndim(Y)) if i not in Y_axes_summed]
+    Y_axes_ignored = [i for i in range(Y_ndim) if i not in Y_axes_summed]
     result = anp.tensordot(g, Y, axes=[g_axes_from_Y, Y_axes_ignored])
     sorted_axes_pairs = sorted(zip(X_axes_summed, Y_axes_summed), key =lambda x : x[1])
-    forward_permutation = ([i for i in range(anp.ndim(X)) if i not in X_axes_summed]
+    forward_permutation = ([i for i in range(X_ndim) if i not in X_axes_summed]
                          + [i for i, _ in sorted_axes_pairs])
     reverse_permutation = list(anp.argsort(forward_permutation))
     if result.ndim == 0:
