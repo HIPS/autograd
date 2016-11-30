@@ -7,7 +7,7 @@ from autograd.util import check_equivalent, check_grads, to_scalar
 from builtins import range
 import warnings
 
-test_complex = False
+test_complex = True
 
 def combo_check(fun, argnums, *args, **kwargs):
     # Tests all combinations of args given.

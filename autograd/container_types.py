@@ -117,7 +117,7 @@ class DictVSpace(VSpace):
         else:
             return np.zeros((0,))
 
-    def unflatten(self, value):
+    def unflatten(self, value, covector=False):
         result = {}
         start = 0
         for k, s in sorted(self.shape.iteritems()):
