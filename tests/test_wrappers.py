@@ -60,7 +60,7 @@ def test_multigrad_onearg():
     fun = lambda x, y: np.sum(x + np.sin(y))
     packed_fun = lambda xy: np.sum(xy[0] + np.sin(xy[1]))
     A, B = npr.randn(3), npr.randn(3)
-    check_equivalent(multigrad(fun)(A,B), grad(packed_fun)((A,B)))
+    check_equivalent(multigrad(fun)(A,B), (grad(packed_fun)((A,B))[0],))
 
 def test_elementwise_grad():
     def simple_fun(a):
