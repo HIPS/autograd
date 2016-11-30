@@ -110,8 +110,8 @@ anp.cross.defgrad(lambda g, ans, vs, gvs, a, b, axisa=-1, axisb=-1, axisc=-1, ax
 
 # ----- Trickier grads -----
 
-def grad_diff(g, ans, a, n=1, axis=-1):
-    nd = len(a.shape)
+def grad_diff(g, ans, vs, gvs, a, n=1, axis=-1):
+    nd = len(vs.shape)
     sl1 = [slice(None)]*nd
     sl1[axis] = slice(None, 1)
 
@@ -121,7 +121,7 @@ def grad_diff(g, ans, a, n=1, axis=-1):
     def undiff(g):
         if g.shape[axis] > 0:
             return anp.concatenate((-g[sl1], -anp.diff(g, axis=axis), g[sl2]), axis=axis)
-        shape = list(g.shape)
+        shape = list(gvs.shape)
         shape[axis] = 1
         return anp.zeros(shape)
 

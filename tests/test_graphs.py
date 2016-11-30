@@ -14,7 +14,7 @@ def test_grad_fanout():
     check_grads(df, npr.rand())
 
 def test_grad_const():
-    fun = lambda x : 1
+    fun = lambda x : 1.0
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("ignore")
         df = grad(fun)
@@ -165,7 +165,8 @@ def test_assignment_raises_error():
 def test_nonscalar_output_1():
     grad(lambda x: x * 2)(np.zeros(2))
 
-def test_nonscalar_output_1():
+@raises(TypeError)
+def test_nonscalar_output_2():
     grad(lambda x: x * 2)(np.zeros(2))
 
 # TODO:
