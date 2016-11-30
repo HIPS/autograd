@@ -106,8 +106,11 @@ class primitive(object):
         def __get__(self, obj, objtype):
             return types.MethodType(self, obj, objtype)
 
-    def defgrad(self, *args, **kwargs):
-        raise Exception(defgrad_deprecated)
+    def defgrad(self, gradfun, argnum=0):
+        warnings.warn(defgrad_deprecated)
+        def vjp(g, ans, vs, gvs, *args, **kwargs):
+            return gradfun(ans, *args, **kwargs)(g)
+        self.defvjp(vjp, argnum)
 
 class nograd_primitive(primitive):
     def __call__(self, *args, **kwargs):

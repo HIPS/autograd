@@ -1,10 +1,11 @@
 from __future__ import absolute_import
+import warnings
 import autograd.numpy as np
 import autograd.numpy.random as npr
 from autograd.util import *
 from autograd import (grad, elementwise_grad, jacobian, value_and_grad,
                       grad_and_aux, hessian_vector_product, hessian, multigrad,
-                      jacobian, vector_jacobian_product)
+                      jacobian, vector_jacobian_product, primitive)
 from builtins import range
 
 npr.seed(1)
@@ -128,3 +129,18 @@ def test_tensor_jacobian_product():
     V = npr.randn(5, 4)
     J = jacobian(fun)(a)
     check_equivalent(np.tensordot(V, J, axes=np.ndim(V)), vector_jacobian_product(fun)(a, V))
+
+def test_deprecated_defgrad_wrapper():
+    @primitive
+    def new_mul(x, y):
+        return x * y
+    with warnings.catch_warnings(record=True) as w:
+        new_mul.defgrad(lambda ans, x, y : lambda g : y * g)
+        new_mul.defgrad(lambda ans, x, y : lambda g : x * g, argnum=1)
+
+    def fun(x, y):
+        return to_scalar(new_mul(x, y))
+
+    mat1 = npr.randn(2, 2)
+    mat2 = npr.randn(2, 2)
+    check_grads(fun, mat1, mat2)
