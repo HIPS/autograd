@@ -3,8 +3,7 @@
 from __future__ import absolute_import
 import warnings
 import sys
-sys.path.append('autograd')
-from core import make_jvp
+from autograd.core import make_jvp
 
 def grad(fun, argnum=0):
     def gradfun(*args,**kwargs):
