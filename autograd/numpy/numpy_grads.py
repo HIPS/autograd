@@ -198,12 +198,16 @@ def grad_np_prod(g, ans, vs, gvs, x, axis=None, keepdims=False): # TODO: Support
 anp.prod.defgrad(grad_np_prod)
 
 def grad_np_var(g, ans, vs, gvs, x, axis=None, ddof=0, keepdims=False):
+    if vs.iscomplex:
+        g = g + 0j
     g_repeated, num_reps = repeat_to_match_shape(g, vs, axis, keepdims)
     x_minus_mean = anp.conj(x - anp.mean(x, axis=axis, keepdims=True))
     return 2.0 * g_repeated * x_minus_mean / (num_reps - ddof)
 anp.var.defgrad(grad_np_var)
 
 def make_grad_np_std(g, ans, vs, gvs, x, axis=None, ddof=0, keepdims=False):
+    if vs.iscomplex:
+        g = g + 0j
     g_repeated, num_reps = repeat_to_match_shape(g, vs, axis, keepdims)  # Avoid division by zero.
     if num_reps <= 1:
         return g_repeated * 0.0
