@@ -30,7 +30,7 @@ defgrad_deprecated = \
 ------------------------------
     defgrad is deprecated!
 ------------------------------
-Use defjvp instead ("define vector-Jacobian product").
+Use defvjp instead ("define vector-Jacobian product").
 The interface is a little different - look at
 autograd/numpy/numpy_grads.py for examples.
 '''
