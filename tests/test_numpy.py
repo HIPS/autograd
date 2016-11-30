@@ -522,7 +522,7 @@ def test_array_from_arrays_2():
 def test_len():
     def fun(x):
         assert len(x) == 3
-        return len(x)
+        return to_scalar(x)
     A = npr.randn(3, 2)
     d_fun = lambda x : to_scalar(grad(fun)(x))
     check_grads(fun, A)

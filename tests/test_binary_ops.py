@@ -80,12 +80,12 @@ def test_pow():
         check_grads(d_fun_1, arg1, arg2)
 
 def test_comparison_grads():
-    compare_funs = [lambda x, y : np.sum(x <  x),
-                    lambda x, y : np.sum(x <= y),
-                    lambda x, y : np.sum(x >  y),
-                    lambda x, y : np.sum(x >= y),
-                    lambda x, y : np.sum(x == y),
-                    lambda x, y : np.sum(x != y)]
+    compare_funs = [lambda x, y : np.sum(x <  x) + 0.0,
+                    lambda x, y : np.sum(x <= y) + 0.0,
+                    lambda x, y : np.sum(x >  y) + 0.0,
+                    lambda x, y : np.sum(x >= y) + 0.0,
+                    lambda x, y : np.sum(x == y) + 0.0,
+                    lambda x, y : np.sum(x != y) + 0.0]
 
     for arg1, arg2 in arg_pairs():
         zeros = (arg1 + arg2) * 0 # get correct shape
@@ -100,12 +100,12 @@ def test_comparison_grads():
             assert np.all(grad(d_fun_1, argnum=1)(arg1, arg2) == zeros)
 
 def test_comparison_values():
-    compare_funs = [lambda x, y : np.sum(x <  x),
-                    lambda x, y : np.sum(x <= y),
-                    lambda x, y : np.sum(x >  y),
-                    lambda x, y : np.sum(x >= y),
-                    lambda x, y : np.sum(x == y),
-                    lambda x, y : np.sum(x != y)]
+    compare_funs = [lambda x, y : np.sum(x <  x) + 0.0,
+                    lambda x, y : np.sum(x <= y) + 0.0,
+                    lambda x, y : np.sum(x >  y) + 0.0,
+                    lambda x, y : np.sum(x >= y) + 0.0,
+                    lambda x, y : np.sum(x == y) + 0.0,
+                    lambda x, y : np.sum(x != y) + 0.0]
 
     for arg1, arg2 in arg_pairs():
         for fun in compare_funs:
