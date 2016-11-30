@@ -135,4 +135,4 @@ def grad_convolve(argnum, g, ans, vs, gvs, A, B, axes=None, dot_axes=[(),()], mo
     new_order = npo.argsort(axes[_X_]['ignore'] + axes[_X_]['dot'] + axes[_X_]['conv'])
     return np.transpose(result, new_order)
 
-convolve.defgrads(grad_convolve, [0, 1])
+convolve.defvjps(grad_convolve, [0, 1])

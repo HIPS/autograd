@@ -21,7 +21,7 @@ def sequence_take(A, idx):
     return A[idx]
 def grad_sequence_take(g, ans, vs, gvs, A, idx):
     return sequence_untake(g, idx, vspace(getval(A)))
-sequence_take.defgrad(grad_sequence_take)
+sequence_take.defvjp(grad_sequence_take)
 
 @primitive
 def sequence_untake(x, idx, vs):
@@ -30,8 +30,8 @@ def sequence_untake(x, idx, vs):
         result[idx] = vs.shape[idx].mut_add(result[idx], x)
         return vs.sequence_type(result)
     return SparseObject(vs, mut_add)
-sequence_untake.defgrad(lambda g, ans, vs, gvs, x, idx, template : sequence_take(g, idx))
-sequence_untake.defgrad_is_zero(argnums=(1, 2))
+sequence_untake.defvjp(lambda g, ans, vs, gvs, x, idx, template : sequence_take(g, idx))
+sequence_untake.defvjp_is_zero(argnums=(1, 2))
 
 @primitive
 def make_sequence(sequence_type, *args):
@@ -88,7 +88,7 @@ def dict_take(A, idx):
     return A[idx]
 def grad_dict_take(g, ans, vs, gvs, A, idx):
     return dict_untake(g, idx, A)
-dict_take.defgrad(grad_dict_take)
+dict_take.defvjp(grad_dict_take)
 
 @primitive
 def dict_untake(x, idx, template):
@@ -97,8 +97,8 @@ def dict_untake(x, idx, template):
          return A
     vs = vspace(template)
     return SparseObject(vs, mut_add)
-dict_untake.defgrad(lambda g, ans, vs, gvs, x, idx, template : dict_take(g, idx))
-dict_untake.defgrad_is_zero(argnums=(1, 2))
+dict_untake.defvjp(lambda g, ans, vs, gvs, x, idx, template : dict_take(g, idx))
+dict_untake.defvjp_is_zero(argnums=(1, 2))
 
 class DictVSpace(VSpace):
     def __init__(self, value):

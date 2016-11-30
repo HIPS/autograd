@@ -25,6 +25,16 @@ common_errors = [
         "Check that you have 'import autograd.numpy as np' instead of 'import numpy as np'."),
 ]
 
+defgrad_deprecated = \
+'''
+------------------------------
+    defgrad is deprecated!
+------------------------------
+Use defjvp instead ("define vector-Jacobian product").
+The interface is a little different - look at
+autograd/numpy/numpy_grads.py for examples.
+'''
+
 def check_common_errors(error_type, error_message):
     keys, vals = zip(*common_errors)
     match = lambda key: error_type == key[0] and len(re.findall(key[1], error_message)) != 0

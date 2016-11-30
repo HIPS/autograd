@@ -7,7 +7,7 @@ from functools import partial
 from future.utils import iteritems
 from collections import defaultdict
 import warnings
-from .errors import add_extra_error_message
+from .errors import add_extra_error_message, defgrad_deprecated
 
 def make_jvp(fun, argnum=0):
     def jvp(*args, **kwargs):
@@ -84,15 +84,15 @@ class primitive(object):
                 errstr = "Gradient of {0} w.r.t. arg number {1} not yet implemented."
             raise NotImplementedError(errstr.format(self.fun.__name__, argnum))
 
-    def defgrad(self, gradmaker, argnum=0):
+    def defvjp(self, gradmaker, argnum=0):
         gradmaker.__name__ = "VJP_{}_of_{}".format(argnum, self.__name__)
         self.grads[argnum] = gradmaker
 
-    def defgrads(self, gradmaker, argnums):
+    def defvjps(self, gradmaker, argnums):
         for argnum in argnums:
-            self.defgrad(partial(gradmaker, argnum), argnum)
+            self.defvjp(partial(gradmaker, argnum), argnum)
 
-    def defgrad_is_zero(self, argnums=(0,)):
+    def defvjp_is_zero(self, argnums=(0,)):
         for argnum in argnums:
             self.zero_grads.add(argnum)
 
@@ -105,6 +105,9 @@ class primitive(object):
     else:
         def __get__(self, obj, objtype):
             return types.MethodType(self, obj, objtype)
+
+    def defgrad(self, *args, **kwargs):
+        raise Exception(defgrad_deprecated)
 
 class nograd_primitive(primitive):
     def __call__(self, *args, **kwargs):
@@ -138,7 +141,7 @@ primitive_vsum.grad = lambda arg, g, *args : g
 
 @primitive
 def identity(x) : return x
-identity.defgrad(lambda g, ans, vs, gvs, x : g)
+identity.defvjp(lambda g, ans, vs, gvs, x : g)
 
 class Node(object):
     __slots__ = ['value', 'recipe', 'progenitors', 'vspace']

@@ -12,4 +12,4 @@ def make_grad_logsumexp(g, ans, vs, gvs, x, axis=None, b=1.0, keepdims=False):
     ans_repeated, _ = repeat_to_match_shape(ans, vs, axis, keepdims)
     return g_repeated * b * anp.exp(x - ans_repeated)
 
-logsumexp.defgrad(make_grad_logsumexp)
+logsumexp.defvjp(make_grad_logsumexp)

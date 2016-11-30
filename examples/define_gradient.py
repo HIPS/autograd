@@ -35,7 +35,7 @@ def make_grad_logsumexp(ans, x):
     return gradient_product
 
 # Now we tell autograd that logsumexmp has a gradient-making function.
-logsumexp.defgrad(make_grad_logsumexp)
+logsumexp.defvjp(make_grad_logsumexp)
 
 
 if __name__ == '__main__':

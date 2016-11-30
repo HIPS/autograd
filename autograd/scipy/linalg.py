@@ -6,7 +6,7 @@ from autograd.numpy.numpy_wrapper import wrap_namespace
 
 wrap_namespace(scipy.linalg.__dict__, globals())  # populates module namespace
 
-sqrtm.defgrad(lambda g, ans, vs, gvs, A, **kwargs: solve_lyapunov(ans, g))
+sqrtm.defvjp(lambda g, ans, vs, gvs, A, **kwargs: solve_lyapunov(ans, g))
 
 def _flip(a, trans):
     if anp.iscomplexobj(a):
@@ -21,6 +21,6 @@ def grad_solve_triangular(g, ans, vs, gvs, a, b, trans=0, lower=False, **kwargs)
     v = al2d(solve_triangular(a, g, trans=_flip(a, trans), lower=lower))
     return -transpose(tri(anp.dot(v, al2d(ans).T)))
 
-solve_triangular.defgrad(grad_solve_triangular)
-solve_triangular.defgrad(lambda g, ans, vs, gvs, a, b, trans=0, lower=False, **kwargs:
+solve_triangular.defvjp(grad_solve_triangular)
+solve_triangular.defvjp(lambda g, ans, vs, gvs, a, b, trans=0, lower=False, **kwargs:
     solve_triangular(a, g, trans=_flip(a, trans), lower=lower), argnum=1)
