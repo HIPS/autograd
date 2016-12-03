@@ -148,6 +148,7 @@ identity.defvjp(lambda g, ans, vs, gvs, x : g)
 
 class Node(object):
     __slots__ = ['value', 'recipe', 'progenitors', 'vspace']
+
     def __init__(self, value, recipe, progenitors):
         self.value = value
         self.recipe = recipe
@@ -162,7 +163,6 @@ class Node(object):
     def __str__(self):
         return "Autograd {0} with value {1} and {2} progenitors(s)".format(
             type(self).__name__, str(self.value), len(self.progenitors))
-
 
 def toposort(end_node, start_node):
     def relevant_parents(node):
