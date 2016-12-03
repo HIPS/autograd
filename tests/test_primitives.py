@@ -56,7 +56,7 @@ tuples = list(map(vspace, map(tuple, composite_values)))
 dicts  = list(map(vspace, [dict(zip(it.count(), x)) for x in composite_values]))
 
 all_arrays  = real_arrays + complex_arrays
-everything  = all_arrays + lists + dicts
+everything  = all_arrays + lists + tuples + dicts
 
 report_mismatch = \
 '''
