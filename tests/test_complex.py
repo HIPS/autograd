@@ -17,14 +17,6 @@ def test_real_if_close_type():
     assert type(df(1.0)) == float
     assert type(df(1.0j)) == complex
 
-def test_imag_type():
-    fun = lambda x: np.sum(np.imag(x))
-    df = grad(fun)
-    assert base_class(type(df(1.0 ))) == float
-    assert base_class(type(df(1.0j))) == complex
-
-# TODO: real times imag
-
 def test_angle_real():
     fun = lambda x : to_scalar(np.angle(x))
     d_fun = lambda x: to_scalar(grad(fun)(x))

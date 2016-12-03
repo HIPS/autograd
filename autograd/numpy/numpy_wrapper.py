@@ -1,18 +1,10 @@
 from __future__ import absolute_import
 from __future__ import print_function
 import types
-from .use_gpu_numpy import use_gpu_numpy
 from future.utils import iteritems
-
-
-if use_gpu_numpy():
-    print("Using GPU-supporting numpy wrapper")
-    import gpu_numpy as _np
-else:
-    import numpy as _np
-
 import warnings
-from autograd.core import primitive, getval
+from autograd.core import primitive, nograd_primitive, getval
+import numpy as _np
 
 def unbox_args(f):
     def wrapped(*args, **kwargs):
@@ -26,12 +18,24 @@ def wrap_intdtype(cls):
         __new__ = unbox_args(cls.__new__)
     return IntdtypeSubclass
 
+nograd_functions = [
+    _np.floor, _np.ceil, _np.round, _np.rint, _np.around, _np.fix, _np.trunc, _np.all,
+    _np.any, _np.argmax, _np.argmin, _np.argpartition, _np.argsort, _np.argwhere, _np.nonzero,
+    _np.flatnonzero, _np.count_nonzero, _np.searchsorted, _np.sign, _np.ndim, _np.shape,
+    _np.floor_divide, _np.logical_and, _np.logical_or, _np.logical_not, _np.logical_xor,
+    _np.isfinite, _np.isinf, _np.isnan, _np.isneginf, _np.isposinf, _np.allclose, _np.isclose,
+    _np.array_equal, _np.array_equiv, _np.greater, _np.greater_equal, _np.less, _np.less_equal,
+    _np.equal, _np.not_equal, _np.iscomplexobj, _np.iscomplex, _np.size, _np.isscalar,
+    _np.isreal, _np.zeros_like, _np.ones_like]
+
 def wrap_namespace(old, new):
     unchanged_types = {float, int, type(None), type}
     int_types = {_np.int, _np.int8, _np.int16, _np.int32, _np.int64, _np.integer}
     function_types = {_np.ufunc, types.FunctionType, types.BuiltinFunctionType}
     for name, obj in iteritems(old):
-        if type(obj) in function_types:
+        if obj in nograd_functions:
+            new[name] = nograd_primitive(obj)
+        elif type(obj) in function_types:
             new[name] = primitive(obj)
         elif type(obj) is type and obj in int_types:
             new[name] = wrap_intdtype(obj)
@@ -82,9 +86,9 @@ def wrap_if_nodes_inside(raw_array, slow_op_name=None):
 def array_from_args(*args):
     return _np.array(args)
 
-def array_from_args_gradmaker(argnum, ans, args, kwargs):
-    return lambda g : g[argnum]
-array_from_args.gradmaker = array_from_args_gradmaker
+def array_from_args_gradmaker(argnum, g, ans, vs, gvs, args, kwargs):
+    return g[argnum]
+array_from_args.grad = array_from_args_gradmaker
 
 def select(condlist, choicelist, default=0):
     raw_array = _np.select(list(condlist), list(choicelist), default=default)

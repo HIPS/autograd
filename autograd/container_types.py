@@ -1,97 +1,76 @@
 from __future__ import absolute_import
-from autograd.core import primitive, Node, getval, zeros_like, cast
+from autograd.core import (primitive, Node, VSpace, register_node, vspace,
+                           register_vspace, getval, SparseObject)
 from builtins import zip
 from future.utils import iteritems
+from functools import partial
+import numpy as np
 
-
-class TupleNode(Node):
+class SequenceNode(Node):
     __slots__ = []
     def __getitem__(self, idx):
-        return tuple_take(self, idx)
+        return sequence_take(self, idx)
     def __len__(self):
         return len(self.value)
 
-    @staticmethod
-    def zeros_like(value):
-        return tuple([zeros_like(item) for item in getval(value)])
-
-    @staticmethod
-    def sum_outgrads(outgrads):
-        return primitive_sum_tuples(*outgrads)
-
-Node.type_mappings[tuple] = TupleNode
+register_node(SequenceNode, tuple)
+register_node(SequenceNode, list)
 
 @primitive
-def primitive_sum_tuples(*tuples):
-    return tuple([primitive_sum(elements) for elements in zip(*tuples)])
-primitive_sum_tuples.gradmaker = lambda *args : lambda g : g
-
-@primitive
-def tuple_take(A, idx):
+def sequence_take(A, idx):
     return A[idx]
-def make_grad_tuple_take(ans, A, idx):
-    return lambda g : tuple_untake(g, idx, A)
-tuple_take.defgrad(make_grad_tuple_take)
+def grad_sequence_take(g, ans, vs, gvs, A, idx):
+    return sequence_untake(g, idx, vspace(getval(A)))
+sequence_take.defvjp(grad_sequence_take)
 
 @primitive
-def tuple_untake(x, idx, template):
-    result = list(zeros_like(template))
-    result[idx] = x
-    return tuple(result)
-tuple_untake.defgrad(lambda ans, x, idx, template : lambda g : tuple_take(g, idx))
-tuple_untake.defgrad_is_zero(argnums=(1, 2))
+def sequence_untake(x, idx, vs):
+    def mut_add(A):
+        result = list(A)
+        result[idx] = vs.shape[idx].mut_add(result[idx], x)
+        return vs.sequence_type(result)
+    return SparseObject(vs, mut_add)
+sequence_untake.defvjp(lambda g, ans, vs, gvs, x, idx, template : sequence_take(g, idx))
+sequence_untake.defvjp_is_zero(argnums=(1, 2))
 
 @primitive
-def make_tuple(*args):
-    return tuple(args)
+def make_sequence(sequence_type, *args):
+    return sequence_type(args)
+make_sequence.grad = lambda argnum, g, sequence_type, *args: g[argnum - 1]
+make_tuple = partial(make_sequence, tuple)
+make_list  = partial(make_sequence, list)
 
-make_tuple.gradmaker = lambda argnum, *args: lambda g: g[argnum]
+class SequenceVSpace(VSpace):
+    def __init__(self, value):
+        self.shape = [vspace(x) for x in value]
+        self.size = sum(s.size for s in self.shape)
+        self.sequence_type = type(value)
+        assert self.sequence_type in (tuple, list)
 
+    def zeros(self):
+        return self.sequence_type(x.zeros() for x in self.shape)
+    def mut_add(self, xs, ys):
+        return self.sequence_type(vs.mut_add(x, y)
+                                  for vs, x, y in zip(self.shape, xs, ys))
+    def flatten(self, value, covector=False):
+        if self.shape:
+            return np.concatenate(
+                [s.flatten(v, covector) for s, v in zip(self.shape, value)])
+        else:
+            return np.zeros((0,))
 
-class ListNode(Node):
-    __slots__ = []
-    def __getitem__(self, idx):
-        return list_take(self, idx)
-    def __len__(self):
-        return len(self.value)
+    def unflatten(self, value, covector=False):
+        result = []
+        start = 0
+        for s in self.shape:
+            N = s.size
 
-    @staticmethod
-    def zeros_like(value):
-        return [zeros_like(item) for item in getval(value)]
+            result.append(s.unflatten(value[start:start + N], covector))
+            start += N
+        return self.sequence_type(result)
 
-    @staticmethod
-    def sum_outgrads(outgrads):
-        return primitive_sum_lists(*outgrads)
-
-    @staticmethod
-    def cast(value, example):
-        return cast(value, cast_to_list)
-
-def cast_to_list(x):
-    return list(x)
-
-Node.type_mappings[list] = ListNode
-
-@primitive
-def primitive_sum_lists(*lists):
-    return [primitive_sum(elements) for elements in zip(*lists)]
-primitive_sum_lists.gradmaker = lambda *args : lambda g : g
-
-@primitive
-def list_take(A, idx):
-    return A[idx]
-def make_grad_list_take(ans, A, idx):
-    return lambda g : list_untake(g, idx, A)
-list_take.defgrad(make_grad_list_take)
-
-@primitive
-def list_untake(x, idx, template):
-    result = list(zeros_like(template))
-    result[idx] = x
-    return result
-list_untake.defgrad(lambda ans, x, idx, template : lambda g : list_take(g, idx))
-list_untake.defgrad_is_zero(argnums=(1, 2))
-
+register_vspace(SequenceVSpace, list)
+register_vspace(SequenceVSpace, tuple)
 
 class DictNode(Node):
     __slots__ = []
@@ -102,55 +81,49 @@ class DictNode(Node):
     def __iter__(self):
         return self.value.__iter__()
 
-    @staticmethod
-    def zeros_like(self):
-        return {k : zeros_like(v) for k, v in iteritems(getval(self))}
-
-    @staticmethod
-    def sum_outgrads(outgrads):
-        return primitive_sum_dicts(*outgrads)
-
-    @staticmethod
-    def cast(value, example):
-        return cast(value, cast_to_dict)
-
-def cast_to_dict(x):
-    return dict(x)
-
-Node.type_mappings[dict] = DictNode
-
-@primitive
-def primitive_sum_dicts(*dicts):
-    """Takes a list of dicts having identical keys.
-       Returns a new dict whose values are the sum over all input dicts."""
-    # assert set(dicts[0]) == set(dicts[0]).intersection(*dicts)
-    keys = dicts[0]
-    return {k : primitive_sum([dict[k] for dict in dicts]) for k in keys}
-primitive_sum_dicts.gradmaker = lambda *args : lambda g : g
+register_node(DictNode, dict)
 
 @primitive
 def dict_take(A, idx):
     return A[idx]
-def make_grad_dict_take(ans, A, idx):
-    return lambda g : dict_untake(g, idx, A)
-dict_take.defgrad(make_grad_dict_take)
+def grad_dict_take(g, ans, vs, gvs, A, idx):
+    return dict_untake(g, idx, A)
+dict_take.defvjp(grad_dict_take)
 
 @primitive
 def dict_untake(x, idx, template):
-    result = dict(zeros_like(template))
-    result[idx] = x
-    return result
-dict_untake.defgrad(lambda ans, x, idx, template : lambda g : dict_take(g, idx))
-dict_untake.defgrad_is_zero(argnums=(1, 2))
+    def mut_add(A):
+         A[idx] = vs.shape[idx].mut_add(A[idx], x)
+         return A
+    vs = vspace(template)
+    return SparseObject(vs, mut_add)
+dict_untake.defvjp(lambda g, ans, vs, gvs, x, idx, template : dict_take(g, idx))
+dict_untake.defvjp_is_zero(argnums=(1, 2))
 
-primitive_summers = {
-    list: primitive_sum_lists,
-    tuple: primitive_sum_tuples,
-    dict: primitive_sum_dicts,
-}
+class DictVSpace(VSpace):
+    def __init__(self, value):
+        self.shape = {k : vspace(v) for k, v in value.iteritems()}
+        self.size  = sum(s.size for s in self.shape.values())
+    def zeros(self):
+        return {k : v.zeros() for k, v in iteritems(self.shape)}
+    def mut_add(self, xs, ys):
+        return {k : v.mut_add(xs[k], ys[k])
+                for k, v in self.shape.iteritems()}
+    def flatten(self, value, covector=False):
+        if self.shape:
+            return np.concatenate(
+                [s.flatten(value[k], covector)
+                 for k, s in sorted(self.shape.iteritems())])
+        else:
+            return np.zeros((0,))
 
-def primitive_sum(container):
-    thetype = type(container[0])
-    if thetype in primitive_summers:
-        return primitive_summers[thetype](*container)
-    return sum(container[1:], container[0])
+    def unflatten(self, value, covector=False):
+        result = {}
+        start = 0
+        for k, s in sorted(self.shape.iteritems()):
+            N = s.size
+            result[k] = s.unflatten(value[start:start + N], covector)
+            start += N
+        return result
+
+register_vspace(DictVSpace, dict)

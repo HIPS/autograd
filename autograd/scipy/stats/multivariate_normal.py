@@ -39,14 +39,14 @@ def covgrad(x, mean, cov):
     solved = np.linalg.solve(cov, (x - mean).T).T
     return lower_half(np.linalg.inv(cov) - generalized_outer_product(solved))
 
-logpdf.defgrad(lambda ans, x, mean=None, cov=1, allow_singular=False: unbroadcast(ans, x,    lambda g: -np.expand_dims(g, 1) * np.linalg.solve(cov, (x - mean).T).T), argnum=0)
-logpdf.defgrad(lambda ans, x, mean=None, cov=1, allow_singular=False: unbroadcast(ans, mean, lambda g:  np.expand_dims(g, 1) * np.linalg.solve(cov, (x - mean).T).T), argnum=1)
-logpdf.defgrad(lambda ans, x, mean=None, cov=1, allow_singular=False: unbroadcast(ans, cov,  lambda g: -np.reshape(g, np.shape(g) + (1, 1)) * covgrad(x, mean, cov)), argnum=2)
+logpdf.defvjp(lambda g, ans, vs, gvs, x, mean, cov: unbroadcast(vs, gvs, -np.expand_dims(g, 1) * np.linalg.solve(cov, (x - mean).T).T), argnum=0)
+logpdf.defvjp(lambda g, ans, vs, gvs, x, mean, cov: unbroadcast(vs, gvs,  np.expand_dims(g, 1) * np.linalg.solve(cov, (x - mean).T).T), argnum=1)
+logpdf.defvjp(lambda g, ans, vs, gvs, x, mean, cov: unbroadcast(vs, gvs, -np.reshape(g, np.shape(g) + (1, 1)) * covgrad(x, mean, cov)), argnum=2)
 
 # Same as log pdf, but multiplied by the pdf (ans).
-pdf.defgrad(lambda ans, x, mean=None, cov=1, allow_singular=False: unbroadcast(ans, x,    lambda g: -g * ans * np.linalg.solve(cov, x - mean)), argnum=0)
-pdf.defgrad(lambda ans, x, mean=None, cov=1, allow_singular=False: unbroadcast(ans, mean, lambda g:  g * ans * np.linalg.solve(cov, x - mean)), argnum=1)
-pdf.defgrad(lambda ans, x, mean=None, cov=1, allow_singular=False: unbroadcast(ans, cov,  lambda g: -g * ans * covgrad(x, mean, cov)),          argnum=2)
+pdf.defvjp(lambda g, ans, vs, gvs, x, mean, cov: unbroadcast(vs, gvs, -g * ans * np.linalg.solve(cov, x - mean)), argnum=0)
+pdf.defvjp(lambda g, ans, vs, gvs, x, mean, cov: unbroadcast(vs, gvs,  g * ans * np.linalg.solve(cov, x - mean)), argnum=1)
+pdf.defvjp(lambda g, ans, vs, gvs, x, mean, cov: unbroadcast(vs, gvs, -g * ans * covgrad(x, mean, cov)),          argnum=2)
 
-entropy.defgrad_is_zero(argnums=(0,))
-entropy.defgrad(lambda ans, mean, cov: unbroadcast(ans, cov, lambda g:  0.5 * g * np.linalg.inv(cov).T), argnum=1)
+entropy.defvjp_is_zero(argnums=(0,))
+entropy.defvjp(lambda g, ans, vs, gvs, mean, cov: unbroadcast(vs, gvs, 0.5 * g * np.linalg.inv(cov).T), argnum=1)

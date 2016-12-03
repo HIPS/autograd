@@ -1,13 +1,24 @@
 from __future__ import absolute_import
+import warnings
 import autograd.numpy as np
 import autograd.numpy.random as npr
 from autograd.util import *
 from autograd import (grad, elementwise_grad, jacobian, value_and_grad,
                       grad_and_aux, hessian_vector_product, hessian, multigrad,
-                      jacobian, vector_jacobian_product)
+                      jacobian, vector_jacobian_product, primitive)
 from builtins import range
 
 npr.seed(1)
+
+def test_return_both():
+    fun = lambda x : 3.0 * x**3.2
+    d_fun = grad(fun)
+    f_and_d_fun = value_and_grad(fun)
+
+    test_x = 1.7
+    f, d = f_and_d_fun(test_x)
+    assert f == fun(test_x)
+    assert d == d_fun(test_x)
 
 def test_value_and_grad():
     fun = lambda x: np.sum(np.sin(x)**2)
@@ -50,7 +61,7 @@ def test_multigrad_onearg():
     fun = lambda x, y: np.sum(x + np.sin(y))
     packed_fun = lambda xy: np.sum(xy[0] + np.sin(xy[1]))
     A, B = npr.randn(3), npr.randn(3)
-    check_equivalent(multigrad(fun)(A,B), grad(packed_fun)((A,B)))
+    check_equivalent(multigrad(fun)(A,B), (grad(packed_fun)((A,B))[0],))
 
 def test_elementwise_grad():
     def simple_fun(a):
@@ -118,3 +129,18 @@ def test_tensor_jacobian_product():
     V = npr.randn(5, 4)
     J = jacobian(fun)(a)
     check_equivalent(np.tensordot(V, J, axes=np.ndim(V)), vector_jacobian_product(fun)(a, V))
+
+def test_deprecated_defgrad_wrapper():
+    @primitive
+    def new_mul(x, y):
+        return x * y
+    with warnings.catch_warnings(record=True) as w:
+        new_mul.defgrad(lambda ans, x, y : lambda g : y * g)
+        new_mul.defgrad(lambda ans, x, y : lambda g : x * g, argnum=1)
+
+    def fun(x, y):
+        return to_scalar(new_mul(x, y))
+
+    mat1 = npr.randn(2, 2)
+    mat2 = npr.randn(2, 2)
+    check_grads(fun, mat1, mat2)
