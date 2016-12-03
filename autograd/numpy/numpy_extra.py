@@ -87,7 +87,7 @@ class ArrayVSpace(VSpace):
         original_examples = super(ArrayVSpace, self).examples()
         if self.shape == ():
             np_scalar_examples = [ex[()] for ex in original_examples]
-            py_scalar_examples = map(self.scalartype, np_scalar_examples)
+            py_scalar_examples = list(map(self.scalartype, np_scalar_examples))
             return original_examples + np_scalar_examples + py_scalar_examples
         else:
             return original_examples
