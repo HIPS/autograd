@@ -51,9 +51,9 @@ real_arrays    = [vspace(np.zeros(s)               ) for s in array_shapes]
 complex_arrays = [vspace(np.zeros(s, dtype=complex)) for s in array_shapes]
 composite_values = [[0.0], [0.0, np.zeros((2,1))],
                     [0.0, np.zeros((2,1)), [0.0]]]
-lists  = map(vspace, composite_values)
-tuples = map(vspace, map(tuple, composite_values))
-dicts  = map(vspace, [dict(zip(it.count(), x)) for x in composite_values])
+lists  = list(map(vspace, composite_values))
+tuples = list(map(vspace, map(tuple, composite_values)))
+dicts  = list(map(vspace, [dict(zip(it.count(), x)) for x in composite_values]))
 
 all_arrays  = real_arrays + complex_arrays
 everything  = all_arrays + lists + dicts
