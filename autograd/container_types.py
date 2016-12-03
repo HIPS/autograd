@@ -102,25 +102,25 @@ dict_untake.defvjp_is_zero(argnums=(1, 2))
 
 class DictVSpace(VSpace):
     def __init__(self, value):
-        self.shape = {k : vspace(v) for k, v in value.iteritems()}
+        self.shape = {k : vspace(v) for k, v in iteritems(value)}
         self.size  = sum(s.size for s in self.shape.values())
     def zeros(self):
         return {k : v.zeros() for k, v in iteritems(self.shape)}
     def mut_add(self, xs, ys):
         return {k : v.mut_add(xs[k], ys[k])
-                for k, v in self.shape.iteritems()}
+                for k, v in iteritems(self.shape)}
     def flatten(self, value, covector=False):
         if self.shape:
             return np.concatenate(
                 [s.flatten(value[k], covector)
-                 for k, s in sorted(self.shape.iteritems())])
+                 for k, s in sorted(iteritems(self.shape))])
         else:
             return np.zeros((0,))
 
     def unflatten(self, value, covector=False):
         result = {}
         start = 0
-        for k, s in sorted(self.shape.iteritems()):
+        for k, s in sorted(iteritems(self.shape)):
             N = s.size
             result[k] = s.unflatten(value[start:start + N], covector)
             start += N
