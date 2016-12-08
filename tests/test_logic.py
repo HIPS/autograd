@@ -27,12 +27,12 @@ def test_falseyness():
 
 def test_unimplemented_falseyness():
     def remove_grad_definitions(fun):
-        grads, zero_grads = fun.grads, fun.zero_grads
-        fun.grads, fun.zero_grads = {}, set()
-        return grads, zero_grads
+        grads, zero_vjps = fun.vjps, fun.zero_vjps
+        fun.vjps, fun.zero_vjps = {}, set()
+        return grads, zero_vjps
 
     def restore_grad_definitions(fun, grad_defs):
-        fun.grads, fun.zero_grads = grad_defs
+        fun.vjps, fun.zero_vjps = grad_defs
 
     grad_defs = remove_grad_definitions(np.iscomplex)
 

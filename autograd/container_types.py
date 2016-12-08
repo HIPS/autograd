@@ -36,7 +36,7 @@ sequence_untake.defvjp_is_zero(argnums=(1, 2))
 @primitive
 def make_sequence(sequence_type, *args):
     return sequence_type(args)
-make_sequence.grad = lambda argnum, g, sequence_type, *args: g[argnum - 1]
+make_sequence.vjp = lambda argnum, g, sequence_type, *args: g[argnum - 1]
 make_tuple = partial(make_sequence, tuple)
 make_list  = partial(make_sequence, list)
 

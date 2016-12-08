@@ -345,7 +345,7 @@ def grad_concatenate_args(argnum, g, ans, vs, gvs, axis_args, kwargs):
     idxs = [slice(None)] * ans.ndim
     idxs[axis] = slice(start, start + args[argnum-1].shape[axis])
     return take(g, idxs)
-anp.concatenate_args.grad = grad_concatenate_args
+anp.concatenate_args.vjp = grad_concatenate_args
 
 def wrapped_reshape(x, *args, **kwargs):
     # The reshape method can be called like A.reshape((5,4)) or A.reshape(5,4).
@@ -411,7 +411,7 @@ def grad_einsum(argnum, g, ans, vs, gvs, operands, kwargs):
         rest_of_ops = [operands[-1]] + operands[:argnum] + operands[(argnum+2):-1] + [operands[argnum+1]]
         return unbroadcast_einsum(vs, gvs, anp.einsum(g, *rest_of_ops), operands[argnum + 1])
 
-anp.einsum.grad = grad_einsum
+anp.einsum.vjp = grad_einsum
 
 @primitive
 def make_diagonal(D, offset=0, axis1=0, axis2=1):

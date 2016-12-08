@@ -61,7 +61,7 @@ Luckily, the two autograd types are completely independent.
 # requirements of primitive functions
 
 * If `f(x) == y` and `vspace(z) == vspace(y)`, then
-  `vspace(f.grads[0](z)) == vspace(x)`,
+  `vspace(f.vjps[0](z)) == vspace(x)`,
 * `vspace(f(x))` is the same for all `x` in a given VSpace.
 
 # design decisions for VSpaces

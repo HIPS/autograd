@@ -28,7 +28,7 @@ def check_args(fun, argnum, args, kwargs):
     ans_vspace = vspace(ans)
     jac = numerical_jacobian(fun, argnum, args, kwargs)
     for outgrad in ans_vspace.examples():
-        result = fun.grads[argnum](
+        result = fun.vjps[argnum](
             outgrad, ans, in_vspace, ans_vspace, *args, **kwargs)
         result_vspace = vspace(result)
         result_reals = vspace_flatten(result, True)

@@ -38,8 +38,8 @@ def backward_pass(g, end_node, start_node):
         cur_outgrad = vsum(node.vspace, *outgrads[node])
         function, args, kwargs, parents = node.recipe
         for argnum, parent in parents:
-            outgrad = function.grad(argnum, cur_outgrad, node,
-                                    parent.vspace, node.vspace, args, kwargs)
+            outgrad = function.vjp(argnum, cur_outgrad, node,
+                                   parent.vspace, node.vspace, args, kwargs)
             outgrads[parent].append(outgrad)
             assert_vspace_match(outgrad, parent.vspace, function)
     return cur_outgrad
@@ -52,8 +52,8 @@ class primitive(object):
     can be recorded. For examples, see the docs."""
     def __init__(self, fun):
         self.fun = fun
-        self.grads = {}
-        self.zero_grads = set()
+        self.vjps = {}
+        self.zero_vjps = set()
         self.__name__ = fun.__name__
         self.__doc__ = fun.__doc__
 
@@ -64,7 +64,7 @@ class primitive(object):
         for argnum, arg in enumerate(args):
             if isnode(arg):
                 argvals[argnum] = arg.value
-                if argnum in self.zero_grads: continue
+                if argnum in self.zero_vjps: continue
                 parents.append((argnum, arg))
                 progenitors.update(arg.progenitors & active_progenitors)
 
@@ -74,27 +74,27 @@ class primitive(object):
         else:
             return result_value
 
-    def grad(self, argnum, outgrad, ans, vs, gvs, args, kwargs):
+    def vjp(self, argnum, outgrad, ans, vs, gvs, args, kwargs):
         try:
-            return self.grads[argnum](outgrad, ans, vs, gvs, *args, **kwargs)
+            return self.vjps[argnum](outgrad, ans, vs, gvs, *args, **kwargs)
         except KeyError:
-            if self.grads == {}:
+            if self.vjps == {}:
                 errstr = "Gradient of {0} not yet implemented."
             else:
                 errstr = "Gradient of {0} w.r.t. arg number {1} not yet implemented."
             raise NotImplementedError(errstr.format(self.fun.__name__, argnum))
 
-    def defvjp(self, gradmaker, argnum=0):
-        gradmaker.__name__ = "VJP_{}_of_{}".format(argnum, self.__name__)
-        self.grads[argnum] = gradmaker
+    def defvjp(self, vjpmaker, argnum=0):
+        vjpmaker.__name__ = "VJP_{}_of_{}".format(argnum, self.__name__)
+        self.vjps[argnum] = vjpmaker
 
-    def defvjps(self, gradmaker, argnums):
+    def defvjps(self, vjpmaker, argnums):
         for argnum in argnums:
-            self.defvjp(partial(gradmaker, argnum), argnum)
+            self.defvjp(partial(vjpmaker, argnum), argnum)
 
     def defvjp_is_zero(self, argnums=(0,)):
         for argnum in argnums:
-            self.zero_grads.add(argnum)
+            self.zero_vjps.add(argnum)
 
     def __repr__(self):
         return self.__name__
@@ -140,7 +140,7 @@ def primitive_vsum(vspace, *args):
         else:
             ans = vspace.mut_add(ans, arg)
     return ans
-primitive_vsum.grad = lambda arg, g, *args : g
+primitive_vsum.vjp = lambda arg, g, *args : g
 
 @primitive
 def identity(x) : return x

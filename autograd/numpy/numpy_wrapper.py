@@ -88,7 +88,7 @@ def array_from_args(*args):
 
 def array_from_args_gradmaker(argnum, g, ans, vs, gvs, args, kwargs):
     return g[argnum]
-array_from_args.grad = array_from_args_gradmaker
+array_from_args.vjp = array_from_args_gradmaker
 
 def select(condlist, choicelist, default=0):
     raw_array = _np.select(list(condlist), list(choicelist), default=default)
