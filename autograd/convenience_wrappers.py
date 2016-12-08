@@ -2,7 +2,7 @@
 from __future__ import absolute_import
 from functools import partial
 import autograd.numpy as np
-from autograd.core import make_jvp, getval, isnode, vspace
+from autograd.core import make_vjp, getval, isnode, vspace
 from collections import OrderedDict
 from inspect import getargspec
 import itertools as it
@@ -22,8 +22,8 @@ def grad(fun, argnum=0):
     def gradfun(*args,**kwargs):
         args = list(args)
         args[argnum] = safe_type(args[argnum])
-        jvp, _ = make_jvp(scalar_fun, argnum)(*args, **kwargs)
-        return jvp(1.0)
+        vjp, _ = make_vjp(scalar_fun, argnum)(*args, **kwargs)
+        return vjp(1.0)
 
     return gradfun
 
@@ -52,9 +52,9 @@ def jacobian(fun, argnum=0):
 
     @attach_name_and_doc(fun, argnum, 'Jacobian')
     def jacfun(*args, **kwargs):
-        jvp, ans = make_jvp(fun, argnum)(*args, **kwargs)
+        vjp, ans = make_vjp(fun, argnum)(*args, **kwargs)
         outshape = getshape(ans)
-        grads = map(jvp, unit_vectors(outshape))
+        grads = map(vjp, unit_vectors(outshape))
         jacobian_shape = outshape + getshape(args[argnum])
         return np.reshape(concatenate(grads), jacobian_shape)
 

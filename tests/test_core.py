@@ -3,14 +3,14 @@
 from __future__ import absolute_import
 import warnings
 import sys
-from autograd.core import make_jvp
+from autograd.core import make_vjp
 
 def grad(fun, argnum=0):
     def gradfun(*args,**kwargs):
         args = list(args)
         args[argnum] = args[argnum]
-        jvp, _ = make_jvp(fun, argnum)(*args, **kwargs)
-        return jvp(1.0)
+        vjp, _ = make_vjp(fun, argnum)(*args, **kwargs)
+        return vjp(1.0)
     return gradfun
 
 # Non-numpy gradient checking functions.

@@ -9,14 +9,14 @@ from collections import defaultdict
 import warnings
 from .errors import add_extra_error_message, defgrad_deprecated
 
-def make_jvp(fun, argnum=0):
-    def jvp(*args, **kwargs):
+def make_vjp(fun, argnum=0):
+    def vjp(*args, **kwargs):
         start_node, end_node = forward_pass(fun, args, kwargs, argnum)
         if not isnode(end_node) or start_node not in end_node.progenitors:
             warnings.warn("Output seems independent of input.")
             return lambda g : start_node.vspace.zeros(), end_node
         return lambda g : backward_pass(g, end_node, start_node), end_node
-    return jvp
+    return vjp
 
 def forward_pass(fun, args, kwargs, argnum=0):
     args = list(args)
