@@ -32,8 +32,7 @@ def backward_pass(g, end_node, start_node):
     outgrads = defaultdict(list)
     outgrads[end_node] = [g]
     assert_vspace_match(outgrads[end_node][0], end_node.vspace, None)
-    tape = toposort(end_node, start_node)
-    for node in tape:
+    for node in toposort(end_node, start_node):
         if node not in outgrads: continue
         cur_outgrad = vsum(node.vspace, *outgrads[node])
         function, args, kwargs, parents = node.recipe
@@ -178,18 +177,15 @@ def toposort(end_node, start_node):
             child_counts[node] = 1
             stack.extend(relevant_parents(node))
 
-    sorted_nodes = []
     childless_nodes = [end_node]
     while childless_nodes:
         node = childless_nodes.pop()
-        sorted_nodes.append(node)
+        yield node
         for parent in relevant_parents(node):
             if child_counts[parent] == 1:
                 childless_nodes.append(parent)
             else:
                 child_counts[parent] -= 1
-
-    return sorted_nodes
 
 class VSpace(object):
     __slots__ = []
