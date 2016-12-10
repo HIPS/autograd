@@ -37,8 +37,9 @@ autograd/numpy/numpy_grads.py for examples.
 
 def check_common_errors(error_type, error_message):
     keys, vals = zip(*common_errors)
-    match = lambda key: error_type == key[0] and len(re.findall(key[1], error_message)) != 0
-    matches = map(match, keys)
+    matches = [error_type == key[0]
+               and len(re.findall(key[1], error_message)) != 0
+               for key in keys]
     num_matches = sum(matches)
 
     if num_matches == 1:
