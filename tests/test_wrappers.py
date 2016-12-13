@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 import warnings
+from functools import partial
 import autograd.numpy as np
 import autograd.numpy.random as npr
 from autograd.util import *
@@ -144,3 +145,8 @@ def test_deprecated_defgrad_wrapper():
     mat1 = npr.randn(2, 2)
     mat2 = npr.randn(2, 2)
     check_grads(fun, mat1, mat2)
+
+def test_partial():
+    def f(x, y):
+        return x
+    grad(partial(f, y=1))

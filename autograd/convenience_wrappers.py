@@ -179,10 +179,11 @@ def multigrad_dict(fun):
 
 def attach_name_and_doc(fun, argnum, opname):
     namestr = "{op}_{fun}_wrt_argnum_{argnum}".format(
-        op=opname.lower(), fun=fun.__name__, argnum=argnum)
+        op=opname.lower(), fun=getattr(fun, __name__, '[unknown name]'), argnum=argnum)
     docstr = "{op} of function {fun} with respect to argument number {argnum}. " \
-        "Has the same arguments as {fun} but the return value has type of" \
-        "argument {argnum}".format(op=opname, fun=fun.__name__, argnum=argnum)
+        "Has the same arguments as {fun} but the return value has type of " \
+        "argument {argnum}.".format(op=opname, fun=getattr(fun, __name__, '[unknown name]'),
+        argnum=argnum)
 
     def wrap(gradfun):
         try:
