@@ -99,9 +99,9 @@ def build_mog_bbsvi(logprob, num_samples, k=10, rs=npr.RandomState(0)):
             return np.mean(log_ps - log_qs)
 
         log_weights, var_params = unpack_mixture_params(var_mixture_params)
-        component_elbos = np.vstack(
+        component_elbos = np.stack(
             [mixture_lower_bound(params_k) for params_k in var_params])
-        return np.sum(component_elbos + log_weights)
+        return np.sum(component_elbos*np.exp(log_weights))
 
     return init_var_params, mixture_elbo, mixture_log_density, sample
 
