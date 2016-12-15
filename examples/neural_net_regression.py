@@ -6,60 +6,54 @@ import autograd.numpy as np
 import autograd.numpy.random as npr
 import autograd.scipy.stats.norm as norm
 from autograd import grad
+from autograd.util import flatten
 
 from autograd.optimizers import adam
 
+def init_random_params(scale, layer_sizes, rs=npr.RandomState(0)):
+    """Build a list of (weights, biases) tuples, one for each layer."""
+    return [(rs.randn(insize, outsize) * scale,   # weight matrix
+             rs.randn(outsize) * scale)           # bias vector
+            for insize, outsize in zip(layer_sizes[:-1], layer_sizes[1:])]
 
-def make_nn_funs(layer_sizes, weight_scale=10.0, noise_scale=0.1, nonlinearity=np.tanh):
-    """These functions implement a standard multi-layer perceptron."""
-    shapes = list(zip(layer_sizes[:-1], layer_sizes[1:]))
-    num_weights = sum((m+1)*n for m, n in shapes)
+def nn_predict(params, inputs, nonlinearity=np.tanh):
+    for W, b in params:
+        outputs = np.dot(inputs, W) + b
+        inputs = nonlinearity(outputs)
+    return outputs
 
-    def unpack_layers(weights):
-        for m, n in shapes:
-            cur_layer_weights = weights[:m*n]     .reshape((m, n))
-            cur_layer_biases  = weights[m*n:m*n+n].reshape((1, n))
-            yield cur_layer_weights, cur_layer_biases
-            weights = weights[(m+1)*n:]
+def log_gaussian(params, scale):
+    flat_params, _ = flatten(params)
+    return np.sum(norm.logpdf(flat_params, 0, scale))
 
-    def predictions(weights, inputs):
-        for W, b in unpack_layers(weights):
-            outputs = np.dot(inputs, W) + b
-            inputs = nonlinearity(outputs)
-        return outputs
+def logprob(weights, inputs, targets, noise_scale=0.1):
+    predictions = nn_predict(weights, inputs)
+    return np.sum(norm.logpdf(predictions, targets, noise_scale))
 
-    def logprob(weights, inputs, targets):
-        log_prior = np.sum(norm.logpdf(weights, 0, weight_scale))
-        preds = predictions(weights, inputs)
-        log_lik = np.sum(norm.logpdf(preds, targets, noise_scale))
-        return log_prior + log_lik
-
-    return num_weights, predictions, logprob
-
-
-def build_toy_dataset(n_data=80, noise_std=0.1, D=1):
+def build_toy_dataset(n_data=80, noise_std=0.1):
     rs = npr.RandomState(0)
     inputs  = np.concatenate([np.linspace(0, 3, num=n_data/2),
                               np.linspace(6, 8, num=n_data/2)])
     targets = np.cos(inputs) + rs.randn(n_data) * noise_std
     inputs = (inputs - 4.0) / 2.0
-    inputs  = inputs.reshape((len(inputs), D))
-    targets = targets.reshape((len(targets), D)) / 2.0
+    inputs  = inputs[:, np.newaxis]
+    targets = targets[:, np.newaxis] / 2.0
     return inputs, targets
 
 
 if __name__ == '__main__':
 
-    # Specify inference problem by its unnormalized log-posterior.
-    rbf  = lambda x: np.exp(-x**2)
-    relu = lambda x: np.maximum(x, 0.0)
-
-    # Implement a 3-hidden layer neural network.
-    num_weights, predictions, logprob = \
-        make_nn_funs(layer_sizes=[1, 20, 20, 1], nonlinearity=rbf)
+    init_scale = 0.1
+    weight_prior_variance = 10.0
+    init_params = init_random_params(init_scale, layer_sizes=[1, 4, 4, 1])
 
     inputs, targets = build_toy_dataset()
-    objective = lambda weights, t: -logprob(weights, inputs, targets)
+
+    def objective(weights, t):
+        return -logprob(weights, inputs, targets)\
+               -log_gaussian(weights, weight_prior_variance)
+
+    print(grad(objective)(init_params, 0))
 
     # Set up figure.
     fig = plt.figure(figsize=(12,8), facecolor='white')
@@ -73,14 +67,11 @@ if __name__ == '__main__':
         plt.cla()
         ax.plot(inputs.ravel(), targets.ravel(), 'bx', ms=12)
         plot_inputs = np.reshape(np.linspace(-7, 7, num=300), (300,1))
-        outputs = predictions(params, plot_inputs)
+        outputs = nn_predict(params, plot_inputs)
         ax.plot(plot_inputs, outputs, 'r', lw=3)
         ax.set_ylim([-1, 1])
         plt.draw()
         plt.pause(1.0/60.0)
-
-    rs = npr.RandomState(0)
-    init_params = 0.02 * rs.randn(num_weights)
 
     print("Optimizing network parameters...")
     optimized_params = adam(grad(objective), init_params,
