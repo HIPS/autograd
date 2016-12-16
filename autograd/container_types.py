@@ -29,7 +29,7 @@ def sequence_untake(x, idx, vs):
         accum = lambda result: vs.shape[idx].mut_add(result, x)
     else:
         accum = lambda result: [elt_vs.mut_add(a, b)
-                                for elt_vs, a, b in zip(vs.shape, result, x)]
+                                for elt_vs, a, b in zip(vs.shape[idx], result, x)]
     def mut_add(A):
         result = list(A)
         result[idx] = accum(result[idx])

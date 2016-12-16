@@ -46,11 +46,19 @@ def test_slices():
         s = slice(None, -1, None)
         y = x[s]
         return y[0]
- 
+
     grad(f)([1., 2., 3.])
 
     def f(x):
         y = x[1:3]
         return y[0]
- 
+
     grad(f)([1., 2., 3.])
+
+
+def test_nested_list():
+    A = [[1.0], 2.0, 1.5]
+    def fun(x):
+        return x[1:][0]
+
+    check_grads(fun, A)
