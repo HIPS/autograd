@@ -26,13 +26,13 @@ sequence_take.defvjp(grad_sequence_take)
 @primitive
 def sequence_untake(x, idx, vs):
     if isinstance(idx, int):
-        accumulate = lambda result: vs.shape[idx].mut_add(result[idx], x)
+        accum = lambda result: vs.shape[idx].mut_add(result, x)
     else:
-        accumulate = lambda result: \
-            [elt_vs.mut_add(a, b) for elt_vs, a, b in zip(vs.shape, result[idx], x)]
+        accum = lambda result: [elt_vs.mut_add(a, b)
+                                for elt_vs, a, b in zip(vs.shape, result, x)]
     def mut_add(A):
         result = list(A)
-        result[idx] = accumulate(result)
+        result[idx] = accum(result[idx])
         return vs.sequence_type(result)
     return SparseObject(vs, mut_add)
 sequence_untake.defvjp(lambda g, ans, vs, gvs, x, idx, template : sequence_take(g, idx))
