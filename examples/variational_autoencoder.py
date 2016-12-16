@@ -15,7 +15,7 @@ def diag_gaussian_log_density(x, mu, log_std):
 
 def unpack_gaussian_params(params):
     # Params of a diagonal Gaussian.
-    D = np.shape(params)[-1] / 2
+    D = np.shape(params)[-1] // 2
     mean, log_std = params[:, :D], params[:, D:]
     return mean, log_std
 
@@ -126,4 +126,3 @@ if __name__ == '__main__':
     # The optimizers provided can optimize lists, tuples, or dicts of parameters.
     optimized_params = adam(objective_grad, combined_init_params, step_size=step_size,
                             num_iters=num_epochs * num_batches, callback=print_perf)
-

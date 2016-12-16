@@ -86,9 +86,9 @@ def simulate(vx, vy, num_time_steps, occlusion, ax=None, render=False):
 
     # Initialize smoke bands.
     red_smoke = np.zeros((rows, cols))
-    red_smoke[rows/4:rows/2] = 1
+    red_smoke[rows//4:rows//2] = 1
     blue_smoke = np.zeros((rows, cols))
-    blue_smoke[rows/2:3*rows/4] = 1
+    blue_smoke[rows//2:3*rows//4] = 1
 
     print("Running simulation...")
     vx, vy = project(vx, vy, occlusion)
