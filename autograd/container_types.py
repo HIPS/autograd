@@ -25,9 +25,14 @@ sequence_take.defvjp(grad_sequence_take)
 
 @primitive
 def sequence_untake(x, idx, vs):
+    if isinstance(idx, int):
+        accumulate = lambda result: vs.shape[idx].mut_add(result[idx], x)
+    else:
+        accumulate = lambda result: \
+            [elt_vs.mut_add(a, b) for elt_vs, a, b in zip(vs.shape, result[idx], x)]
     def mut_add(A):
         result = list(A)
-        result[idx] = vs.shape[idx].mut_add(result[idx], x)
+        result[idx] = accumulate(result)
         return vs.sequence_type(result)
     return SparseObject(vs, mut_add)
 sequence_untake.defvjp(lambda g, ans, vs, gvs, x, idx, template : sequence_take(g, idx))
@@ -49,9 +54,11 @@ class SequenceVSpace(VSpace):
 
     def zeros(self):
         return self.sequence_type(x.zeros() for x in self.shape)
+
     def mut_add(self, xs, ys):
         return self.sequence_type(vs.mut_add(x, y)
                                   for vs, x, y in zip(self.shape, xs, ys))
+
     def flatten(self, value, covector=False):
         if self.shape:
             return np.concatenate(

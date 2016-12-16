@@ -41,4 +41,10 @@ def test_grads():
     check_grads(fun, input_list)
     check_grads(d_fun, input_list)
 
-test_grads()
+def test_slices():
+    def f(x):
+        s = slice(None, -1, None)
+        y = x[s]
+        return y[0]
+ 
+    grad(f)([1., 2., 3.])
