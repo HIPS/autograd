@@ -21,7 +21,7 @@ def diag_gaussian_log_density(x, mu, log_std):
 
 def unpack_gaussian_params(params):
     # Variational dist is a diagonal Gaussian.
-    D = np.shape(params)[0] / 2
+    D = np.shape(params)[0] // 2
     mean, log_std = params[:D], params[D:]
     return mean, log_std
 
