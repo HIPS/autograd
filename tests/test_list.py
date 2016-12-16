@@ -48,3 +48,9 @@ def test_slices():
         return y[0]
  
     grad(f)([1., 2., 3.])
+
+    def f(x):
+        y = x[1:3]
+        return y[0]
+ 
+    grad(f)([1., 2., 3.])
