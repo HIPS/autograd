@@ -22,8 +22,8 @@ def grad(fun, argnum=0):
     def gradfun(*args,**kwargs):
         args = list(args)
         args[argnum] = safe_type(args[argnum])
-        vjp, _ = make_vjp(scalar_fun, argnum)(*args, **kwargs)
-        return vjp(1.0)
+        vjp, ans = make_vjp(scalar_fun, argnum)(*args, **kwargs)
+        return vjp(cast_to_same_dtype(1.0, ans))
 
     return gradfun
 
@@ -213,3 +213,9 @@ def as_scalar(x):
             "Output {} can't be cast to float. "
             "Function grad requires a scalar-valued function. "
             "Try jacobian or elementwise_grad.".format(getval(x)))
+
+def cast_to_same_dtype(value, example):
+    if hasattr(example, 'dtype') and example.dtype.type is not np.float64:
+        return np.array(value, dtype=example.dtype)
+    else:
+        return value
