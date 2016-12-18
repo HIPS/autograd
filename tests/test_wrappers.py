@@ -150,3 +150,14 @@ def test_partial():
     def f(x, y):
         return x
     grad(partial(f, y=1))
+
+def test_dtypes():
+    def f(x):
+        return np.sum(x**2)
+
+    # Array y with dtype np.float32
+    y = np.random.randn(10, 10).astype(np.float32)
+    assert grad(f)(y).dtype.type is np.float32
+
+    y = np.random.randn(10, 10).astype(np.float16)
+    assert grad(f)(y).dtype.type is np.float16
