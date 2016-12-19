@@ -50,3 +50,13 @@ erfc = primitive(scipy.special.erfc)
 
 erf.defvjp( lambda g, ans, vs, gvs, x:  2.*g*inv_root_pi*np.exp(-x**2))
 erfc.defvjp(lambda g, ans, vs, gvs, x: -2.*g*inv_root_pi*np.exp(-x**2))
+
+
+### Inverse error function ###
+root_pi = 1.7724538509055159
+erfinv = primitive(scipy.special.erfinv)
+erfcinv = primitive(scipy.special.erfcinv)
+
+erfinv.defvjp(lambda g, ans, vs, gvs, x: g * root_pi / 2 * np.exp(erfinv(x)**2))
+erfcinv.defvjp(lambda g, ans, vs, gvs, x: -g * root_pi / 2 * np.exp(erfcinv(x)**2))
+
