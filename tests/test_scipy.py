@@ -136,3 +136,6 @@ def test_y1(): unary_ufunc_check(special.y1, lims=[0.2, 20.0], test_complex=Fals
 
 def test_erf(): unary_ufunc_check(special.erf, lims=[-3., 3.], test_complex=True)
 def test_erfc(): unary_ufunc_check(special.erfc, lims=[-3., 3.], test_complex=True)
+
+def test_erfinv(): unary_ufunc_check(special.erfinv, lims=[-0.95, 0.95], test_complex=False)
+def test_erfcinv(): unary_ufunc_check(special.erfcinv, lims=[0.05, 1.95], test_complex=False)
