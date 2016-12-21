@@ -17,8 +17,12 @@ anp.nan_to_num.defvjp(lambda g, ans, vs, gvs, x: anp.where(anp.isfinite(x), g, 0
 
 anp.add.defvjp(        lambda g, ans, vs, gvs, x, y : unbroadcast(vs, gvs, g))
 anp.add.defvjp(        lambda g, ans, vs, gvs, x, y : unbroadcast(vs, gvs, g), argnum=1)
+anp.add.defjvp(        lambda g, ans, gvs, vs, x, y : broadcast(gvs, vs, g))
+anp.add.defjvp(        lambda g, ans, gvs, vs, x, y : broadcast(gvs, vs, g), argnum=1)
 anp.multiply.defvjp(   lambda g, ans, vs, gvs, x, y : unbroadcast(vs, gvs, y * g))
 anp.multiply.defvjp(   lambda g, ans, vs, gvs, x, y : unbroadcast(vs, gvs, x * g), argnum=1)
+anp.multiply.defjvp(   lambda g, ans, vs, gvs, x, y : broadcast(gvs, vs, y * g))
+anp.multiply.defjvp(   lambda g, ans, vs, gvs, x, y : broadcast(gvs, vs, x * g), argnum=1)
 anp.subtract.defvjp(   lambda g, ans, vs, gvs, x, y : unbroadcast(vs, gvs, g))
 anp.subtract.defvjp(   lambda g, ans, vs, gvs, x, y : unbroadcast(vs, gvs, -g), argnum=1)
 anp.divide.defvjp(     lambda g, ans, vs, gvs, x, y : unbroadcast(vs, gvs,   g / y))
@@ -452,6 +456,16 @@ def unbroadcast(vs, gvs, result, broadcast_idx=0):
     for axis, size in enumerate(vs.shape):
         if size == 1:
             result = anp.sum(result, axis=axis, keepdims=True)
+    if gvs.iscomplex and not vs.iscomplex:
+        result = anp.real(result)
+    return result
+
+def broadcast(gvs, vs, result, broadcast_idx=0):
+    while anp.ndim(result) < len(vs.shape):
+        result = result[anp.newaxis, ...]
+    for axis, size in enumerate(result.shape):
+        if size == 1:
+            result = anp.repeat(result, vs.shape[axis], axis)
     if gvs.iscomplex and not vs.iscomplex:
         result = anp.real(result)
     return result

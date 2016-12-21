@@ -18,6 +18,20 @@ def make_vjp(fun, argnum=0):
         return lambda g : backward_pass(g, end_node, start_node), end_node
     return vjp
 
+def make_jvp(fun, argnum=0):
+    def jvp(*args, **kwargs):
+        args = list(args)
+        start_node = new_progenitor(args[argnum])
+        args[argnum] = start_node
+        active_progenitors.add(start_node)
+        def forward_mode_pass(v):
+            assert_vspace_match(v, start_node.vspace, None)
+            start_node.forward_grads[start_node] = v
+            end_node = fun(*args, **kwargs)
+            return end_node
+        return forward_mode_pass
+    return jvp
+
 def forward_pass(fun, args, kwargs, argnum=0):
     args = list(args)
     start_node = new_progenitor(args[argnum])
@@ -52,6 +66,7 @@ class primitive(object):
     def __init__(self, fun):
         self.fun = fun
         self.vjps = {}
+        self.jvps = {}
         self.zero_vjps = set()
         self.__name__ = fun.__name__
         self.__doc__ = fun.__doc__
@@ -69,7 +84,18 @@ class primitive(object):
 
         result_value = self.fun(*argvals, **kwargs)
         if progenitors:
-            return new_node(result_value, (self, args, kwargs, parents), progenitors)
+            result = new_node(result_value, (self, args, kwargs, parents), progenitors)
+            ingrads = defaultdict(list)
+            for argnum, arg in parents:
+                for progenitor in arg.forward_grads:
+                    ingrad = self.jvp(argnum, arg.forward_grads[progenitor],
+                                               result, arg.vspace, result.vspace,
+                                               args, kwargs)
+                    ingrads[progenitor].append(ingrad)
+                    assert_vspace_match(ingrad, result.vspace, self)
+            result.forward_grads = {progenitor: vsum(result.vspace, *ingrads[progenitor])
+                                    for progenitor in ingrads}
+            return result
         else:
             return result_value
 
@@ -83,9 +109,23 @@ class primitive(object):
                 errstr = "Gradient of {0} w.r.t. arg number {1} not yet implemented."
             raise NotImplementedError(errstr.format(self.fun.__name__, argnum))
 
+    def jvp(self, argnum, ingrad, ans, gvs, vs, args, kwargs):
+        try:
+            return self.jvps[argnum](ingrad, ans, gvs, vs, *args, **kwargs)
+        except KeyError:
+            if self.jvps == {}:
+                errstr = "Forward gradient of {0} not yet implemented."
+            else:
+                errstr = "Forward gradient of {0} w.r.t. arg number {1} not yet implemented."
+            raise NotImplementedError(errstr.format(self.fun.__name__, argnum))
+
     def defvjp(self, vjpmaker, argnum=0):
         vjpmaker.__name__ = "VJP_{}_of_{}".format(argnum, self.__name__)
         self.vjps[argnum] = vjpmaker
+
+    def defjvp(self, jvpmaker, argnum=0):
+        jvpmaker.__name__ = "JVP_{}_of_{}".format(argnum, self.__name__)
+        self.jvps[argnum] = jvpmaker
 
     def defvjps(self, vjpmaker, argnums):
         for argnum in argnums:
@@ -146,13 +186,14 @@ def identity(x) : return x
 identity.defvjp(lambda g, ans, vs, gvs, x : g)
 
 class Node(object):
-    __slots__ = ['value', 'recipe', 'progenitors', 'vspace']
+    __slots__ = ['value', 'forward_grads', 'recipe', 'progenitors', 'vspace']
 
     def __init__(self, value, recipe, progenitors):
         self.value = value
         self.recipe = recipe
         self.progenitors = progenitors
         self.vspace = vspace(value)
+        self.forward_grads = {}
 
     def __bool__(self):
         return bool(self.value)
