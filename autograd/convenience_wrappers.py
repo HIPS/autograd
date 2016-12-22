@@ -2,7 +2,7 @@
 from __future__ import absolute_import
 from functools import partial
 import autograd.numpy as np
-from autograd.core import make_vjp, getval, isnode, vspace
+from autograd.core import make_vjp, getval, isnode, vspace, make_jvp
 from collections import OrderedDict
 from inspect import getargspec
 import itertools as it
@@ -26,6 +26,19 @@ def grad(fun, argnum=0):
         return vjp(cast_to_same_dtype(1.0, ans))
 
     return gradfun
+
+def forward_derivative(fun, argnum=0):
+    """
+    Derivative of fun w.r.t. scalar argument argnum.
+    """
+    @attach_name_and_doc(fun, argnum, 'Forward mode derivative')
+    def dervfun(*args, **kwargs):
+        args = list(args)
+        args[argnum] = safe_type(args[argnum])
+        jvp, start_node = make_jvp(fun, argnum)(*args, **kwargs)
+        d = jvp(cast_to_same_dtype(1.0, args[argnum])).progenitors[start_node]
+        return d
+    return dervfun
 
 def jacobian(fun, argnum=0):
     """

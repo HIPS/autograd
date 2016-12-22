@@ -58,6 +58,9 @@ def test_angle():   unary_ufunc_check(np.angle)
 # Binary ufunc tests
 
 def test_add(): binary_ufunc_check(np.add)
+def test_multiply(): binary_ufunc_check(np.multiply)
+def test_subtract(): binary_ufunc_check(np.subtract)
+def test_divide(): binary_ufunc_check(np.divide, lims_A=[1, 2], lims_B=[1, 2])
 def test_logaddexp(): binary_ufunc_check(np.logaddexp, test_complex=False)
 def test_logaddexp2(): binary_ufunc_check(np.logaddexp2, test_complex=False)
 def test_remainder(): binary_ufunc_check_no_same_args(np.remainder, lims_A=[-0.9, 0.9], lims_B=[0.7, 1.9], test_complex=False)
