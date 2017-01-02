@@ -2,7 +2,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 import itertools as it
 import autograd.numpy.random as npr
-from autograd import grad, primitive
+from autograd import grad, primitive, forward_derivative
 from autograd.util import check_equivalent, check_grads, to_scalar
 from builtins import range
 import warnings
@@ -94,6 +94,14 @@ def binary_ufunc_check(fun, lims_A=[-2, 2], lims_B=[-2, 2], test_complex=test_co
     mat2   = npr.rand(1, 2)
     combo_check(fun, (0, 1), [T_A(scalar), T_A(scalar_int), T_A(vector), T_A(mat), T_A(mat2)],
                              [T_B(scalar), T_B(scalar_int), T_B(vector), T_B(mat), T_B(mat2)])
+
+    scalar_to_scalar = lambda x: to_scalar(fun(2 * x * vector, 3 * x * vector))
+    check_equivalent(grad(scalar_to_scalar)(scalar),
+                     forward_derivative(scalar_to_scalar)(scalar))
+    check_equivalent(forward_derivative(grad(scalar_to_scalar))(scalar),
+                     grad(forward_derivative(scalar_to_scalar))(scalar))
+
+
     if test_complex:
         comp = 0.6 + 0.3j
         matc = npr.rand(3, 2) + 0.1j * npr.rand(3, 2)

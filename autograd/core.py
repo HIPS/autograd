@@ -4,7 +4,6 @@ import types
 import numpy as np
 import numpy.random as npr
 from functools import partial
-from future.utils import iteritems
 from collections import defaultdict
 import warnings
 from .errors import add_extra_error_message, defgrad_deprecated
@@ -89,15 +88,15 @@ class primitive(object):
             result = new_node(result_value, (self, args, kwargs, parents), progenitors)
             ingrads = defaultdict(list)
             for argnum, arg in parents:
-                for progenitor in arg.progenitors:
-                    if arg.progenitors[progenitor] is None: continue
-                    forward_grad = arg.progenitors.pop(progenitor)
-                    ingrad = self.jvp(argnum, forward_grad,
-                                               result, arg.vspace, result.vspace,
-                                               args, kwargs)
+                for progenitor, forward_grad in arg.progenitors.items():
+                    if forward_grad is None or progenitor not in active_progenitors:
+                        continue
+                    active_progenitors.remove(progenitor)
+                    ingrad = self.jvp(argnum, forward_grad, result, arg.vspace,
+                                      result.vspace, args, kwargs)
+                    active_progenitors.add(progenitor)
                     ingrads[progenitor].append(ingrad)
                     assert_vspace_match(ingrad, result.vspace, self)
-                    arg.progenitors[progenitor] = forward_grad
             result.progenitors.update({progenitor: vsum(result.vspace, *ingrads[progenitor])
                                        for progenitor in ingrads})
             return result
@@ -185,6 +184,7 @@ def primitive_vsum(vspace, *args):
             ans = vspace.mut_add(ans, arg)
     return ans
 primitive_vsum.vjp = lambda arg, g, *args : g
+primitive_vsum.jvp = lambda arg, g, *args : g
 
 @primitive
 def identity(x) : return x

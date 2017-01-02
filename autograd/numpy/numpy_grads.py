@@ -314,6 +314,10 @@ def grad_np_sum(g, ans, vs, gvs, x, axis=None, keepdims=False):
     return repeat_to_match_shape(g, vs, axis, keepdims)[0]
 anp.sum.defvjp(grad_np_sum)
 
+def forward_grad_np_sum(g, ans, gvs, vs, x, axis=None, keepdims=False):
+    return anp.sum(g, axis=None, keepdims=False)
+anp.sum.defjvp(forward_grad_np_sum)
+
 def grad_np_mean(g, ans, vs, gvs, x, axis=None, keepdims=False):
     g_repeated, num_reps = repeat_to_match_shape(g, vs, axis, keepdims)
     return g_repeated / num_reps
@@ -561,7 +565,7 @@ def unbroadcast(vs, gvs, result, broadcast_idx=0):
 def broadcast(gvs, vs, result, broadcast_idx=0):
     while anp.ndim(result) < len(vs.shape):
         result = result[anp.newaxis, ...]
-    for axis, size in enumerate(result.shape):
+    for axis, size in enumerate(vs.shape):
         if size == 1:
             result = anp.repeat(result, vs.shape[axis], axis)
     if gvs.iscomplex and not vs.iscomplex:
