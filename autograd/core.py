@@ -96,7 +96,7 @@ class primitive(object):
                                       result.vspace, args, kwargs)
                     active_progenitors.add(progenitor)
                     ingrads[progenitor].append(ingrad)
-                    assert_vspace_match(ingrad, result.vspace, self)
+                    assert_vspace_match(ingrad, result.vspace, self, fwd=True)
             result.progenitors.update({progenitor: vsum(result.vspace, *ingrads[progenitor])
                                        for progenitor in ingrads})
             return result
@@ -295,11 +295,12 @@ class SparseObject(object):
 register_vspace(lambda x : x.vs, SparseObject)
 register_node(Node, SparseObject)
 
-def assert_vspace_match(x, expected_vspace, fun):
+def assert_vspace_match(x, expected_vspace, fun, fwd=False):
+    grad_string = "Forward grad" if fwd else "Grad"
     assert expected_vspace == vspace(getval(x)), \
-        "\nGrad of {} returned unexpected vector space" \
+        "\n{} of {} returned unexpected vector space" \
         "\nVector space is {}" \
-        "\nExpected        {}".format(fun, vspace(getval(x)), expected_vspace)
+        "\nExpected        {}".format(grad_string, fun, vspace(getval(x)), expected_vspace)
 
 isnode = lambda x: type(x) in node_types
 getval = lambda x: x.value if isnode(x) else x
