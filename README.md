@@ -1,10 +1,5 @@
 # Autograd  [![Test status](https://travis-ci.org/HIPS/autograd.svg?branch=master)](https://travis-ci.org/HIPS/autograd)
 
-*Note to users:* We just merged a rewrite of autograd's core. If you need to
-roll back the change, you can use `git checkout 0f026ab` and [open an
-issue](https://github.com/hips/autograd/issues) to let us know about any
-problems.
-
 Autograd can automatically differentiate native Python and Numpy code. It can
 handle a large subset of Python's features, including loops, ifs, recursion and
 closures, and it can even take derivatives of derivatives of derivatives. It
