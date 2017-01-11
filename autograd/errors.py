@@ -23,6 +23,10 @@ common_errors = [
     ((TypeError, r"got an unexpected keyword argument '(?:dtype)|(?:out)'" ),
         "This error *might* be caused by importing numpy instead of autograd.numpy. \n"
         "Check that you have 'import autograd.numpy as np' instead of 'import numpy as np'."),
+    ((AttributeError, r"object has no attribute" ),
+        "This error *might* be caused by importing numpy instead of autograd.numpy,"
+        "or otherwise using a raw numpy function instead of the autograd-wrapped version. \n"
+        "Check that you have 'import autograd.numpy as np' instead of 'import numpy as np'."),
 ]
 
 defgrad_deprecated = \
