@@ -20,6 +20,8 @@ class AutogradHint(Exception):
 common_errors = [
     ((TypeError, r'float() argument must be a string or a number'),
         "This error *might* be caused by assigning into arrays, which autograd doesn't support."),
+    ((ValueError, r'setting an array element with a sequence'),
+        "This error *might* be caused by assigning into arrays, which autograd doesn't support."),
     ((TypeError, r"got an unexpected keyword argument '(?:dtype)|(?:out)'" ),
         "This error *might* be caused by importing numpy instead of autograd.numpy. \n"
         "Check that you have 'import autograd.numpy as np' instead of 'import numpy as np'."),
