@@ -36,7 +36,7 @@ def forward_derivative(fun, argnum=0):
         args = list(args)
         args[argnum] = safe_type(args[argnum])
         jvp, start_node = make_jvp(fun, argnum)(*args, **kwargs)
-        d = jvp(cast_to_same_dtype(1.0, args[argnum])).progenitors[start_node]
+        ans, d = jvp(cast_to_same_dtype(1.0, args[argnum]))
         return d
     return dervfun
 

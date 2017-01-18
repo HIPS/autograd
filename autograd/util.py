@@ -8,7 +8,7 @@ from builtins import map, range, zip
 
 import autograd.numpy as np
 import itertools as it
-from autograd.convenience_wrappers import grad
+from autograd.convenience_wrappers import grad, forward_derivative
 from autograd.core import vspace, vspace_flatten, getval
 from copy import copy
 
@@ -56,6 +56,14 @@ def check_grads(fun, *args):
     if not args:
         raise Exception("No args given")
     exact = tuple([grad(fun, i)(*args) for i in range(len(args))])
+    args = [float(x) if isinstance(x, int) else x for x in args]
+    numeric = nd(fun, *args)
+    check_equivalent(exact, numeric)
+
+def check_forward_grads(fun, *args):
+    if not args:
+        raise Exception("No args given")
+    exact = tuple([forward_derivative(fun, i)(*args) for i in range(len(args))])
     args = [float(x) if isinstance(x, int) else x for x in args]
     numeric = nd(fun, *args)
     check_equivalent(exact, numeric)

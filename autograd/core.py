@@ -4,7 +4,8 @@ import types
 import numpy as np
 import numpy.random as npr
 from functools import partial
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
+from orderedset import OrderedSet
 import warnings
 from .errors import add_extra_error_message, defgrad_deprecated
 
@@ -22,13 +23,16 @@ def make_jvp(fun, argnum=0):
         args = list(args)
         start_node = new_progenitor(args[argnum])
         args[argnum] = start_node
-        active_progenitors.add(start_node)
         def forward_mode_pass(v):
             assert_vspace_match(v, start_node.vspace, None)
             start_node.progenitors[start_node] = v
+            active_progenitors.add(start_node)
             end_node = fun(*args, **kwargs)
             active_progenitors.remove(start_node)
-            return end_node
+            if not isnode(end_node) or start_node not in end_node.progenitors:
+                warnings.warn("Output seems independent of input.")
+                return end_node, vspace(end_node).zeros()
+            return end_node, end_node.progenitors[start_node]
         return forward_mode_pass, start_node
     return jvp
 
@@ -57,7 +61,8 @@ def backward_pass(g, end_node, start_node):
             assert_vspace_match(outgrad, parent.vspace, function)
     return cur_outgrad
 
-active_progenitors = set()
+active_progenitors = OrderedSet()
+deactivated_forward_progenitors = set()
 
 class primitive(object):
     """
@@ -73,32 +78,40 @@ class primitive(object):
 
     def __call__(self, *args, **kwargs):
         argvals = list(args)
-        progenitors = dict()
+        reverse_progenitors = set()
+        forward_progenitors = defaultdict(list)
         parents = []
         for argnum, arg in enumerate(args):
             if isnode(arg):
                 argvals[argnum] = arg.value
                 if argnum in self.zero_vjps: continue
                 parents.append((argnum, arg))
-                progenitors.update({progenitor: val for progenitor, val in arg.progenitors.items()
-                                   if progenitor in active_progenitors})
+                reverse_progenitors.update({progenitor for progenitor in arg.progenitors
+                                            if arg.progenitors[progenitor] is None and
+                                            progenitor in active_progenitors})
+                for progenitor, val in arg.progenitors.items():
+                    if val is not None and progenitor in active_progenitors - deactivated_forward_progenitors:
+                        forward_progenitors[progenitor].append((argnum, arg))
 
         result_value = self.fun(*argvals, **kwargs)
-        if progenitors:
+        if reverse_progenitors or forward_progenitors:
+            progenitors = {progenitor: None for progenitor in reverse_progenitors}
+            progenitors.update({progenitor: vspace(result_value).zeros() for progenitor in forward_progenitors})
             result = new_node(result_value, (self, args, kwargs, parents), progenitors)
-            ingrads = defaultdict(list)
-            for argnum, arg in parents:
-                for progenitor, forward_grad in arg.progenitors.items():
-                    if forward_grad is None or progenitor not in active_progenitors:
-                        continue
-                    active_progenitors.remove(progenitor)
-                    ingrad = self.jvp(argnum, forward_grad, result, arg.vspace,
-                                      result.vspace, args, kwargs)
-                    active_progenitors.add(progenitor)
-                    ingrads[progenitor].append(ingrad)
-                    assert_vspace_match(ingrad, result.vspace, self, fwd=True)
-            result.progenitors.update({progenitor: vsum(result.vspace, *ingrads[progenitor])
-                                       for progenitor in ingrads})
+
+            deactivated_forward_progenitors.update(forward_progenitors)
+            for progenitor in active_progenitors:
+                if progenitor not in forward_progenitors:
+                    continue
+                ingrads = list()
+
+                for argnum, arg in forward_progenitors[progenitor]:
+                    forward_grad = arg.progenitors[progenitor]
+                    ingrads.append(self.jvp(argnum, forward_grad, result, arg.vspace,
+                                            result.vspace, args, kwargs))
+
+                result.progenitors[progenitor] = vsum(result.vspace, *ingrads)
+                deactivated_forward_progenitors.remove(progenitor)
             return result
         else:
             return result_value

@@ -2,8 +2,9 @@ from __future__ import absolute_import
 from __future__ import print_function
 import itertools as it
 import autograd.numpy.random as npr
+import autograd.numpy as anp
 from autograd import grad, primitive, forward_derivative
-from autograd.util import check_equivalent, check_grads, to_scalar
+from autograd.util import check_equivalent, check_grads, to_scalar, check_forward_grads
 from builtins import range
 import warnings
 
@@ -22,6 +23,8 @@ def combo_check(fun, argnums, *args, **kwargs):
 
 def check_fun_and_grads(fun, args, kwargs, argnums):
     wrt_args = [args[i] for i in argnums]
+    rand_vecs = [anp.ones(anp.shape(arg)) for arg in wrt_args]
+
     try:
         if isinstance(fun, primitive):
             wrapped   = fun(*args, **kwargs)
@@ -55,7 +58,30 @@ def check_fun_and_grads(fun, args, kwargs, argnums):
             print("Second derivative test failed! Args were", args, kwargs)
             raise
 
-def stat_check(fun, test_complex=test_complex):
+        try:
+            def scalar_args_fun(*new_args):
+                full_args = list(args)
+                for i, argnum in enumerate(argnums):
+                    full_args[argnum] = (wrt_args[i] + new_args[i] *
+                                         rand_vecs[i])
+                return to_scalar(fun(*full_args, **kwargs))
+            check_forward_grads(scalar_args_fun, *anp.zeros(len(wrt_args)))
+        except:
+            print("First forward derivative test failed! Args were", args, kwargs)
+            raise
+
+        try:
+            for i in argnums:
+                def d_scalar_args_fun(*args):
+                    return forward_derivative(scalar_args_fun, argnum=i)(*args)
+                check_grads(d_scalar_args_fun, *anp.zeros(len(wrt_args)))
+                check_forward_grads(d_scalar_args_fun, *anp.zeros(len(wrt_args)))
+                check_forward_grads(grad(scalar_args_fun, argnum=i), *anp.zeros(len(wrt_args)))
+        except:
+            print("Second forward derivative test failed! Args were", args, kwargs)
+            raise
+
+def stat_check(fun, test_complex=test_complex, mean=0.):
     # Tests functions that compute statistics, like sum, mean, etc
     x = 3.5
     A = npr.randn()
@@ -94,13 +120,6 @@ def binary_ufunc_check(fun, lims_A=[-2, 2], lims_B=[-2, 2], test_complex=test_co
     mat2   = npr.rand(1, 2)
     combo_check(fun, (0, 1), [T_A(scalar), T_A(scalar_int), T_A(vector), T_A(mat), T_A(mat2)],
                              [T_B(scalar), T_B(scalar_int), T_B(vector), T_B(mat), T_B(mat2)])
-
-    scalar_to_scalar = lambda x: to_scalar(fun(2 * x * vector, 3 * x * vector))
-    check_equivalent(grad(scalar_to_scalar)(scalar),
-                     forward_derivative(scalar_to_scalar)(scalar))
-    check_equivalent(forward_derivative(grad(scalar_to_scalar))(scalar),
-                     grad(forward_derivative(scalar_to_scalar))(scalar))
-
 
     if test_complex:
         comp = 0.6 + 0.3j

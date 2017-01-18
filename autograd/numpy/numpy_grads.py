@@ -244,6 +244,7 @@ def grad_diff(g, ans, vs, gvs, a, n=1, axis=-1):
     return helper(g, n)
 
 anp.diff.defvjp(grad_diff)
+anp.diff.defjvp(lambda g, ans, gvs, vs, a, n=1, axis=-1: anp.diff(g, n, axis))
 
 def grad_repeat(g, ans, vs, gvs, x, repeats, axis=None):
     shape = x.shape
@@ -257,6 +258,7 @@ def grad_repeat(g, ans, vs, gvs, x, repeats, axis=None):
             expanded = anp.reshape(g, shape[0:axis+1] + (repeats,) + shape[axis+1:])
             return anp.sum(expanded, axis=axis+1, keepdims=False)
 anp.repeat.defvjp(grad_repeat)
+anp.repeat.defjvp(lambda g, ans, gvs, vs, x, repeats, axis=None: anp.repeat(g, repeats, axis))
 
 def grad_tile(g, ans, vs, gvs, x, reps):
     reps = [reps] if anp.isscalar(reps) else reps
@@ -264,6 +266,7 @@ def grad_tile(g, ans, vs, gvs, x, reps):
         g = sum(anp.split(g, rep, axis))
     return anp.reshape(g, x.shape)
 anp.tile.defvjp(grad_tile)
+anp.tile.defjvp(lambda g, ans, gvs, vs, x, reps: anp.tile(g, reps))
 
 def grad_kron(argnum, G, ans, vs, gvs, A, B):
     def blocks(G):
@@ -279,12 +282,15 @@ def grad_kron(argnum, G, ans, vs, gvs, A, B):
         Aflat = anp.ravel(A)
         return sum(aij * Gij for aij, Gij in zip(Aflat, flat(blocks(G))))
 anp.kron.defvjps(grad_kron, [0, 1])
+anp.kron.defjvp(lambda g, ans, gvs, vs, a, b: anp.kron(g, b))
+anp.kron.defjvp(lambda g, ans, gvs, vs, a, b: anp.kron(a, g), argnum=1)
 
 def grad_transpose(g, ans, vs, gvs, x, axes=None):
     if axes is not None:
         axes = anp.argsort(axes)
     return anp.transpose(g, axes)
 anp.transpose.defvjp(grad_transpose)
+anp.transpose.defjvp(lambda g, ans, gvs, vs, x, axes=None: anp.transpose(g, axes))
 
 def repeat_to_match_shape(g, vs, axis, keepdims):
     """Returns the array g repeated along axis to fit vector space vs.
@@ -322,11 +328,15 @@ def grad_np_mean(g, ans, vs, gvs, x, axis=None, keepdims=False):
     g_repeated, num_reps = repeat_to_match_shape(g, vs, axis, keepdims)
     return g_repeated / num_reps
 anp.mean.defvjp(grad_np_mean)
+anp.mean.defjvp(lambda g, ans, gvs, vs, x, axis=None, keepdims=False: anp.mean(g, axis=axis, keepdims=keepdims1))
 
 def grad_np_prod(g, ans, vs, gvs, x, axis=None, keepdims=False): # TODO: Support tuples of axes.
     g_repeated, _ = repeat_to_match_shape(g * ans, vs, axis, keepdims)
     return g_repeated / x
 anp.prod.defvjp(grad_np_prod)
+def forward_grad_np_prod(g, ans, gvs, vs, x, axis=None, keepdims=False):
+    return (ans * g) / x
+anp.prod.defjvp(forward_grad_np_prod)
 
 def grad_np_var(g, ans, vs, gvs, x, axis=None, ddof=0, keepdims=False):
     if vs.iscomplex:
@@ -564,12 +574,12 @@ def unbroadcast(vs, gvs, result, broadcast_idx=0):
 
 def broadcast(gvs, vs, result, broadcast_idx=0):
     while anp.ndim(result) < len(vs.shape):
-        result = result[anp.newaxis, ...]
+        result = anp.expand_dims(result, 0)
     for axis, size in enumerate(anp.shape(result)):
         if size == 1:
             result = anp.repeat(result, vs.shape[axis], axis=axis)
-    if gvs.iscomplex and not vs.iscomplex:
-        result = anp.real(result)
+    if vs.iscomplex and not gvs.iscomplex:
+        result = result + 0j
     return result
 
 def unbroadcast_einsum(vs, gvs, result, subscript):
