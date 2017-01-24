@@ -3,6 +3,7 @@ from __future__ import print_function
 import itertools as it
 import autograd.numpy.random as npr
 import autograd.numpy as anp
+from autograd.core import vspace
 from autograd import grad, primitive, forward_derivative
 from autograd.util import check_equivalent, check_grads, to_scalar, check_forward_grads
 from builtins import range
@@ -23,7 +24,7 @@ def combo_check(fun, argnums, *args, **kwargs):
 
 def check_fun_and_grads(fun, args, kwargs, argnums):
     wrt_args = [args[i] for i in argnums]
-    rand_vecs = [anp.ones(anp.shape(arg)) for arg in wrt_args]
+    rand_vecs = [npr.randn(vspace(arg).size) for arg in wrt_args]
 
     try:
         if isinstance(fun, primitive):
@@ -62,8 +63,9 @@ def check_fun_and_grads(fun, args, kwargs, argnums):
             def scalar_args_fun(*new_args):
                 full_args = list(args)
                 for i, argnum in enumerate(argnums):
-                    full_args[argnum] = (wrt_args[i] + new_args[i] *
-                                         rand_vecs[i])
+                    vs = vspace(wrt_args[i])
+                    full_args[argnum] = vs.unflatten((vs.flatten(wrt_args[i]) + new_args[i] *
+                                         rand_vecs[i]))
                 return to_scalar(fun(*full_args, **kwargs))
             check_forward_grads(scalar_args_fun, *anp.zeros(len(wrt_args)))
         except:

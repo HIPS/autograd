@@ -157,9 +157,9 @@ anp.cross.defvjp(lambda g, ans, vs, gvs, a, b, axisa=-1, axisb=-1, axisc=-1, axi
 # Forward
 anp.negative.defjvp(lambda g, ans, gvs, vs, x: -g)
 anp.abs.defjvp(
-    lambda g, ans, gvs, vs, x : g * replace_zero(anp.conj(x), 0.) / replace_zero(ans, 1.))
+    lambda g, ans, gvs, vs, x : anp.real(g * replace_zero(anp.conj(x), 0.)) / replace_zero(ans, 1.))
 anp.fabs.defjvp(    lambda g, ans, gvs, vs, x : anp.sign(x) * g)  # fabs doesn't take complex numbers.
-anp.absolute.defjvp(lambda g, ans, gvs, vs, x : g * anp.conj(x) / ans)
+anp.absolute.defjvp(lambda g, ans, gvs, vs, x : anp.real(g * anp.conj(x)) / ans)
 anp.reciprocal.defjvp(lambda g, ans, gvs, vs, x : - g / x**2)
 anp.exp.defjvp(   lambda g, ans, gvs, vs, x : ans * g)
 anp.exp2.defjvp(  lambda g, ans, gvs, vs, x : ans * anp.log(2) * g)
@@ -202,18 +202,18 @@ anp.flipud.defjvp( lambda g, ans, gvs, vs, x,              : anp.flipud(g))
 anp.fliplr.defjvp( lambda g, ans, gvs, vs, x,              : anp.fliplr(g))
 anp.rot90.defjvp(  lambda g, ans, gvs, vs, x, k=1          : anp.rot90(g, k))
 anp.trace.defjvp(  lambda g, ans, gvs, vs, x, offset=0     : anp.trace(g, offset))
-anp.full.defjvp(   lambda g, ans, gvs, vs, shape, fill_value, dtype=None : anp.fill(shape, g, dtype), argnum=1)
+anp.full.defjvp(   lambda g, ans, gvs, vs, shape, fill_value, dtype=None : anp.full(shape, g, dtype), argnum=1)
 anp.triu.defjvp(   lambda g, ans, gvs, vs, x, k=0          : anp.triu(g, k=k))
 anp.tril.defjvp(   lambda g, ans, gvs, vs, x, k=0          : anp.tril(g, k=k))
 anp.clip.defjvp(   lambda g, ans, gvs, vs, x, a_min, a_max : g * anp.logical_and(ans != a_min, ans != a_max))
 anp.swapaxes.defjvp(lambda g, ans, gvs, vs, x, axis1, axis2: anp.swapaxes(g, axis1, axis2))
 anp.rollaxis.defjvp(lambda g, ans, gvs, vs, a, axis, start=0: anp.rollaxis(g, axis, start))
 anp.real_if_close.defjvp(lambda g, ans, gvs, vs, x : match_complex(vs, g))
-anp.real.defjvp(  lambda g, ans, gvs, vs, x   : match_complex(vs, g))
+anp.real.defjvp(  lambda g, ans, gvs, vs, x   : anp.real(g))
 anp.imag.defjvp(  lambda g, ans, gvs, vs, x   : match_complex(vs, -1j * g))
-anp.conj.defjvp(  lambda g, ans, gvs, vs, x   : anp.conj(g))
+anp.conj.defjvp(  lambda g, ans, gvs, vs, x   : g)
 anp.angle.defjvp( lambda g, ans, gvs, vs, x   : match_complex(vs, g * anp.conj(x * 1j) / anp.abs(x)**2))
-anp.where.defjvp( lambda g, ans, gvs, vs, c, x=None, y=None : anp.where(c, g, anp.zeros(g.shape)), argnum=1)
+anp.where.defjvp( lambda g, ans, gvs, vs, c, x=None, y=None : anp.where(c, g, anp.zeros(anp.shape(g))), argnum=1)
 anp.where.defjvp( lambda g, ans, gvs, vs, c, x=None, y=None : anp.where(c, anp.zeros(g.shape), g), argnum=2)
 anp.cross.defjvp(lambda g, ans, gvs, vs, a, b, axisa=-1, axisb=-1, axisc=-1, axis=None :
                   anp.cross(g, b, axisa, axisb, axisc, axis), argnum=0)
@@ -328,7 +328,7 @@ def grad_np_mean(g, ans, vs, gvs, x, axis=None, keepdims=False):
     g_repeated, num_reps = repeat_to_match_shape(g, vs, axis, keepdims)
     return g_repeated / num_reps
 anp.mean.defvjp(grad_np_mean)
-anp.mean.defjvp(lambda g, ans, gvs, vs, x, axis=None, keepdims=False: anp.mean(g, axis=axis, keepdims=keepdims1))
+anp.mean.defjvp(lambda g, ans, gvs, vs, x, axis=None, keepdims=False: anp.mean(g, axis=axis, keepdims=keepdims))
 
 def grad_np_prod(g, ans, vs, gvs, x, axis=None, keepdims=False): # TODO: Support tuples of axes.
     g_repeated, _ = repeat_to_match_shape(g * ans, vs, axis, keepdims)
@@ -345,6 +345,23 @@ def grad_np_var(g, ans, vs, gvs, x, axis=None, ddof=0, keepdims=False):
     x_minus_mean = anp.conj(x - anp.mean(x, axis=axis, keepdims=True))
     return 2.0 * g_repeated * x_minus_mean / (num_reps - ddof)
 anp.var.defvjp(grad_np_var)
+def forward_grad_np_var(g, ans, gvs, vs, x, axis=None, ddof=0, keepdims=False):
+    if vs.iscomplex:
+        g = g + 0j
+    if axis is None:
+        if gvs.iscomplex:
+            num_reps = gvs.size / 2
+        else:
+            num_reps = gvs.size
+    elif isinstance(axis, int):
+        num_reps = gvs.shape[axis]
+    elif isinstance(axis, tuple):
+        num_reps = anp.prod(anp.array(gvs.shape)[list(axis)])
+
+    g_minus_mean = g - anp.mean(g, axis=axis, keepdims=True)
+    return (2.0 * anp.sum(x * g_minus_mean, axis=axis, keepdims=keepdims) /
+            (num_reps - ddof))
+anp.var.defjvp(forward_grad_np_var)
 
 def grad_np_std(g, ans, vs, gvs, x, axis=None, ddof=0, keepdims=False):
     if vs.iscomplex:
@@ -357,6 +374,23 @@ def grad_np_std(g, ans, vs, gvs, x, axis=None, ddof=0, keepdims=False):
         x_minus_mean = anp.conj(x - anp.mean(x, axis=axis, keepdims=True))
         return g_repeated * x_minus_mean / (num_reps - ddof)
 anp.std.defvjp(grad_np_std)
+def forward_grad_np_std(g, ans, gvs, vs, x, axis=None, ddof=0, keepdims=False):
+    if axis is None:
+        if gvs.iscomplex:
+            num_reps = gvs.size / 2
+        else:
+            num_reps = gvs.size
+    elif isinstance(axis, int):
+        num_reps = gvs.shape[axis]
+    elif isinstance(axis, tuple):
+        num_reps = anp.prod(anp.array(gvs.shape)[list(axis)])
+
+    if num_reps <= 1:
+        return vs.zeros()
+    x_minus_mean = anp.conj(x - anp.mean(x, axis=axis, keepdims=True))
+    return (anp.sum(g * x_minus_mean, axis=axis, keepdims=keepdims) /
+            ((num_reps - ddof) / ans))
+anp.std.defjvp(forward_grad_np_std)
 
 def grad_chooser(g, ans, vs, gvs, x, axis=None, keepdims=None):
     """Builds gradient of functions that choose a single item, such as min or max."""

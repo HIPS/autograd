@@ -107,8 +107,10 @@ class primitive(object):
 
                 for argnum, arg in forward_progenitors[progenitor]:
                     forward_grad = arg.progenitors[progenitor]
-                    ingrads.append(self.jvp(argnum, forward_grad, result, arg.vspace,
-                                            result.vspace, args, kwargs))
+                    ingrad = self.jvp(argnum, forward_grad, result, arg.vspace,
+                                      result.vspace, args, kwargs)
+                    assert_vspace_match(ingrad, result.vspace, self, fwd=True)
+                    ingrads.append(ingrad)
 
                 result.progenitors[progenitor] = vsum(result.vspace, *ingrads)
                 deactivated_forward_progenitors.remove(progenitor)

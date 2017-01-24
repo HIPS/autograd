@@ -12,6 +12,7 @@ def take(A, idx):
 def grad_take(g, ans, vs, gvs, A, idx):
     return untake(g, idx, A)
 take.defvjp(grad_take)
+take.defjvp(lambda g, ans, gvs, vs, A, idx: take(g, idx))
 
 @primitive
 def untake(x, idx, template):
