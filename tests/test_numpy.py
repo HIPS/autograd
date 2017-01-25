@@ -868,3 +868,15 @@ def test_maximum_equal_values_2d():
     check_grads(d_fun, -1.0)
     check_grads(fun, 2.0)
     check_grads(d_fun, 2.0)
+
+def test_linspace():
+    for num in [0, 1, 5]:
+        def fun(x, y): return to_scalar(np.linspace(x, y, 5))
+        d_fun = lambda x, y : to_scalar(grad(fun)(x, y))
+
+        check_grads(fun, 1.2, 3.4)
+        check_grads(d_fun, 1.2, 3.4)
+        check_grads(fun, 1.2, -3.4)
+        check_grads(d_fun, 1.2, -3.4)
+        check_grads(fun, 1.2, 1.2)
+        check_grads(d_fun, 1.2, 1.2)

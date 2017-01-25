@@ -48,7 +48,6 @@ anp.power.defvjp(
     lambda g, ans, vs, gvs, x, y :
     unbroadcast(vs, gvs, g * anp.log(replace_zero(x, 1.)) * x ** y), argnum=1)
 
-
 # ----- Simple grads -----
 
 anp.negative.defvjp(lambda g, ans, vs, gvs, x: -g)
@@ -117,6 +116,11 @@ anp.cross.defvjp(lambda g, ans, vs, gvs, a, b, axisa=-1, axisb=-1, axisc=-1, axi
                   anp.cross(b, g, axisb, axisc, axisa, axis), argnum=0)
 anp.cross.defvjp(lambda g, ans, vs, gvs, a, b, axisa=-1, axisb=-1, axisc=-1, axis=None :
                   anp.cross(g, a, axisc, axisa, axisb, axis), argnum=1)
+
+anp.linspace.defvjp(lambda g, ans, vs, gvs, start, stop, num:
+                    anp.sum((anp.linspace(1.0, 0.0, num)) * g))
+anp.linspace.defvjp(lambda g, ans, vs, gvs, start, stop, num:
+                    anp.sum((anp.linspace(0.0, 1.0, num)) * g), argnum=1)
 
 # ----- Trickier grads -----
 
