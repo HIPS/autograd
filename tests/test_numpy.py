@@ -871,7 +871,7 @@ def test_maximum_equal_values_2d():
 
 def test_linspace():
     for num in [0, 1, 5]:
-        def fun(x, y): return to_scalar(np.linspace(x, y, 5))
+        def fun(x, y): return to_scalar(np.linspace(x, y, num))
         d_fun = lambda x, y : to_scalar(grad(fun)(x, y))
 
         check_grads(fun, 1.2, 3.4)
