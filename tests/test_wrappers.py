@@ -6,7 +6,8 @@ import autograd.numpy.random as npr
 from autograd.util import *
 from autograd import (grad, elementwise_grad, jacobian, value_and_grad,
                       grad_and_aux, hessian_vector_product, hessian, multigrad,
-                      jacobian, vector_jacobian_product, primitive)
+                      jacobian, vector_jacobian_product, primitive,
+                      checkpointed_grad)
 from builtins import range
 
 npr.seed(1)
@@ -117,6 +118,47 @@ def test_vector_jacobian_product():
     J = jacobian(fun)(a)
     check_equivalent(np.dot(V.T, J), vector_jacobian_product(fun)(a, V))
 
+def test_vector_jacobian_product_tuple_output():
+    fun = lambda a: np.roll(np.sin(a), 1)
+    a = npr.randn(5)
+    V = npr.randn(5)
+    J = jacobian(fun)(a)
+    fun_tuple = lambda a: (fun(a),)
+    check_equivalent(np.dot(V.T, J), vector_jacobian_product(fun_tuple)(a, (V,)))
+
+def test_checkpointed_grad():
+    def f(a):
+        b = a**2 + 1
+        c = b**2 + 1
+        d = c**2 + 1
+        e = d**2 + 1
+        return e
+
+    A = np.random.randn(2, 2)
+    check_equivalent(grad(lambda x: np.sum(f(f(x))))(A),
+                     checkpointed_grad(f, f, np.sum)(A))
+
+def test_checkpointed_grad_multi_output():
+    def f(a):
+        b = a**2 + 1
+        c = b**2 + 1
+        d = c**2 + 1
+        e = d**2 + 1
+        return d, e
+
+    def g(t):
+        d, e = t
+        a = d**2
+        b = e**2
+        return a + b
+
+    A = np.random.randn(2, 2)
+
+    grad(lambda x: np.sum(g(f(x))))(A)
+
+    check_equivalent(grad(lambda x: np.sum(g(f(x))))(A),
+                     checkpointed_grad(f, g, np.sum)(A))
+
 def test_matrix_jacobian_product():
     fun = lambda a: np.roll(np.sin(a), 1)
     a = npr.randn(5, 4)
@@ -125,7 +167,7 @@ def test_matrix_jacobian_product():
     check_equivalent(np.tensordot(V, J), vector_jacobian_product(fun)(a, V))
 
 def test_tensor_jacobian_product():
-    fun = lambda a: np.roll(np.sin(a), 1)
+    fun = lambda a: np.sum(np.roll(np.sin(a), 1), axis=2, keepdims=False)
     a = npr.randn(5, 4, 3)
     V = npr.randn(5, 4)
     J = jacobian(fun)(a)
