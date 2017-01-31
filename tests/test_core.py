@@ -7,8 +7,6 @@ from autograd.core import make_vjp
 
 def grad(fun, argnum=0):
     def gradfun(*args,**kwargs):
-        args = list(args)
-        args[argnum] = args[argnum]
         vjp, _ = make_vjp(fun, argnum)(*args, **kwargs)
         return vjp(1.0)
     return gradfun
