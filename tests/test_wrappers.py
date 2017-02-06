@@ -167,9 +167,9 @@ def test_matrix_jacobian_product():
     check_equivalent(np.tensordot(V, J), vector_jacobian_product(fun)(a, V))
 
 def test_tensor_jacobian_product():
-    fun = lambda a: np.sum(np.roll(np.sin(a), 1), axis=2, keepdims=False)
+    fun = lambda a: np.roll(np.sin(a), 1)
     a = npr.randn(5, 4, 3)
-    V = npr.randn(5, 4)
+    V = npr.randn(5, 4, 3)
     J = jacobian(fun)(a)
     check_equivalent(np.tensordot(V, J, axes=np.ndim(V)), vector_jacobian_product(fun)(a, V))
 
