@@ -1,20 +1,18 @@
 
 # todo
-  [ ] work out vspace type system
-  [ ] write systematic tests for primitive grads using
-      (correct vspaces, linearity, agree with finite differences)
-  [ ] expose flatten/unflatten
-  [ ] make the primitives handle any necessary casting
-  [ ] work out how to handle grad_with_aux (ideally self-referentially)
-  [ ] check we still raise errors like "Output type {} can't be cast to float"
-  [ ] use vspace in primitive gradients (e.g. for broadcasting)
-  [ ] replace safe_type with int as an acceptable scalar value (cast to float)
-  [ ] use either defgrad_is_zero or nograd_primitive but not both
-  [ ] figure out way to handle singleton arrays rather than casting to scalar
-      (maybe treat scalars as arrays of shape ()?)
-  [ ] write memory tests that check for cycles
-  [ ] decide how to handle backward compatibility
-  [ ] merge in changes from last 6 months of main branch commits
+ - [ ] work out vspace type system  
+ - [ ] write systematic tests for primitive grads using  (correct vspaces, linearity, agree with finite differences)  
+ - [ ] expose flatten/unflatten
+ - [ ] make the primitives handle any necessary casting
+ - [ ] work out how to handle grad_with_aux (ideally self-referentially)
+ - [ ] check we still raise errors like "Output type {} can't be cast to float"
+ - [ ] use vspace in primitive gradients (e.g. for broadcasting)
+ - [ ] replace safe_type with int as an acceptable scalar value (cast to float)
+ - [ ] use either defgrad_is_zero or nograd_primitive but not both
+ - [ ] figure out way to handle singleton arrays rather than casting to scalar (maybe treat scalars as arrays of shape ()?)
+ - [ ] write memory tests that check for cycles
+ - [ ] decide how to handle backward compatibility
+ - [ ] merge in changes from last 6 months of main branch commits
 
 # changes in simplifying-core-no-tape
   * Removed tape in favor of direct toposort.
