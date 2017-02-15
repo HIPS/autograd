@@ -76,10 +76,21 @@ class primitive(object):
         self.__doc__ = fun.__doc__
 
     def __call__(self, *args, **kwargs):
+        argvals, parents, progenitors, forward_progenitors = self.find_progenitors(args)
+        result_value = self.fun(*argvals, **kwargs)
+        if progenitors or forward_progenitors:
+            result = new_node(result_value, (self, args, kwargs, parents), progenitors, dict())
+            if forward_progenitors:
+                self.fwd_update(args, kwargs, result, forward_progenitors)
+            return result
+        else:
+            return result_value
+
+    def find_progenitors(self, args):
         argvals = list(args)
+        parents = []
         progenitors = set()
         forward_progenitors = defaultdict(list)
-        parents = []
         for argnum, arg in enumerate(args):
             if isnode(arg):
                 argvals[argnum] = arg.value
@@ -91,27 +102,23 @@ class primitive(object):
                 for progenitor in arg.forward_progenitors:
                     if active_forward_progenitors.get(progenitor, False):
                         forward_progenitors[progenitor].append((argnum, arg))
+        return argvals, parents, progenitors, forward_progenitors
 
-        result_value = self.fun(*argvals, **kwargs)
-        if progenitors or forward_progenitors:
-            result = new_node(result_value, (self, args, kwargs, parents), progenitors, dict())
-            for progenitor in forward_progenitors:
-                active_forward_progenitors[progenitor] = False
-            for progenitor in active_forward_progenitors:
-                if progenitor not in forward_progenitors:
-                    continue
-                ingrads = list()
-                for argnum, arg in forward_progenitors[progenitor]:
-                    forward_grad = arg.forward_progenitors[progenitor]
-                    ingrad = self.jvp(argnum, forward_grad, result, arg.vspace,
-                                      result.vspace, args, kwargs)
-                    assert_vspace_match(ingrad, result.vspace, self, fwd=True)
-                    ingrads.append(ingrad)
-                result.forward_progenitors[progenitor] = vsum(result.vspace, *ingrads)
-                active_forward_progenitors[progenitor] = True
-            return result
-        else:
-            return result_value
+    def fwd_update(self, args, kwargs, result, forward_progenitors):
+        for progenitor in forward_progenitors:
+            active_forward_progenitors[progenitor] = False
+        for progenitor in active_forward_progenitors:
+            if progenitor not in forward_progenitors:
+                continue
+            ingrads = list()
+            for argnum, arg in forward_progenitors[progenitor]:
+                forward_grad = arg.forward_progenitors[progenitor]
+                ingrad = self.jvp(argnum, forward_grad, result, arg.vspace,
+                                  result.vspace, args, kwargs)
+                assert_vspace_match(ingrad, result.vspace, self, fwd=True)
+                ingrads.append(ingrad)
+            result.forward_progenitors[progenitor] = vsum(result.vspace, *ingrads)
+            active_forward_progenitors[progenitor] = True
 
     def vjp(self, argnum, outgrad, ans, vs, gvs, args, kwargs):
         try:
