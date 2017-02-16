@@ -3,7 +3,7 @@ from __future__ import print_function
 import types
 from future.utils import iteritems
 import warnings
-from autograd.core import primitive, nograd_primitive, getval
+from autograd.core import primitive, nograd_primitive, getval, vspace
 import numpy as _np
 
 def unbox_args(f):
@@ -89,6 +89,16 @@ def array_from_args(*args):
 def array_from_args_gradmaker(argnum, g, ans, vs, gvs, args, kwargs):
     return g[argnum]
 array_from_args.vjp = array_from_args_gradmaker
+
+def array_from_args_fwd_gradmaker(argnum, g, ans, gvs, vs, args, kwargs):
+    result = []
+    for i in range(len(args)):
+        if i == argnum:
+            result.append(g)
+        else:
+            result.append(_np.zeros_like(getval(args[i])))
+    return array_from_args(*result)
+array_from_args.jvp = array_from_args_fwd_gradmaker
 
 def select(condlist, choicelist, default=0):
     raw_array = _np.select(list(condlist), list(choicelist), default=default)

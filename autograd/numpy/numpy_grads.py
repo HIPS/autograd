@@ -497,6 +497,16 @@ def grad_concatenate_args(argnum, g, ans, vs, gvs, axis_args, kwargs):
     return take(g, idxs)
 anp.concatenate_args.vjp = grad_concatenate_args
 
+def fwd_grad_concatenate_args(argnum, g, ans, gvs, vs, axis_args, kwargs):
+    result = []
+    for i in range(1, len(axis_args)):
+        if i == argnum:
+            result.append(g)
+        else:
+            result.append(anp.zeros_like(getval(axis_args[i])))
+    return anp.concatenate_args(axis_args[0], *result)
+anp.concatenate_args.jvp = fwd_grad_concatenate_args
+
 def wrapped_reshape(x, *args, **kwargs):
     # The reshape method can be called like A.reshape((5,4)) or A.reshape(5,4).
     # The reshape function doesn't support both ways, so we have to wrap it.
@@ -537,6 +547,15 @@ def grad_reshape_list(g, ans, vs, gvs, *arys):
 anp.atleast_1d.defvjp(grad_reshape_list)
 anp.atleast_2d.defvjp(grad_reshape_list)
 anp.atleast_3d.defvjp(grad_reshape_list)
+def atleast_jvpmaker(fun):
+    def jvp(g, ans, gvs, vs, *arys):
+        if len(arys) > 1:
+            raise NotImplementedError("Can't handle multiple arguments yet.")
+        return fun(g)
+    return jvp
+anp.atleast_1d.defjvp(atleast_jvpmaker(anp.atleast_1d))
+anp.atleast_2d.defjvp(atleast_jvpmaker(anp.atleast_2d))
+anp.atleast_3d.defjvp(atleast_jvpmaker(anp.atleast_3d))
 
 def grad_einsum(argnum, g, ans, vs, gvs, operands, kwargs):
     # Gradient of einsum is obtained by swapping outgrad with the argument
