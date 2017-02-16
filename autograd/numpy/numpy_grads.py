@@ -211,7 +211,7 @@ anp.rollaxis.defjvp(lambda g, ans, gvs, vs, a, axis, start=0: anp.rollaxis(g, ax
 anp.real_if_close.defjvp(lambda g, ans, gvs, vs, x : match_complex(vs, g))
 anp.real.defjvp(  lambda g, ans, gvs, vs, x   : anp.real(g))
 anp.imag.defjvp(  lambda g, ans, gvs, vs, x   : match_complex(vs, -1j * g))
-anp.conj.defjvp(  lambda g, ans, gvs, vs, x   : g)
+anp.conj.defjvp(  lambda g, ans, gvs, vs, x   : anp.conj(g))
 anp.angle.defjvp( lambda g, ans, gvs, vs, x   : match_complex(vs, g * anp.conj(x * 1j) / anp.abs(x)**2))
 anp.where.defjvp( lambda g, ans, gvs, vs, c, x=None, y=None : anp.where(c, g, anp.zeros(anp.shape(g))), argnum=1)
 anp.where.defjvp( lambda g, ans, gvs, vs, c, x=None, y=None : anp.where(c, anp.zeros(g.shape), g), argnum=2)
