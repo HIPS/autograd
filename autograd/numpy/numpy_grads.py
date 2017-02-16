@@ -424,6 +424,9 @@ def grad_inner(argnum, g, ans, vs, gvs, A, B):
     return grad_tensordot(argnum, g, ans, vs, gvs, A, B, axes=axes)
 anp.inner.defvjps(grad_inner, [0, 1])
 
+anp.inner.defjvp(lambda g, ans, gvs, vs, A, B: anp.inner(g, B))
+anp.inner.defjvp(lambda g, ans, gvs, vs, A, B: anp.inner(A, g), argnum=1)
+
 def grad_matmul(argnum, g, ans, vs, gvs, A, B):
     if anp.ndim(A) == 0 or anp.ndim(B) == 0:
         raise ValueError("Scalar operands are not allowed, use '*' instead")
@@ -434,6 +437,9 @@ def grad_matmul(argnum, g, ans, vs, gvs, A, B):
         return grad_einsum(argnum + 1, g, ans, vs, gvs, ("...ij,...jk->...ik", A, B), None)
 anp.matmul.defvjps(grad_matmul, [0, 1])
 
+anp.matmul.defjvp(lambda g, ans, gvs, vs, A, B: anp.matmul(g, B))
+anp.matmul.defjvp(lambda g, ans, gvs, vs, A, B: anp.matmul(A, g), argnum=1)
+
 def grad_dot(argnum, g, ans, vs, gvs, A, B):
     A_ndim, B_ndim = anp.ndim(A), anp.ndim(B)
     if A_ndim == 0 or B_ndim == 0:
@@ -442,6 +448,9 @@ def grad_dot(argnum, g, ans, vs, gvs, A, B):
         axes = ([A_ndim - 1], [max(0, B_ndim - 2)])
     return grad_tensordot(argnum, g, ans, vs, gvs, A, B, axes=axes)
 anp.dot.defvjps(grad_dot, [0, 1])
+
+anp.dot.defjvp(lambda g, ans, gvs, vs, A, B: anp.dot(g, B))
+anp.dot.defjvp(lambda g, ans, gvs, vs, A, B: anp.dot(A, g), argnum=1)
 
 def grad_tensordot(argnum, g, ans, vs, gvs, A, B, axes=2):
     A_ndim = anp.ndim(A)
@@ -485,6 +494,8 @@ def grad_tensordot(argnum, g, ans, vs, gvs, A, B, axes=2):
         result = result[()]
     return anp.transpose(result, axes=reverse_permutation)
 anp.tensordot.defvjps(grad_tensordot, [0, 1])
+anp.tensordot.defjvp(lambda g, ans, gvs, vs, A, B, axes=2: anp.tensordot(g, B, axes=axes))
+anp.tensordot.defjvp(lambda g, ans, gvs, vs, A, B, axes=2: anp.tensordot(A, g, axes=axes), argnum=1)
 
 anp.outer.defvjp(lambda g, ans, vs, gvs, a, b : anp.dot(g, b.T))
 anp.outer.defvjp(lambda g, ans, vs, gvs, a, b : anp.dot(a.T, g), argnum=1)
@@ -526,6 +537,13 @@ def grad_sort(g, ans, vs, gvs, x, axis=-1, kind='quicksort', order=None):
 anp.sort.defvjp(grad_sort)
 anp.msort.defvjp(grad_sort)  # Until multi-D is allowed, these are the same.
 
+def fwd_grad_sort(g, ans, gvs, vs, x, axis=-1, kind='quicksort', order=None):
+    sort_perm = anp.argsort(x, axis, kind, order)
+    return g[sort_perm]
+anp.sort.defjvp(fwd_grad_sort)
+anp.msort.defjvp(lambda g, ans, gvs, vs, x: fwd_grad_sort(g, ans, gvs, vs, x,
+                                                          axis=0))
+
 def grad_partition(g, ans, vs, gvs, x, kth, axis=-1, kind='introselect', order=None):
     #TODO: Cast input with np.asanyarray()
     if len(x.shape) > 1:
@@ -534,6 +552,11 @@ def grad_partition(g, ans, vs, gvs, x, kth, axis=-1, kind='introselect', order=N
     partition_perm = anp.argpartition(x, kth, axis, kind, order)
     return unpermuter(g, partition_perm)
 anp.partition.defvjp(grad_partition)
+
+def fwd_grad_partition(g, ans, gvs, vs, x, kth, axis=-1, kind='introselect', order=None):
+    partition_perm = anp.argpartition(x, kth, axis, kind, order)
+    return g[partition_perm]
+anp.partition.defjvp(fwd_grad_partition)
 
 def unpermuter(g, permutation):
     unsort = anp.zeros(len(permutation), dtype=int)
@@ -581,6 +604,14 @@ def grad_einsum(argnum, g, ans, vs, gvs, operands, kwargs):
         return unbroadcast_einsum(vs, gvs, anp.einsum(g, *rest_of_ops), operands[argnum + 1])
 
 anp.einsum.vjp = grad_einsum
+
+def fwd_grad_einsum(argnum, g, ans, gvs, vs, operands, kwargs):
+    operands = list(operands)
+    operands[argnum] = g
+    return anp.einsum(*operands)
+
+anp.einsum.jvp = fwd_grad_einsum
+
 
 @primitive
 def make_diagonal(D, offset=0, axis1=0, axis2=1):
