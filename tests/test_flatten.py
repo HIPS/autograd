@@ -19,3 +19,10 @@ def test_flatten_dict():
     val_recovered = unflatten(vect)
     vect_2, _ = flatten(val_recovered)
     assert np.all(vect == vect_2)
+
+def test_flatten_complex():
+    val = 2 + 3j
+    vect, unflatten = flatten(val)
+    assert np.all(vect == np.array([2 + 3j]))
+    val_recovered = unflatten(vect)
+    assert val_recovered == val

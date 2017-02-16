@@ -108,7 +108,7 @@ def flatten(value):
             return np.reshape(vector, shape)
         return np.ravel(value), unflatten
 
-    elif isinstance(getval(value), (float, int)):
+    elif isinstance(getval(value), (float, int, complex)):
         return np.array([value]), lambda x : x[0]
 
     elif isinstance(getval(value), (tuple, list)):
