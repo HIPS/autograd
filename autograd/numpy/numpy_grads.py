@@ -335,7 +335,7 @@ def grad_np_prod(g, ans, vs, gvs, x, axis=None, keepdims=False): # TODO: Support
     return g_repeated / x
 anp.prod.defvjp(grad_np_prod)
 def forward_grad_np_prod(g, ans, gvs, vs, x, axis=None, keepdims=False):
-    return (ans * g) / x
+    return ans * anp.sum(g / x, axis=axis, keepdims=keepdims)
 anp.prod.defjvp(forward_grad_np_prod)
 
 def grad_np_var(g, ans, vs, gvs, x, axis=None, ddof=0, keepdims=False):
