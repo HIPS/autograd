@@ -358,8 +358,8 @@ def forward_grad_np_var(g, ans, gvs, vs, x, axis=None, ddof=0, keepdims=False):
     elif isinstance(axis, tuple):
         num_reps = anp.prod(anp.array(gvs.shape)[list(axis)])
 
-    g_minus_mean = g - anp.mean(g, axis=axis, keepdims=True)
-    return (2.0 * anp.sum(x * g_minus_mean, axis=axis, keepdims=keepdims) /
+    x_minus_mean = anp.conj(x - anp.mean(x, axis=axis, keepdims=True))
+    return (2.0 * anp.sum(anp.real(g * x_minus_mean), axis=axis, keepdims=keepdims) /
             (num_reps - ddof))
 anp.var.defjvp(forward_grad_np_var)
 
@@ -388,8 +388,8 @@ def forward_grad_np_std(g, ans, gvs, vs, x, axis=None, ddof=0, keepdims=False):
     if num_reps <= 1:
         return vs.zeros()
     x_minus_mean = anp.conj(x - anp.mean(x, axis=axis, keepdims=True))
-    return (anp.sum(g * x_minus_mean, axis=axis, keepdims=keepdims) /
-            ((num_reps - ddof) / ans))
+    return (anp.sum(anp.real(g * x_minus_mean), axis=axis, keepdims=keepdims) /
+            ((num_reps - ddof) * ans))
 anp.std.defjvp(forward_grad_np_std)
 
 def grad_chooser(g, ans, vs, gvs, x, axis=None, keepdims=None):
