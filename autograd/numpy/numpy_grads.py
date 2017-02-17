@@ -404,6 +404,23 @@ anp.min.defvjp(grad_chooser)
 anp.amax.defvjp(grad_chooser)
 anp.amin.defvjp(grad_chooser)
 
+def fwd_grad_chooser(g, ans, gvs, vs, x, axis=None, keepdims=False):
+    if anp.isscalar(x):
+        return g
+    if not keepdims:
+        if isinstance(axis, int):
+            ans = anp.expand_dims(ans, axis)
+        elif isinstance(axis, tuple):
+            for ax in sorted(axis):
+                ans = anp.expand_dims(ans, ax)
+    chosen_locations = x == ans
+    return anp.sum(g * chosen_locations, axis=axis, keepdims=keepdims)
+
+anp.max.defjvp(fwd_grad_chooser)
+anp.min.defjvp(fwd_grad_chooser)
+anp.amax.defjvp(fwd_grad_chooser)
+anp.amin.defjvp(fwd_grad_chooser)
+
 def reverse_axis(x, axis):
     x = x.swapaxes(axis, 0)
     x = x[::-1,...]
