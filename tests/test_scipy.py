@@ -19,33 +19,33 @@ R = npr.randn
 U = npr.uniform
 
 ### Stats ###
-def test_norm_pdf():    combo_check(stats.norm.pdf,    [0,1,2], [R(4)], [R(4)], [R(4)**2 + 1.1])
-def test_norm_cdf():    combo_check(stats.norm.cdf,    [0,1,2], [R(4)], [R(4)], [R(4)**2 + 1.1])
-def test_norm_logpdf(): combo_check(stats.norm.logpdf, [0,1,2], [R(4)], [R(4)], [R(4)**2 + 1.1])
-def test_norm_logcdf(): combo_check(stats.norm.logcdf, [0,1,2], [R(4)], [R(4)], [R(4)**2 + 1.1])
+def test_norm_pdf():    combo_check(stats.norm.pdf,    [0,1,2], [R(4)], [R(4)], [R(4)**2 + 1.1], fwd=False)
+def test_norm_cdf():    combo_check(stats.norm.cdf,    [0,1,2], [R(4)], [R(4)], [R(4)**2 + 1.1], fwd=False)
+def test_norm_logpdf(): combo_check(stats.norm.logpdf, [0,1,2], [R(4)], [R(4)], [R(4)**2 + 1.1], fwd=False)
+def test_norm_logcdf(): combo_check(stats.norm.logcdf, [0,1,2], [R(4)], [R(4)], [R(4)**2 + 1.1], fwd=False)
 
-def test_norm_pdf_broadcast():    combo_check(stats.norm.pdf,    [0,1,2], [R(4,3)], [R(1,3)], [R(4,1)**2 + 1.1])
-def test_norm_cdf_broadcast():    combo_check(stats.norm.cdf,    [0,1,2], [R(4,3)], [R(1,3)], [R(4,1)**2 + 1.1])
-def test_norm_logpdf_broadcast(): combo_check(stats.norm.logpdf, [0,1,2], [R(4,3)], [R(1,3)], [R(4,1)**2 + 1.1])
-def test_norm_logcdf_broadcast(): combo_check(stats.norm.logcdf, [0,1,2], [R(4,3)], [R(1,3)], [R(4,1)**2 + 1.1])
+def test_norm_pdf_broadcast():    combo_check(stats.norm.pdf,    [0,1,2], [R(4,3)], [R(1,3)], [R(4,1)**2 + 1.1], fwd=False)
+def test_norm_cdf_broadcast():    combo_check(stats.norm.cdf,    [0,1,2], [R(4,3)], [R(1,3)], [R(4,1)**2 + 1.1], fwd=False)
+def test_norm_logpdf_broadcast(): combo_check(stats.norm.logpdf, [0,1,2], [R(4,3)], [R(1,3)], [R(4,1)**2 + 1.1], fwd=False)
+def test_norm_logcdf_broadcast(): combo_check(stats.norm.logcdf, [0,1,2], [R(4,3)], [R(1,3)], [R(4,1)**2 + 1.1], fwd=False)
 
-def test_t_pdf():    combo_check(stats.t.pdf,    [0,1,2,3], [R(4)], [R(4)**2 + 2.1], [R(4)], [R(4)**2 + 2.1])
-def test_t_cdf():    combo_check(stats.t.cdf,    [0,2],     [R(4)], [R(4)**2 + 2.1], [R(4)], [R(4)**2 + 2.1])
-def test_t_logpdf(): combo_check(stats.t.logpdf, [0,1,2,3], [R(4)], [R(4)**2 + 2.1], [R(4)], [R(4)**2 + 2.1])
-def test_t_logcdf(): combo_check(stats.t.logcdf, [0,2],     [R(4)], [R(4)**2 + 2.1], [R(4)], [R(4)**2 + 2.1])
+def test_t_pdf():    combo_check(stats.t.pdf,    [0,1,2,3], [R(4)], [R(4)**2 + 2.1], [R(4)], [R(4)**2 + 2.1], fwd=False)
+def test_t_cdf():    combo_check(stats.t.cdf,    [0,2],     [R(4)], [R(4)**2 + 2.1], [R(4)], [R(4)**2 + 2.1], fwd=False)
+def test_t_logpdf(): combo_check(stats.t.logpdf, [0,1,2,3], [R(4)], [R(4)**2 + 2.1], [R(4)], [R(4)**2 + 2.1], fwd=False)
+def test_t_logcdf(): combo_check(stats.t.logcdf, [0,2],     [R(4)], [R(4)**2 + 2.1], [R(4)], [R(4)**2 + 2.1], fwd=False)
 
-def test_t_pdf_broadcast():    combo_check(stats.t.pdf,    [0,1,2,3], [R(4,3)], [R(1,3)**2 + 2.1], [R(4,3)], [R(4,1)**2 + 2.1])
-def test_t_cdf_broadcast():    combo_check(stats.t.cdf,    [0,2],     [R(4,3)], [R(1,3)**2 + 2.1], [R(4,3)], [R(4,1)**2 + 2.1])
-def test_t_logpdf_broadcast(): combo_check(stats.t.logpdf, [0,1,2,3], [R(4,3)], [R(1,3)**2 + 2.1], [R(4,3)], [R(4,1)**2 + 2.1])
-def test_t_logcdf_broadcast(): combo_check(stats.t.logcdf, [0,2],     [R(4,3)], [R(1,3)**2 + 2.1], [R(4,3)], [R(4,1)**2 + 2.1])
+def test_t_pdf_broadcast():    combo_check(stats.t.pdf,    [0,1,2,3], [R(4,3)], [R(1,3)**2 + 2.1], [R(4,3)], [R(4,1)**2 + 2.1], fwd=False)
+def test_t_cdf_broadcast():    combo_check(stats.t.cdf,    [0,2],     [R(4,3)], [R(1,3)**2 + 2.1], [R(4,3)], [R(4,1)**2 + 2.1], fwd=False)
+def test_t_logpdf_broadcast(): combo_check(stats.t.logpdf, [0,1,2,3], [R(4,3)], [R(1,3)**2 + 2.1], [R(4,3)], [R(4,1)**2 + 2.1], fwd=False)
+def test_t_logcdf_broadcast(): combo_check(stats.t.logcdf, [0,2],     [R(4,3)], [R(1,3)**2 + 2.1], [R(4,3)], [R(4,1)**2 + 2.1], fwd=False)
 
 def make_psd(mat): return np.dot(mat.T, mat) + np.eye(mat.shape[0])
-def test_mvn_pdf():    combo_check(mvn.logpdf, [0, 1, 2], [R(4)], [R(4)], [make_psd(R(4, 4))])
-def test_mvn_logpdf(): combo_check(mvn.logpdf, [0, 1, 2], [R(4)], [R(4)], [make_psd(R(4, 4))])
-def test_mvn_entropy():combo_check(mvn.entropy,[0, 1],            [R(4)], [make_psd(R(4, 4))])
+def test_mvn_pdf():    combo_check(mvn.logpdf, [0, 1, 2], [R(4)], [R(4)], [make_psd(R(4, 4))], fwd=False)
+def test_mvn_logpdf(): combo_check(mvn.logpdf, [0, 1, 2], [R(4)], [R(4)], [make_psd(R(4, 4))], fwd=False)
+def test_mvn_entropy():combo_check(mvn.entropy,[0, 1],            [R(4)], [make_psd(R(4, 4))], fwd=False)
 
-def test_mvn_pdf_broadcast():    combo_check(mvn.logpdf, [0, 1, 2], [R(5, 4)], [R(4)], [make_psd(R(4, 4))])
-def test_mvn_logpdf_broadcast(): combo_check(mvn.logpdf, [0, 1, 2], [R(5, 4)], [R(4)], [make_psd(R(4, 4))])
+def test_mvn_pdf_broadcast():    combo_check(mvn.logpdf, [0, 1, 2], [R(5, 4)], [R(4)], [make_psd(R(4, 4))], fwd=False)
+def test_mvn_logpdf_broadcast(): combo_check(mvn.logpdf, [0, 1, 2], [R(5, 4)], [R(4)], [make_psd(R(4, 4))], fwd=False)
 
 alpha = npr.random(4)**2 + 1.2
 x = stats.dirichlet.rvs(alpha, size=1)[0,:]
@@ -99,21 +99,24 @@ def test_convolve_generalization():
 def test_convolve():
     combo_check(autograd.scipy.signal.convolve, [0,1],
                 [R(4), R(5), R(6)],
-                [R(2), R(3), R(4)], mode=['full', 'valid'])
+                [R(2), R(3), R(4)], mode=['full', 'valid'], fwd=False)
 
 def test_convolve_2d():
     combo_check(autograd.scipy.signal.convolve, [0, 1],
                 [R(4, 3), R(5, 4), R(6, 7)],
-                [R(2, 2), R(3, 2), R(4, 2), R(4, 1)], mode=['full', 'valid'])
+                [R(2, 2), R(3, 2), R(4, 2), R(4, 1)], mode=['full', 'valid'],
+                fwd=False)
 
 def test_convolve_ignore():
     combo_check(autograd.scipy.signal.convolve, [0, 1], [R(4, 3)], [R(3, 2)],
                 axes=[([0],[0]), ([1],[1]), ([0],[1]), ([1],[0]), ([0, 1], [0, 1]), ([1, 0], [1, 0])],
-                mode=['full', 'valid'])
+                mode=['full', 'valid'],
+                fwd=False)
 
 def test_convolve_ignore_dot():
     combo_check(autograd.scipy.signal.convolve, [0, 1], [R(3, 3, 2)], [R(3, 2, 3)],
-                axes=[([1],[1])], dot_axes=[([0],[2]), ([0],[0])], mode=['full', 'valid'])
+                axes=[([1],[1])], dot_axes=[([0],[2]), ([0],[0])], mode=['full', 'valid'],
+                fwd=False)
 
 ### Special ###
 def test_polygamma(): combo_check(special.polygamma, [1], [0], R(4)**2 + 1.3)

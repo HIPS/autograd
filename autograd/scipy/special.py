@@ -25,6 +25,15 @@ multigammaln.defvjp(lambda g, ans, vs, gvs, a, d:
     g * np.sum(digamma(np.expand_dims(a, -1) - np.arange(d)/2.), -1))
 multigammaln.defvjp_is_zero(argnums=(1,))
 
+polygamma.defjvp(lambda g, ans, gvs, vs, n, x: g * polygamma(n + 1, x), argnum=1)
+psi.defjvp(      lambda g, ans, gvs, vs, x: g * polygamma(1, x))
+digamma.defjvp(  lambda g, ans, gvs, vs, x: g * polygamma(1, x))
+gamma.defjvp(    lambda g, ans, gvs, vs, x: g * ans * psi(x))
+gammaln.defjvp(  lambda g, ans, gvs, vs, x: g * psi(x))
+rgamma.defjvp(   lambda g, ans, gvs, vs, x: g * psi(x) / -gamma(x))
+multigammaln.defjvp(lambda g, ans, gvs, vs, a, d:
+    g * np.sum(digamma(np.expand_dims(a, -1) - np.arange(d)/2.), -1))
+
 ### Bessel functions ###
 
 j0 = primitive(scipy.special.j0)
@@ -43,6 +52,13 @@ yn.defvjp_is_zero(argnums=(0,))
 jn.defvjp(lambda g, ans, vs, gvs, n, x: g * (jn(n - 1, x) - jn(n + 1, x)) / 2.0, argnum=1)
 yn.defvjp(lambda g, ans, vs, gvs, n, x: g * (yn(n - 1, x) - yn(n + 1, x)) / 2.0, argnum=1)
 
+j0.defjvp(lambda g, ans, gvs, vs, x: -g * j1(x))
+y0.defjvp(lambda g, ans, gvs, vs, x: -g * y1(x))
+j1.defjvp(lambda g, ans, gvs, vs, x: g * (j0(x) - jn(2, x)) / 2.0)
+y1.defjvp(lambda g, ans, gvs, vs, x: g * (y0(x) - yn(2, x)) / 2.0)
+jn.defjvp(lambda g, ans, gvs, vs, n, x: g * (jn(n - 1, x) - jn(n + 1, x)) / 2.0, argnum=1)
+yn.defjvp(lambda g, ans, gvs, vs, n, x: g * (yn(n - 1, x) - yn(n + 1, x)) / 2.0, argnum=1)
+
 ### Error Function ###
 inv_root_pi = 0.56418958354775627928
 erf = primitive(scipy.special.erf)
@@ -51,6 +67,8 @@ erfc = primitive(scipy.special.erfc)
 erf.defvjp( lambda g, ans, vs, gvs, x:  2.*g*inv_root_pi*np.exp(-x**2))
 erfc.defvjp(lambda g, ans, vs, gvs, x: -2.*g*inv_root_pi*np.exp(-x**2))
 
+erf.defjvp( lambda g, ans, gvs, vs, x:  2.*g*inv_root_pi*np.exp(-x**2))
+erfc.defjvp(lambda g, ans, gvs, vs, x: -2.*g*inv_root_pi*np.exp(-x**2))
 
 ### Inverse error function ###
 root_pi = 1.7724538509055159
@@ -60,3 +78,5 @@ erfcinv = primitive(scipy.special.erfcinv)
 erfinv.defvjp(lambda g, ans, vs, gvs, x: g * root_pi / 2 * np.exp(erfinv(x)**2))
 erfcinv.defvjp(lambda g, ans, vs, gvs, x: -g * root_pi / 2 * np.exp(erfcinv(x)**2))
 
+erfinv.defjvp(lambda g, ans, gvs, vs, x: g * root_pi / 2 * np.exp(erfinv(x)**2))
+erfcinv.defjvp(lambda g, ans, gvs, vs, x: -g * root_pi / 2 * np.exp(erfcinv(x)**2))
