@@ -78,10 +78,15 @@ class primitive(object):
     def __call__(self, *args, **kwargs):
         argvals, parents, progenitors, forward_progenitors = self.find_progenitors(args)
         result_value = self.fun(*argvals, **kwargs)
-        if progenitors or forward_progenitors:
+        if progenitors and not forward_progenitors:
+            return new_node(result_value, (self, args, kwargs, parents), progenitors, dict())
+        elif progenitors and forward_progenitors:
             result = new_node(result_value, (self, args, kwargs, parents), progenitors, dict())
-            if forward_progenitors:
-                self.fwd_update(args, kwargs, result, forward_progenitors)
+            result = self.fwd_update(args, kwargs, result, forward_progenitors)
+            return result
+        elif forward_progenitors and not progenitors:
+            result = new_node(result_value, None,                          progenitors, dict())
+            result = self.fwd_update(args, kwargs, result, forward_progenitors)
             return result
         else:
             return result_value
@@ -119,6 +124,7 @@ class primitive(object):
                 ingrads.append(ingrad)
             result.forward_progenitors[progenitor] = vsum(result.vspace, *ingrads)
             active_forward_progenitors[progenitor] = True
+        return result
 
     def vjp(self, argnum, outgrad, ans, vs, gvs, args, kwargs):
         try:
