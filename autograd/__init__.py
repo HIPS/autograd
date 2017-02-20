@@ -4,4 +4,4 @@ from . import container_types
 from .convenience_wrappers import (grad, multigrad, multigrad_dict, elementwise_grad,
                                    value_and_grad, grad_and_aux, hessian_vector_product,
                                    hessian, jacobian, vector_jacobian_product, grad_named,
-                                   forward_derivative)
+                                   forward_derivative, jacobian_vector_product)

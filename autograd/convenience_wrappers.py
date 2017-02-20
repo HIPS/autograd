@@ -105,15 +105,11 @@ def hessian(fun, argnum=0):
     "Returns a function that computes the exact Hessian."
     return jacobian(jacobian(fun, argnum), argnum)
 
-def hessian_vector_product(fun, argnum=0):
+def hessian_vector_product(fun, argnum=0, method='rev-rev'):
     """Builds a function that returns the exact Hessian-vector product.
     The returned function has arguments (*args, vector, **kwargs), and takes
     roughly 4x as long to evaluate as the original function."""
-    fun_grad = grad(fun, argnum)
-    def vector_dot_grad(*args, **kwargs):
-        args, vector = args[:-1], args[-1]
-        return np.tensordot(fun_grad(*args, **kwargs), vector, np.ndim(vector))
-    return grad(vector_dot_grad, argnum)  # Grad wrt original input.
+    return jacobian_vector_product(grad(fun, argnum), argnum)
 
 def vector_jacobian_product(fun, argnum=0):
     """Builds a function that returns the exact vector-Jacobian product, that
@@ -123,6 +119,16 @@ def vector_jacobian_product(fun, argnum=0):
         args, vector = args[:-1], args[-1]
         return np.tensordot(vector, fun(*args, **kwargs), axes=np.ndim(vector))
     return jacobian(vector_dot_fun, argnum)  # Grad wrt original input.
+
+def jacobian_vector_product(fun, argnum=0):
+    """Builds a function that returns the exact Jacobian-vector product, that
+    is the Jacobian matrix right-multiplied by vector. The returned function
+    has arguments (*args, vector, **kwargs)."""
+    jvp = make_jvp(fun, argnum=argnum)
+    def jac_vec_prod(*args, **kwargs):
+        args, vector = args[:-1], args[-1]
+        return jvp(*args, **kwargs)[0](vector)[1]
+    return jac_vec_prod
 
 def value_and_grad(fun, argnum=0):
     """Returns a function that returns both value and gradient. Suitable for use
