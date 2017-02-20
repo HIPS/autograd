@@ -108,8 +108,23 @@ def hessian(fun, argnum=0):
 def hessian_vector_product(fun, argnum=0, method='rev-rev'):
     """Builds a function that returns the exact Hessian-vector product.
     The returned function has arguments (*args, vector, **kwargs), and takes
-    roughly 4x as long to evaluate as the original function."""
-    return jacobian_vector_product(grad(fun, argnum), argnum)
+    roughly 4x as long to evaluate as the original function.
+
+    There are two methods available, specified by the `method' parameter:
+    rev-rev (default) and fwd-rev. fwd-rev is faster and has lower memory
+    overhead but is incompatible with some primitives."""
+    if method == 'rev-rev':
+        fun_grad = grad(fun, argnum)
+        def vector_dot_grad(*args, **kwargs):
+            args, vector = args[:-1], args[-1]
+            return np.tensordot(fun_grad(*args, **kwargs), vector, np.ndim(vector))
+        return grad(vector_dot_grad, argnum)  # Grad wrt original input.
+    elif method == 'fwd-rev':
+        return jacobian_vector_product(grad(fun, argnum), argnum)
+    else:
+        raise ValueError("{} is not a valid method for hessian_vector_product. "
+                         "Valid methods are: 'rev-rev', 'fwd-rev'.".format(method))
+
 
 def vector_jacobian_product(fun, argnum=0):
     """Builds a function that returns the exact vector-Jacobian product, that
