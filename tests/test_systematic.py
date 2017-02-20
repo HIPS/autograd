@@ -66,14 +66,14 @@ def test_logaddexp2(): binary_ufunc_check(np.logaddexp2, test_complex=False)
 def test_remainder(): binary_ufunc_check_no_same_args(np.remainder, lims_A=[-0.9, 0.9], lims_B=[0.7, 1.9], test_complex=False)
 def test_true_divide(): binary_ufunc_check(np.true_divide, lims_B=[0.8, 1.2], test_complex=False)
 def test_mod(): binary_ufunc_check_no_same_args(np.mod,    lims_B=[0.8, 2.1], test_complex=False)
-def test_true_divide_neg(): binary_ufunc_check(np.true_divide, lims_B=[-0.3, -2.0], test_complex=False)
-def test_mod_neg(): binary_ufunc_check_no_same_args(np.mod,    lims_B=[-0.3, -2.0], test_complex=False)
+def test_true_divide_neg(): binary_ufunc_check(np.true_divide, lims_B=[-0.8, -2.0], test_complex=False)
+def test_mod_neg(): binary_ufunc_check_no_same_args(np.mod,    lims_B=[-0.8, -2.0], test_complex=False)
 
 def test_op_mul(): binary_ufunc_check(op.mul)
 def test_op_add(): binary_ufunc_check(op.add)
 def test_op_sub(): binary_ufunc_check(op.sub)
-def test_op_mod(): binary_ufunc_check_no_same_args(op.mod, lims_B=[0.3, 2.0], test_complex=False)
-def test_op_mod_neg(): binary_ufunc_check_no_same_args(op.mod, lims_B=[-0.3, -2.0], test_complex=False)
+def test_op_mod(): binary_ufunc_check_no_same_args(op.mod, lims_B=[0.8, 2.0], test_complex=False)
+def test_op_mod_neg(): binary_ufunc_check_no_same_args(op.mod, lims_B=[-0.8, -2.0], test_complex=False)
 
 
 
