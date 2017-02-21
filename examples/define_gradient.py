@@ -6,7 +6,7 @@ from __future__ import print_function
 import autograd.numpy as np
 import autograd.numpy.random as npr
 
-from autograd.core import grad, primitive
+from autograd import grad, primitive
 from autograd.util import quick_grad_check
 
 
@@ -24,19 +24,19 @@ def logsumexp(x):
 # The reason for the closure is so that the gradient can depend
 # on both the input to the original function (x), and the output of the
 # original function (ans).
-def make_grad_logsumexp(ans, x):
+
+def logsumexp_vjp(g, ans, vs, gvs, x):
     # If you want to be able to take higher-order derivatives, then all the
     # code inside this function must be itself differentiable by autograd.
-    def gradient_product(g):
-        # This closure multiplies g with the Jacobian of logsumexp (d_ans/d_x).
-        # Because autograd uses reverse-mode differentiation, g contains
-        # the gradient of the objective w.r.t. ans, the output of logsumexp.
-        return np.full(x.shape, g) * np.exp(x - np.full(x.shape, ans))
-    return gradient_product
+    # This closure multiplies g with the Jacobian of logsumexp (d_ans/d_x).
+    # Because autograd uses reverse-mode differentiation, g contains
+    # the gradient of the objective w.r.t. ans, the output of logsumexp.
+    # The arguments `vs` and `gvs` contain information about the shapes of
+    # `x` and `g` but using them is optional.
+    return np.full(x.shape, g) * np.exp(x - np.full(x.shape, ans))
 
 # Now we tell autograd that logsumexmp has a gradient-making function.
-logsumexp.defvjp(make_grad_logsumexp)
-
+logsumexp.defvjp(logsumexp_vjp)
 
 if __name__ == '__main__':
     # Now we can use logsumexp() inside a larger function that we want
@@ -47,7 +47,7 @@ if __name__ == '__main__':
         return np.sum(lse)
 
     grad_of_example = grad(example_func)
-    print("Gradient: ", grad_of_example(npr.randn(10)))
+    print("Gradient: \n", grad_of_example(npr.randn(10)))
 
     # Check the gradients numerically, just to be safe.
     quick_grad_check(example_func, npr.randn(10))
