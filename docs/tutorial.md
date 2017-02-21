@@ -201,28 +201,25 @@ to treat it as a black box whose gradient can be specified later.
 Functions with this decorator can contain anything that Python knows
 how to execute, including calls to other languages.
 
-Next, we write a function that specifies the gradient of `logsumexp`.
-In autograd, gradients are specified in a slightly roundabout way: through a function that returns a closure that evaluates the gradient:
+Next, we write a function that specifies the gradient of the primitive `logsumexp`:
 
 ```python
-def make_grad_logsumexp(ans, x):
-    def gradient_product(g):
-        return np.full(x.shape, g) * np.exp(x - np.full(x.shape, ans))
-    return gradient_product
+def logsumexp_vjp(g, ans, vs, gvs, x):
+    return np.full(x.shape, g) * np.exp(x - np.full(x.shape, ans))
 ```
-This allows the gradient to depend on both the input (`x`) and the output (`ans`) of the original function.
 
-What is the closure `gradient_product(g)` computing, exactly?
-Because autograd uses reverse-mode differentiation, `g` is
-the gradient of the final objective with respect to `ans` (the output of `logsumexp`).
-Thus `gradient_product` multiplies `g` with the Jacobian of `logsumexp`.
-
+`logsumexp_vjp` computes a vector-Jacobian product (VJP):
+it right-multiplies `g` by the Jacobian of `logsumexp`.
+`g` will be the gradient of the final objective with respect to `ans`
+(the output of `logsumexp`).
+The calculation can depend on both the input (`x`)
+and the output (`ans`) of the original function.
 If you want to be able to take higher-order derivatives, then the
-code inside the gradient-making function must be itself differentiable by autograd.
+code inside the VJP function must be itself differentiable by autograd.
 
-The final step is to tell autograd about `logsumexp`'s gradient-making function:
+The final step is to tell autograd about `logsumexp`'s vector-Jacobian product function:
 ```python
-logsumexp.defgrad(make_grad_logsumexp)
+logsumexp.defvjp(logsumexp_vjp)
 ```
 
 Now we can use logsumexp() anywhere, including inside of a larger function that we want to differentiate:
@@ -238,7 +235,6 @@ def example_func(y):
 grad_of_example = grad(example_func)
 print "Gradient: ", grad_of_example(np.array([1.5, 6.7, 1e-10])
 ```
-
 This example can be found as a Python script [here](../examples/define_gradient.py).
 
 
