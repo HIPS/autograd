@@ -81,12 +81,15 @@ register_vspace(SequenceVSpace, tuple)
 
 class DictNode(Node):
     __slots__ = []
-    def __getitem__(self, idx):
-        return dict_take(self, idx)
-    def __len__(self):
-        return len(self.value)
-    def __iter__(self):
-        return self.value.__iter__()
+    def __getitem__(self, idx): return dict_take(self, idx)
+    def __len__(self): return len(self.value)
+    def __iter__(self): return self.value.__iter__()
+    def items(self): return list(self.iteritems())
+    def keys(self): return list(self.iterkeys())
+    def values(self): return list(self.itervalues())
+    def iteritems(self): return ((k, self[k]) for k in self)
+    def iterkeys(self): return iter(self)
+    def itervalues(self): return (self[k] for k in self)
 
 register_node(DictNode, dict)
 
