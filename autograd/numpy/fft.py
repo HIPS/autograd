@@ -13,7 +13,7 @@ wrap_namespace(ffto.__dict__, globals())
 def fft_defvjp(fft_fun):
     def fft_grad(g, ans, vs, gvs, x, *args, **kwargs):
         check_no_repeated_axes(*args, **kwargs)
-        return match_complex(vs, truncate_pad(fft_fun(g, *args, **kwargs), vs.shape))
+        return match_complex(vs, truncate_pad(fft_fun(g, *args, **kwargs).conjugate(), vs.shape))
     fft_fun.defvjp(fft_grad)
 
 for fft_fun in (fft, ifft, fft2, ifft2, fftn, ifftn):
