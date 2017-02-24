@@ -1,5 +1,6 @@
 import sys
 import re
+from functools import wraps
 from future.utils import raise_from, raise_
 
 class AutogradHint(Exception):
@@ -40,6 +41,13 @@ Use defvjp instead ("define vector-Jacobian product").
 The interface is a little different - look at
 autograd/numpy/numpy_grads.py for examples.
 '''
+
+def add_error_hints(fun):
+  @wraps(fun)
+  def wrapped(*args, **kwargs):
+    try: return fun(*args, **kwargs)
+    except Exception as e: add_extra_error_message(e)
+  return wrapped
 
 def check_common_errors(error_type, error_message):
     keys, vals = zip(*common_errors)

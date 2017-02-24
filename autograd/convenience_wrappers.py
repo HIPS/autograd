@@ -1,8 +1,9 @@
-"""Convenience functions built on top of `grad`."""
+"""Convenience functions built on top of `make_vjp`."""
 from __future__ import absolute_import
 from functools import partial
 import autograd.numpy as np
 from autograd.core import make_vjp, getval, isnode, vspace
+from .errors import add_error_hints
 from collections import OrderedDict
 from inspect import getargspec
 import itertools as it
@@ -19,6 +20,7 @@ def grad(fun, argnum=0):
         return as_scalar(fun(*args, **kwargs))
 
     @attach_name_and_doc(fun, argnum, 'Gradient')
+    @add_error_hints
     def gradfun(*args,**kwargs):
         args = list(args)
         args[argnum] = safe_type(args[argnum])
@@ -51,6 +53,7 @@ def jacobian(fun, argnum=0):
     concatenate = lambda lst: np.concatenate(map(np.atleast_1d, lst))
 
     @attach_name_and_doc(fun, argnum, 'Jacobian')
+    @add_error_hints
     def jacfun(*args, **kwargs):
         vjp, ans = make_vjp(fun, argnum)(*args, **kwargs)
         outshape = getshape(ans)

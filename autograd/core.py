@@ -7,7 +7,7 @@ from functools import partial
 from future.utils import iteritems
 from collections import defaultdict
 import warnings
-from .errors import add_extra_error_message, defgrad_deprecated
+from .errors import defgrad_deprecated
 
 def make_vjp(fun, argnum=0):
     def vjp(*args, **kwargs):
@@ -23,8 +23,7 @@ def forward_pass(fun, args, kwargs, argnum=0):
     start_node = new_progenitor(args[argnum])
     args[argnum] = start_node
     active_progenitors.add(start_node)
-    try: end_node = fun(*args, **kwargs)
-    except Exception as e: add_extra_error_message(e)
+    end_node = fun(*args, **kwargs)
     active_progenitors.remove(start_node)
     return start_node, end_node
 
