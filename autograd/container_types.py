@@ -22,6 +22,7 @@ def sequence_take(A, idx):
 def grad_sequence_take(g, ans, vs, gvs, A, idx):
     return sequence_untake(g, idx, vspace(getval(A)))
 sequence_take.defvjp(grad_sequence_take)
+sequence_take.defjvp(lambda g, ans, gvs, vs, A, idx: sequence_take(g, idx))
 
 @primitive
 def sequence_untake(x, idx, vs):
@@ -36,6 +37,7 @@ def sequence_untake(x, idx, vs):
         return vs.sequence_type(result)
     return SparseObject(vs, mut_add)
 sequence_untake.defvjp(lambda g, ans, vs, gvs, x, idx, template : sequence_take(g, idx))
+sequence_untake.defjvp(lambda g, ans, gvs, vs, x, idx, template : sequence_untake(g, idx, vs))
 sequence_untake.defvjp_is_zero(argnums=(1, 2))
 
 @primitive

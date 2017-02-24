@@ -12,6 +12,12 @@ logpdf = primitive(scipy.stats.dirichlet.logpdf)
 logpdf.defvjp(lambda g, ans, vs, gvs, x, alpha: g * (alpha - 1) / x, argnum=0)
 logpdf.defvjp(lambda g, ans, vs, gvs, x, alpha: g * (digamma(np.sum(alpha)) - digamma(alpha) + np.log(x)), argnum=1)
 
+logpdf.defjvp(lambda g, ans, gvs, vs, x, alpha: np.inner(g, (alpha - 1) / x), argnum=0)
+logpdf.defjvp(lambda g, ans, gvs, vs, x, alpha: np.inner(g, (digamma(np.sum(alpha)) - digamma(alpha) + np.log(x))), argnum=1)
+
 # Same as log pdf, but multiplied by the pdf (ans).
 pdf.defvjp(lambda g, ans, vs, gvs, x, alpha: g * ans * (alpha - 1) / x, argnum=0)
 pdf.defvjp(lambda g, ans, vs, gvs, x, alpha: g * ans * (digamma(np.sum(alpha)) - digamma(alpha) + np.log(x)), argnum=1)
+
+pdf.defjvp(lambda g, ans, gvs, vs, x, alpha: np.inner(g, ans * (alpha - 1) / x), argnum=0)
+pdf.defjvp(lambda g, ans, gvs, vs, x, alpha: np.inner(g, ans * (digamma(np.sum(alpha)) - digamma(alpha) + np.log(x))), argnum=1)

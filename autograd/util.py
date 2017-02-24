@@ -8,7 +8,7 @@ from builtins import map, range, zip
 
 import autograd.numpy as np
 import itertools as it
-from autograd.convenience_wrappers import grad
+from autograd.convenience_wrappers import grad, forward_derivative
 from autograd.core import vspace, vspace_flatten, getval
 from copy import copy
 
@@ -60,6 +60,14 @@ def check_grads(fun, *args):
     numeric = nd(fun, *args)
     check_equivalent(exact, numeric)
 
+def check_forward_grads(fun, *args):
+    if not args:
+        raise Exception("No args given")
+    exact = tuple([forward_derivative(fun, i)(*args) for i in range(len(args))])
+    args = [float(x) if isinstance(x, int) else x for x in args]
+    numeric = nd(fun, *args)
+    check_equivalent(exact, numeric)
+
 def to_scalar(x):
     if isinstance(getval(x), list)  or isinstance(getval(x), tuple):
         return sum([to_scalar(item) for item in x])
@@ -100,7 +108,7 @@ def flatten(value):
             return np.reshape(vector, shape)
         return np.ravel(value), unflatten
 
-    elif isinstance(getval(value), (float, int)):
+    elif isinstance(getval(value), (float, int, complex)):
         return np.array([value]), lambda x : x[0]
 
     elif isinstance(getval(value), (tuple, list)):

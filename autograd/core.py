@@ -4,8 +4,7 @@ import types
 import numpy as np
 import numpy.random as npr
 from functools import partial
-from future.utils import iteritems
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 import warnings
 from .errors import add_extra_error_message, defgrad_deprecated
 
@@ -17,6 +16,24 @@ def make_vjp(fun, argnum=0):
             return lambda g : start_node.vspace.zeros(), end_node
         return lambda g : backward_pass(g, end_node, start_node), end_node
     return vjp
+
+def make_jvp(fun, argnum=0):
+    def jvp(*args, **kwargs):
+        args = list(args)
+        start_node = new_progenitor(args[argnum])
+        args[argnum] = start_node
+        def forward_mode_pass(v):
+            assert_vspace_match(v, start_node.vspace, None)
+            start_node.forward_progenitors[start_node] = v
+            active_forward_progenitors[start_node] = True
+            end_node = fun(*args, **kwargs)
+            active_forward_progenitors.pop(start_node)
+            if not isnode(end_node) or start_node not in end_node.forward_progenitors:
+                warnings.warn("Output seems independent of input.")
+                return end_node, vspace(getval(end_node)).zeros()
+            return end_node, end_node.forward_progenitors[start_node]
+        return forward_mode_pass, start_node
+    return jvp
 
 def forward_pass(fun, args, kwargs, argnum=0):
     args = list(args)
@@ -44,6 +61,7 @@ def backward_pass(g, end_node, start_node):
     return cur_outgrad
 
 active_progenitors = set()
+active_forward_progenitors = OrderedDict()
 
 class primitive(object):
     """
@@ -52,26 +70,61 @@ class primitive(object):
     def __init__(self, fun):
         self.fun = fun
         self.vjps = {}
+        self.jvps = {}
         self.zero_vjps = set()
         self.__name__ = fun.__name__
         self.__doc__ = fun.__doc__
 
     def __call__(self, *args, **kwargs):
+        argvals, parents, progenitors, forward_progenitors = self.find_progenitors(args)
+        result_value = self.fun(*argvals, **kwargs)
+        if progenitors and not forward_progenitors:
+            return new_node(result_value, (self, args, kwargs, parents), progenitors, dict())
+        elif progenitors and forward_progenitors:
+            result = new_node(result_value, (self, args, kwargs, parents), progenitors, dict())
+            result = self.fwd_update(args, kwargs, result, forward_progenitors)
+            return result
+        elif forward_progenitors and not progenitors:
+            result = new_node(result_value, None,                          progenitors, dict())
+            result = self.fwd_update(args, kwargs, result, forward_progenitors)
+            return result
+        else:
+            return result_value
+
+    def find_progenitors(self, args):
         argvals = list(args)
-        progenitors = set()
         parents = []
+        progenitors = set()
+        forward_progenitors = defaultdict(list)
         for argnum, arg in enumerate(args):
             if isnode(arg):
                 argvals[argnum] = arg.value
                 if argnum in self.zero_vjps: continue
-                parents.append((argnum, arg))
-                progenitors.update(arg.progenitors & active_progenitors)
+                reverse = arg.progenitors & active_progenitors
+                if reverse:
+                    parents.append((argnum, arg))
+                    progenitors.update(reverse)
+                for progenitor in arg.forward_progenitors:
+                    if active_forward_progenitors.get(progenitor, False):
+                        forward_progenitors[progenitor].append((argnum, arg))
+        return argvals, parents, progenitors, forward_progenitors
 
-        result_value = self.fun(*argvals, **kwargs)
-        if progenitors:
-            return new_node(result_value, (self, args, kwargs, parents), progenitors)
-        else:
-            return result_value
+    def fwd_update(self, args, kwargs, result, forward_progenitors):
+        for progenitor in forward_progenitors:
+            active_forward_progenitors[progenitor] = False
+        for progenitor in active_forward_progenitors:
+            if progenitor not in forward_progenitors:
+                continue
+            ingrads = list()
+            for argnum, arg in forward_progenitors[progenitor]:
+                forward_grad = arg.forward_progenitors[progenitor]
+                ingrad = self.jvp(argnum, forward_grad, result, arg.vspace,
+                                  result.vspace, args, kwargs)
+                assert_vspace_match(ingrad, result.vspace, self, fwd=True)
+                ingrads.append(ingrad)
+            result.forward_progenitors[progenitor] = vsum(result.vspace, *ingrads)
+            active_forward_progenitors[progenitor] = True
+        return result
 
     def vjp(self, argnum, outgrad, ans, vs, gvs, args, kwargs):
         try:
@@ -83,9 +136,23 @@ class primitive(object):
                 errstr = "Gradient of {0} w.r.t. arg number {1} not yet implemented."
             raise NotImplementedError(errstr.format(self.fun.__name__, argnum))
 
+    def jvp(self, argnum, ingrad, ans, gvs, vs, args, kwargs):
+        try:
+            return self.jvps[argnum](ingrad, ans, gvs, vs, *args, **kwargs)
+        except KeyError:
+            if self.jvps == {}:
+                errstr = "Forward gradient of {0} not yet implemented."
+            else:
+                errstr = "Forward gradient of {0} w.r.t. arg number {1} not yet implemented."
+            raise NotImplementedError(errstr.format(self.fun.__name__, argnum))
+
     def defvjp(self, vjpmaker, argnum=0):
         vjpmaker.__name__ = "VJP_{}_of_{}".format(argnum, self.__name__)
         self.vjps[argnum] = vjpmaker
+
+    def defjvp(self, jvpmaker, argnum=0):
+        jvpmaker.__name__ = "JVP_{}_of_{}".format(argnum, self.__name__)
+        self.jvps[argnum] = jvpmaker
 
     def defvjps(self, vjpmaker, argnums):
         for argnum in argnums:
@@ -116,12 +183,13 @@ class nograd_primitive(primitive):
         argvals = map(getval, args)
         return self.fun(*argvals, **kwargs)
 
-def new_progenitor(x):
+def new_progenitor(x, fwd=False):
     if isnode(x):
-        node = new_node(x.value, (identity, (x,), {}, [(0, x)]), x.progenitors)
+        node = new_node(x.value, (identity, (x,), {}, [(0, x)]), x.progenitors, x.forward_progenitors)
     else:
-        node = new_node(x,       (identity, (x,), {}, []      ), set())
-    node.progenitors = node.progenitors | {node}
+        node = new_node(x,       (identity, (x,), {}, []      ), set(),         dict())
+    if not fwd:
+        node.progenitors = node.progenitors | {node}
     return node
 
 def vsum(vspace, *args):
@@ -140,18 +208,21 @@ def primitive_vsum(vspace, *args):
             ans = vspace.mut_add(ans, arg)
     return ans
 primitive_vsum.vjp = lambda arg, g, *args : g
+primitive_vsum.jvp = lambda arg, g, *args : g
 
 @primitive
 def identity(x) : return x
 identity.defvjp(lambda g, ans, vs, gvs, x : g)
 
 class Node(object):
-    __slots__ = ['value', 'recipe', 'progenitors', 'vspace']
+    __slots__ = ['value', 'recipe', 'progenitors', 'forward_progenitors',
+                 'vspace']
 
-    def __init__(self, value, recipe, progenitors):
+    def __init__(self, value, recipe, progenitors, forward_progenitors):
         self.value = value
         self.recipe = recipe
         self.progenitors = progenitors
+        self.forward_progenitors = forward_progenitors
         self.vspace = vspace(value)
 
     def __bool__(self):
@@ -229,9 +300,9 @@ def register_node(node_type, value_type):
 def register_vspace(vspace_maker, value_type):
     vspace_mappings[value_type] = vspace_maker
 
-def new_node(value, recipe, progenitors):
+def new_node(value, recipe, progenitors, forward_progenitors):
     try:
-        return node_type_mappings[type(value)](value, recipe, progenitors)
+        return node_type_mappings[type(value)](value, recipe, progenitors, forward_progenitors)
     except KeyError:
         raise TypeError("Can't differentiate w.r.t. type {}".format(type(value)))
 
@@ -250,11 +321,12 @@ class SparseObject(object):
 register_vspace(lambda x : x.vs, SparseObject)
 register_node(Node, SparseObject)
 
-def assert_vspace_match(x, expected_vspace, fun):
+def assert_vspace_match(x, expected_vspace, fun, fwd=False):
+    grad_string = "Forward grad" if fwd else "Grad"
     assert expected_vspace == vspace(getval(x)), \
-        "\nGrad of {} returned unexpected vector space" \
+        "\n{} of {} returned unexpected vector space" \
         "\nVector space is {}" \
-        "\nExpected        {}".format(fun, vspace(getval(x)), expected_vspace)
+        "\nExpected        {}".format(grad_string, fun, vspace(getval(x)), expected_vspace)
 
 isnode = lambda x: type(x) in node_types
 getval = lambda x: x.value if isnode(x) else x

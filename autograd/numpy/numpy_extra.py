@@ -12,6 +12,7 @@ def take(A, idx):
 def grad_take(g, ans, vs, gvs, A, idx):
     return untake(g, idx, A)
 take.defvjp(grad_take)
+take.defjvp(lambda g, ans, gvs, vs, A, idx: take(g, idx))
 
 @primitive
 def untake(x, idx, template):
@@ -20,6 +21,7 @@ def untake(x, idx, template):
         return A
     return SparseObject(vspace(template), mut_add)
 untake.defvjp(lambda g, ans, vs, gvs, x, idx, template : take(g, idx))
+untake.defjvp(lambda g, ans, gvs, vs, x, idx, template : untake(g, idx, template))
 untake.defvjp_is_zero(argnums=(1, 2))
 
 Node.__array_priority__ = 90.0

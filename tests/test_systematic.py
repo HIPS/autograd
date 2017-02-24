@@ -8,8 +8,8 @@ npr.seed(0)
 
 # Array statistics functions
 def test_max():  stat_check(np.max)
-def test_all():  stat_check(np.all)
-def test_any():  stat_check(np.any)
+def test_all():  stat_check(np.all, fwd=False)
+def test_any():  stat_check(np.any, fwd=False)
 def test_max():  stat_check(np.max)
 def test_mean(): stat_check(np.mean)
 def test_min():  stat_check(np.min)
@@ -58,19 +58,22 @@ def test_angle():   unary_ufunc_check(np.angle)
 # Binary ufunc tests
 
 def test_add(): binary_ufunc_check(np.add)
+def test_multiply(): binary_ufunc_check(np.multiply)
+def test_subtract(): binary_ufunc_check(np.subtract)
+def test_divide(): binary_ufunc_check(np.divide, lims_A=[1, 2], lims_B=[1, 2])
 def test_logaddexp(): binary_ufunc_check(np.logaddexp, test_complex=False)
 def test_logaddexp2(): binary_ufunc_check(np.logaddexp2, test_complex=False)
 def test_remainder(): binary_ufunc_check_no_same_args(np.remainder, lims_A=[-0.9, 0.9], lims_B=[0.7, 1.9], test_complex=False)
 def test_true_divide(): binary_ufunc_check(np.true_divide, lims_B=[0.8, 1.2], test_complex=False)
 def test_mod(): binary_ufunc_check_no_same_args(np.mod,    lims_B=[0.8, 2.1], test_complex=False)
-def test_true_divide_neg(): binary_ufunc_check(np.true_divide, lims_B=[-0.3, -2.0], test_complex=False)
-def test_mod_neg(): binary_ufunc_check_no_same_args(np.mod,    lims_B=[-0.3, -2.0], test_complex=False)
+def test_true_divide_neg(): binary_ufunc_check(np.true_divide, lims_B=[-0.8, -2.0], test_complex=False)
+def test_mod_neg(): binary_ufunc_check_no_same_args(np.mod,    lims_B=[-0.8, -2.0], test_complex=False)
 
 def test_op_mul(): binary_ufunc_check(op.mul)
 def test_op_add(): binary_ufunc_check(op.add)
 def test_op_sub(): binary_ufunc_check(op.sub)
-def test_op_mod(): binary_ufunc_check_no_same_args(op.mod, lims_B=[0.3, 2.0], test_complex=False)
-def test_op_mod_neg(): binary_ufunc_check_no_same_args(op.mod, lims_B=[-0.3, -2.0], test_complex=False)
+def test_op_mod(): binary_ufunc_check_no_same_args(op.mod, lims_B=[0.8, 2.0], test_complex=False)
+def test_op_mod_neg(): binary_ufunc_check_no_same_args(op.mod, lims_B=[-0.8, -2.0], test_complex=False)
 
 
 

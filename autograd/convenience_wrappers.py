@@ -2,7 +2,7 @@
 from __future__ import absolute_import
 from functools import partial
 import autograd.numpy as np
-from autograd.core import make_vjp, getval, isnode, vspace
+from autograd.core import make_vjp, getval, isnode, vspace, make_jvp
 from collections import OrderedDict
 from inspect import getargspec
 import itertools as it
@@ -26,6 +26,19 @@ def grad(fun, argnum=0):
         return vjp(cast_to_same_dtype(1.0, ans))
 
     return gradfun
+
+def forward_derivative(fun, argnum=0):
+    """
+    Derivative of fun w.r.t. scalar argument argnum.
+    """
+    @attach_name_and_doc(fun, argnum, 'Forward mode derivative')
+    def dervfun(*args, **kwargs):
+        args = list(args)
+        args[argnum] = safe_type(args[argnum])
+        jvp, start_node = make_jvp(fun, argnum)(*args, **kwargs)
+        ans, d = jvp(cast_to_same_dtype(1.0, args[argnum]))
+        return d
+    return dervfun
 
 def jacobian(fun, argnum=0):
     """
@@ -92,15 +105,26 @@ def hessian(fun, argnum=0):
     "Returns a function that computes the exact Hessian."
     return jacobian(jacobian(fun, argnum), argnum)
 
-def hessian_vector_product(fun, argnum=0):
+def hessian_vector_product(fun, argnum=0, method='rev-rev'):
     """Builds a function that returns the exact Hessian-vector product.
     The returned function has arguments (*args, vector, **kwargs), and takes
-    roughly 4x as long to evaluate as the original function."""
-    fun_grad = grad(fun, argnum)
-    def vector_dot_grad(*args, **kwargs):
-        args, vector = args[:-1], args[-1]
-        return np.tensordot(fun_grad(*args, **kwargs), vector, np.ndim(vector))
-    return grad(vector_dot_grad, argnum)  # Grad wrt original input.
+    roughly 4x as long to evaluate as the original function.
+
+    There are two methods available, specified by the `method' parameter:
+    rev-rev (default) and fwd-rev. fwd-rev is faster and has lower memory
+    overhead but is incompatible with some primitives."""
+    if method == 'rev-rev':
+        fun_grad = grad(fun, argnum)
+        def vector_dot_grad(*args, **kwargs):
+            args, vector = args[:-1], args[-1]
+            return np.tensordot(fun_grad(*args, **kwargs), vector, np.ndim(vector))
+        return grad(vector_dot_grad, argnum)  # Grad wrt original input.
+    elif method == 'fwd-rev':
+        return jacobian_vector_product(grad(fun, argnum), argnum)
+    else:
+        raise ValueError("{} is not a valid method for hessian_vector_product. "
+                         "Valid methods are: 'rev-rev', 'fwd-rev'.".format(method))
+
 
 def vector_jacobian_product(fun, argnum=0):
     """Builds a function that returns the exact vector-Jacobian product, that
@@ -110,6 +134,16 @@ def vector_jacobian_product(fun, argnum=0):
         args, vector = args[:-1], args[-1]
         return np.tensordot(vector, fun(*args, **kwargs), axes=np.ndim(vector))
     return jacobian(vector_dot_fun, argnum)  # Grad wrt original input.
+
+def jacobian_vector_product(fun, argnum=0):
+    """Builds a function that returns the exact Jacobian-vector product, that
+    is the Jacobian matrix right-multiplied by vector. The returned function
+    has arguments (*args, vector, **kwargs)."""
+    jvp = make_jvp(fun, argnum=argnum)
+    def jac_vec_prod(*args, **kwargs):
+        args, vector = args[:-1], args[-1]
+        return jvp(*args, **kwargs)[0](vector)[1]
+    return jac_vec_prod
 
 def value_and_grad(fun, argnum=0):
     """Returns a function that returns both value and gradient. Suitable for use
