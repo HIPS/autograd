@@ -1,8 +1,7 @@
 """Convenience functions built on top of `grad`."""
 from __future__ import absolute_import
-from functools import partial
 import autograd.numpy as np
-from autograd.core import make_vjp, getval, isnode, vspace
+from autograd.core import make_vjp, getval, vspace
 from collections import OrderedDict
 from inspect import getargspec
 import itertools as it
@@ -108,8 +107,56 @@ def vector_jacobian_product(fun, argnum=0):
     has arguments (*args, vector, **kwargs)."""
     def vector_dot_fun(*args, **kwargs):
         args, vector = args[:-1], args[-1]
-        return np.tensordot(vector, fun(*args, **kwargs), axes=np.ndim(vector))
-    return jacobian(vector_dot_fun, argnum)  # Grad wrt original input.
+        result = fun(*args, **kwargs)
+        if isinstance(result, tuple):
+            return sum(np.tensordot(v, r, axes=np.ndim(v))
+                       for v, r in zip(vector, result))
+        else:
+            return np.tensordot(vector, fun(*args, **kwargs), axes=np.ndim(vector))
+    return grad(vector_dot_fun, argnum)  # Grad wrt original input.
+
+def checkpointed_grad(*funs):
+    """
+    Computes the gradient of the composition
+
+    def f(arg):
+        return funs[-1](funs[-2](...funs[1](funs[0](arg))...))
+
+    with memory requirements roughly equal to the maximum of the memory
+    requirements for computing the gradients of the individual funs.
+
+    Example usage:
+    >>> from autograd import grad, checkpointed_grad
+    >>> import autograd.numpy as np
+    >>> def f(a):
+    ...     b = a**2 + 1
+    ...     c = b**2 + 1
+    ...     return c
+    ...
+    >>>
+    >>> A = np.array([1., 2., 3., 4.])
+    >>>
+    >>> checkpointed_grad(f, f, np.sum)(A)
+    array([  4.16000000e+03,   2.81632000e+06,   4.94592960e+08,
+             2.65355475e+10])
+
+    This is equivalent to:
+    >>> grad(lambda x: np.sum(f(f(x))))(A)
+    array([  4.16000000e+03,   2.81632000e+06,   4.94592960e+08,
+             2.65355475e+10])
+    """
+    gradfuns = [vector_jacobian_product(fun) for fun in funs[:-1]]
+    final_grad = grad(funs[-1])
+
+    def gradfun(arg):
+        values = [arg]
+        for fun in funs[:-1]:
+            values.append(fun(values[-1]))
+        outgrad = final_grad(values.pop())
+        while values:
+            outgrad = gradfuns.pop()(values.pop(), outgrad)
+        return outgrad
+    return gradfun
 
 def value_and_grad(fun, argnum=0):
     """Returns a function that returns both value and gradient. Suitable for use
