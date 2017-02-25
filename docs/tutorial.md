@@ -237,6 +237,58 @@ print "Gradient: ", grad_of_example(np.array([1.5, 6.7, 1e-10])
 ```
 This example can be found as a Python script [here](../examples/define_gradient.py).
 
+## Complex numbers
+
+Autograd supports complex arrays and scalars using a convention described as follows.
+Consider a complex-to-complex function, `f`,
+expressed in terms of real-to-real components, `u` and `v`:
+
+	def f(z):
+	    x, y = real(z), imag(z)
+	    return u(x, y) + v(x, y) * 1j
+
+We define `grad` of `f` as
+
+	def grad_f(z):
+	    x, y = real(z), imag(z)
+	    return grad(u, 0)(x, y) - i * grad(u, 1)(x, y)
+
+(The second argument of `grad` specifies which argument we're differentiating with respect to.)
+So we throw out v, the imaginary part of f, entirely.
+
+Our convention covers three important cases:
+  * If `f` is holomorphic, we get the usual complex derivative
+    (since `grad(u, 0) == grad(v, 1)` and `grad(u, 1) == - grad(v, 0)`).
+  * If `f` is a real-valued loss function of a complex parameter, `x`,
+    we get a result that we can use in a gradient-based optimizer,
+	by taking steps in the direction of the complex conjugate of `grad(f)(x)`.
+  * If `f` is a real-to-real function that happens to use complex primitives internally,
+    some of which must necessarily be non-holomorphic
+    (maybe you use FFTs to implement convolutions for example)
+	then we get the same result that a purely real implementation would have given.
+
+Our convention doesn't handle the case where `f` is a non-holomorphic function
+and you're interested in all of du/dx, du/dy, dv/dx and dv/dy.
+But then the answer would have to contain four real values
+and there would be no way to express it as a single complex number.
+
+We define primitive vector-Jacobian products of complex functions like this
+
+	def f_vjp(g, z):
+	    z_x, g_y = real(z), imag(z)
+	    g_x, g_y = real(g), imag(g)
+	    return (       g_x * grad(u, 0)(x, y)
+	             - i * g_x * grad(u, 1)(x, y)
+	             -     g_y * grad(v, 0)(x, y)
+	             + i * g_y * grad(v, 1)(x, y))
+
+For holomorphic primitives, this is just the regular complex derivative multiplied by `g`,
+so most simple math primitives don't need to be changed from their real implementations.
+For non-holomorphic primitives, it preserves all four real partial derivatives as if we
+were treating complex numbers as real 2-tuples
+(though it throws a couple of negative signs in there).
+Chapter 4 of [Dougal's PhD thesis](https://dougalmaclaurin.com/phd-thesis.pdf)
+goes into a bit more detail about how we define the primitive vector-Jacobian products.
 
 ## Planned features
 
@@ -244,10 +296,11 @@ Autograd is still under active development.  We plan to support:
 * GPU operations
 * In-place array operations and assignment to arrays
 
-
 ## Support
-Autograd was written by [Dougal Maclaurin](mailto:maclaurin@physics.harvard.edu), [David
-Duvenaud](http://mlg.eng.cam.ac.uk/duvenaud/), and [Matthew
-Johnson](http://www.mit.edu/~mattjj/) and we're actively developing it. Please
+Autograd was written by
+[Dougal Maclaurin](https://dougalmaclaurin.com),
+[David Duvenaud](http://mlg.eng.cam.ac.uk/duvenaud/), and
+[Matthew Johnson](http://www.mit.edu/~mattjj/)
+and we're actively developing it. Please
 feel free to submit any bugs or feature requests. We'd also love to hear about
 your experiences with autograd in general. Drop us an email!
