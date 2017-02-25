@@ -275,7 +275,7 @@ and there would be no way to express it as a single complex number.
 We define primitive vector-Jacobian products of complex functions like this
 
 	def f_vjp(g, z):
-	    z_x, g_y = real(z), imag(z)
+	    z_x, z_y = real(z), imag(z)
 	    g_x, g_y = real(g), imag(g)
 	    return (       g_x * grad(u, 0)(x, y)
 	             - i * g_x * grad(u, 1)(x, y)
