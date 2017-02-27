@@ -7,9 +7,16 @@ from functools import partial
 import numpy as np
 
 class SequenceNode(Node):
-    __slots__ = []
+    __slots__ = ['elements']
+    def __init__(self, *args, **kwargs):
+        self.elements = {}
+        super(SequenceNode, self).__init__(*args, **kwargs)
     def __getitem__(self, idx):
-        return sequence_take(self, idx)
+        # slices are not hashable: https://bugs.python.org/issue408326
+        key = (idx.start, idx.stop, idx.step) if isinstance(idx, slice) else idx
+        if key not in self.elements:
+            self.elements[key] = sequence_take(self, idx)
+        return self.elements[key]
     def __len__(self):
         return len(self.value)
 
