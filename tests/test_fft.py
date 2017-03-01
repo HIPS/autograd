@@ -110,6 +110,76 @@ def test_ifftn():
     check_grads(fun, mat)
     check_grads(d_fun, mat)
 
+def test_rfft():
+    def fun(x): return to_scalar(np.fft.rfft(x))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    D = 4
+    mat = npr.randn(D, D) / 10.0
+    check_grads(fun, mat)
+    check_grads(d_fun, mat)
+
+def test_rfft_axes():
+    def fun(x): return to_scalar(np.fft.rfft(x, axis=0))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    D = 4
+    mat = npr.randn(D, D) / 10.0
+    check_grads(fun, mat)
+    check_grads(d_fun, mat)
+
+def test_irfft():
+    def fun(x): return to_scalar(np.fft.irfft(x))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    D = 4
+    mat = npr.randn(D, D) / 10.0
+    # ensure hermitian by doing a fft
+    mat = np.fft.rfft(mat)
+    check_grads(fun, mat)
+    check_grads(d_fun, mat)
+
+def test_rfft2():
+    def fun(x): return to_scalar(np.fft.rfft2(x))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    D = 4
+    mat = npr.randn(D, D) / 10.0
+    check_grads(fun, mat)
+    check_grads(d_fun, mat)
+
+def test_irfft2():
+    def fun(x): return to_scalar(np.fft.irfft2(x))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    D = 4
+    mat = npr.randn(D, D) / 10.0
+    # ensure hermitian by doing a fft
+    mat = np.fft.rfft2(mat)
+    check_grads(fun, mat)
+    check_grads(d_fun, mat)
+
+def test_rfftn():
+    def fun(x): return to_scalar(np.fft.rfftn(x))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    D = 4
+    mat = npr.randn(D, D, D) / 10.0
+    check_grads(fun, mat)
+    check_grads(d_fun, mat)
+
+def test_rfftn_axes():
+    def fun(x): return to_scalar(np.fft.rfftn(x, axes=(0, 2)))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    D = 4
+    mat = npr.randn(D, D, D) / 10.0
+    check_grads(fun, mat)
+    check_grads(d_fun, mat)
+
+def test_irfftn():
+    def fun(x): return to_scalar(np.fft.irfftn(x))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    D = 4
+    mat = npr.randn(D, D, D) / 10.0
+    # ensure hermitian by doing a fft
+    mat = np.fft.rfftn(mat)
+    check_grads(fun, mat)
+    check_grads(d_fun, mat)
+
 def test_fftshift():
     def fun(x): return to_scalar(np.fft.fftshift(x))
     d_fun = lambda x : to_scalar(grad(fun)(x))
