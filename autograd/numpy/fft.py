@@ -28,6 +28,8 @@ def rfft_defvjp(rfft_fun, irfft_fun, n):
         nd = x.ndim
         check_no_repeated_axes(*args, **kwargs)
         axes = find_axes(nd, n, *args, **kwargs)
+        check_even_shape(axes, vs.shape)
+
         norm = np.prod([vs.shape[i] for i in axes])
         fac = np.zeros(gvs.shape)
         fac[...] = 0.5
@@ -43,6 +45,7 @@ def rfft_defvjp(rfft_fun, irfft_fun, n):
         check_no_repeated_axes(*args, **kwargs)
         nd = x.ndim
         axes = find_axes(nd, n, *args, **kwargs)
+        check_even_shape(axes, gvs.shape)
         norm = np.prod([gvs.shape[i] for i in axes])
         r = match_complex(vs, truncate_pad((rfft_fun(g, *args, **kwargs)), vs.shape))
         fac = np.zeros(vs.shape)
@@ -79,6 +82,10 @@ def check_no_repeated_axes(*args, **kwargs):
         except (TypeError, KeyError):
             # no iterable axes argument
             pass
+
+def check_even_shape(axes, shape):
+    if shape[axes[-1]] % 2 != 0:
+        raise NotImplementedError("Real FFT gradient for odd lengthed last axes is not implemented.")
 
 def find_axes(nd, n, *args, **kwargs):
     if len(args) == 2:

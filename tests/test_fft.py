@@ -3,6 +3,7 @@ import autograd.numpy as np
 import autograd.numpy.random as npr
 from autograd.util import *
 from autograd import grad
+from numpy.testing import assert_raises
 npr.seed(1)
 
 def test_fft():
@@ -162,6 +163,21 @@ def test_rfftn():
     check_grads(fun, mat)
     check_grads(d_fun, mat)
 
+def test_rfftn_odd_not_implemented():
+    def fun(x): return to_scalar(np.fft.rfftn(x))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    D = 5
+    mat = npr.randn(D, D, D) / 10.0
+    assert_raises(NotImplementedError, check_grads, fun, mat)
+
+def test_rfftn_subset():
+    def fun(x): return to_scalar(np.fft.rfftn(x)[(0, 1, 0), (3, 3, 2)])
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    D = 4
+    mat = npr.randn(D, D, D) / 10.0
+    check_grads(fun, mat)
+    check_grads(d_fun, mat)
+
 def test_rfftn_axes():
     def fun(x): return to_scalar(np.fft.rfftn(x, axes=(0, 2)))
     d_fun = lambda x : to_scalar(grad(fun)(x))
@@ -172,6 +188,16 @@ def test_rfftn_axes():
 
 def test_irfftn():
     def fun(x): return to_scalar(np.fft.irfftn(x))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    D = 4
+    mat = npr.randn(D, D, D) / 10.0
+    # ensure hermitian by doing a fft
+    mat = np.fft.rfftn(mat)
+    check_grads(fun, mat)
+    check_grads(d_fun, mat)
+
+def test_irfftn_subset():
+    def fun(x): return to_scalar(np.fft.irfftn(x)[(0, 1, 0), (3, 3, 2)])
     d_fun = lambda x : to_scalar(grad(fun)(x))
     D = 4
     mat = npr.randn(D, D, D) / 10.0
