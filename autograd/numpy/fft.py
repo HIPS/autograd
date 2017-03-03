@@ -10,44 +10,80 @@ wrap_namespace(ffto.__dict__, globals())
 
 # TODO: make fft gradient work for a repeated axis,
 # e.g. by replacing fftn with repeated calls to 1d fft along each axis
-def fft_defvjp(fft_fun):
-    def fft_grad(g, ans, vs, gvs, x, *args, **kwargs):
-        check_no_repeated_axes(*args, **kwargs)
-        return match_complex(vs, truncate_pad(fft_fun(g, *args, **kwargs), vs.shape))
-    fft_fun.defvjp(fft_grad)
+def fft_grad(get_axes, fft_fun, g, ans, vs, gvs, x, *args, **kwargs):
+    axes, s = get_axes(x, *args, **kwargs)
+    check_no_repeated_axes(axes)
+    return match_complex(vs, truncate_pad(fft_fun(g, *args, **kwargs), vs.shape))
 
-for fft_fun in (fft, ifft, fft2, ifft2, fftn, ifftn):
-    fft_defvjp(fft_fun)
+fft.defvjp(lambda *args, **kwargs:
+        fft_grad(get_fft_axes, fft, *args, **kwargs))
+ifft.defvjp(lambda *args, **kwargs:
+        fft_grad(get_fft_axes, ifft, *args, **kwargs))
+
+fft2.defvjp(lambda *args, **kwargs:
+        fft_grad(get_fft_axes, fft2, *args, **kwargs))
+ifft2.defvjp(lambda *args, **kwargs:
+        fft_grad(get_fft_axes, ifft2, *args, **kwargs))
+
+fftn.defvjp(lambda *args, **kwargs:
+        fft_grad(get_fft_axes, fftn, *args, **kwargs))
+ifftn.defvjp(lambda *args, **kwargs:
+        fft_grad(get_fft_axes, ifftn, *args, **kwargs))
 
 fftshift.defvjp( lambda g, ans, vs, gvs, x, axes=None : match_complex(vs, anp.conj(ifftshift(anp.conj(g), axes))))
 ifftshift.defvjp(lambda g, ans, vs, gvs, x, axes=None : match_complex(vs, anp.conj(fftshift(anp.conj(g), axes))))
 
-def rfft_defvjp(rfft_fun, irfft_fun, n):
-    def rfft_grad(g, ans, vs, gvs, x, *args, **kwargs):
-        nd = x.ndim
-        check_no_repeated_axes(*args, **kwargs)
-        axes = find_axes(nd, n, *args, **kwargs)
-        check_even_shape(axes, vs.shape)
-        fac, norm = make_rfft_factors(axes, gvs.shape, vs.shape)
-        g = anp.conj(g / fac)
-        r = match_complex(vs, truncate_pad((irfft_fun(g, *args, **kwargs)), vs.shape))
-        return r * norm
+def rfft_grad(get_axes, irfft_fun, g, ans, vs, gvs, x, *args, **kwargs):
+    axes, s = get_axes(x, *args, **kwargs)
+
+    check_no_repeated_axes(axes)
+    if s is None: s = [vs.shape[i] for i in axes]
+    check_even_shape(s)
+
+    # s is the full fft shape
+    # gs is the compressed shape
+    gs = list(s)
+    gs[-1] = gs[-1] // 2  + 1
+    fac, norm = make_rfft_factors(axes, gvs.shape, gs, s)
+    g = anp.conj(g / fac)
+    r = match_complex(vs, truncate_pad((irfft_fun(g, *args, **kwargs)), vs.shape))
+    return r * norm
 
     rfft_fun.defvjp(rfft_grad)
 
-    def irfft_grad(g, ans, vs, gvs, x, *args, **kwargs):
-        check_no_repeated_axes(*args, **kwargs)
-        nd = x.ndim
-        axes = find_axes(nd, n, *args, **kwargs)
-        check_even_shape(axes, gvs.shape)
-        r = match_complex(vs, truncate_pad((rfft_fun(g, *args, **kwargs)), vs.shape))
-        fac, norm = make_rfft_factors(axes, vs.shape, gvs.shape)
-        r = anp.conj(r) * fac / norm
-        return r
-    irfft_fun.defvjp(irfft_grad)
+def irfft_grad(get_axes, rfft_fun, g, ans, vs, gvs, x, *args, **kwargs):
+    axes, gs = get_axes(x, *args, **kwargs)
 
-for rfft_fun, irfft_fun, n in ((rfft, irfft, 1), (rfftn, irfftn, None), (rfft2, irfft2, 2)):
-    rfft_defvjp(rfft_fun, irfft_fun, n)
+    check_no_repeated_axes(axes)
+    if gs is None: gs = [gvs.shape[i] for i in axes]
+    check_even_shape(gs)
+
+    # gs is the full fft shape
+    # s is the compressed shape
+    s = list(gs)
+    s[-1] = s[-1] // 2 + 1
+    r = match_complex(vs, truncate_pad((rfft_fun(g,  *args, **kwargs)), vs.shape))
+    fac, norm = make_rfft_factors(axes, vs.shape, s, gs)
+    r = anp.conj(r) * fac / norm
+    return r
+
+rfft.defvjp(lambda *args, **kwargs:
+        rfft_grad(get_fft_axes, irfft, *args, **kwargs))
+
+irfft.defvjp(lambda *args, **kwargs:
+        irfft_grad(get_fft_axes, rfft, *args, **kwargs))
+
+rfft2.defvjp(lambda *args, **kwargs:
+        rfft_grad(get_fft2_axes, irfft2, *args, **kwargs))
+
+irfft2.defvjp(lambda *args, **kwargs:
+        irfft_grad(get_fft2_axes, rfft2, *args, **kwargs))
+
+rfftn.defvjp(lambda *args, **kwargs:
+        rfft_grad(get_fftn_axes, irfftn, *args, **kwargs))
+
+irfftn.defvjp(lambda *args, **kwargs:
+        irfft_grad(get_fftn_axes, rfftn, *args, **kwargs))
 
 @primitive
 def truncate_pad(x, shape):
@@ -59,63 +95,46 @@ def truncate_pad(x, shape):
 truncate_pad.defvjp(lambda g, ans, vs, gvs, x, shape: match_complex(vs, truncate_pad(g, vs.shape)))
 
 ## TODO: could be made less stringent, to fail only when repeated axis has different values of s
-def check_no_repeated_axes(*args, **kwargs):
-        try:
-            if len(args) == 2:
-                axes = args[1]
-            else:
-                axes = kwargs['axes']
-            axes_set = set(axes)
-            if len(axes) != len(axes_set):
-                raise NotImplementedError("FFT gradient for repeated axes not implemented.")
-        except (TypeError, KeyError):
-            # no iterable axes argument
-            pass
+def check_no_repeated_axes(axes):
+    axes_set = set(axes)
+    if len(axes) != len(axes_set):
+        raise NotImplementedError("FFT gradient for repeated axes not implemented.")
 
-def check_even_shape(axes, shape):
-    if shape[axes[-1]] % 2 != 0:
+def check_even_shape(shape):
+    if shape[-1] % 2 != 0:
         raise NotImplementedError("Real FFT gradient for odd lengthed last axes is not implemented.")
 
-def find_axes(nd, n, *args, **kwargs):
-    """ implement the default behavior of axis and axes parameters,
-        returns a list of axes the fft is ran on. We need to probe
-        into the details of rfft and irfft due to the compression
-        storage.
-    """
-    if len(args) == 2:
-        axes = args[1]
-    else:
-        axes = kwargs.get('axes', None)
-        if axes is None: axes = kwargs.get('axis', None)
+def get_fft_axes(a, d=None, axis=-1, *args, **kwargs):
+    axes = [axis]
+    if d is not None: d = [d]
+    return axes, d
 
+def get_fft2_axes(a, s=None, axes=(-2, -1), *args, **kwargs):
+    return axes, s
+
+def get_fftn_axes(a, s=None, axes=None, *args, **kwargs):
     if axes is None:
-        if n == 1:
-            axes = nd - 1
-        elif n == 2:
-            axes = [nd -2, nd -1]
-        else:
-            axes = list(range(nd))
-    try:
-        len(axes)
-    except:
-        axes = [axes]
-    return axes
+        axes = list(range(a.ndim))
+    return axes, s
 
-def make_rfft_factors(axes, facshape, normshape):
+def make_rfft_factors(axes, resshape, facshape, normshape):
     """ make the compression factors and compute the normalization
         for irfft and rfft.
     """
     norm = 1.0
-    for i in axes: norm = norm * normshape[i]
+    for n in normshape: norm = norm * n
 
     # inplace modification is fine because we produce a constant
     # which doesn't go into autograd.
     # For same reason could have used numpy rather than anp.
     # but we already imported anp, so use it instead.
-    fac = anp.zeros(facshape)
+    fac = anp.zeros(resshape)
     fac[...] = 2
-    index = [slice(None)] * len(facshape)
-    index[axes[-1]] = (0, -1)
+    index = [slice(None)] * len(resshape)
+    if facshape[-1] <= resshape[axes[-1]]:
+        index[axes[-1]] = (0, facshape[-1] - 1)
+    else:
+        index[axes[-1]] = (0,)
     fac[tuple(index)] = 1
     return fac, norm
 

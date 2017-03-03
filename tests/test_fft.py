@@ -3,7 +3,7 @@ import autograd.numpy as np
 import autograd.numpy.random as npr
 from autograd.util import *
 from autograd import grad
-from numpy.testing import assert_raises
+from numpy.testing import assert_raises, assert_array_equal
 npr.seed(1)
 
 def test_fft():
@@ -22,40 +22,53 @@ def test_fft_axis():
     check_grads(fun, mat)
     check_grads(d_fun, mat)
 
-def test_fft_n_smaller():
-   D = 5
-   for fft_fun in (np.fft.fft, np.fft.ifft):
-       def fun(x): return to_scalar(fft_fun(x, D - 2))
-       d_fun = lambda x : to_scalar(grad(fun)(x))
-       mat = npr.randn(D, D)
-       check_grads(fun, mat)
-       check_grads(d_fun, mat)
+def match_complex(fft_fun, mat):
+    # ensure hermitian by doing a fft
+    if fft_fun.__name__.startswith('ir'):
+        return getattr(np.fft, fft_fun.__name__[1:])(mat)
+    else:
+        return mat
 
-def test_fft_n_bigger():
-   D = 5
-   for fft_fun in (np.fft.fft, np.fft.ifft):
-       def fun(x): return to_scalar(fft_fun(x, D + 2))
-       d_fun = lambda x : to_scalar(grad(fun)(x))
-       mat = npr.randn(D, D)
-       check_grads(fun, mat)
-       check_grads(d_fun, mat)
+def check_fft_n(fft_fun, D, n):
+    def fun(x): return to_scalar(fft_fun(x, D + n))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    mat = npr.randn(D, D)
+    mat = match_complex(fft_fun, mat)
+    assert_array_equal(grad(fun)(mat).shape, mat.shape)
+    check_grads(fun, mat)
+    check_grads(d_fun, mat)
 
-def check_fft_s(fft_fun):
-   D = 5
+def test_fft_n_smaller(): check_fft_n(np.fft.fft, 5, -2)
+def test_fft_n_bigger(): check_fft_n(np.fft.fft, 5, 2)
+def test_ifft_n_smaller(): check_fft_n(np.fft.ifft, 5, -2)
+def test_ifft_n_bigger(): check_fft_n(np.fft.ifft, 5, 2)
+
+def test_rfft_n_smaller(): check_fft_n(np.fft.rfft, 4, -2)
+def test_rfft_n_bigger(): check_fft_n(np.fft.rfft, 4, 2)
+def test_irfft_n_smaller(): check_fft_n(np.fft.irfft, 4, -2)
+def test_irfft_n_bigger(): check_fft_n(np.fft.irfft, 4, 2)
+
+def check_fft_s(fft_fun, D):
    def fun(x): return to_scalar(fft_fun(x, s=s, axes=axes))
    d_fun = lambda x : to_scalar(grad(fun)(x))
 
    mat = npr.randn(D,D,D) / 10.0
+   mat = match_complex(fft_fun, mat)
    s = [D + 2, D - 2]
    axes = [0,2]
 
    check_grads(fun, mat)
    check_grads(d_fun, mat)
 
-def test_fft2_s():  check_fft_s(np.fft.fft2)
-def test_ifft2_s(): check_fft_s(np.fft.ifft2)
-def test_fftn_s():  check_fft_s(np.fft.fftn)
-def test_ifftn_s(): check_fft_s(np.fft.ifftn)
+def test_fft2_s():  check_fft_s(np.fft.fft2, 5)
+def test_ifft2_s(): check_fft_s(np.fft.ifft2, 5)
+def test_fftn_s():  check_fft_s(np.fft.fftn, 5)
+def test_ifftn_s(): check_fft_s(np.fft.ifftn, 5)
+
+def test_rfft2_s():  check_fft_s(np.fft.rfft2, 4)
+def test_irfft2_s(): check_fft_s(np.fft.irfft2, 4)
+def test_rfftn_s():  check_fft_s(np.fft.rfftn, 4)
+def test_irfftn_s(): check_fft_s(np.fft.irfftn, 4)
 
 ## TODO: fft gradient not implemented for repeated axes
 # def test_fft_repeated_axis():
