@@ -14,6 +14,14 @@ def test_fft():
     check_grads(fun, mat)
     check_grads(d_fun, mat)
 
+def test_fft_ortho():
+    def fun(x): return to_scalar(np.fft.fft(x, norm='ortho'))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    D = 5
+    mat = npr.randn(D, D)
+    check_grads(fun, mat)
+    check_grads(d_fun, mat)
+
 def test_fft_axis():
     def fun(x): return to_scalar(np.fft.fft(x, axis=0))
     d_fun = lambda x : to_scalar(grad(fun)(x))
@@ -132,6 +140,14 @@ def test_rfft():
     check_grads(fun, mat)
     check_grads(d_fun, mat)
 
+def test_rfft_ortho():
+    def fun(x): return to_scalar(np.fft.rfft(x, norm='ortho'))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    D = 4
+    mat = npr.randn(D, D) / 10.0
+    check_grads(fun, mat)
+    check_grads(d_fun, mat)
+
 def test_rfft_axes():
     def fun(x): return to_scalar(np.fft.rfft(x, axis=0))
     d_fun = lambda x : to_scalar(grad(fun)(x))
@@ -142,6 +158,16 @@ def test_rfft_axes():
 
 def test_irfft():
     def fun(x): return to_scalar(np.fft.irfft(x))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    D = 4
+    mat = npr.randn(D, D) / 10.0
+    # ensure hermitian by doing a fft
+    mat = np.fft.rfft(mat)
+    check_grads(fun, mat)
+    check_grads(d_fun, mat)
+
+def test_irfft_ortho():
+    def fun(x): return to_scalar(np.fft.irfft(x, norm='ortho'))
     d_fun = lambda x : to_scalar(grad(fun)(x))
     D = 4
     mat = npr.randn(D, D) / 10.0
