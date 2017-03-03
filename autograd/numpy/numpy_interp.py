@@ -1,11 +1,9 @@
-import numpy as np
-from autograd import numpy as anp
-from autograd import primitive
+from autograd.core import primitive
+from . import numpy_wrapper as anp
 
 def interp(x, xp, yp, left=None, right=None):
     """ Differentiable against yp """
-    if left is None:
-        left = yp[0]
+    if left is None: left = yp[0]
     if right is None: right = yp[-1]
 
     xp = anp.concatenate([[xp[0]], xp, [xp[-1]]])
@@ -14,6 +12,10 @@ def interp(x, xp, yp, left=None, right=None):
     m = make_matrix(x, xp)
     y = anp.inner(m, yp)
     return y
+
+
+# The following are internal functions
+import numpy as np
 
 def W(r, D):
     """ Convolution kernel for linear interpolation.
