@@ -1,20 +1,33 @@
-from autograd.core import primitive
 from . import numpy_wrapper as anp
 
-def interp(x, xp, yp, left=None, right=None):
-    """ Differentiable against yp """
+def _interp_vjp(x, xp, yp, left, right, period, g):
+    from autograd import vector_jacobian_product
+    func = vector_jacobian_product(_interp, argnum=2)
+    return func(x, xp, yp, left, right, period, g)
+
+def _interp(x, xp, yp, left=None, right=None, period=None):
+    """ A partial rewrite of interp that is differentiable against yp """
+    if period is not None:
+        xp = anp.concatenate([[xp[-1] - period], xp, [xp[0] + period]])
+        yp = anp.concatenate([anp.array([yp[-1]]), yp, anp.array([yp[0]])])
+        return _interp(x % period, xp, yp, left, right, None)
+
     if left is None: left = yp[0]
     if right is None: right = yp[-1]
 
     xp = anp.concatenate([[xp[0]], xp, [xp[-1]]])
-    yp = anp.concatenate([anp.array([left]), yp, anp.array([right])])
 
+    yp = anp.concatenate([anp.array([left]), yp, anp.array([right])])
     m = make_matrix(x, xp)
     y = anp.inner(m, yp)
     return y
 
+anp.interp.defvjp(lambda g, ans, vs, gvs, x, xp, yp, left=None, right=None, period=None:
+    _interp_vjp(x, xp, yp, left, right, period, g), argnum=2)
+
 
 # The following are internal functions
+
 import numpy as np
 
 def W(r, D):
