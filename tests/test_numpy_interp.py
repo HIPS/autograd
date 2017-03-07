@@ -37,9 +37,5 @@ def test_interp_period():
     def fun(yp): return to_scalar(np.interp(x, xp, yp, period=10))
     def dfun(yp): return to_scalar(grad(fun)(yp))
 
-    print('xp', xp)
-    print('yp', yp)
-    print('x', x % 10)
-    print('y', np.interp(x, xp, yp, period=10))
     check_grads(fun, yp)
     check_grads(dfun, yp)
