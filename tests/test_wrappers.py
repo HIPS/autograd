@@ -6,7 +6,7 @@ import autograd.numpy.random as npr
 from autograd.util import *
 from autograd import (grad, elementwise_grad, jacobian, value_and_grad,
                       grad_and_aux, hessian_vector_product, hessian, multigrad,
-                      jacobian, vector_jacobian_product, primitive)
+                      jacobian, vector_jacobian_product, primitive, checkpoint)
 from builtins import range
 
 npr.seed(1)
@@ -161,3 +161,44 @@ def test_dtypes():
 
     y = np.random.randn(10, 10).astype(np.float16)
     assert grad(f)(y).dtype.type is np.float16
+
+def test_checkpoint_correctness():
+    bar = lambda x, y: 2*x + y + 5
+    checkpointed_bar = checkpoint(bar)
+    foo = lambda x: bar(x, x/3.) + bar(x, x**2)
+    foo2 = lambda x: checkpointed_bar(x, x/3.) + checkpointed_bar(x, x**2)
+    assert np.allclose(foo(3.), foo2(3.))
+    assert np.allclose(grad(foo)(3.), grad(foo2)(3.))
+
+    baz = lambda *args: sum(args)
+    checkpointed_baz = checkpoint(baz)
+    foobaz = lambda x: baz(x, x/3.)
+    foobaz2 = lambda x: checkpointed_baz(x, x/3.)
+    assert np.allclose(foobaz(3.), foobaz2(3.))
+    assert np.allclose(grad(foobaz)(3.), grad(foobaz2)(3.))
+
+def checkpoint_memory():
+    '''This test is meant to be run manually, since it depends on
+    memory_profiler and its behavior may vary.'''
+    try:
+        from memory_profiler import memory_usage
+    except ImportError:
+        return
+
+    def f(a):
+        for _ in range(10):
+            a = np.sin(a**2 + 1)
+        return a
+    checkpointed_f = checkpoint(f)
+
+    def testfun(f, x):
+        for _ in range(5):
+            x = f(x)
+        return np.sum(x)
+    gradfun = grad(testfun, 1)
+
+    A = npr.RandomState(0).randn(100000)
+    max_usage              = max(memory_usage((gradfun, (f,              A))))
+    max_checkpointed_usage = max(memory_usage((gradfun, (checkpointed_f, A))))
+
+    assert max_checkpointed_usage < max_usage / 2.

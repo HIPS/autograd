@@ -2,7 +2,7 @@
 from __future__ import absolute_import
 from functools import partial
 import autograd.numpy as np
-from autograd.core import make_vjp, getval, isnode, vspace
+from autograd.core import make_vjp, getval, isnode, vspace, primitive
 from .errors import add_error_hints
 from collections import OrderedDict
 from inspect import getargspec
@@ -179,6 +179,18 @@ def multigrad_dict(fun):
         return OrderedDict((argname, grad_dict[argname]) for argname in argdict)
 
     return gradfun
+
+def checkpoint(fun):
+    """Returns a checkpointed version of `fun`, where intermediate values
+    computed during the forward pass of `fun` are discarded and then recomputed
+    for the backward pass. Useful to save memory, effectively trading off time
+    and memory. See e.g. arxiv.org/abs/1604.06174.
+    """
+    def wrapped_grad(argnum, g, ans, vs, gvs, args, kwargs):
+        return make_vjp(fun, argnum)(*args, **kwargs)[0](g)
+    wrapped = primitive(fun)
+    wrapped.vjp = wrapped_grad
+    return wrapped
 
 def attach_name_and_doc(fun, argnum, opname):
     namestr = "{op}_{fun}_wrt_argnum_{argnum}".format(
