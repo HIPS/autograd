@@ -134,7 +134,7 @@ When using the `grad` function, the output must be a scalar, but the functions `
 
 ## Supported and unsupported parts of numpy/scipy
 
-Numpy has [a lot of features](http://docs.scipy.org/doc/numpy/reference/). We've done our best to support most of them.  so far, we've implemented gradients for:
+Numpy has [a lot of features](http://docs.scipy.org/doc/numpy/reference/). We've done our best to support most of them. So far, we've implemented gradients for:
 * most of the [mathematical operations](../autograd/numpy/numpy_grads.py)
 * most of the [array and matrix manipulation routines](../autograd/numpy/numpy_grads.py)
 * some [linear algebra](../autograd/numpy/linalg.py) functions
