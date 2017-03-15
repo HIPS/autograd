@@ -110,6 +110,15 @@ def dict_untake(x, idx, template):
 dict_untake.defvjp(lambda g, ans, vs, gvs, x, idx, template : dict_take(g, idx))
 dict_untake.defvjp_is_zero(argnums=(1, 2))
 
+def make_dict(pairs):
+    keys, vals = zip(*pairs)
+    return _make_dict(make_list(*keys), make_list(*vals))
+@primitive
+def _make_dict(keys, vals):
+    return dict(zip(keys, vals))
+_make_dict.defvjp(lambda g, ans, vs, gvs, keys, vals: [g[key] for key in keys],
+                  argnum=1)
+
 class DictVSpace(VSpace):
     def __init__(self, value):
         self.shape = {k : vspace(v) for k, v in iteritems(value)}
