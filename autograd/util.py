@@ -22,6 +22,8 @@ def unary_nd(f, x, eps=EPS):
     vs = vspace(x)
     nd_grad = np.zeros(vs.size)
     x_flat = vs.flatten(x)
+    if x_flat.dtype != np.float64:
+        nd_grad = nd_grad.astype(x_flat.dtype)
     for d in range(vs.size):
         dx = np.zeros(vs.size)
         dx[d] = eps/2
