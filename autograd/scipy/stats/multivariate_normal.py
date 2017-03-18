@@ -34,19 +34,28 @@ def generalized_outer_product(mat):
     else:
         raise ArithmeticError
 
-def covgrad(x, mean, cov):
+def covgrad(x, mean, cov, allow_singular=False):
+    if allow_singular:
+        raise NotImplementedError("The multivariate normal pdf is not "
+                "differentiable w.r.t. a singular covariance matix")
     # I think once we have Cholesky we can make this nicer.
     solved = np.linalg.solve(cov, (x - mean).T).T
     return lower_half(np.linalg.inv(cov) - generalized_outer_product(solved))
 
-logpdf.defvjp(lambda g, ans, vs, gvs, x, mean, cov: unbroadcast(vs, gvs, -np.expand_dims(g, 1) * np.linalg.solve(cov, (x - mean).T).T), argnum=0)
-logpdf.defvjp(lambda g, ans, vs, gvs, x, mean, cov: unbroadcast(vs, gvs,  np.expand_dims(g, 1) * np.linalg.solve(cov, (x - mean).T).T), argnum=1)
-logpdf.defvjp(lambda g, ans, vs, gvs, x, mean, cov: unbroadcast(vs, gvs, -np.reshape(g, np.shape(g) + (1, 1)) * covgrad(x, mean, cov)), argnum=2)
+def solve(allow_singular):
+    if allow_singular:
+        return lambda A, x: np.dot(np.linalg.pinv(A), x)
+    else:
+        return np.linalg.solve
+
+logpdf.defvjp(lambda g, ans, vs, gvs, x, mean, cov, allow_singular=False: unbroadcast(vs, gvs, -np.expand_dims(g, 1) * solve(allow_singular)(cov, (x - mean).T).T), argnum=0)
+logpdf.defvjp(lambda g, ans, vs, gvs, x, mean, cov, allow_singular=False: unbroadcast(vs, gvs,  np.expand_dims(g, 1) * solve(allow_singular)(cov, (x - mean).T).T), argnum=1)
+logpdf.defvjp(lambda g, ans, vs, gvs, x, mean, cov, allow_singular=False: unbroadcast(vs, gvs, -np.reshape(g, np.shape(g) + (1, 1)) * covgrad(x, mean, cov, allow_singular)), argnum=2)
 
 # Same as log pdf, but multiplied by the pdf (ans).
-pdf.defvjp(lambda g, ans, vs, gvs, x, mean, cov: unbroadcast(vs, gvs, -g * ans * np.linalg.solve(cov, x - mean)), argnum=0)
-pdf.defvjp(lambda g, ans, vs, gvs, x, mean, cov: unbroadcast(vs, gvs,  g * ans * np.linalg.solve(cov, x - mean)), argnum=1)
-pdf.defvjp(lambda g, ans, vs, gvs, x, mean, cov: unbroadcast(vs, gvs, -g * ans * covgrad(x, mean, cov)),          argnum=2)
+pdf.defvjp(lambda g, ans, vs, gvs, x, mean, cov, allow_singular=False: unbroadcast(vs, gvs, -np.expand_dims(ans * g, 1) * solve(allow_singular)(cov, (x - mean).T).T), argnum=0)
+pdf.defvjp(lambda g, ans, vs, gvs, x, mean, cov, allow_singular=False: unbroadcast(vs, gvs,  np.expand_dims(ans * g, 1) * solve(allow_singular)(cov, (x - mean).T).T), argnum=1)
+pdf.defvjp(lambda g, ans, vs, gvs, x, mean, cov, allow_singular=False: unbroadcast(vs, gvs, -np.reshape(ans * g, np.shape(g) + (1, 1)) * covgrad(x, mean, cov, allow_singular)), argnum=2)
 
 entropy.defvjp_is_zero(argnums=(0,))
 entropy.defvjp(lambda g, ans, vs, gvs, mean, cov: unbroadcast(vs, gvs, 0.5 * g * np.linalg.inv(cov).T), argnum=1)
