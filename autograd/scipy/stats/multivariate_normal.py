@@ -4,7 +4,6 @@ import scipy.stats
 import autograd.numpy as np
 from autograd.core import primitive
 from autograd.numpy.numpy_grads import unbroadcast
-from autograd.scipy.linalg import pinvh
 
 pdf    =  primitive(scipy.stats.multivariate_normal.pdf)
 logpdf =  primitive(scipy.stats.multivariate_normal.logpdf)
@@ -36,21 +35,18 @@ def generalized_outer_product(mat):
         raise ArithmeticError
 
 def covgrad(x, mean, cov, allow_singular=False):
+    if allow_singular:
+        raise NotImplementedError("The multivariate normal pdf is not "
+                "differentiable w.r.t. a singular covariance matix")
     # I think once we have Cholesky we can make this nicer.
-    solved = solve(allow_singular)(cov, (x - mean).T).T
-    return lower_half(inv(allow_singular)(cov) - generalized_outer_product(solved))
+    solved = np.linalg.solve(cov, (x - mean).T).T
+    return lower_half(np.linalg.inv(cov) - generalized_outer_product(solved))
 
 def solve(allow_singular):
     if allow_singular:
-        return lambda A, x: np.linalg.lstsq(A, x)[0]
+        return lambda A, x: np.dot(np.linalg.pinv(A), x)
     else:
         return np.linalg.solve
-
-def inv(allow_singular):
-    if allow_singular:
-        return lambda A: pinvh(A)[0]
-    else:
-        return np.linalg.inv
 
 logpdf.defvjp(lambda g, ans, vs, gvs, x, mean, cov, allow_singular=False: unbroadcast(vs, gvs, -np.expand_dims(g, 1) * solve(allow_singular)(cov, (x - mean).T).T), argnum=0)
 logpdf.defvjp(lambda g, ans, vs, gvs, x, mean, cov, allow_singular=False: unbroadcast(vs, gvs,  np.expand_dims(g, 1) * solve(allow_singular)(cov, (x - mean).T).T), argnum=1)

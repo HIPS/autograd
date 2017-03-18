@@ -40,15 +40,15 @@ def test_t_logpdf_broadcast(): combo_check(stats.t.logpdf, [0,1,2,3], [R(4,3)], 
 def test_t_logcdf_broadcast(): combo_check(stats.t.logcdf, [0,2],     [R(4,3)], [R(1,3)**2 + 2.1], [R(4,3)], [R(4,1)**2 + 2.1])
 
 def make_psd(mat): return np.dot(mat.T, mat) + np.eye(mat.shape[0])
-def test_mvn_pdf():    combo_check(mvn.pdf, [0, 1, 2], [R(4)], [R(4)], [make_psd(R(4, 4))], allow_singular=[False, True])
-def test_mvn_logpdf(): combo_check(mvn.logpdf, [0, 1, 2], [R(4)], [R(4)], [make_psd(R(4, 4))], allow_singular=[False, True])
+def test_mvn_pdf():    combo_check(mvn.pdf, [0, 1, 2], [R(4)], [R(4)], [make_psd(R(4, 4))], allow_singular=[False])
+def test_mvn_logpdf(): combo_check(mvn.logpdf, [0, 1, 2], [R(4)], [R(4)], [make_psd(R(4, 4))], allow_singular=[False])
 def test_mvn_entropy():combo_check(mvn.entropy,[0, 1],            [R(4)], [make_psd(R(4, 4))])
 
 C = np.zeros((4, 4))
 C[0, 0] = C[1, 1] = 1
-C += 1e-3 * np.eye(4)
-def test_mvn_pdf_sing_cov(): combo_check(mvn.pdf, [0, 1, 2], [np.concatenate(R(2), np.zeros(2))], [np.concatenate(R(2), np.zeros(2))], [C], [True])
-def test_mvn_logpdf_sing_cov(): combo_check(mvn.logpdf, [0, 1, 2], [np.concatenate(R(2), np.zeros(2))], [np.concatenate(R(2), np.zeros(2))], [C], [True])
+# C += 1e-3 * np.eye(4)
+def test_mvn_pdf_sing_cov(): combo_check(mvn.pdf, [0, 1], [np.concatenate((R(2), np.zeros(2)))], [np.concatenate((R(2), np.zeros(2)))], [C], [True])
+def test_mvn_logpdf_sing_cov(): combo_check(mvn.logpdf, [0, 1], [np.concatenate((R(2), np.zeros(2)))], [np.concatenate((R(2), np.zeros(2)))], [C], [True])
 
 def test_mvn_pdf_broadcast():    combo_check(mvn.pdf, [0, 1, 2], [R(5, 4)], [R(4)], [make_psd(R(4, 4))])
 def test_mvn_logpdf_broadcast(): combo_check(mvn.logpdf, [0, 1, 2], [R(5, 4)], [R(4)], [make_psd(R(4, 4))])
