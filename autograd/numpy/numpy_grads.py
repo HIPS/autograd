@@ -190,14 +190,13 @@ anp.transpose.defvjp(grad_transpose)
 def repeat_to_match_shape(g, vs, axis, keepdims):
     """Returns the array g repeated along axis to fit vector space vs.
        Also returns the number of repetitions of the array."""
-    zero = vs.zeros()
-    if zero.shape == ():
+    if vs.shape == ():
       return g, 1
     axis = list(axis) if isinstance(axis, tuple) else axis
-    shape = anp.array(zero.shape)
+    shape = anp.array(vs.shape)
     shape[axis] = 1
-    num_reps = anp.prod(anp.array(zero.shape)[axis])
-    return anp.reshape(g, shape) + zero, num_reps
+    num_reps = anp.prod(anp.array(vs.shape)[axis])
+    return anp.reshape(g, shape) + vs.zeros(), num_reps
 
 def grad_np_sum(g, ans, vs, gvs, x, axis=None, keepdims=False):
     return repeat_to_match_shape(g, vs, axis, keepdims)[0]
