@@ -193,9 +193,9 @@ def repeat_to_match_shape(g, vs, axis, keepdims):
     if vs.shape == ():
       return g, 1
     axis = list(axis) if isinstance(axis, tuple) else axis
-    shape = anp.array(vs.shape)
+    shape = onp.array(vs.shape)
     shape[axis] = 1
-    num_reps = anp.prod(anp.array(vs.shape)[axis])
+    num_reps = onp.prod(onp.array(vs.shape)[axis])
     return anp.reshape(g, shape) + vs.zeros(), num_reps
 
 def grad_np_sum(g, ans, vs, gvs, x, axis=None, keepdims=False):
