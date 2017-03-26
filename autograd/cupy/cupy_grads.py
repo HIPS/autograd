@@ -3,6 +3,7 @@ import cupy as ocp
 import numpy as np
 
 from autograd.core import primitive, getval, vspace
+from autograd.numpy.numpy_grads import balanced_eq
 from . import cupy_wrapper as acp
 from .cupy_extra import CupyArrayNode, take, take_axis
 from builtins import range, zip
@@ -19,6 +20,9 @@ acp.subtract.defvjp(lambda g, ans, vs, gvs, x, y: unbroadcast(vs, gvs, g))
 acp.subtract.defvjp(lambda g, ans, vs, gvs, x, y: unbroadcast(vs, gvs, -g), argnum=1)
 acp.divide.defvjp(  lambda g, ans, vs, gvs, x, y: unbroadcast(vs, gvs, g / y))
 acp.divide.defvjp(  lambda g, ans, vs, gvs, x, y: unbroadcast(vs, gvs, - g * x / y**2), argnum=1)
+acp.maximum.defvjp( lambda g, ans, vs, gvs, x, y: unbroadcast(vs, gvs, g * balanced_eq(x, ans, y)))
+acp.maximum.defvjp( lambda g, ans, vs, gvs, x, y: unbroadcast(vs, gvs, g * balanced_eq(y, ans, x)),
+                   argnum=1)
 acp.power.defvjp(lambda g, ans, vs, gvs, x, y:
                  unbroadcast(vs, gvs, g * y * x ** acp.where(y, y - 1, 1)))
 
