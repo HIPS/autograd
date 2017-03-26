@@ -57,16 +57,16 @@ def rmsprop(grad, init_params, callback=None, num_iters=100,
     avg_sq_grad = cp.ones(len(x))
     for i in range(num_iters):
         g = flattened_grad(x, i)
-        if callback: callback(unflatten(x), i, unflatten(g))
+        if callback: callback(i, lambda: (unflatten(x), unflatten(g)))
         avg_sq_grad = avg_sq_grad * gamma + g**2 * (1 - gamma)
-        x -= step_size * g/(cp.sqrt(avg_sq_grad) + eps)
+        x -= step_size * g / (cp.sqrt(avg_sq_grad) + eps)
     return unflatten(x)
 
 ### script
 
 if __name__ == '__main__':
-    # Model parameters
-    layer_sizes = [784, 200, 100, 10]
+    # Model parameters (NOTE bigger layer size than examples/neural_net.py)
+    layer_sizes = [784, 1024, 1024, 10]
     L2_reg = 1.0
 
     # Training parameters
@@ -96,8 +96,9 @@ if __name__ == '__main__':
     objective_grad = grad(objective)
 
     print("     Epoch     |    Train accuracy  |       Test accuracy  ")
-    def print_perf(params, iter, gradient):
+    def print_perf(iter, thunk):
         if iter % num_batches == 0:
+            params, gradient = thunk()
             train_acc = accuracy(params, train_images, train_labels)
             test_acc  = accuracy(params, test_images, test_labels)
             print("{:15}|{:20}|{:20}".format(iter//num_batches, train_acc, test_acc))
