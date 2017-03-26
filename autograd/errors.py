@@ -27,7 +27,7 @@ common_errors = [
         "This error *might* be caused by importing numpy instead of autograd.numpy. \n"
         "Check that you have 'import autograd.numpy as np' instead of 'import numpy as np'."),
     ((AttributeError, r"object has no attribute" ),
-        "This error *might* be caused by importing numpy instead of autograd.numpy,"
+        "This error *might* be caused by importing numpy instead of autograd.numpy, \n"
         "or otherwise using a raw numpy function instead of the autograd-wrapped version. \n"
         "Check that you have 'import autograd.numpy as np' instead of 'import numpy as np'."),
 ]

@@ -65,7 +65,8 @@ class primitive(object):
         self.fun = fun
         self.vjps = {}
         self.zero_vjps = set()
-        self.__name__ = fun.__name__
+        self.__name__ = getattr(fun, '__name__', None) \
+                or getattr(fun, 'name', None) or '[unknown]'
         self.__doc__ = fun.__doc__
 
     def __call__(self, *args, **kwargs):
@@ -93,7 +94,8 @@ class primitive(object):
                 errstr = "Gradient of {0} not yet implemented."
             else:
                 errstr = "Gradient of {0} w.r.t. arg number {1} not yet implemented."
-            raise NotImplementedError(errstr.format(self.fun.__name__, argnum))
+            raise NotImplementedError(errstr.format(
+                getattr(self.fun, '__name__', '[unknown]'), argnum))
 
     def defvjp(self, vjpmaker, argnum=0):
         vjpmaker.__name__ = "VJP_{}_of_{}".format(argnum, self.__name__)
