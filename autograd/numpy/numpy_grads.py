@@ -190,26 +190,13 @@ anp.transpose.defvjp(grad_transpose)
 def repeat_to_match_shape(g, vs, axis, keepdims):
     """Returns the array g repeated along axis to fit vector space vs.
        Also returns the number of repetitions of the array."""
-    shape = vs.shape
-    if shape == ():
-        return g, 1
-    elif axis is None:
-        if keepdims:
-            g = anp.sum(g)
-        return anp.full(shape, g, dtype=vs.dtype), anp.prod(shape)
-    elif isinstance(axis, int):
-        if not keepdims:
-            g = anp.expand_dims(g, axis)
-        return anp.repeat(g, shape[axis], axis), shape[axis]
-    elif isinstance(axis, tuple):
-        repeats  = [shape[i] if i in axis else 1 for i in range(len(shape))]
-        expanded = [shape[i] if i not in axis else 1 for i in range(len(shape))]
-        num_reps = anp.prod(anp.array(shape)[list(axis)])
-        if not keepdims:
-            g = anp.reshape(g, expanded)
-        return anp.tile(g, repeats), num_reps
-    else:
-        raise Exception('Axis type {} not valid'.format(type(axis)))
+    if vs.shape == ():
+      return g, 1
+    axis = list(axis) if isinstance(axis, tuple) else axis
+    shape = onp.array(vs.shape)
+    shape[axis] = 1
+    num_reps = onp.prod(onp.array(vs.shape)[axis])
+    return anp.reshape(g, shape) + vs.zeros(), num_reps
 
 def grad_np_sum(g, ans, vs, gvs, x, axis=None, keepdims=False):
     return repeat_to_match_shape(g, vs, axis, keepdims)[0]
