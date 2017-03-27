@@ -116,7 +116,7 @@ def make_dict(pairs):
 @primitive
 def _make_dict(keys, vals):
     return dict(zip(keys, vals))
-_make_dict.defvjp(lambda g, ans, vs, gvs, keys, vals: [g[key] for key in keys],
+_make_dict.defvjp(lambda g, ans, vs, gvs, keys, vals: make_list(*[g[key] for key in keys]),
                   argnum=1)
 
 class DictVSpace(VSpace):
