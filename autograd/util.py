@@ -10,6 +10,7 @@ import autograd.numpy as np
 import itertools as it
 from autograd.convenience_wrappers import grad
 from autograd.core import vspace, vspace_flatten, getval
+from autograd.container_types import make_tuple, make_list, make_dict
 from copy import copy
 
 EPS, RTOL, ATOL = 1e-4, 1e-4, 1e-6
@@ -104,7 +105,7 @@ def flatten(value):
         return np.array([value]), lambda x : x[0]
 
     elif isinstance(getval(value), (tuple, list)):
-        constructor = type(getval(value))
+        constructor = make_tuple if isinstance(getval(value), tuple) else make_list
         if not value:
             return np.array([]), lambda x : constructor()
         flat_pieces, unflatteners = zip(*map(flatten, value))
@@ -112,7 +113,7 @@ def flatten(value):
 
         def unflatten(vector):
             pieces = np.split(vector, split_indices)
-            return constructor(unflatten(v) for unflatten, v in zip(unflatteners, pieces))
+            return constructor(*[unflatten(v) for unflatten, v in zip(unflatteners, pieces)])
 
         return np.concatenate(flat_pieces), unflatten
 
@@ -123,9 +124,9 @@ def flatten(value):
 
         def unflatten(vector):
             pieces = np.split(vector, split_indices)
-            return {key: unflattener(piece)
-                    for piece, unflattener, key in zip(pieces, unflatteners, keys)}
-
+            return make_dict([(key, unflattener(piece))
+                    for piece, unflattener, key in zip(pieces, unflatteners, keys)])
+        
         return np.concatenate(flat_pieces), unflatten
 
     else:
