@@ -95,7 +95,8 @@ def test_tile():
     combo_check(np.tile, [0], [R(1)], reps=[(2,), 2])
 
 def test_kron():
-    combo_check(np.kron, [0,1], [R(5,5), R(4,4)], [R(3,3), R(2,2)])
+    combo_check(np.kron, [0,1], [R(5,5), R(4,4), R(5), R(5,1), R(1,5), R()],
+                                [R(3,3), R(2,2), R(3), R(1,3), R(3,1), R()])
 
 def test_inner(): combo_check(np.inner, [0, 1],
                             [1.5, R(3), R(2, 3)],

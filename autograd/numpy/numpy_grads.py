@@ -166,19 +166,19 @@ def grad_tile(g, ans, vs, gvs, x, reps):
     return anp.reshape(g, x.shape)
 anp.tile.defvjp(grad_tile)
 
-def grad_kron(argnum, G, ans, vs, gvs, A, B):
-    def blocks(G):
-        return map(lambda blockrow: anp.split(blockrow, A.shape[1], 1),
-                                    anp.split(G,        A.shape[0], 0))
-    flat = lambda lst: [item for sublist in lst for item in sublist]
-
+def grad_kron(argnum, G, ans, vs, gvs, orig_A, orig_B):
+    # kron has different promotion rules than dot
+    A, B = anp.atleast_2d(orig_A), anp.atleast_2d(orig_B)
+    shape = list(anp.shape(A) + anp.shape(B))
+    n = anp.ndim(A)
+    shape[n-1], shape[n] = shape[n], shape[n-1]
+    reshaped_G = anp.swapaxes(anp.reshape(G, shape), n-1, n)
     if argnum == 0:
-        Bflat = anp.ravel(B)
-        return anp.array([[anp.dot(Bflat, anp.ravel(Gij))
-                           for Gij in Gi] for Gi in blocks(G)])
+        return anp.reshape(anp.tensordot(reshaped_G, B, axes=anp.ndim(B)),
+                           anp.shape(orig_A))
     else:
-        Aflat = anp.ravel(A)
-        return sum(aij * Gij for aij, Gij in zip(Aflat, flat(blocks(G))))
+        return anp.reshape(anp.tensordot(A, reshaped_G, axes=anp.ndim(A)),
+                           anp.shape(orig_B))
 anp.kron.defvjps(grad_kron, [0, 1])
 
 def grad_transpose(g, ans, vs, gvs, x, axes=None):
