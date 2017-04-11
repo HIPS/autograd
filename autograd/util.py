@@ -126,7 +126,7 @@ def flatten(value):
             pieces = np.split(vector, split_indices)
             return make_dict([(key, unflattener(piece))
                     for piece, unflattener, key in zip(pieces, unflatteners, keys)])
-        
+
         return np.concatenate(flat_pieces), unflatten
 
     else:
