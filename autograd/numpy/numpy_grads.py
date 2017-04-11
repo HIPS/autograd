@@ -167,7 +167,8 @@ def grad_tile(g, ans, vs, gvs, x, reps):
 anp.tile.defvjp(grad_tile)
 
 def grad_kron(argnum, G, ans, vs, gvs, orig_A, orig_B):
-    # kron has different promotion rules than dot
+    # kron has different promotion rules than dot. the reshapes are necessary if
+    # and only if (1) orig_B is 1D or (2) orig_A and/or orig_B are 0D
     A, B = anp.atleast_2d(orig_A), anp.atleast_2d(orig_B)
     shape = list(anp.shape(A) + anp.shape(B))
     n = anp.ndim(A)
