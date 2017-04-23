@@ -397,7 +397,7 @@ anp.atleast_3d.defvjp(grad_reshape_list)
 
 def grad_einsum(argnum, g, ans, vs, gvs, operands, kwargs):
     if isinstance(operands[0], string_types):  # using "ijk" convention.
-        in_subs, out_subs, _ = _parse_einsum_input(operands)
+        in_subs, out_subs, _ = _parse_einsum_input(tuple(map(getval, operands)))
         operands = operands[1:]
 
         in_subs_list = in_subs.split(',')

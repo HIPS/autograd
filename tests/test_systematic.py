@@ -159,6 +159,8 @@ def test_einsum_matmult():    combo_check(np.einsum, [1, 2], ['ij,jk->ik'], [R(2
 def test_einsum_matmult_broadcast(): combo_check(np.einsum, [1, 2], ['...ij,...jk->...ik'],
                                                  [R(2, 3), R(2, 2, 3)],
                                                  [R(3, 4), R(2, 3, 4)])
+def test_einsum_matmult_broadcast_leadzero(): combo_check(np.einsum, [1, 2], ['...ij,...jk->...ik'],
+                                                          [R(0, 2, 3)], [R(0, 3, 4)])
 def test_einsum_covsum():     combo_check(np.einsum, [1, 2], ['ijk,lji->lki'], [R(3, 4, 4)], [R(4, 4, 3)])
 def test_einsum_ellipses(): combo_check(np.einsum, [1, 2], ['...jk,...lj->...lk', '...,...->...'],
                                         [R(4, 4), R(3, 4, 4)],
