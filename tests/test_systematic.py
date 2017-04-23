@@ -184,6 +184,7 @@ def test_einsum2_three_args(): combo_check(np.einsum, [0, 2],
 def test_einsum_naked_sum(): combo_check(np.einsum, [1, 2], ['k,nk->'], [R(5)], [R(10, 5)])
 def test_einsum_naked_sum_ellipsis(): combo_check(np.einsum, [1, 2], ['...k,...nk->...'],
                                                   [R(3, 5)], [R(3, 10, 5)])
+def test_einsum_no_output_indices(): combo_check(np.einsum, [1, 2], ['ij,k'], [R(3,4)], [R(3)])
 
 def test_trace():    combo_check(np.trace, [0], [R(5, 5), R(4, 5), R(5, 4), R(3, 4, 5)], offset=[-1, 0, 1])
 def test_diag():     combo_check(np.diag, [0], [R(5, 5)], k=[-1, 0, 1])
