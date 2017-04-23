@@ -81,6 +81,8 @@ def test_transpose(): combo_check(np.transpose, [0],
                                   [R(2, 3, 4)], axes = [None, [0, 1, 2], [0, 2, 1],
                                                               [2, 0, 1], [2, 1, 0],
                                                               [1, 0, 2], [1, 2, 0]])
+def test_moveaxis(): combo_check(np.moveaxis, [0],
+                                 [R(2, 3, 4)], source=[0, 1, 2], destination=[0, 1, 2])
 def test_repeat(): combo_check(np.repeat, [0], [R(2, 3, 4), R(3, 1)],
                                repeats=[0,1,2], axis = [None, 0, 1])
 
@@ -125,6 +127,7 @@ def test_tensordot_4(): combo_check(np.tensordot, [0, 1],
                                     axes=[1, 2])
 def test_tensordot_5(): combo_check(np.tensordot, [0, 1], [R(4)], [R()], axes=[0])
 def test_tensordot_6(): combo_check(np.tensordot, [0, 1], [R(2,6)], [R(6,3)], axes=[[[-1], [0]]])
+def test_tensordot_7(): combo_check(np.tensordot, [0, 1], [R(2,6)], [R(6,3)], axes=[[-1, 0]])
 
 # Need custom tests because gradient is undefined when arguments are identical.
 def test_maximum(): combo_check(np.maximum, [0, 1],

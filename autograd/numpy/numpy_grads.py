@@ -104,6 +104,8 @@ anp.triu.defvjp(   lambda g, ans, vs, gvs, x, k=0          : anp.triu(g, k=k))
 anp.tril.defvjp(   lambda g, ans, vs, gvs, x, k=0          : anp.tril(g, k=k))
 anp.clip.defvjp(   lambda g, ans, vs, gvs, x, a_min, a_max : g * anp.logical_and(ans != a_min, ans != a_max))
 anp.swapaxes.defvjp(lambda g, ans, vs, gvs, x, axis1, axis2: anp.swapaxes(g, axis2, axis1))
+anp.moveaxis.defvjp(lambda g, ans, vs, gvs, a, source, destination:
+                    anp.moveaxis(g, destination, source))
 anp.rollaxis.defvjp(lambda g, ans, vs, gvs, a, axis, start=0: anp.rollaxis(g, start - 1, axis) if start > axis
                                                  else anp.rollaxis(g, start, axis + 1))
 anp.real_if_close.defvjp(lambda g, ans, vs, gvs, x : match_complex(vs, g))
@@ -285,46 +287,46 @@ def grad_dot(argnum, g, ans, vs, gvs, A, B):
 anp.dot.defvjps(grad_dot, [0, 1])
 
 def grad_tensordot(argnum, g, ans, vs, gvs, A, B, axes=2):
+    if anp.size(A) == anp.size(B) == 0:
+        return g * B if argnum == 0 else g * A
+
     A_ndim = anp.ndim(A)
-    B_ndim = anp.ndim(B)
-    g_ndim = len(gvs.shape)
+    g_axes = onp.arange(anp.ndim(g))
     if type(axes) is int:
-        if axes > 0:
-            axes = (list(range(A_ndim))[-axes:],
-                    list(range(B_ndim))[:axes])
+        axes = max(axes, 0)
+        if argnum == 0:
+            B_axes = onp.arange(anp.ndim(B))
+            return anp.tensordot(g, B, [g_axes[A_ndim-axes:], B_axes[axes:]])
         else:
-            axes = [(), ()] # summing over zero axes
-
-        assert len(axes[0]) == len(axes[1])  # required by tensordot
-
-    def convert_negative_indices(a, axes_list):
-        axes = range(anp.ndim(a))
-        return [axes[i] for i in axes_list]
-
-    N_axes_summed = len(axes[0])
-    if argnum == 0:
-        X, Y = A, B
-        X_ndim, Y_ndim = A_ndim, B_ndim
-        X_axes_summed, Y_axes_summed = axes
-        g_axes_from_Y = list(range(g_ndim))[(X_ndim - N_axes_summed):]
+            A_axes = onp.arange(A_ndim)
+            return anp.tensordot(A, g, [A_axes[:A_ndim-axes], g_axes[:A_ndim-axes]])
+    elif type(axes[0]) is int:
+        B_ndim = anp.ndim(B)
+        axes = [axes[0] % A_ndim, axes[1] % B_ndim]
+        if argnum == 0:
+            B_axes = onp.arange(B_ndim)
+            return anp.tensordot(g, B, [g_axes[A_ndim-1:], onp.delete(B_axes, axes[1])])
+        else:
+            A_axes = onp.arange(A_ndim)
+            return anp.tensordot(A, g, [onp.delete(A_axes, axes[0]), g_axes[:A_ndim-1]])
     else:
-        X, Y = B, A
-        X_ndim, Y_ndim = B_ndim, A_ndim
-        X_axes_summed, Y_axes_summed = axes[::-1]
-        g_axes_from_Y = list(range(g_ndim))[:(Y_ndim - N_axes_summed)]
-
-    X_axes_summed, Y_axes_summed = map(
-        convert_negative_indices, [X, Y], [X_axes_summed, Y_axes_summed])
-
-    Y_axes_ignored = [i for i in range(Y_ndim) if i not in Y_axes_summed]
-    result = anp.tensordot(g, Y, axes=[g_axes_from_Y, Y_axes_ignored])
-    sorted_axes_pairs = sorted(zip(X_axes_summed, Y_axes_summed), key =lambda x : x[1])
-    forward_permutation = ([i for i in range(X_ndim) if i not in X_axes_summed]
-                         + [i for i, _ in sorted_axes_pairs])
-    reverse_permutation = list(anp.argsort(forward_permutation))
-    if result.ndim == 0:
-        result = result[()]
-    return anp.transpose(result, axes=reverse_permutation)
+        B_ndim = anp.ndim(B)
+        A_axes = onp.arange(A_ndim)
+        B_axes = onp.arange(B_ndim)
+        summed_axes = [onp.asarray(axes[0]) % A_ndim,
+                       onp.asarray(axes[1]) % B_ndim]
+        other_axes  = [onp.delete(A_axes, summed_axes[0]),
+                       onp.delete(B_axes, summed_axes[1])]
+        if argnum == 0:
+            out = anp.tensordot(g, B, [g_axes[len(other_axes[0]):], other_axes[1]])
+            perm = onp.argsort(onp.concatenate(
+                (other_axes[0], summed_axes[0][onp.argsort(summed_axes[1])])))
+            return anp.transpose(out, perm)
+        else:
+            out = anp.tensordot(A, g, [other_axes[0], g_axes[:len(other_axes[0])]])
+            perm = onp.argsort(onp.concatenate(
+                (summed_axes[1][onp.argsort(summed_axes[0])], other_axes[1])))
+            return anp.transpose(out, perm)
 anp.tensordot.defvjps(grad_tensordot, [0, 1])
 
 anp.outer.defvjp(lambda g, ans, vs, gvs, a, b : anp.dot(g, b.T))
