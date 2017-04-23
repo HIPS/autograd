@@ -257,3 +257,8 @@ def assert_vspace_match(x, expected_vspace, fun):
 
 isnode = lambda x: type(x) in node_types
 getval = lambda x: x.value if isnode(x) else x
+
+def unbox_if_possible(node):
+    if isnode(node) and not active_progenitors.intersection(node.progenitors):
+        return node.value
+    return node
