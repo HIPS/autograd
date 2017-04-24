@@ -39,11 +39,6 @@ solve.defvjps(grad_solve, [0, 1])
 
 def grad_norm(g, ans, vs, gvs, x, ord=None, axis=None):
     def check_implemented():
-        matrix_norm = (x.ndim==2 and axis is None) or isinstance(axis, tuple)
-        frobenius_norm = ord is None or ord == 'fro'
-        diffable_pnorm = ord is None or ord > 1
-
-    def check_implemented():
         matrix_norm = (x.ndim == 2 and axis is None) or isinstance(axis, tuple)
 
         if matrix_norm:
