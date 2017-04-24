@@ -8,9 +8,6 @@ from numpy.lib.stride_tricks import as_strided
 from builtins import range, zip
 from future.utils import iteritems
 
-def prod(x):
-    return npo.prod(x, dtype=int)
-
 @primitive
 def convolve(A, B, axes=None, dot_axes=[(),()], mode='full'):
     assert mode in ['valid', 'full'], "Mode {0} not yet implemented".format(mode)
