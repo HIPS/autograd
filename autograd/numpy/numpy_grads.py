@@ -383,18 +383,6 @@ anp.atleast_1d.defvjp(grad_reshape_list)
 anp.atleast_2d.defvjp(grad_reshape_list)
 anp.atleast_3d.defvjp(grad_reshape_list)
 
-# @primitive
-# def parse_einsum_input(*args):
-#     return _parse_einsum_input(args)
-# def grad_parse_einsum_input(argnum, g, ans, vs, gvs, args, kwargs):
-#     if isinstance(args[0], string_types):  # using "ijk" convention
-#         pass
-#     else:  # using (op0, sublist0, op1, sublist1, ..., sublistout) convention
-#         pass
-
-
-# parse_einsum_input.defvjp(grad_parse_einsum_input, argnum=2)
-
 def grad_einsum(argnum, g, ans, vs, gvs, operands, kwargs):
     if isinstance(operands[0], string_types):  # using "ijk" convention.
         in_subs, out_subs, _ = _parse_einsum_input(tuple(map(getval, operands)))
