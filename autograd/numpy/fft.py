@@ -46,8 +46,6 @@ def rfft_grad(get_args, irfft_fun, g, ans, vs, gvs, x, *args, **kwargs):
     r = match_complex(vs, truncate_pad((irfft_fun(g, *args, **kwargs)), vs.shape))
     return r
 
-    rfft_fun.defvjp(rfft_grad)
-
 def irfft_grad(get_args, rfft_fun, g, ans, vs, gvs, x, *args, **kwargs):
     axes, gs, norm = get_args(x, *args, **kwargs)
 
