@@ -1,12 +1,14 @@
 from __future__ import absolute_import
 import numpy as onp
 import operator as op
+from numpy.core.einsumfunc import _parse_einsum_input, einsum_symbols_set
 
 from autograd.core import primitive, getval, vspace
 from . import numpy_wrapper as anp
 from .numpy_extra import ArrayNode, take, array_types
 from builtins import range, zip
 from future.utils import string_types
+import string
 
 # ----- Functions that are constant w.r.t. continuous inputs -----
 
@@ -382,28 +384,42 @@ anp.atleast_2d.defvjp(grad_reshape_list)
 anp.atleast_3d.defvjp(grad_reshape_list)
 
 def grad_einsum(argnum, g, ans, vs, gvs, operands, kwargs):
-    # Gradient of einsum is obtained by swapping outgrad with the argument
-    # being differentiated wrt.
     if isinstance(operands[0], string_types):  # using "ijk" convention.
-        subscripts, operands = operands[0], operands[1:]
-        if not '->' in subscripts:
-            raise NotImplementedError("Need indices on both sides.")
+        in_subs, out_subs, _ = _parse_einsum_input(tuple(map(getval, operands)))
+        operands = operands[1:]
+
+        in_subs_list = in_subs.split(',')
         op_num = argnum - 1
-        input_subs, output_subs = subscripts.split('->')
-        input_subs_list = input_subs.split(',')
-        subs_wrt = input_subs_list[op_num]
-        rest_of_ops = operands[:op_num] + operands[op_num + 1:]
-        rest_of_subs = input_subs_list[:op_num] + input_subs_list[op_num + 1:]
-        new_subscripts = ','.join([output_subs] + rest_of_subs) + '->' + subs_wrt
-        return unbroadcast_einsum(vs, gvs, anp.einsum(new_subscripts, *((g,) + rest_of_ops)),
-                                  subs_wrt)
-    else:  # Using (op0, sublist0, op1, sublist1..., sublistout) convention.
+        subs_wrt = in_subs_list[op_num]
+        rest_of_ops = operands[:op_num] + operands[op_num+1:]
+        rest_of_subs = in_subs_list[:op_num] + in_subs_list[op_num+1:]
+
+        # subscripts that only appear in subs_wrt (and not in other subscript lists
+        # or in the output) are implicitly being summed out, as if contracted
+        # against a tensor of ones. we make that tensor of ones explicit to handle
+        # the necessary vjp broadcasting inside einsum.
+        other_named_subs = set(''.join([out_subs] + rest_of_subs))
+        naked_summed = [(i, sub) for (i, sub) in enumerate(subs_wrt)
+                        if sub not in other_named_subs]
+        if naked_summed:
+            naked_summed_dims, ones_subs = zip(*naked_summed)
+            ones_subs = ''.join(ones_subs)
+            ones = onp.ones(onp.array(operands[op_num].shape)[naked_summed_dims])
+            new_input_subs = ','.join([out_subs, ones_subs] + rest_of_subs)
+            new_operands = (g, ones) + rest_of_ops
+        else:
+            new_input_subs = ','.join([out_subs] + rest_of_subs)
+            new_operands = (g,) + rest_of_ops
+
+        new_subscripts = new_input_subs + '->' + subs_wrt
+        return anp.einsum(new_subscripts, *new_operands)
+    else:  # using (op0, sublist0, op1, sublist1, ..., sublistout) convention
         if len(operands) % 2 == 0:
             raise NotImplementedError("Need sublistout argument")
         operands = list(operands)
-        rest_of_ops = [operands[-1]] + operands[:argnum] + operands[(argnum+2):-1] + [operands[argnum+1]]
+        rest_of_ops = [operands[-1]] + operands[:argnum] + \
+                operands[(argnum+2):-1] + [operands[argnum+1]]
         return unbroadcast_einsum(vs, gvs, anp.einsum(g, *rest_of_ops), operands[argnum + 1])
-
 anp.einsum.vjp = grad_einsum
 
 @primitive

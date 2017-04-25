@@ -159,6 +159,8 @@ def test_einsum_matmult():    combo_check(np.einsum, [1, 2], ['ij,jk->ik'], [R(2
 def test_einsum_matmult_broadcast(): combo_check(np.einsum, [1, 2], ['...ij,...jk->...ik'],
                                                  [R(2, 3), R(2, 2, 3)],
                                                  [R(3, 4), R(2, 3, 4)])
+def test_einsum_matmult_broadcast_leadzero(): combo_check(np.einsum, [1, 2], ['...ij,...jk->...ik'],
+                                                          [R(0, 2, 3)], [R(0, 3, 4)])
 def test_einsum_covsum():     combo_check(np.einsum, [1, 2], ['ijk,lji->lki'], [R(3, 4, 4)], [R(4, 4, 3)])
 def test_einsum_ellipses(): combo_check(np.einsum, [1, 2], ['...jk,...lj->...lk', '...,...->...'],
                                         [R(4, 4), R(3, 4, 4)],
@@ -181,6 +183,10 @@ def test_einsum2_matmult_broadcast(): combo_check(np.einsum, [0, 2],
 def test_einsum2_covsum():     combo_check(np.einsum, [0, 2], [R(3, 4, 4)], [(0,1,2)], [R(4, 4, 3)], [(3,1,0)], [(3,2,0)])
 def test_einsum2_three_args(): combo_check(np.einsum, [0, 2],
                                           [R(3, 4, 4)], [(0,1,2)], [R(4, 4, 3)], [(3,1,0)], [R(4, 4, 3)], [(3,3,0)], [(3,2,0)])
+def test_einsum_naked_sum(): combo_check(np.einsum, [1, 2], ['k,nk->'], [R(5)], [R(10, 5)])
+def test_einsum_naked_sum_ellipsis(): combo_check(np.einsum, [1, 2], ['...k,...nk->...'],
+                                                  [R(3, 5)], [R(3, 10, 5)])
+def test_einsum_no_output_indices(): combo_check(np.einsum, [1, 2], ['ij,k'], [R(3,4)], [R(3)])
 
 def test_trace():    combo_check(np.trace, [0], [R(5, 5), R(4, 5), R(5, 4), R(3, 4, 5)], offset=[-1, 0, 1])
 def test_diag():     combo_check(np.diag, [0], [R(5, 5)], k=[-1, 0, 1])
