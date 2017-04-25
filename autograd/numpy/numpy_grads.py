@@ -174,16 +174,14 @@ def grad_kron(argnum, G, ans, vs, gvs, orig_A, orig_B):
     # kron has different promotion rules than dot. the reshapes are necessary if
     # and only if (1) orig_B is 1D or (2) orig_A and/or orig_B are 0D
     A, B = anp.atleast_2d(orig_A), anp.atleast_2d(orig_B)
-    shape = list(anp.shape(A) + anp.shape(B))
+    shape = list(A.shape + B.shape)
     n = anp.ndim(A)
     shape[n-1], shape[n] = shape[n], shape[n-1]
     reshaped_G = anp.swapaxes(anp.reshape(G, shape), n-1, n)
     if argnum == 0:
-        return anp.reshape(anp.tensordot(reshaped_G, B, axes=anp.ndim(B)),
-                           anp.shape(orig_A))
+        return anp.reshape(anp.tensordot(reshaped_G, B, axes=anp.ndim(B)), vs.shape)
     else:
-        return anp.reshape(anp.tensordot(A, reshaped_G, axes=anp.ndim(A)),
-                           anp.shape(orig_B))
+        return anp.reshape(anp.tensordot(A, reshaped_G, axes=anp.ndim(A)), vs.shape)
 anp.kron.defvjps(grad_kron, [0, 1])
 
 def grad_transpose(g, ans, vs, gvs, x, axes=None):
@@ -336,9 +334,10 @@ anp.outer.defvjp(lambda g, ans, vs, gvs, a, b : anp.dot(a.T, g), argnum=1)
 
 def grad_concatenate_args(argnum, g, ans, vs, gvs, axis_args, kwargs):
     axis, args = axis_args[0], axis_args[1:]
-    start = sum([a.shape[axis] for a in args[:argnum-1]])
+    sizes = [a.shape[axis] for a in args[:argnum]]
+    start = sum(sizes[:-1])
     idxs = [slice(None)] * ans.ndim
-    idxs[axis] = slice(start, start + args[argnum-1].shape[axis])
+    idxs[axis] = slice(start, start + sizes[-1])
     return take(g, idxs)
 anp.concatenate_args.vjp = grad_concatenate_args
 
