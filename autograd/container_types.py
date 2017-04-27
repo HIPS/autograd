@@ -8,10 +8,10 @@ import numpy as np
 
 class SequenceNode(Node):
     __slots__ = []
-    def __getitem__(self, idx):
-        return sequence_take(self, idx)
-    def __len__(self):
-        return len(self.value)
+    def __getitem__(self, idx): return sequence_take(self, idx)
+    def __len__(self): return len(self.value)
+    def __add__(self, other): return sequence_extend_right(self, *other)
+    def __radd__(self, other): return sequence_extend_left(self, *other)
 
 register_node(SequenceNode, tuple)
 register_node(SequenceNode, list)
@@ -22,6 +22,22 @@ def sequence_take(A, idx):
 def grad_sequence_take(g, ans, vs, gvs, A, idx):
     return sequence_untake(g, idx, vspace(getval(A)))
 sequence_take.defvjp(grad_sequence_take)
+
+@primitive
+def sequence_extend_right(seq, *elts):
+    return seq + type(seq)(elts)
+def grad_sequence_extend_right(argnum, g, ans, vs, gvs, args, kwargs):
+    seq, elts = args[0], args[1:]
+    return g[:len(seq)] if argnum == 0 else g[len(seq) + argnum - 1]
+sequence_extend_right.vjp = grad_sequence_extend_right
+
+@primitive
+def sequence_extend_left(seq, *elts):
+    return type(seq)(elts) + seq
+def grad_sequence_extend_left(argnum, g, ans, vs, gvs, args, kwargs):
+    seq, elts = args[0], args[1:]
+    return g[len(elts):] if argnum == 0 else g[argnum - 1]
+sequence_extend_left.vjp = grad_sequence_extend_left
 
 @primitive
 def sequence_untake(x, idx, vs):
