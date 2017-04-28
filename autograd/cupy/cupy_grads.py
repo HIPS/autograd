@@ -77,51 +77,50 @@ def grad_dot(argnum, g, ans, vs, gvs, A, B):
 acp.dot.defvjps(grad_dot, [0, 1])
 
 def grad_tensordot(argnum, g, ans, vs, gvs, A, B, axes=2):
-    A_ndim, B_ndim = acp.ndim(A), acp.ndim(B)
+    A_ndim = acp.ndim(A)
+    g_axes = np.arange(acp.ndim(g))
     g_ndim = len(gvs.shape)
-    if type(axes) is int:
-        if axes > 0:
-            axes = (list(range(A_ndim))[-axes:],
-                    list(range(B_ndim))[:axes])
-        else:
-            axes = [(), ()] # summing over zero axes
 
-        assert len(axes[0]) == len(axes[1])  # required by tensordot
-
-    def convert_negative_indices(a, axes_list):
-        axes = range(acp.ndim(a))
-        return [axes[i] for i in axes_list]
-
-    N_axes_summed = len(axes[0])
-    if argnum == 0:
-        X, Y = A, B
-        X_ndim, Y_ndim = A_ndim, B_ndim
-        X_axes_summed, Y_axes_summed = axes
-        g_axes_from_Y = list(range(g_ndim))[(X_ndim - N_axes_summed):]
-    else:
-        X, Y = B, A
-        X_ndim, Y_ndim = B_ndim, A_ndim
-        X_axes_summed, Y_axes_summed = axes[::-1]
-        g_axes_from_Y = list(range(g_ndim))[:(Y_ndim - N_axes_summed)]
-
-    X_axes_summed, Y_axes_summed = map(
-        convert_negative_indices, [X, Y], [X_axes_summed, Y_axes_summed])
-
-    Y_axes_ignored = [i for i in range(Y_ndim) if i not in Y_axes_summed]
-
-    # NOTE(mattjj): cupy.tensordot doesn't handle scalar arguments because it checks
-    # a.ndim and b.ndim instead of using an ndim function
     if g_ndim == 0:
-        result = g * Y
+        if argnum == 0:
+          return g * B
+        else:
+          return A * g
+    if type(axes) is int:
+        axes = max(axes, 0)
+        if argnum == 0:
+            B_axes = np.arange(acp.ndim(B))
+            return acp.tensordot(g, B, [g_axes[A_ndim-axes:], B_axes[axes:]])
+        else:
+            A_axes = np.arange(A_ndim)
+            return acp.tensordot(A, g, [A_axes[:A_ndim-axes], g_axes[:A_ndim-axes]])
+    elif type(axes[0]) is int:
+        B_ndim = acp.ndim(B)
+        axes = [axes[0] % A_ndim, axes[1] % B_ndim]
+        if argnum == 0:
+            B_axes = np.arange(B_ndim)
+            return acp.tensordot(g, B, [g_axes[A_ndim-1:], np.delete(B_axes, axes[1])])
+        else:
+            A_axes = np.arange(A_ndim)
+            return acp.tensordot(A, g, [np.delete(A_axes, axes[0]), g_axes[:A_ndim-1]])
     else:
-        result = acp.tensordot(g, Y, axes=[g_axes_from_Y, Y_axes_ignored])
-    sorted_axes_pairs = sorted(zip(X_axes_summed, Y_axes_summed), key =lambda x : x[1])
-    forward_permutation = ([i for i in range(X_ndim) if i not in X_axes_summed]
-                         + [i for i, _ in sorted_axes_pairs])
-    reverse_permutation = list(np.argsort(forward_permutation))
-    if result.ndim == 0:
-        result = result[()]
-    return acp.transpose(result, axes=reverse_permutation)
+        B_ndim = acp.ndim(B)
+        A_axes = np.arange(A_ndim)
+        B_axes = np.arange(B_ndim)
+        summed_axes = [np.asarray(axes[0]) % A_ndim,
+                       np.asarray(axes[1]) % B_ndim]
+        other_axes  = [np.delete(A_axes, summed_axes[0]),
+                       np.delete(B_axes, summed_axes[1])]
+        if argnum == 0:
+            out = acp.tensordot(g, B, [g_axes[len(other_axes[0]):], other_axes[1]])
+            perm = np.argsort(np.concatenate(
+                (other_axes[0], summed_axes[0][np.argsort(summed_axes[1])])))
+            return acp.transpose(out, perm)
+        else:
+            out = acp.tensordot(A, g, [other_axes[0], g_axes[:len(other_axes[0])]])
+            perm = np.argsort(np.concatenate(
+                (summed_axes[1][np.argsort(summed_axes[0])], other_axes[1])))
+            return acp.transpose(out, perm)
 acp.tensordot.defvjps(grad_tensordot, [0, 1])
 
 def grad_concatenate_args(argnum, g, ans, vs, gvs, axis_args, kwargs):
