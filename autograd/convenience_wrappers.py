@@ -95,6 +95,14 @@ def hessian(fun, argnum=0):
     "Returns a function that computes the exact Hessian."
     return jacobian(jacobian(fun, argnum), argnum)
 
+def make_hvp(fun, argnum=0):
+    """Constructs a function for evaluating the Hessian-vector product at a
+    point, which may be useful when evaluating many Hessian-vector products at
+    the same point while caching the results of the forward pass."""
+    def hvp_maker(*args, **kwargs):
+        return make_vjp(grad(fun, argnum), argnum)(*args, **kwargs)[0]
+    return hvp_maker
+
 def hessian_vector_product(fun, argnum=0):
     """Builds a function that returns the exact Hessian-vector product.
     The returned function has arguments (*args, vector, **kwargs), and takes

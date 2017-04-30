@@ -5,8 +5,9 @@ import autograd.numpy as np
 import autograd.numpy.random as npr
 from autograd.util import *
 from autograd import (grad, elementwise_grad, jacobian, value_and_grad,
-                      grad_and_aux, hessian_vector_product, hessian, multigrad,
-                      jacobian, vector_jacobian_product, primitive, checkpoint)
+                      grad_and_aux, hessian_vector_product, hessian, make_hvp,
+                      multigrad, jacobian, vector_jacobian_product, primitive,
+                      checkpoint)
 from builtins import range
 
 npr.seed(1)
@@ -74,7 +75,6 @@ def test_elementwise_grad():
     numeric = np.squeeze(np.array([nd(simple_fun, A[i]) for i in range(len(A))]))
     check_equivalent(exact, numeric)
 
-
 def test_elementwise_grad_multiple_args():
     def simple_fun(a, b):
         return a + np.sin(a) + np.cosh(b)
@@ -87,13 +87,20 @@ def test_elementwise_grad_multiple_args():
     numeric = np.squeeze(np.array([nd(simple_fun, A, B[i])[argnum] for i in range(len(B))]))
     check_equivalent(exact, numeric)
 
-
 def test_hessian_vector_product():
     fun = lambda a: np.sum(np.sin(a))
     a = npr.randn(5)
     v = npr.randn(5)
     H = hessian(fun)(a)
     check_equivalent(np.dot(H, v), hessian_vector_product(fun)(a, v))
+
+def test_hvp():
+    fun = lambda a: np.sum(np.sin(a))
+    a = npr.randn(5)
+    v = npr.randn(5)
+    H = hessian(fun)(a)
+    hvp = make_hvp(fun)(a)
+    check_equivalent(np.dot(H, v), hvp(v))
 
 def test_hessian_matrix_product():
     fun = lambda a: np.sum(np.sin(a))
