@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-from .core import primitive, make_vjp
+from .core import primitive, make_vjp, getval
 from . import container_types
 from .container_types import make_tuple, make_list, make_dict
 from .convenience_wrappers import (grad, multigrad, multigrad_dict, elementwise_grad,

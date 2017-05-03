@@ -71,6 +71,7 @@ class ArrayVSpace(VSpace):
         self.shape = value.shape
         self.size  = value.size
         self.dtype = value.dtype
+        self.ndim  = value.ndim
         self.scalartype = float
 
     def zeros(self):
