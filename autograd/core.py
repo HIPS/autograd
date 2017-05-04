@@ -28,18 +28,16 @@ def forward_pass(fun, args, kwargs, argnum=0):
     return start_node, end_node
 
 def backward_pass(g, end_node, start_node):
-    outgrads = defaultdict(list)
-    outgrads[end_node] = [g]
-    assert_vspace_match(outgrads[end_node][0], end_node.vspace, None)
+    outgrads = {}
+    outgrads[end_node] = g
     for node in toposort(end_node, start_node):
-        if node not in outgrads: continue
-        cur_outgrad = vsum(node.vspace, *outgrads[node])
+        cur_outgrad = outgrads.get(node, node.vspace.zeros())
         function, args, kwargs, parents = node.recipe
         for argnum, parent in parents:
             outgrad = function.vjp(argnum, cur_outgrad, node,
                                    parent.vspace, node.vspace, args, kwargs)
-            outgrads[parent].append(outgrad)
-            assert_vspace_match(outgrad, parent.vspace, function)
+            outgrads[parent] = vsum(parent.vspace, outgrad, outgrads[parent]) \
+                    if parent in outgrads else vsum(parent.vspace, outgrad)
     return cur_outgrad
 
 active_progenitors = set()
