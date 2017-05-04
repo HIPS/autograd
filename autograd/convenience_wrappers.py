@@ -85,11 +85,11 @@ def value_and_multigrad(fun, argnums=[0]):
 
 def multigrad(fun, argnums=[0]):
     """Returns a function that returns gradients wrt multiple arguments
-    simultaneously."""    
+    simultaneously."""
     double_val_fun = value_and_multigrad(fun, argnums=argnums)
     def multigrad_fun(*args, **kwargs):
         return double_val_fun(*args, **kwargs)[0]
-    return multgrad_fun
+    return multigrad_fun
 
 def elementwise_grad(fun, argnum=0):
     """Like `jacobian`, but produces a function which computes just the diagonal
