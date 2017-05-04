@@ -88,7 +88,7 @@ def multigrad(fun, argnums=[0]):
     simultaneously."""
     double_val_fun = value_and_multigrad(fun, argnums=argnums)
     def multigrad_fun(*args, **kwargs):
-        return double_val_fun(*args, **kwargs)[0]
+        return double_val_fun(*args, **kwargs)[1]
     return multigrad_fun
 
 def elementwise_grad(fun, argnum=0):
