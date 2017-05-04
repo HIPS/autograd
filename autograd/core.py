@@ -31,7 +31,8 @@ def backward_pass(g, end_node, start_node):
     outgrads = {}
     outgrads[end_node] = g
     for node in toposort(end_node, start_node):
-        cur_outgrad = outgrads.get(node, node.vspace.zeros())
+        if node not in outgrads: continue
+        cur_outgrad = outgrads[node]
         function, args, kwargs, parents = node.recipe
         for argnum, parent in parents:
             outgrad = function.vjp(argnum, cur_outgrad, node,
