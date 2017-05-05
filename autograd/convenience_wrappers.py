@@ -17,6 +17,9 @@ def grad(fun, argnum=0):
     arguments as `fun`, but returns the gradient instead. The function `fun`
     should be scalar-valued. The gradient has the same type as the argument."""
 
+    if hasattr(fun, 'gradfuns') and argnum in fun.gradfuns:
+        return fun.gradfuns[argnum]
+
     def scalar_fun(*args, **kwargs):
         return as_scalar(fun(*args, **kwargs))
 

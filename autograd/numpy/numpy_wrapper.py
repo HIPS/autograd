@@ -69,6 +69,8 @@ def column_stack(tup):
 def array(A, *args, **kwargs):
     if isinstance(A, _np.ndarray):
         return _np.array(A, *args, **kwargs)
+    # elif isinstance(getval(A), _np.ndarray):
+    #     raise NotImplementedError  # TODO do something here
     else:
         raw_array = _np.array(A, *args, **kwargs)
         return wrap_if_nodes_inside(raw_array)
