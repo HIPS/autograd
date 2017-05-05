@@ -2,7 +2,8 @@
 from __future__ import absolute_import
 from functools import partial
 import autograd.numpy as np
-from autograd.core import make_vjp, getval, isnode, vspace, primitive
+from autograd.core import make_vjp, getval, isnode, vspace, primitive, unbox_if_possible
+from autograd.container_types import make_tuple
 from .errors import add_error_hints
 from collections import OrderedDict
 from inspect import getargspec
@@ -127,9 +128,9 @@ def value_and_grad(fun, argnum=0):
     in scipy.optimize"""
     def double_val_fun(*args, **kwargs):
         val = fun(*args, **kwargs)
-        return val, getval(val)
+        return make_tuple(val, unbox_if_possible(val))
     gradval_and_val = grad_and_aux(double_val_fun, argnum)
-    flip = lambda x, y: (y, x)
+    flip = lambda x, y: make_tuple(y, x)
     return lambda *args, **kwargs: flip(*gradval_and_val(*args, **kwargs))
 
 def grad_and_aux(fun, argnum=0):

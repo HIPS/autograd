@@ -30,6 +30,9 @@ def test_value_and_grad():
     check_equivalent(fun(x), dfun_both(x)[0])
     check_equivalent(dfun(x), dfun_both(x)[1])
 
+    def fun2(x): return dfun_both(x)[0]
+    check_grads(fun2, x)
+
 def test_hessian():
     # Check Hessian of a quadratic function.
     D = 5
