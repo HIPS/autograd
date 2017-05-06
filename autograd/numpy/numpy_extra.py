@@ -67,6 +67,7 @@ class ArrayNode(Node):
 
 class ArrayVSpace(VSpace):
     def __init__(self, value):
+        value = np.array(value, copy=False)
         self.shape = value.shape
         self.size  = value.size
         self.dtype = value.dtype
@@ -120,11 +121,11 @@ array_types = set([anp.ndarray, ArrayNode])
 
 for type_ in [float, anp.float64, anp.float32, anp.float16]:
     register_node(ArrayNode, type_)
-    register_vspace(lambda x: ArrayVSpace(np.array(x)), type_)
+    register_vspace(ArrayVSpace, type_)
 
 for type_ in [complex, anp.complex64, anp.complex128]:
     register_node(ArrayNode, type_)
-    register_vspace(lambda x: ComplexArrayVSpace(np.array(x)), type_)
+    register_vspace(ComplexArrayVSpace, type_)
 
 # These numpy.ndarray methods are just refs to an equivalent numpy function
 nondiff_methods = ['all', 'any', 'argmax', 'argmin', 'argpartition',
