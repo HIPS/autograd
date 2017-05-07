@@ -5,9 +5,8 @@ import autograd.numpy as np
 import autograd.numpy.random as npr
 from autograd.util import *
 from autograd import (grad, elementwise_grad, jacobian, value_and_grad,
-                      grad_and_aux, hessian_vector_product, hessian, make_hvp,
-                      multigrad, jacobian, vector_jacobian_product, primitive,
-                      checkpoint)
+                      hessian_vector_product, hessian, make_hvp, multigrad,
+                      jacobian, vector_jacobian_product, primitive, checkpoint)
 from builtins import range
 
 npr.seed(1)

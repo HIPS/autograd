@@ -23,13 +23,31 @@ def grad(fun, argnum=0):
     def scalar_fun(*args, **kwargs):
         return as_scalar(fun(*args, **kwargs))
 
+    vjp_fun = make_vjp(scalar_fun, argnum)
+
     @attach_name_and_doc(fun, argnum, 'Gradient')
     @add_error_hints
-    def gradfun(*args,**kwargs):
+    def gradfun(*args, **kwargs):
         args = list(args)
         args[argnum] = safe_type(args[argnum])
-        vjp, ans = make_vjp(scalar_fun, argnum)(*args, **kwargs)
+        vjp, ans = vjp_fun(*args, **kwargs)
         return vjp(cast_to_same_dtype(1.0, ans))
+
+    return gradfun
+
+def value_and_grad(fun, argnum=0):
+    def scalar_fun(*args, **kwargs):
+        return as_scalar(fun(*args, **kwargs))
+
+    vjp_fun = make_vjp(scalar_fun, argnum)
+
+    @attach_name_and_doc(fun, argnum, 'Value and gradient')
+    @add_error_hints
+    def gradfun(*args, **kwargs):
+        args = list(args)
+        args[argnum] = safe_type(args[argnum])
+        vjp, ans = vjp_fun(*args, **kwargs)
+        return make_tuple(ans, vjp(cast_to_same_dtype(1.0, ans)))
 
     return gradfun
 
@@ -125,29 +143,6 @@ def vector_jacobian_product(fun, argnum=0):
         args, vector = args[:-1], args[-1]
         return np.tensordot(vector, fun(*args, **kwargs), axes=np.ndim(vector))
     return jacobian(vector_dot_fun, argnum)  # Grad wrt original input.
-
-def value_and_grad(fun, argnum=0):
-    """Returns a function that returns both value and gradient. Suitable for use
-    in scipy.optimize"""
-    def double_val_fun(*args, **kwargs):
-        val = fun(*args, **kwargs)
-        return make_tuple(val, unbox_if_possible(val))
-    gradval_and_val = grad_and_aux(double_val_fun, argnum)
-    flip = lambda x, y: make_tuple(y, x)
-    return lambda *args, **kwargs: flip(*gradval_and_val(*args, **kwargs))
-
-def grad_and_aux(fun, argnum=0):
-    """Builds a function that returns the gradient of the first output and the
-    (unmodified) second output of a function that returns two outputs."""
-    def grad_and_aux_fun(*args, **kwargs):
-        saved = lambda: None
-        def return_val_save_aux(*args, **kwargs):
-            val, saved.aux = fun(*args, **kwargs)
-            return val
-        gradval = grad(return_val_save_aux, argnum)(*args, **kwargs)
-        return gradval, saved.aux
-
-    return grad_and_aux_fun
 
 def multigrad_dict(fun):
     "Takes gradients wrt all arguments simultaneously,"
