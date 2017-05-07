@@ -40,36 +40,8 @@ class RNNSuite:
         self.fn = autograd_rnn
         self.grad_fn = grad(self.fn)
 
-        # Set up for time_rnn_backward
-        # self.rnn_forward()
-
-    # def rnn_forward(self):
-    #     def scalar_fun(*args, **kwargs):
-    #         return as_scalar(self.fn(*args, **kwargs))
-    #     argnum = 0
-    #     args = list(((self.W1,self.b1,self.Wout,self.bout),self.x,self.l,self.n))
-    #     args[argnum] = safe_type(args[argnum])
-    #     self.vjp, self.ans = make_vjp(scalar_fun, argnum)(*args)
-    #     pass
-
-    # def rnn_backward(self):
-    #     self.vjp(cast_to_same_dtype(1.0,self.ans))
-    #     pass
-
     def rnn_grad(self):
         self.grad_fn((self.W1,self.b1,self.Wout,self.bout),self.x,self.l,self.n)
-
-    # def time_rnn_forward(self):
-    #     self.rnn_forward()
-
-    # def peakmem_rnn_forward(self):
-    #     self.rnn_forward()
-
-    # def time_rnn_backward(self):
-    #     self.rnn_backward()
-
-    # def peakmem_rnn_backward(self):
-    #     self.rnn_backward()
 
     def time_rnn_grad(self):
         self.rnn_grad()
