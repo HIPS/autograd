@@ -10,8 +10,7 @@ import autograd.numpy as np
 
 class RNNSuite:
     """
-    An example benchmark that times the performance of various kinds
-    of iterating over dictionaries in Python.
+    Checking speed on a vanilla RNN.
     """
 
     # NOTE: this is run each time we run a benchmark.
