@@ -40,6 +40,7 @@ def backward_pass(g, end_node, start_node):
                                    parent.vspace, node.vspace, args, kwargs)
             outgrads[parent].append(outgrad)
             assert_vspace_match(outgrad, parent.vspace, function)
+        del outgrads[node]
     return cur_outgrad
 
 active_progenitors = set()
