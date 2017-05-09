@@ -28,20 +28,33 @@ def forward_pass(fun, args, kwargs, argnum=0):
     return start_node, end_node
 
 def backward_pass(g, end_node, start_node):
-    outgrads = defaultdict(list)
-    outgrads[end_node] = [g]
+    outgrads = {end_node : (g, False)}
     assert_vspace_match(outgrads[end_node][0], end_node.vspace, None)
     for node in toposort(end_node, start_node):
         if node not in outgrads: continue
-        cur_outgrad = vsum(node.vspace, *outgrads[node])
+        cur_outgrad = outgrads[node]
         function, args, kwargs, parents = node.recipe
         for argnum, parent in parents:
-            outgrad = function.vjp(argnum, cur_outgrad, node,
+            outgrad = function.vjp(argnum, cur_outgrad[0], node,
                                    parent.vspace, node.vspace, args, kwargs)
-            outgrads[parent].append(outgrad)
             assert_vspace_match(outgrad, parent.vspace, function)
+            outgrads[parent] = add_outgrads(parent.vspace, outgrads.get(parent), outgrad)
         del outgrads[node]
-    return cur_outgrad
+    return cur_outgrad[0]
+
+def add_outgrads(vspace, prev_g_flagged, g):
+    if prev_g_flagged is None:
+        if type(getval(g)) == SparseObject:
+            return primitive_mut_add(vspace, vspace.zeros(), g), True
+        else:
+            return g, False
+    else:
+        prev_g, mutable = prev_g_flagged
+        if mutable:
+            return primitive_mut_add(vspace, prev_g, g), True
+        else:
+            prev_g_mutable = primitive_mut_add(vspace, vspace.zeros(), prev_g)
+            return primitive_mut_add(vspace, prev_g_mutable, g), True
 
 active_progenitors = set()
 
@@ -116,6 +129,14 @@ class nograd_primitive(primitive):
         argvals = map(getval, args)
         return self.fun(*argvals, **kwargs)
 
+@primitive
+def primitive_mut_add(vspace, x_prev, x_new):
+    if type(x_new) == SparseObject:
+        return x_new.mut_add(x_prev)
+    else:
+        return vspace.mut_add(x_prev, x_new)
+primitive_mut_add.vjp = lambda argnum, g, *args : g
+
 def new_progenitor(x):
     if isnode(x):
         node = new_node(x.value, (identity, (x,), {}, [(0, x)]), x.progenitors)
@@ -123,23 +144,6 @@ def new_progenitor(x):
         node = new_node(x,       (identity, (x,), {}, []      ), set())
     node.progenitors = node.progenitors | {node}
     return node
-
-def vsum(vspace, *args):
-    if len(args) == 1 and type(getval(args[0])) != SparseObject:
-        return args[0]
-    else:
-        return primitive_vsum(vspace, *args)
-
-@primitive
-def primitive_vsum(vspace, *args):
-    ans = vspace.zeros()
-    for arg in args:
-        if type(arg) == SparseObject:
-            ans = arg.mut_add(ans)
-        else:
-            ans = vspace.mut_add(ans, arg)
-    return ans
-primitive_vsum.vjp = lambda arg, g, *args : g
 
 @primitive
 def identity(x) : return x
