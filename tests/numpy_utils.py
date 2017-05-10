@@ -6,6 +6,8 @@ from autograd import grad, primitive
 from autograd.util import check_equivalent, check_grads, to_scalar
 from builtins import range
 import warnings
+import coverage
+cover = coverage.Coverage()
 
 test_complex = True
 
@@ -21,6 +23,8 @@ def combo_check(fun, argnums, *args, **kwargs):
         print(".", end=' ')
 
 def check_fun_and_grads(fun, args, kwargs, argnums):
+    cover.load()
+    cover.start()
     wrt_args = [args[i] for i in argnums]
     try:
         if isinstance(fun, primitive):
@@ -54,6 +58,8 @@ def check_fun_and_grads(fun, args, kwargs, argnums):
         except:
             print("Second derivative test failed! Args were", args, kwargs)
             raise
+    cover.stop()
+    cover.save()
 
 def stat_check(fun, test_complex=test_complex):
     # Tests functions that compute statistics, like sum, mean, etc

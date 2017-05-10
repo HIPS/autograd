@@ -10,3 +10,10 @@ MANIFEST
 *.so
 *.c
 autograd.egg-info/
+
+# Unit test / coverage reports
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*,cover
