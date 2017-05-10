@@ -18,7 +18,7 @@ before_install:
   - conda update --yes conda
   - conda config --add channels conda-forge
 install:
-  - conda install --yes python=$TRAVIS_PYTHON_VERSION pip numpy scipy nose future, coveralls
+  - conda install --yes python=$TRAVIS_PYTHON_VERSION pip numpy scipy nose future coveralls
   - pip install -v .
 script: nosetests tests
 after_success:
