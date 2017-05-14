@@ -15,10 +15,10 @@ wrap_namespace(npla.__dict__, globals())
 # https://people.maths.ox.ac.uk/gilesm/files/NA-08-01.pdf
 
 # transpose by swapping last two dimensions
-T = lambda x: anp.swapaxes(x, -1, -2)
+def T(x): return anp.swapaxes(x, -1, -2)
 
 # add two dimensions to the end of x
-add2d = lambda x: anp.array(x)[...,None,None]
+def add2d(x): return anp.reshape(x, anp.shape(x) + (1, 1))
 
 det.defvjp(lambda g, ans, vs, gvs, x: add2d(g) * add2d(ans) * T(inv(x)))
 slogdet.defvjp(lambda g, ans, vs, gvs, x: add2d(g[1]) * T(inv(x)))
