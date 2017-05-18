@@ -45,6 +45,9 @@ def adam(grad, init_params, callback=None, num_iters=100,
     It's basically RMSprop with momentum and some correction terms."""
     flattened_grad, unflatten, x = flatten_func(grad, init_params)
 
+    step_size = np.repeat(step_size, num_iters) if np.isscalar(step_size) \
+            else step_size
+
     m = np.zeros(len(x))
     v = np.zeros(len(x))
     for i in range(num_iters):
@@ -54,5 +57,5 @@ def adam(grad, init_params, callback=None, num_iters=100,
         v = (1 - b2) * (g**2) + b2 * v  # Second moment estimate.
         mhat = m / (1 - b1**(i + 1))    # Bias correction.
         vhat = v / (1 - b2**(i + 1))
-        x = x - step_size*mhat/(np.sqrt(vhat) + eps)
+        x = x - step_size[i] * mhat/(np.sqrt(vhat) + eps)
     return unflatten(x)

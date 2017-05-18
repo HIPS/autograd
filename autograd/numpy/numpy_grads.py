@@ -385,7 +385,7 @@ anp.atleast_3d.defvjp(grad_reshape_list)
 def grad_einsum(argnum, g, ans, vs, gvs, operands, kwargs):
     if isinstance(operands[0], string_types):  # using "ijk" convention.
         in_subs, out_subs, _ = _parse_einsum_input(tuple(map(getval, operands)))
-        operands = operands[1:]
+        string, operands = operands[0], operands[1:]
 
         in_subs_list = in_subs.split(',')
         op_num = argnum - 1
@@ -411,7 +411,7 @@ def grad_einsum(argnum, g, ans, vs, gvs, operands, kwargs):
             new_operands = (g,) + rest_of_ops
 
         new_subscripts = new_input_subs + '->' + subs_wrt
-        return anp.einsum(new_subscripts, *new_operands)
+        return unbroadcast(vs, gvs, anp.einsum(new_subscripts, *new_operands))
     else:  # using (op0, sublist0, op1, sublist1, ..., sublistout) convention
         if len(operands) % 2 == 0:
             raise NotImplementedError("Need sublistout argument")
