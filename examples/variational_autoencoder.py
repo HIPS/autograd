@@ -117,7 +117,7 @@ if __name__ == '__main__':
     def print_perf(combined_params, iter, grad):
         if iter % 10 == 0:
             gen_params, rec_params = combined_params
-            bound = np.mean(objective(combined_params, iter))
+            bound = objective(combined_params, iter)
             print("{:15}|{:20}".format(iter//num_batches, bound))
 
             fake_data = generate_from_prior(gen_params, 20, latent_dim, seed)
