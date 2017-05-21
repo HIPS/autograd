@@ -4,6 +4,7 @@ import autograd.numpy as np
 
 from autograd.core import primitive
 
+### Gamma functions ###
 polygamma    = primitive(scipy.special.polygamma)
 psi          = primitive(scipy.special.psi)        # psi(x) is just polygamma(0, x)
 digamma      = primitive(scipy.special.digamma)    # digamma is another name for psi.
@@ -26,7 +27,6 @@ multigammaln.defvjp(lambda g, ans, vs, gvs, a, d:
 multigammaln.defvjp_is_zero(argnums=(1,))
 
 ### Bessel functions ###
-
 j0 = primitive(scipy.special.j0)
 y0 = primitive(scipy.special.y0)
 j1 = primitive(scipy.special.j1)
@@ -60,3 +60,9 @@ erfcinv = primitive(scipy.special.erfcinv)
 erfinv.defvjp(lambda g, ans, vs, gvs, x: g * root_pi / 2 * np.exp(erfinv(x)**2))
 erfcinv.defvjp(lambda g, ans, vs, gvs, x: -g * root_pi / 2 * np.exp(erfcinv(x)**2))
 
+### Logit and Expit ###
+logit = primitive(scipy.special.logit)
+expit = primitive(scipy.special.expit)
+
+logit.defvjp(lambda g, ans, vs, gvs, x: g / ( x * (1 - x)))
+expit.defvjp(lambda g, ans, vs, gvs, x: g * ans * (1 - ans))
