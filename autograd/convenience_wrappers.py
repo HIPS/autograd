@@ -70,18 +70,27 @@ def grad_named(fun, argname):
     arg_index = getargspec(fun).args.index(argname)
     return grad(fun, arg_index)
 
-def multigrad(fun, argnums=[0]):
-    """Takes gradients wrt multiple arguments simultaneously."""
+def value_and_multigrad(fun, argnums=[0]):
+    """Returns a function that returns both value and gradients wrt multiple
+    arguments simultaneously."""
     def combined_arg_fun(multi_arg, *args, **kwargs):
         extra_args_list = list(args)
         for argnum_ix, arg_ix in enumerate(argnums):
             extra_args_list[arg_ix] = multi_arg[argnum_ix]
         return fun(*extra_args_list, **kwargs)
-    gradfun = grad(combined_arg_fun, argnum=0)
+    gradfun = value_and_grad(combined_arg_fun, argnum=0)
     def gradfun_rearranged(*args, **kwargs):
         multi_arg = tuple([args[i] for i in argnums])
         return gradfun(multi_arg, *args, **kwargs)
     return gradfun_rearranged
+
+def multigrad(fun, argnums=[0]):
+    """Returns a function that returns gradients wrt multiple arguments
+    simultaneously."""
+    double_val_fun = value_and_multigrad(fun, argnums=argnums)
+    def multigrad_fun(*args, **kwargs):
+        return double_val_fun(*args, **kwargs)[1]
+    return multigrad_fun
 
 def elementwise_grad(fun, argnum=0):
     """Like `jacobian`, but produces a function which computes just the diagonal

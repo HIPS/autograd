@@ -7,7 +7,7 @@ from autograd.util import *
 from autograd import (grad, elementwise_grad, jacobian, value_and_grad,
                       grad_and_aux, hessian_vector_product, hessian, make_hvp,
                       multigrad, jacobian, vector_jacobian_product, primitive,
-                      checkpoint)
+                      checkpoint, value_and_multigrad)
 from builtins import range
 
 npr.seed(1)
@@ -61,6 +61,28 @@ def test_multigrad():
     exact = multigrad(complicated_fun, argnums=[3, 1])(A, B, C, D, E, f=F, g=G)
     numeric = nd(complicated_fun_3_1, D, B)
     check_equivalent(exact, numeric)
+
+def test_value_and_multigrad():
+    def complicated_fun(a,b,c,d,e,f=1.1, g=9.0):
+        return a + np.sin(b) + np.cosh(c) + np.cos(d) + np.tan(e) + f + g
+
+    A = 0.5
+    B = -0.3
+    C = 0.2
+    D = -1.1
+    E = 0.7
+    F = 0.6
+    G = -0.1
+
+    dfun = multigrad(complicated_fun, argnums=[3, 1])
+    dfun_both = value_and_multigrad(complicated_fun, argnums=[3, 1])
+
+    check_equivalent(complicated_fun(A, B, C, D, E, f=F, g=G),
+                     dfun_both(A, B, C, D, E, f=F, g=G)[0])
+
+    check_equivalent(dfun(A, B, C, D, E, f=F, g=G),
+                     dfun_both(A, B, C, D, E, f=F, g=G)[1])
+
 
 def test_multigrad_onearg():
     fun = lambda x, y: np.sum(x + np.sin(y))
