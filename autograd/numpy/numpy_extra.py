@@ -10,16 +10,16 @@ from . import numpy_wrapper as anp
 def take(A, idx):
     return A[idx]
 def grad_take(g, ans, vs, gvs, A, idx):
-    return untake(g, idx, A)
+    return untake(g, idx, A.vspace)
 take.defvjp(grad_take)
 
 @primitive
-def untake(x, idx, template):
+def untake(x, idx, vs):
     def mut_add(A):
         np.add.at(A, idx, x)
         return A
-    return SparseObject(vspace(template), mut_add)
-untake.defvjp(lambda g, ans, vs, gvs, x, idx, template : take(g, idx))
+    return SparseObject(vs, mut_add)
+untake.defvjp(lambda g, ans, vs, gvs, x, idx, _: take(g, idx))
 untake.defvjp_is_zero(argnums=(1, 2))
 
 Node.__array_priority__ = 90.0
