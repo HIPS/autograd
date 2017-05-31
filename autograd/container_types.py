@@ -4,7 +4,7 @@ from autograd.core import (primitive, Node, VSpace, register_node, vspace,
 from builtins import zip
 from future.utils import iteritems
 from functools import partial
-import numpy as np
+import autograd.numpy as np
 
 class SequenceNode(Node):
     __slots__ = []
