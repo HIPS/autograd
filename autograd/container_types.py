@@ -20,7 +20,7 @@ register_node(SequenceNode, list)
 def sequence_take(A, idx):
     return A[idx]
 def grad_sequence_take(g, ans, vs, gvs, A, idx):
-    return sequence_untake(g, idx, vspace(getval(A)))
+    return sequence_untake(g, idx, vs)
 sequence_take.defvjp(grad_sequence_take)
 
 @primitive
@@ -51,7 +51,7 @@ def sequence_untake(x, idx, vs):
         result[idx] = accum(result[idx])
         return vs.sequence_type(result)
     return SparseObject(vs, mut_add)
-sequence_untake.defvjp(lambda g, ans, vs, gvs, x, idx, template : sequence_take(g, idx))
+sequence_untake.defvjp(lambda g, ans, vs, gvs, x, idx, _: sequence_take(g, idx))
 sequence_untake.defvjp_is_zero(argnums=(1, 2))
 
 @primitive
@@ -113,17 +113,16 @@ register_node(DictNode, dict)
 def dict_take(A, idx):
     return A[idx]
 def grad_dict_take(g, ans, vs, gvs, A, idx):
-    return dict_untake(g, idx, A)
+    return dict_untake(g, idx, vs)
 dict_take.defvjp(grad_dict_take)
 
 @primitive
-def dict_untake(x, idx, template):
+def dict_untake(x, idx, vs):
     def mut_add(A):
          A[idx] = vs.shape[idx].mut_add(A[idx], x)
          return A
-    vs = vspace(template)
     return SparseObject(vs, mut_add)
-dict_untake.defvjp(lambda g, ans, vs, gvs, x, idx, template : dict_take(g, idx))
+dict_untake.defvjp(lambda g, ans, vs, gvs, x, idx, _: dict_take(g, idx))
 dict_untake.defvjp_is_zero(argnums=(1, 2))
 
 def make_dict(pairs):

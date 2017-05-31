@@ -10,7 +10,7 @@ from . import numpy_wrapper as anp
 def take(A, idx):
     return A[idx]
 def grad_take(g, ans, vs, gvs, A, idx):
-    return untake(g, idx, A.vspace)
+    return untake(g, idx, vs)
 take.defvjp(grad_take)
 
 @primitive
