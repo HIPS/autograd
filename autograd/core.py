@@ -199,6 +199,12 @@ class VSpace(object):
     def zeros(self):
         assert False
 
+    def ones(self):
+        assert False
+
+    def standard_basis(self):
+        assert False
+
     def mut_add(self, x, y):
         x += y
         return x
@@ -243,6 +249,8 @@ def vspace(value):
         return vspace_mappings[type(value)](value)
     except KeyError:
         raise TypeError("Can't find vspace for type {}".format(type(value)))
+
+def get_vspace(value_or_node): return vspace(getval(value_or_node))
 
 class SparseObject(object):
     __slots__ = ['vs', 'mut_add']
