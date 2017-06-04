@@ -32,14 +32,13 @@ def backward_pass(g, end_node, start_node):
     assert_vspace_match(outgrads[end_node][0], end_node.vspace, None)
     for node in toposort(end_node, start_node):
         if node not in outgrads: continue
-        cur_outgrad = outgrads[node]
+        cur_outgrad = outgrads.pop(node)
         function, args, kwargs, parents = node.recipe
         for argnum, parent in parents:
             outgrad = function.vjp(argnum, cur_outgrad[0], node,
                                    parent.vspace, node.vspace, args, kwargs)
             assert_vspace_match(outgrad, parent.vspace, function)
             outgrads[parent] = add_outgrads(parent.vspace, outgrads.get(parent), outgrad)
-        del outgrads[node]
     return cur_outgrad[0]
 
 def add_outgrads(vspace, prev_g_flagged, g):
