@@ -78,7 +78,7 @@ class ArrayVSpace(VSpace):
         return anp.zeros(self.shape, dtype=self.dtype)
 
     def flatten(self, value, covector=False):
-        return np.ravel(value)
+        return anp.ravel(value)
 
     def unflatten(self, value, covector=False):
         return value.reshape(self.shape)
@@ -102,16 +102,16 @@ class ComplexArrayVSpace(ArrayVSpace):
 
     def flatten(self, value, covector=False):
         if covector:
-            return np.ravel(np.stack([np.real(value), - np.imag(value)]))
+            return anp.ravel(anp.stack([anp.real(value), - anp.imag(value)]))
         else:
-            return np.ravel(np.stack([np.real(value), np.imag(value)]))
+            return anp.ravel(anp.stack([anp.real(value), anp.imag(value)]))
 
     def unflatten(self, value, covector=False):
-        reshaped = np.reshape(value, (2,) + self.shape)
+        reshaped = anp.reshape(value, (2,) + self.shape)
         if covector:
-            return np.array(reshaped[0] - 1j * reshaped[1])
+            return anp.array(reshaped[0] - 1j * reshaped[1])
         else:
-            return np.array(reshaped[0] + 1j * reshaped[1])
+            return anp.array(reshaped[0] + 1j * reshaped[1])
 
 register_node(ArrayNode, np.ndarray)
 register_vspace(lambda x: ComplexArrayVSpace(x)
