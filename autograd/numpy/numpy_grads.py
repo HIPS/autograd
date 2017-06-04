@@ -465,24 +465,14 @@ def unbroadcast(vs, gvs, result, broadcast_idx=0):
     return result
 
 def unbroadcast_einsum(vs, gvs, result, subscript):
-    if isinstance(subscript, string_types):
-        if '...' not in subscript:
-            return result
-        elif subscript.startswith('...'):
-            return unbroadcast(vs, gvs, result)
-        elif subscript.endswith('...'):
-            return unbroadcast(vs, gvs, result, -1)
-        else:
-            return unbroadcast(vs, gvs, result, subscript.index('...'))
+    if Ellipsis not in subscript:
+        return result
+    elif subscript[0] == Ellipsis:
+        return unbroadcast(vs, gvs, result, 0)
+    elif subscript[-1] == Ellipsis:
+        return unbroadcast(vs, gvs, result, -1)
     else:
-        if Ellipsis not in subscript:
-            return result
-        elif subscript[0] == Ellipsis:
-            return unbroadcast(vs, gvs, result, 0)
-        elif subscript[-1] == Ellipsis:
-            return unbroadcast(vs, gvs, result, -1)
-        else:
-            return unbroadcast(vs, gvs, result, subscript.index(Ellipsis))
+        return unbroadcast(vs, gvs, result, subscript.index(Ellipsis))
 
 def balanced_eq(x, z, y):
     return (x == z) / (1.0 + (x == y))
