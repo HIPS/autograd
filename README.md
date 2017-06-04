@@ -5,9 +5,12 @@ handle a large subset of Python's features, including loops, ifs, recursion and
 closures, and it can even take derivatives of derivatives of derivatives. It
 uses reverse-mode differentiation (a.k.a. backpropagation), which means it can
 efficiently take gradients of scalar-valued functions with respect to
-array-valued arguments. The main intended application is gradient-based
-optimization. For more information, check out the [tutorial](docs/tutorial.md)
-and the [examples directory](examples/).
+array-valued arguments. There's also a [forward-mode
+extension](https://github.com/BB-UCL/autograd-forward), which lets you
+arbitrarily mix forward- and reverse-mode accumulation. The main intended
+application of autograd is gradient-based optimization. For more information,
+check out the [tutorial](docs/tutorial.md) and the [examples
+directory](examples/).
 
 Example use:
 
