@@ -2,8 +2,8 @@
 from __future__ import absolute_import
 from functools import partial
 import autograd.numpy as np
-from autograd.core import (make_vjp, getval, isnode, vspace, get_vspace,
-                           primitive, unbox_if_possible)
+from autograd.core import (make_vjp, getval, isnode, vspace, primitive,
+                           unbox_if_possible)
 from autograd.container_types import make_tuple
 from .errors import add_error_hints
 from collections import OrderedDict

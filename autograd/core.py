@@ -250,8 +250,6 @@ def vspace(value):
     except KeyError:
         raise TypeError("Can't find vspace for type {}".format(type(value)))
 
-def get_vspace(value_or_node): return vspace(getval(value_or_node))
-
 class SparseObject(object):
     __slots__ = ['vs', 'mut_add']
     def __init__(self, vs, mut_add):
