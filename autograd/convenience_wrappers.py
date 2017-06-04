@@ -17,16 +17,12 @@ def grad(fun, argnum=0):
     positional argument number `argnum`. The returned function takes the same
     arguments as `fun`, but returns the gradient instead. The function `fun`
     should be scalar-valued. The gradient has the same type as the argument."""
-
-    def scalar_fun(*args, **kwargs):
-        return as_scalar(fun(*args, **kwargs))
-
     @attach_name_and_doc(fun, argnum, 'Gradient')
     @add_error_hints
     def gradfun(*args,**kwargs):
         args = list(args)
         args[argnum] = safe_type(args[argnum])
-        vjp, ans = make_vjp(scalar_fun, argnum)(*args, **kwargs)
+        vjp, ans = make_vjp(fun, argnum)(*args, **kwargs)
         return vjp(vspace(getval(ans)).ones())
 
     return gradfun
@@ -219,20 +215,6 @@ def safe_type(value):
         return float(value)
     else:
         return value
-
-def as_scalar(x):
-    vs = vspace(getval(x))
-    if vs.iscomplex:
-        x = np.real(x)
-    if vs.shape == ():
-        return x
-    elif vs.size == 1:
-        return x.reshape(())
-    else:
-        raise TypeError(
-            "Output {} can't be cast to float. "
-            "Function grad requires a scalar-valued function. "
-            "Try jacobian or elementwise_grad.".format(getval(x)))
 
 def cast_to_same_dtype(value, example):
     if hasattr(example, 'dtype') and example.dtype.type is not np.float64:
