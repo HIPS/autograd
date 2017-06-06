@@ -8,14 +8,14 @@ npr.seed(1)
 def test_real_type():
     fun = lambda x: np.sum(np.real(x))
     df = grad(fun)
-    assert type(df(1.0)) == float
-    assert type(df(1.0j)) == complex
+    assert np.isrealobj(df(2.0))
+    assert np.iscomplexobj(df(1.0j))
 
 def test_real_if_close_type():
     fun = lambda x: np.sum(np.real(x))
     df = grad(fun)
-    assert type(df(1.0)) == float
-    assert type(df(1.0j)) == complex
+    assert np.isrealobj(df(1.0))
+    assert np.iscomplexobj(df(1.0j))
 
 def test_angle_real():
     fun = lambda x : to_scalar(np.angle(x))

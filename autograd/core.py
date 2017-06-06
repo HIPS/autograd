@@ -199,6 +199,12 @@ class VSpace(object):
     def zeros(self):
         assert False
 
+    def ones(self):
+        assert False
+
+    def standard_basis(self):
+        assert False
+
     def mut_add(self, x, y):
         x += y
         return x

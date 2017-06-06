@@ -161,13 +161,13 @@ def test_assignment_raises_error():
     A = npr.randn(5)
     check_grads(fun, A, 3.0)
 
-@raises(TypeError)
-def test_nonscalar_output_1():
-    grad(lambda x: x * 2)(np.zeros(2))
+# @raises(TypeError)
+# def test_nonscalar_output_1():
+#     grad(lambda x: x * 2)(np.zeros(2))
 
-@raises(TypeError)
-def test_nonscalar_output_2():
-    grad(lambda x: x * 2)(np.zeros(2))
+# @raises(TypeError)
+# def test_nonscalar_output_2():
+#     grad(lambda x: x * 2)(np.zeros(2))
 
 # TODO:
 # Diamond patterns

@@ -75,7 +75,16 @@ class ArrayVSpace(VSpace):
         self.scalartype = float
 
     def zeros(self):
-        return anp.zeros(self.shape, dtype=self.dtype)
+        return np.zeros(self.shape, dtype=self.dtype)
+
+    def ones(self):
+        return np.ones(self.shape, dtype=self.dtype)
+
+    def standard_basis(self):
+      for idxs in np.ndindex(*self.shape):
+            vect = np.zeros(self.shape)
+            vect[idxs] = 1
+            yield vect
 
     def flatten(self, value, covector=False):
         return anp.ravel(value)

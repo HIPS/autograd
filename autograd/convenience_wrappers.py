@@ -2,7 +2,8 @@
 from __future__ import absolute_import
 from functools import partial
 import autograd.numpy as np
-from autograd.core import make_vjp, getval, isnode, vspace, primitive, unbox_if_possible
+from autograd.core import (make_vjp, getval, isnode, vspace, primitive,
+                           unbox_if_possible)
 from autograd.container_types import make_tuple
 from .errors import add_error_hints
 from collections import OrderedDict
@@ -16,17 +17,13 @@ def grad(fun, argnum=0):
     positional argument number `argnum`. The returned function takes the same
     arguments as `fun`, but returns the gradient instead. The function `fun`
     should be scalar-valued. The gradient has the same type as the argument."""
-
-    def scalar_fun(*args, **kwargs):
-        return as_scalar(fun(*args, **kwargs))
-
     @attach_name_and_doc(fun, argnum, 'Gradient')
     @add_error_hints
     def gradfun(*args,**kwargs):
         args = list(args)
         args[argnum] = safe_type(args[argnum])
-        vjp, ans = make_vjp(scalar_fun, argnum)(*args, **kwargs)
-        return vjp(cast_to_same_dtype(1.0, ans))
+        vjp, ans = make_vjp(fun, argnum)(*args, **kwargs)
+        return vjp(vspace(getval(ans)).ones())
 
     return gradfun
 
@@ -39,28 +36,14 @@ def jacobian(fun, argnum=0):
     If the input to `fun` has shape (in1, in2, ...) and the output has shape
     (out1, out2, ...) then the Jacobian has shape (out1, out2, ..., in1, in2, ...).
     """
-    def getshape(val):
-        val = getval(val)
-        assert np.isscalar(val) or isinstance(val, np.ndarray), \
-            'Jacobian requires input and output to be scalar- or array-valued'
-        return np.shape(val)
-
-    def unit_vectors(shape):
-        for idxs in it.product(*map(range, shape)):
-            vect = np.zeros(shape)
-            vect[idxs] = 1
-            yield vect
-
-    concatenate = lambda lst: np.concatenate(map(np.atleast_1d, lst))
-
     @attach_name_and_doc(fun, argnum, 'Jacobian')
     @add_error_hints
     def jacfun(*args, **kwargs):
         vjp, ans = make_vjp(fun, argnum)(*args, **kwargs)
-        outshape = getshape(ans)
-        grads = map(vjp, unit_vectors(outshape))
-        jacobian_shape = outshape + getshape(args[argnum])
-        return np.reshape(concatenate(grads), jacobian_shape)
+        ans_vspace = vspace(getval(ans))
+        jacobian_shape = ans_vspace.shape + vspace(getval(args[argnum])).shape
+        grads = map(vjp, ans_vspace.standard_basis())
+        return np.reshape(np.stack(grads), jacobian_shape)
 
     return jacfun
 
@@ -232,20 +215,6 @@ def safe_type(value):
         return float(value)
     else:
         return value
-
-def as_scalar(x):
-    vs = vspace(getval(x))
-    if vs.iscomplex:
-        x = np.real(x)
-    if vs.shape == ():
-        return x
-    elif vs.size == 1:
-        return x.reshape(())
-    else:
-        raise TypeError(
-            "Output {} can't be cast to float. "
-            "Function grad requires a scalar-valued function. "
-            "Try jacobian or elementwise_grad.".format(getval(x)))
 
 def cast_to_same_dtype(value, example):
     if hasattr(example, 'dtype') and example.dtype.type is not np.float64:
