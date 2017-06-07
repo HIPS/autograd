@@ -5,9 +5,9 @@ import autograd.numpy as np
 import autograd.numpy.random as npr
 from autograd.util import *
 from autograd import (grad, elementwise_grad, jacobian, value_and_grad,
-                      grad_and_aux, hessian_vector_product, hessian, make_hvp,
-                      multigrad, jacobian, vector_jacobian_product, primitive,
-                      checkpoint, value_and_multigrad)
+                      grad_and_aux, hessian_tensor_product, hessian, make_hvp,
+                      multigrad, jacobian, tensor_jacobian_product, primitive,
+                      checkpoint, value_and_multigrad, make_jvp, make_ggnvp)
 from builtins import range
 
 npr.seed(1)
@@ -112,12 +112,12 @@ def test_elementwise_grad_multiple_args():
     numeric = np.squeeze(np.array([nd(simple_fun, A, B[i])[argnum] for i in range(len(B))]))
     check_equivalent(exact, numeric)
 
-def test_hessian_vector_product():
+def test_hessian_tensor_product():
     fun = lambda a: np.sum(np.sin(a))
     a = npr.randn(5)
     v = npr.randn(5)
     H = hessian(fun)(a)
-    check_equivalent(np.dot(H, v), hessian_vector_product(fun)(a, v))
+    check_equivalent(np.dot(H, v), hessian_tensor_product(fun)(a, v))
 
 def test_hvp():
     fun = lambda a: np.sum(np.sin(a))
@@ -132,36 +132,36 @@ def test_hessian_matrix_product():
     a = npr.randn(5, 4)
     V = npr.randn(5, 4)
     H = hessian(fun)(a)
-    check_equivalent(np.tensordot(H, V), hessian_vector_product(fun)(a, V))
+    check_equivalent(np.tensordot(H, V), hessian_tensor_product(fun)(a, V))
 
 def test_hessian_tensor_product():
     fun = lambda a: np.sum(np.sin(a))
     a = npr.randn(5, 4, 3)
     V = npr.randn(5, 4, 3)
     H = hessian(fun)(a)
-    check_equivalent(np.tensordot(H, V, axes=np.ndim(V)), hessian_vector_product(fun)(a, V))
+    check_equivalent(np.tensordot(H, V, axes=np.ndim(V)), hessian_tensor_product(fun)(a, V))
 
-def test_vector_jacobian_product():
+def test_tensor_jacobian_product():
     # This function will have an asymmetric jacobian matrix.
     fun = lambda a: np.roll(np.sin(a), 1)
     a = npr.randn(5)
     V = npr.randn(5)
     J = jacobian(fun)(a)
-    check_equivalent(np.dot(V.T, J), vector_jacobian_product(fun)(a, V))
+    check_equivalent(np.dot(V.T, J), tensor_jacobian_product(fun)(a, V))
 
 def test_matrix_jacobian_product():
     fun = lambda a: np.roll(np.sin(a), 1)
     a = npr.randn(5, 4)
     V = npr.randn(5, 4)
     J = jacobian(fun)(a)
-    check_equivalent(np.tensordot(V, J), vector_jacobian_product(fun)(a, V))
+    check_equivalent(np.tensordot(V, J), tensor_jacobian_product(fun)(a, V))
 
 def test_tensor_jacobian_product():
     fun = lambda a: np.roll(np.sin(a), 1)
     a = npr.randn(5, 4, 3)
     V = npr.randn(5, 4)
     J = jacobian(fun)(a)
-    check_equivalent(np.tensordot(V, J, axes=np.ndim(V)), vector_jacobian_product(fun)(a, V))
+    check_equivalent(np.tensordot(V, J, axes=np.ndim(V)), tensor_jacobian_product(fun)(a, V))
 
 def test_deprecated_defgrad_wrapper():
     @primitive
@@ -234,3 +234,57 @@ def checkpoint_memory():
     max_checkpointed_usage = max(memory_usage((gradfun, (checkpointed_f, A))))
 
     assert max_checkpointed_usage < max_usage / 2.
+
+def test_make_jvp():
+    A = npr.randn(3, 5)
+    x = npr.randn(5)
+    v = npr.randn(5)
+    fun = lambda x: np.tanh(np.dot(A, x))
+
+    jvp_explicit = lambda x: lambda v: np.dot(jacobian(fun)(x), v)
+    jvp = make_jvp(fun)
+
+    check_equivalent(jvp_explicit(x)(v), jvp(x)(v))
+
+def _make_explicit_ggnvp(f, g=lambda x: 1./2*np.dot(x, x)):
+    def ggnvp_maker(x):
+        J = jacobian(f)(x)
+        H = hessian(g)(f(x))
+        def ggnvp(v):
+            return np.dot(J.T, np.dot(H, np.dot(J, v)))
+        return ggnvp
+    return ggnvp_maker
+
+def test_make_ggnvp():
+    A = npr.randn(5, 4)
+    x = npr.randn(4)
+    v = npr.randn(4)
+
+    fun = lambda x: np.dot(A, x)
+    check_equivalent(make_ggnvp(fun)(x)(v), _make_explicit_ggnvp(fun)(x)(v))
+
+    fun2 = lambda x: np.tanh(np.dot(A, x))
+    check_equivalent(make_ggnvp(fun2)(x)(v), _make_explicit_ggnvp(fun2)(x)(v))
+
+def test_make_ggnvp_nondefault_g():
+    A = npr.randn(5, 4)
+    x = npr.randn(4)
+    v = npr.randn(4)
+
+    g = lambda y: np.sum(2.*y**2 + y**4)
+
+    fun = lambda x: np.dot(A, x)
+    check_equivalent(make_ggnvp(fun, g)(x)(v), _make_explicit_ggnvp(fun, g)(x)(v))
+
+    fun2 = lambda x: np.tanh(np.dot(A, x))
+    check_equivalent(make_ggnvp(fun2, g)(x)(v), _make_explicit_ggnvp(fun2, g)(x)(v))
+
+def test_make_ggnvp_broadcasting():
+  A = npr.randn(4, 5)
+  x = npr.randn(10, 4)
+  v = npr.randn(10, 4)
+
+  fun = lambda x: np.tanh(np.dot(x, A))
+  res1 = np.stack([_make_explicit_ggnvp(fun)(xi)(vi) for xi, vi in zip(x, v)])
+  res2 = make_ggnvp(fun)(x)(v)
+  check_equivalent(res1, res2)
