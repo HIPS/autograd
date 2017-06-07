@@ -44,7 +44,7 @@ def backward_pass(g, end_node, start_node):
 def add_outgrads(vspace, prev_g_flagged, g):
     if prev_g_flagged is None:
         if type(getval(g)) == SparseObject:
-            return primitive_mut_add(vspace, vspace.zeros(), g), True
+            return primitive_mut_add(vspace, None, g), True
         else:
             return g, False
     else:
@@ -52,7 +52,7 @@ def add_outgrads(vspace, prev_g_flagged, g):
         if mutable:
             return primitive_mut_add(vspace, prev_g, g), True
         else:
-            prev_g_mutable = primitive_mut_add(vspace, vspace.zeros(), prev_g)
+            prev_g_mutable = primitive_mut_add(vspace, None, prev_g)
             return primitive_mut_add(vspace, prev_g_mutable, g), True
 
 active_progenitors = set()
@@ -130,6 +130,8 @@ class nograd_primitive(primitive):
 
 @primitive
 def primitive_mut_add(vspace, x_prev, x_new):
+    if x_prev is None:
+        x_prev = vspace.zeros()
     if type(x_new) == SparseObject:
         return x_new.mut_add(x_prev)
     else:
