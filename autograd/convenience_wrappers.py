@@ -75,45 +75,62 @@ def multigrad(fun, argnums=[0]):
         return double_val_fun(*args, **kwargs)[1]
     return multigrad_fun
 
-def elementwise_grad(fun, argnum=0):
-    """Like `jacobian`, but produces a function which computes just the diagonal
-    of the Jacobian, and does the computation in one pass rather than in a loop.
-    Note: this is only valid if the Jacobian is diagonal. Only arrays are
-    currently supported. Can be used for broadcasting."""
-    def sum_output(*args, **kwargs):
-        return np.sum(fun(*args, **kwargs))
-    return grad(sum_output, argnum=argnum)
+elementwise_grad = grad  # backward compatibility
 
 def hessian(fun, argnum=0):
     "Returns a function that computes the exact Hessian."
     return jacobian(jacobian(fun, argnum), argnum)
 
 def make_hvp(fun, argnum=0):
-    """Constructs a function for evaluating the Hessian-vector product at a
-    point, which may be useful when evaluating many Hessian-vector products at
-    the same point while caching the results of the forward pass."""
+    """Builds a function for evaluating the Hessian-vector product at a point,
+    which may be useful when evaluating many Hessian-vector products at the same
+    point while caching the results of the forward pass."""
     def hvp_maker(*args, **kwargs):
         return make_vjp(grad(fun, argnum), argnum)(*args, **kwargs)[0]
     return hvp_maker
 
-def hessian_vector_product(fun, argnum=0):
-    """Builds a function that returns the exact Hessian-vector product.
-    The returned function has arguments (*args, vector, **kwargs), and takes
-    roughly 4x as long to evaluate as the original function."""
+def hessian_tensor_product(fun, argnum=0):
+    """Builds a function that returns the exact Hessian-tensor product.
+    The returned function has arguments (*args, tensor, **kwargs), and for
+    vectors takes roughly 4x as long to evaluate as the original function."""
     fun_grad = grad(fun, argnum)
     def vector_dot_grad(*args, **kwargs):
         args, vector = args[:-1], args[-1]
         return np.tensordot(fun_grad(*args, **kwargs), vector, np.ndim(vector))
-    return grad(vector_dot_grad, argnum)  # Grad wrt original input.
+    return grad(vector_dot_grad, argnum)
+hessian_vector_product = hessian_tensor_product
 
-def vector_jacobian_product(fun, argnum=0):
-    """Builds a function that returns the exact vector-Jacobian product, that
-    is the Jacobian matrix left-multiplied by vector. The returned function
-    has arguments (*args, vector, **kwargs)."""
+def tensor_jacobian_product(fun, argnum=0):
+    """Builds a function that returns the exact tensor-Jacobian product, that
+    is the Jacobian matrix left-multiplied by tensor. The returned function
+    has arguments (*args, tensor, **kwargs)."""
     def vector_dot_fun(*args, **kwargs):
         args, vector = args[:-1], args[-1]
         return np.tensordot(vector, fun(*args, **kwargs), axes=np.ndim(vector))
-    return jacobian(vector_dot_fun, argnum)  # Grad wrt original input.
+    return jacobian(vector_dot_fun, argnum)
+vector_jacobian_product = tensor_jacobian_product
+
+def make_jvp(fun, argnum=0):
+    """Builds a function for evaluating the Jacobian-vector product at a
+    point. Roughly 1.5x more FLOPs than forward-mode, plus memory requirements
+    that scale with the number of primitives applied in the evaluation of f, as
+    well as other overheads. See github.com/BB-UCL/autograd-forward."""
+    def jvp_maker(*args, **kwargs):
+        vjp, y = make_vjp(fun, argnum)(*args, **kwargs)
+        vjp_vjp, _ = make_vjp(vjp)(vspace(getval(y)).zeros())
+        return vjp_vjp  # vjp_vjp is just jvp by linearity
+    return jvp_maker
+
+def make_ggnvp(f, g=lambda x: 1./2*np.sum(x**2, axis=-1), f_argnum=0):
+    """Builds a function for evaluating generalized-Gauss-Newton-vector products
+    at a point. Slightly more expensive than mixed-mode."""
+    def ggnvp_maker(*args, **kwargs):
+        f_vjp, f_x = make_vjp(f, f_argnum)(*args, **kwargs)
+        g_hvp, grad_g_x = make_vjp(grad(g))(f_x)
+        f_vjp_vjp, _ = make_vjp(f_vjp)(vspace(getval(grad_g_x)).zeros())
+        def ggnvp(v): return f_vjp(g_hvp(f_vjp_vjp(v)))
+        return ggnvp
+    return ggnvp_maker
 
 def value_and_grad(fun, argnum=0):
     """Returns a function that returns both value and gradient. Suitable for use

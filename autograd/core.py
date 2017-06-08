@@ -10,13 +10,15 @@ import warnings
 from .errors import defgrad_deprecated
 
 def make_vjp(fun, argnum=0):
-    def vjp(*args, **kwargs):
+    def vjp_maker(*args, **kwargs):
         start_node, end_node = forward_pass(fun, args, kwargs, argnum)
         if not isnode(end_node) or start_node not in end_node.progenitors:
             warnings.warn("Output seems independent of input.")
-            return lambda g : start_node.vspace.zeros(), end_node
-        return lambda g : backward_pass(g, end_node, start_node), end_node
-    return vjp
+            def vjp(g): return start_node.vspace.zeros()
+        else:
+            def vjp(g): return backward_pass(g, end_node, start_node)
+        return vjp, end_node
+    return vjp_maker
 
 def forward_pass(fun, args, kwargs, argnum=0):
     args = list(args)
