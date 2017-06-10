@@ -29,21 +29,19 @@ Example use:
 0.39322386636453377
 ```
 
-We can continue to differentiate as many times as we like:
+We can continue to differentiate as many times as we like, and use numpy's
+broadcasting of scalar-valued functions across many different input values:
 
 ```python
->>> def elementwise_grad(fun):                   # A wrapper for broadcasting
-...     return grad(lambda x: np.sum(fun(x)))    # (closures are no problem)
-...
->>> grad_tanh   = elementwise_grad(tanh)
->>> grad_tanh_2 = elementwise_grad(grad_tanh)    # 2nd derivative
->>> grad_tanh_3 = elementwise_grad(grad_tanh_2)  # 3rd derivative
->>> grad_tanh_4 = elementwise_grad(grad_tanh_3)  # etc.
->>> grad_tanh_5 = elementwise_grad(grad_tanh_4)
->>> grad_tanh_6 = elementwise_grad(grad_tanh_5)
+>>> grad_tanh   = grad(tanh)
+>>> grad_tanh_2 = grad(grad_tanh)    # 2nd derivative
+>>> grad_tanh_3 = grad(grad_tanh_2)  # 3rd derivative
+>>> grad_tanh_4 = grad(grad_tanh_3)  # etc.
+>>> grad_tanh_5 = grad(grad_tanh_4)
+>>> grad_tanh_6 = grad(grad_tanh_5)
 >>>
 >>> import matplotlib.pyplot as plt
->>> x = np.linspace(-7, 7, 200)
+>>> x = np.linspace(-7, 7, 200)  # grad handles broadcasting across inputs
 >>> plt.plot(x, tanh(x),
 ...          x, grad_tanh(x),
 ...          x, grad_tanh_2(x),
