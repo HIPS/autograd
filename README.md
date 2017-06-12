@@ -33,22 +33,15 @@ We can continue to differentiate as many times as we like, and use numpy's
 broadcasting of scalar-valued functions across many different input values:
 
 ```python
->>> grad_tanh   = grad(tanh)
->>> grad_tanh_2 = grad(grad_tanh)    # 2nd derivative
->>> grad_tanh_3 = grad(grad_tanh_2)  # 3rd derivative
->>> grad_tanh_4 = grad(grad_tanh_3)  # etc.
->>> grad_tanh_5 = grad(grad_tanh_4)
->>> grad_tanh_6 = grad(grad_tanh_5)
->>>
 >>> import matplotlib.pyplot as plt
->>> x = np.linspace(-7, 7, 200)  # grad handles broadcasting across inputs
+>>> x = np.linspace(-7, 7, 200)           # grad broadcasts across inputs
 >>> plt.plot(x, tanh(x),
-...          x, grad_tanh(x),
-...          x, grad_tanh_2(x),
-...          x, grad_tanh_3(x),
-...          x, grad_tanh_4(x),
-...          x, grad_tanh_5(x),
-...          x, grad_tanh_6(x))
+...          x, grad(tanh)(x),                                # first  derivative
+...          x, grad(grad(tanh))(x),                          # second derivative
+...          x, grad(grad(grad(tanh)))(x),                    # third  derivative
+...          x, grad(grad(grad(grad(tanh))))(x),              # fourth derivative
+...          x, grad(grad(grad(grad(grad(tanh)))))(x),        # fifth  derivative
+...          x, grad(grad(grad(grad(grad(grad(tanh))))))(x))  # sixth  derivative
 >>> plt.show()
 ```
 
