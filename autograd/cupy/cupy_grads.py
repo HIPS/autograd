@@ -27,7 +27,7 @@ acp.power.defvjp(lambda g, ans, vs, gvs, x, y:
                  unbroadcast(vs, gvs, g * y * x ** acp.where(y, y - 1, 1)))
 
 acp.exp.defvjp(lambda g, ans, vs, gvs, x : ans * g)
-acp.sinh.defvjp(lambda g, ans, vs, gvs, x: g * acp.cosh)
+acp.sinh.defvjp(lambda g, ans, vs, gvs, x: g * acp.cosh(x))
 acp.cosh.defvjp(lambda g, ans, vs, gvs, x: g * acp.sinh(x))
 acp.tanh.defvjp(lambda g, ans, vs, gvs, x: g / acp.cosh(x)**2)
 acp.negative.defvjp(lambda g, ans, vs, gvs, x: -g)
