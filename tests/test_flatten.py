@@ -1,6 +1,7 @@
 import autograd.numpy as np
 import autograd.numpy.random as npr
 from autograd.util import flatten
+from autograd import make_vjp
 
 def test_flatten():
     val = (npr.randn(4), [npr.randn(3,4), 2.5], (), (2.0, [1.0, npr.randn(2)]))
@@ -19,3 +20,10 @@ def test_flatten_dict():
     val_recovered = unflatten(vect)
     vect_2, _ = flatten(val_recovered)
     assert np.all(vect == vect_2)
+
+def unflatten_tracing():
+    val = [npr.randn(4), [npr.randn(3,4), 2.5], (), (2.0, [1.0, npr.randn(2)])]
+    vect, unflatten = flatten(val)
+    def f(vect): return unflatten(vect)
+    flatten2, _ = make_vjp(f)(vect)
+    assert np.all(vect == flatten2(val))

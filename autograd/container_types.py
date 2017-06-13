@@ -78,19 +78,18 @@ class SequenceVSpace(VSpace):
     def flatten(self, value, covector=False):
         if self.shape:
             return np.concatenate(
-                [s.flatten(v, covector) for s, v in zip(self.shape, value)])
+                [vs.flatten(v, covector) for vs, v in zip(self.shape, value)])
         else:
             return np.zeros((0,))
 
     def unflatten(self, value, covector=False):
         result = []
         start = 0
-        for s in self.shape:
-            N = s.size
-
-            result.append(s.unflatten(value[start:start + N], covector))
+        for vs in self.shape:
+            N = vs.size
+            result.append(vs.unflatten(value[start:start + N], covector))
             start += N
-        return self.sequence_type(result)
+        return make_sequence(self.sequence_type, *result)
 
 register_vspace(SequenceVSpace, list)
 register_vspace(SequenceVSpace, tuple)
@@ -152,12 +151,12 @@ class DictVSpace(VSpace):
             return np.zeros((0,))
 
     def unflatten(self, value, covector=False):
-        result = {}
+        result = []
         start = 0
         for k, s in sorted(iteritems(self.shape)):
             N = s.size
-            result[k] = s.unflatten(value[start:start + N], covector)
+            result.append((k, s.unflatten(value[start:start + N], covector)))
             start += N
-        return result
+        return make_dict(result)
 
 register_vspace(DictVSpace, dict)
