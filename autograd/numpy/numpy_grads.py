@@ -398,12 +398,12 @@ def grad_einsum(argnum, g, ans, vs, gvs, operands, kwargs):
         # against a tensor of ones. we make that tensor of ones explicit to handle
         # the necessary vjp broadcasting inside einsum.
         other_named_subs = set(''.join([out_subs] + rest_of_subs))
-        naked_summed = [(i, sub) for (i, sub) in enumerate(subs_wrt)
+        naked_summed = [(i, sub) for i, sub in enumerate(subs_wrt)
                         if sub not in other_named_subs]
         if naked_summed:
             naked_summed_dims, ones_subs = zip(*naked_summed)
             ones_subs = ''.join(ones_subs)
-            ones = onp.ones(onp.array(operands[op_num].shape)[naked_summed_dims])
+            ones = onp.ones(onp.array(operands[op_num].shape)[list(naked_summed_dims)])
             new_input_subs = ','.join([out_subs, ones_subs] + rest_of_subs)
             new_operands = (g, ones) + rest_of_ops
         else:
