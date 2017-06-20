@@ -110,9 +110,9 @@ class maxpool_layer(object):
         for i in [0, 1]:
             pool_width = self.pool_shape[i]
             img_width = inputs.shape[i + 2]
-            new_shape += (pool_width, img_width // pool_width)
+            new_shape += (img_width // pool_width, pool_width)
         result = inputs.reshape(new_shape)
-        return np.max(np.max(result, axis=2), axis=3)
+        return np.max(np.max(result, axis=3), axis=4)
 
 class full_layer(object):
     def __init__(self, size):
