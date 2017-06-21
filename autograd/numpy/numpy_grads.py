@@ -254,7 +254,7 @@ def reverse_axis(x, axis):
 
 def grad_np_cumsum(g, ans, vs, gvs, x, axis=None):
     if axis:
-        return reverse_axis(anp.cumsum(reverse_axis(g, axis)), axis)
+        return reverse_axis(anp.cumsum(reverse_axis(g, axis), axis), axis)
     else:
         return anp.reshape(anp.cumsum(g[::-1], axis)[::-1], x.shape)
 anp.cumsum.defvjp(grad_np_cumsum)
