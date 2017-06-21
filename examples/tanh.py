@@ -20,21 +20,14 @@ function at each broadcasted input value.
 def tanh(x):
     return (1.0 - np.exp(-x))  / (1.0 + np.exp(-x))
 
-d_fun      = grad(tanh)       # First derivative
-dd_fun     = grad(d_fun)      # Second derivative
-ddd_fun    = grad(dd_fun)     # Third derivative
-dddd_fun   = grad(ddd_fun)    # Fourth derivative
-ddddd_fun  = grad(dddd_fun)   # Fifth derivative
-dddddd_fun = grad(ddddd_fun)  # Sixth derivative
-
 x = np.linspace(-7, 7, 200)
 plt.plot(x, tanh(x),
-         x, d_fun(x),
-         x, dd_fun(x),
-         x, ddd_fun(x),
-         x, dddd_fun(x),
-         x, ddddd_fun(x),
-         x, dddddd_fun(x))
+         x, grad(tanh)(x),                                 # first derivative
+         x, grad(grad(tanh))(x),                           # second derivative
+         x, grad(grad(grad(tanh)))(x),                     # third derivative
+         x, grad(grad(grad(grad(tanh))))(x),               # fourth derivative
+         x, grad(grad(grad(grad(grad(tanh)))))(x),         # fifth derivative
+         x, grad(grad(grad(grad(grad(grad(tanh))))))(x))   # sixth derivative
 
 plt.axis('off')
 plt.savefig("tanh.png")
