@@ -4,7 +4,7 @@ from autograd.core import (primitive, Node, VSpace, register_node, vspace,
 from builtins import zip
 from future.utils import iteritems
 from functools import partial
-import autograd.numpy as np
+import numpy as np
 
 class SequenceNode(Node):
     __slots__ = []
@@ -89,7 +89,7 @@ class SequenceVSpace(VSpace):
             N = vs.size
             result.append(vs.unflatten(value[start:start + N], covector))
             start += N
-        return make_sequence(self.sequence_type, *result)
+        return self.sequence_type(result)
 
 register_vspace(SequenceVSpace, list)
 register_vspace(SequenceVSpace, tuple)
@@ -151,12 +151,12 @@ class DictVSpace(VSpace):
             return np.zeros((0,))
 
     def unflatten(self, value, covector=False):
-        result = []
+        result = {}
         start = 0
         for k, s in sorted(iteritems(self.shape)):
             N = s.size
-            result.append((k, s.unflatten(value[start:start + N], covector)))
+            result[k] = s.unflatten(value[start:start + N], covector)
             start += N
-        return make_dict(result)
+        return result
 
 register_vspace(DictVSpace, dict)
