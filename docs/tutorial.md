@@ -110,7 +110,7 @@ If we evaluate this product from left-to-right: (dF/dG * dG/dH) * dH/dx)), the r
 
 Compared to finite differences or forward-mode, reverse-mode differentiation is by far the more practical method for differentiating functions that take in a large vector and output a single number.
 In the machine learning community, reverse-mode differentiation is known as 'backpropagation', since the gradients propogate backwards through the function.
-It's particularly nice since you don't need to instantiate Jacobians, and Jacobian-vector products can often be computed efficiently as well.
+It's particularly nice since you don't need to instantiate the intermediate Jacobian matrices explicitly, and instead only rely on applying a sequence of matrix-free vector-Jacobian product functions (VJPs).
 Because autograd supports higher derivatives as well, Hessian-vector products (a form of second-derivative) are also available and efficient to compute.
 
 ### How can you support ifs, while loops and recursion?
