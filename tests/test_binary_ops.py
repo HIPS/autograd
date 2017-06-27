@@ -2,6 +2,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 import autograd.numpy as np
 import autograd.numpy.random as npr
+import itertools as it
 from autograd.util import *
 from autograd import grad, value_and_grad
 rs = npr.RandomState(0)

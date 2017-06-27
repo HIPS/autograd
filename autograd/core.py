@@ -4,8 +4,6 @@ import types
 import numpy as np
 import numpy.random as npr
 from functools import partial
-from future.utils import iteritems
-from collections import defaultdict
 import warnings
 from .errors import defgrad_deprecated
 

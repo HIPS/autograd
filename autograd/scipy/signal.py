@@ -1,9 +1,7 @@
 from __future__ import absolute_import
-import scipy.signal
 from autograd.core import primitive
 import autograd.numpy as np
 import numpy as npo # original numpy
-import itertools as it
 from numpy.lib.stride_tricks import as_strided
 from builtins import range, zip
 from future.utils import iteritems

@@ -1,9 +1,8 @@
 from __future__ import absolute_import
 import numpy as np
 
-from autograd.core import (Node, VSpace,
-                           SparseObject, primitive, vspace,
-                           register_node, register_vspace, getval)
+from autograd.core import (Node, VSpace, SparseObject, primitive,
+                           register_node, register_vspace)
 from . import numpy_wrapper as anp
 
 @primitive
