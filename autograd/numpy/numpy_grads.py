@@ -151,17 +151,34 @@ def grad_diff(g, ans, vs, gvs, a, n=1, axis=-1):
 anp.diff.defvjp(grad_diff)
 
 def grad_repeat(g, ans, vs, gvs, x, repeats, axis=None):
-    shape = x.shape
-    if axis is None:  # If axis is none, np.repeat() repeats the flattened array.
-        expanded = anp.reshape(g, (anp.prod(shape),) + (repeats,))
-        return anp.reshape(anp.sum(expanded, axis=1, keepdims=False), shape)
-    else:
-        if shape[axis] == 1:  # For this common case, the logic is simple.
-            return anp.sum(g, axis=axis, keepdims=True)
-        else:
-            expanded = anp.reshape(g, shape[0:axis+1] + (repeats,) + shape[axis+1:])
-            return anp.sum(expanded, axis=axis+1, keepdims=False)
+    if gvs.size == 0:
+        return vs.zeros()
+    if axis is None:
+        axis = 0
+        x = anp.ravel(x)
+    repeats = onp.repeat(repeats, x.shape[axis]) if onp.isscalar(repeats) else repeats
+    return anp.reshape(add_reduceat(g, repeats, axis), vs.shape)
 anp.repeat.defvjp(grad_repeat)
+
+# we define this custom primitive to make grad_repeat simpler.
+# if we add support for ufunc methods (github issue #234), we might want to
+# remove this primitive
+@primitive
+def add_reduceat(x, partition_sizes, axis):
+    partition_sizes = onp.asarray(partition_sizes)
+    indices = onp.cumsum(partition_sizes) - partition_sizes
+    out = onp.add.reduceat(x, indices, axis)
+
+    # when indices are repeated, reduceat strangely includes the indexed value
+    # in the corresponding sum, so we need to fix up that case manually
+    repeat_ind_shape = [1] * x.ndim
+    repeat_ind_shape[axis] = indices.shape[0]
+    repeat_ind = onp.reshape(onp.ediff1d(indices, [1]) == 0, repeat_ind_shape)
+    out = onp.where(repeat_ind, 0, out)
+
+    return out
+add_reduceat.defvjp(lambda g, ans, vs, gvs, x, partition_sizes, axis:
+                    anp.repeat(g, partition_sizes, axis))
 
 def grad_tile(g, ans, vs, gvs, x, reps):
     reps = [reps] if anp.isscalar(reps) else reps
