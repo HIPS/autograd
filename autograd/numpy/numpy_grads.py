@@ -1,14 +1,12 @@
 from __future__ import absolute_import
 import numpy as onp
-import operator as op
-from numpy.core.einsumfunc import _parse_einsum_input, einsum_symbols_set
+from numpy.core.einsumfunc import _parse_einsum_input
 
 from autograd.core import primitive, getval, vspace
 from . import numpy_wrapper as anp
-from .numpy_extra import ArrayNode, take, array_types
+from .numpy_extra import ArrayNode, take
 from builtins import range, zip
 from future.utils import string_types
-import string
 
 # ----- Functions that are constant w.r.t. continuous inputs -----
 

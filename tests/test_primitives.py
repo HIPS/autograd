@@ -2,9 +2,7 @@ import autograd.numpy as np
 import autograd.numpy.random as npr
 import itertools as it
 from autograd.core import vspace, vspace_flatten
-from functools import partial
 import autograd.core as agc
-import operator as op
 
 EPS, RTOL, ATOL = 1e-4, 1e-4, 1e-6
 

@@ -1,17 +1,14 @@
 from __future__ import absolute_import
 from __future__ import print_function
 from copy import copy
-import itertools as it
 from operator import itemgetter
 from future.utils import iteritems
 from builtins import map, range, zip
 
 import autograd.numpy as np
-import itertools as it
 from autograd.convenience_wrappers import grad
 from autograd.core import vspace, vspace_flatten, getval
 from autograd.container_types import make_tuple, make_list, make_dict
-from copy import copy
 
 EPS, RTOL, ATOL = 1e-4, 1e-4, 1e-6
 

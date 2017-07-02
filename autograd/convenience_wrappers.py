@@ -1,14 +1,12 @@
 """Convenience functions built on top of `make_vjp`."""
 from __future__ import absolute_import
-from functools import partial
 import autograd.numpy as np
-from autograd.core import (make_vjp, getval, isnode, vspace, primitive,
+from autograd.core import (make_vjp, getval, vspace, primitive,
                            unbox_if_possible)
 from autograd.container_types import make_tuple
 from .errors import add_error_hints
 from collections import OrderedDict
 from inspect import getargspec
-import itertools as it
 import warnings
 
 def grad(fun, argnum=0):

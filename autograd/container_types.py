@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from autograd.core import (primitive, Node, VSpace, register_node, vspace,
-                           register_vspace, getval, SparseObject)
+                           register_vspace, SparseObject)
 from builtins import zip
 from future.utils import iteritems
 from functools import partial
