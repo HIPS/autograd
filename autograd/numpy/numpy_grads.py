@@ -199,7 +199,7 @@ def repeat_to_match_shape(g, vs, axis, keepdims):
     num_reps = onp.prod(onp.array(vs.shape)[axis])
     return anp.reshape(g, shape) + vs.zeros(), num_reps
 
-def grad_np_sum(g, ans, vs, gvs, x, axis=None, keepdims=False):
+def grad_np_sum(g, ans, vs, gvs, x, axis=None, keepdims=False, dtype=None):
     return repeat_to_match_shape(g, vs, axis, keepdims)[0]
 anp.sum.defvjp(grad_np_sum)
 
