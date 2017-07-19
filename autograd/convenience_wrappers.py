@@ -38,13 +38,14 @@ def jacobian(fun, argnum=0):
     @add_error_hints
     def jacfun(*args, **kwargs):
         vjp, ans = make_vjp(fun, argnum)(*args, **kwargs)
+        arg_vspace = vspace(getval(args[argnum]))
         ans_vspace = vspace(getval(ans))
         try:
-            jacobian_vspace = ans_vspace * vspace(args[argnum])
+            jacobian_vspace = ans_vspace * arg_vspace
         except NotImplementedError:
             raise ValueError("Input and output must be of scalar or array type, "
                              "with matching dtype.\nInput vspace:\n{} "
-                             "\nOutput vspace:\n{}".format(vspace(args[argnum]), ans_vspace))
+                             "\nOutput vspace:\n{}".format(arg_vspace, ans_vspace))
         grads = map(vjp, ans_vspace.standard_basis())
         return np.reshape(np.stack(grads), jacobian_vspace.shape)
 
