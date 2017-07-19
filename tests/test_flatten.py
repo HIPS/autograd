@@ -34,3 +34,8 @@ def test_flatten_nodes_in_containers():
         xy, _ = flatten([x, y])
         return np.sum(xy)
     grad(f)(1.0, 2.0)
+
+def test_flatten_complex():
+    val = 1 + 1j
+    flat, unflatten = flatten(val)
+    assert np.all(val == unflatten(flat))
