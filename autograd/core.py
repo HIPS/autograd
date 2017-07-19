@@ -265,10 +265,10 @@ register_vspace(lambda x : x.vs, SparseObject)
 register_node(Node, SparseObject)
 
 def assert_vspace_match(x, expected_vspace, fun):
-    assert expected_vspace == vspace(getval(x)), \
+    assert expected_vspace == vspace(x), \
         "\nGrad of {} returned unexpected vector space" \
         "\nVector space is {}" \
-        "\nExpected        {}".format(fun, vspace(getval(x)), expected_vspace)
+        "\nExpected        {}".format(fun, vspace(x), expected_vspace)
 
 isnode = lambda x: type(x) in node_types
 getval = lambda x: x.value if isnode(x) else x
