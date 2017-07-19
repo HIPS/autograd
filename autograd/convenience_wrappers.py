@@ -81,7 +81,7 @@ elementwise_grad = grad  # backward compatibility
 
 def hessian(fun, argnum=0):
     "Returns a function that computes the exact Hessian."
-    return jacobian(grad(fun, argnum), argnum)
+    return jacobian(jacobian(fun, argnum), argnum)
 
 def make_hvp(fun, argnum=0):
     """Builds a function for evaluating the Hessian-vector product at a point,
