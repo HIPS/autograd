@@ -1,8 +1,7 @@
 """Convenience functions built on top of `make_vjp`."""
 from __future__ import absolute_import
 import autograd.numpy as np
-from autograd.core import (make_vjp, getval, vspace, primitive,
-                           unbox_if_possible)
+from autograd.core import make_vjp, vspace, primitive, unbox_if_possible
 from autograd.container_types import make_tuple
 from .errors import add_error_hints
 from collections import OrderedDict
