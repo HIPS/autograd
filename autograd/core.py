@@ -217,6 +217,10 @@ class VSpace(object):
     def __repr__(self):
         return "{}_{}".format(type(self).__name__, self.__dict__)
 
+    def __mul__(self, other):
+        # Tensor product as in https://en.wikipedia.org/wiki/Tensor_product
+        assert False
+
     def examples(self):
         # Used for testing only
         N = self.size

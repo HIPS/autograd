@@ -38,10 +38,14 @@ def jacobian(fun, argnum=0):
     @add_error_hints
     def jacfun(*args, **kwargs):
         vjp, ans = make_vjp(fun, argnum)(*args, **kwargs)
-        ans_vspace = vspace(getval(ans))
-        jacobian_shape = ans_vspace.shape + vspace(getval(args[argnum])).shape
+        ans_vspace = ans.vspace
+        try:
+            jacobian_vspace = ans_vspace * vspace(args[argnum])
+        except NotImplementedError:
+            raise ValueError("Input and output must be of scalar or array type, "
+                             "with matching dtype.")
         grads = map(vjp, ans_vspace.standard_basis())
-        return np.reshape(np.stack(grads), jacobian_shape)
+        return np.reshape(np.stack(grads), jacobian_vspace.shape)
 
     return jacfun
 
@@ -77,7 +81,7 @@ elementwise_grad = grad  # backward compatibility
 
 def hessian(fun, argnum=0):
     "Returns a function that computes the exact Hessian."
-    return jacobian(jacobian(fun, argnum), argnum)
+    return jacobian(grad(fun, argnum), argnum)
 
 def make_hvp(fun, argnum=0):
     """Builds a function for evaluating the Hessian-vector product at a point,
