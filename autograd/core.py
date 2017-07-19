@@ -250,7 +250,10 @@ def vspace(value):
     try:
         return vspace_mappings[type(value)](value)
     except KeyError:
-        raise TypeError("Can't find vspace for type {}".format(type(value)))
+        if isnode(value):
+            return value.vspace
+        else:
+            raise TypeError("Can't find vspace for type {}".format(type(value)))
 
 class SparseObject(object):
     __slots__ = ['vs', 'mut_add']
