@@ -21,7 +21,7 @@ def grad(fun, argnum=0):
         args = list(args)
         args[argnum] = safe_type(args[argnum])
         vjp, ans = make_vjp(fun, argnum)(*args, **kwargs)
-        return vjp(vspace(getval(ans)).ones())
+        return vjp(vspace(ans).ones())
 
     return gradfun
 
@@ -38,8 +38,8 @@ def jacobian(fun, argnum=0):
     @add_error_hints
     def jacfun(*args, **kwargs):
         vjp, ans = make_vjp(fun, argnum)(*args, **kwargs)
-        ans_vspace = vspace(getval(ans))
-        jacobian_shape = ans_vspace.shape + vspace(getval(args[argnum])).shape
+        ans_vspace = vspace(ans)
+        jacobian_shape = ans_vspace.shape + vspace(args[argnum]).shape
         grads = map(vjp, ans_vspace.standard_basis())
         return np.reshape(np.stack(grads), jacobian_shape)
 
@@ -115,7 +115,7 @@ def make_jvp(fun, argnum=0):
     well as other overheads. See github.com/BB-UCL/autograd-forward."""
     def jvp_maker(*args, **kwargs):
         vjp, y = make_vjp(fun, argnum)(*args, **kwargs)
-        vjp_vjp, _ = make_vjp(vjp)(vspace(getval(y)).zeros())
+        vjp_vjp, _ = make_vjp(vjp)(vspace(y).zeros())
         return vjp_vjp  # vjp_vjp is just jvp by linearity
     return jvp_maker
 
@@ -125,7 +125,7 @@ def make_ggnvp(f, g=lambda x: 1./2*np.sum(x**2, axis=-1), f_argnum=0):
     def ggnvp_maker(*args, **kwargs):
         f_vjp, f_x = make_vjp(f, f_argnum)(*args, **kwargs)
         g_hvp, grad_g_x = make_vjp(grad(g))(f_x)
-        f_jvp, _ = make_vjp(f_vjp)(vspace(getval(grad_g_x)).zeros())
+        f_jvp, _ = make_vjp(f_vjp)(vspace(grad_g_x).zeros())
         def ggnvp(v): return f_vjp(g_hvp(f_jvp(v)))
         return ggnvp
     return ggnvp_maker
