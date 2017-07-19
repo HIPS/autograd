@@ -38,7 +38,7 @@ def jacobian(fun, argnum=0):
     @add_error_hints
     def jacfun(*args, **kwargs):
         vjp, ans = make_vjp(fun, argnum)(*args, **kwargs)
-        ans_vspace = vspace(ans)
+        ans_vspace = vspace(getval(ans))
         try:
             jacobian_vspace = ans_vspace * vspace(args[argnum])
         except NotImplementedError:
