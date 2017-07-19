@@ -444,7 +444,7 @@ anp.make_diagonal.defvjp(
     anp.diagonal(g, offset, axis1, axis2))
 
 def match_complex(vs, x):
-    x_iscomplex = vspace(getval(x)).iscomplex
+    x_iscomplex = vspace(x).iscomplex
     if x_iscomplex and not vs.iscomplex:
         return anp.real(x)
     elif not x_iscomplex and vs.iscomplex:
