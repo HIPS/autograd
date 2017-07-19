@@ -1,14 +1,11 @@
 from __future__ import absolute_import
 from __future__ import print_function
 from copy import copy
-from operator import itemgetter
-from future.utils import iteritems
-from builtins import map, range, zip
+from builtins import range
 
 import autograd.numpy as np
 from autograd.convenience_wrappers import grad
 from autograd.core import vspace, vspace_flatten, getval
-from autograd.container_types import make_tuple, make_list, make_dict
 
 EPS, RTOL, ATOL = 1e-4, 1e-4, 1e-6
 
@@ -92,39 +89,8 @@ def flatten(value):
        Returns 1D numpy array and an unflatten function.
        Doesn't preserve mixed numeric types (e.g. floats and ints).
        Assumes dict keys are sortable."""
-    if isinstance(getval(value), np.ndarray):
-        shape = value.shape
-        def unflatten(vector):
-            return np.reshape(vector, shape)
-        return np.ravel(value), unflatten
-
-    elif isinstance(getval(value), (float, int)):
-        return np.array([value]), lambda x : x[0]
-
-    elif isinstance(getval(value), (tuple, list)):
-        constructor = make_tuple if isinstance(getval(value), tuple) else make_list
-        if not value:
-            return np.array([]), lambda x : constructor()
-        flat_pieces, unflatteners = zip(*map(flatten, value))
-        split_indices = np.cumsum([len(vec) for vec in flat_pieces[:-1]])
-
-        def unflatten(vector):
-            pieces = np.split(vector, split_indices)
-            return constructor(*[unflatten(v) for unflatten, v in zip(unflatteners, pieces)])
-
-        return np.concatenate(flat_pieces), unflatten
-
-    elif isinstance(getval(value), dict):
-        items = sorted(iteritems(value), key=itemgetter(0))
-        keys, flat_pieces, unflatteners = zip(*[(k,) + flatten(v) for k, v in items])
-        split_indices = np.cumsum([len(vec) for vec in flat_pieces[:-1]])
-
-        def unflatten(vector):
-            pieces = np.split(vector, split_indices)
-            return make_dict([(key, unflattener(piece))
-                    for piece, unflattener, key in zip(pieces, unflatteners, keys)])
-
-        return np.concatenate(flat_pieces), unflatten
+    vs = vspace(value)
+    return vs.flatten(value), vs.unflatten
 
 def flatten_func(func, example):
     """Flattens both the inputs to a function, and the outputs."""
