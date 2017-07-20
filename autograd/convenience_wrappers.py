@@ -125,8 +125,8 @@ def make_ggnvp(f, g=lambda x: 1./2*np.sum(x**2, axis=-1), f_argnum=0):
     def ggnvp_maker(*args, **kwargs):
         f_vjp, f_x = make_vjp(f, f_argnum)(*args, **kwargs)
         g_hvp, grad_g_x = make_vjp(grad(g))(f_x)
-        f_vjp_vjp, _ = make_vjp(f_vjp)(vspace(getval(grad_g_x)).zeros())
-        def ggnvp(v): return f_vjp(g_hvp(f_vjp_vjp(v)))
+        f_jvp, _ = make_vjp(f_vjp)(vspace(getval(grad_g_x)).zeros())
+        def ggnvp(v): return f_vjp(g_hvp(f_jvp(v)))
         return ggnvp
     return ggnvp_maker
 
