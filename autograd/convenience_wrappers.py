@@ -84,7 +84,7 @@ def make_hvp(fun, argnum=0):
     which may be useful when evaluating many Hessian-vector products at the same
     point while caching the results of the forward pass."""
     def hvp_maker(*args, **kwargs):
-        return make_vjp(grad(fun, argnum), argnum)(*args, **kwargs)[0]
+        return make_vjp(grad(fun, argnum), argnum)(*args, **kwargs)
     return hvp_maker
 
 def hessian_tensor_product(fun, argnum=0):
