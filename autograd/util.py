@@ -4,6 +4,7 @@ from copy import copy
 from builtins import range
 
 import autograd.numpy as np
+import autograd.cupy as cp
 from autograd.convenience_wrappers import grad
 from autograd.core import vspace, vspace_flatten, getval
 

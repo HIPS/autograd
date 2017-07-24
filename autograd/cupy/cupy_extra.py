@@ -82,6 +82,9 @@ class CupyArrayVSpace(VSpace):
     def zeros(self):
         return acp.zeros(self.shape, dtype=self.dtype)
 
+    def ones(self):
+        return acp.ones(self.shape, dtype=self.dtype)
+
     def flatten(self, value, covector=False):
         return acp.ravel(value)
 
