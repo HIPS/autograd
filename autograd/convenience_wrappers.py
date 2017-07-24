@@ -61,7 +61,7 @@ def value_and_multigrad(fun, argnums=[0]):
         return fun(*extra_args_list, **kwargs)
     gradfun = value_and_grad(combined_arg_fun, argnum=0)
     def gradfun_rearranged(*args, **kwargs):
-        multi_arg = tuple([args[i] for i in argnums])
+        multi_arg = make_tuple(*[args[i] for i in argnums])
         return gradfun(multi_arg, *args, **kwargs)
     return gradfun_rearranged
 
