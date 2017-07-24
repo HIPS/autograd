@@ -124,7 +124,7 @@ def test_hvp():
     a = npr.randn(5)
     v = npr.randn(5)
     H = hessian(fun)(a)
-    hvp = make_hvp(fun)(a)
+    hvp = make_hvp(fun)(a)[0]
     check_equivalent(np.dot(H, v), hvp(v))
 
 def test_hessian_matrix_product():
