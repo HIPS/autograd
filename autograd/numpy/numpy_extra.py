@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 import numpy as np
+from copy import copy
 
 from autograd.core import (Node, VSpace, SparseObject, primitive,
                            register_node, register_vspace)
@@ -100,6 +101,15 @@ class ArrayVSpace(VSpace):
             return original_examples + np_scalar_examples + py_scalar_examples
         else:
             return original_examples
+
+    def __mul__(self, other):
+        if type(other) == type(self) and other.dtype == self.dtype:
+            product_vspace = copy(self)
+            product_vspace.shape += other.shape
+            product_vspace.size *= other.size
+            return product_vspace
+        else:
+            raise NotImplementedError
 
 class ComplexArrayVSpace(ArrayVSpace):
     iscomplex = True

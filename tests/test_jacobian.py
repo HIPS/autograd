@@ -3,6 +3,8 @@ import autograd.numpy as np
 import autograd.numpy.random as npr
 from autograd.util import check_grads
 from autograd import grad, jacobian
+from autograd.core import vspace
+from numpy.testing import assert_raises
 
 npr.seed(1)
 
@@ -41,3 +43,16 @@ def test_jacobian_higher_order():
 
     check_grads(lambda x: np.sum(np.sin(jacobian(fun)(x))), npr.randn(3))
     check_grads(lambda x: np.sum(np.sin(jacobian(jacobian(fun))(x))), npr.randn(3))
+
+def test_array_vspace_tensor_product():
+    a = np.array([2., 3.])
+    b = npr.randn(3, 4, 5)
+    product_vspace = vspace(a) * vspace(b)
+    assert product_vspace.shape == (2, 3, 4, 5)
+    assert product_vspace.size == 120
+
+def test_array_vspace_incompatible():
+    a = np.array([2., 3.], dtype=np.float32)
+    b = npr.randn(3, 4, 5)
+    with assert_raises(ValueError):
+        a * b
