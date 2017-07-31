@@ -1,8 +1,6 @@
 from __future__ import absolute_import
 import sys
 import types
-import numpy as np
-import cupy as cp
 from functools import partial
 import warnings
 from .errors import defgrad_deprecated
