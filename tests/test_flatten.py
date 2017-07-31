@@ -4,7 +4,7 @@ from autograd.util import flatten
 from autograd import make_vjp, grad
 
 def test_flatten():
-    val = (npr.randn(4), [npr.randn(3,4), 2.5], (), (2.0, [1.0, npr.randn(2)]))
+    val = (npr.randn(4), [npr.randn(3,4), 2.5], (2.0, [1.0, npr.randn(2)]))
     vect, unflatten = flatten(val)
     val_recovered = unflatten(vect)
     vect_2, _ = flatten(val_recovered)
