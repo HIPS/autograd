@@ -66,6 +66,7 @@ class SequenceVSpace(VSpace):
         self.shape = [vspace(x) for x in value]
         self.size = sum(s.size for s in self.shape)
         self.sequence_type = type(value)
+        self.lib = vspace(value[0]).lib
         assert self.sequence_type in (tuple, list)
 
     def zeros(self):
@@ -77,10 +78,10 @@ class SequenceVSpace(VSpace):
 
     def flatten(self, value, covector=False):
         if self.shape:
-            return np.concatenate(
-                [vs.flatten(v, covector) for vs, v in zip(self.shape, value)])
+            return self.lib.concatenate([vs.flatten(v, covector)
+                                         for vs, v in zip(self.shape, value)])
         else:
-            return np.zeros((0,))
+            return self.lib.zeros((0,))
 
     def unflatten(self, value, covector=False):
         result = []
@@ -137,6 +138,7 @@ class DictVSpace(VSpace):
     def __init__(self, value):
         self.shape = {k : vspace(v) for k, v in iteritems(value)}
         self.size  = sum(s.size for s in self.shape.values())
+        self.lib = vspace(next(iter(value.values()))).lib
     def zeros(self):
         return {k : v.zeros() for k, v in iteritems(self.shape)}
     def mut_add(self, xs, ys):
@@ -144,11 +146,11 @@ class DictVSpace(VSpace):
                 for k, v in iteritems(self.shape)}
     def flatten(self, value, covector=False):
         if self.shape:
-            return np.concatenate(
+            return self.lib.concatenate(
                 [s.flatten(value[k], covector)
                  for k, s in sorted(iteritems(self.shape))])
         else:
-            return np.zeros((0,))
+            return self.lib.zeros((0,))
 
     def unflatten(self, value, covector=False):
         result = {}

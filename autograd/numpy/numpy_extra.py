@@ -72,6 +72,7 @@ class ArrayVSpace(VSpace):
         self.dtype = value.dtype
         self.ndim  = value.ndim
         self.scalartype = float
+        self.lib = np
 
     def zeros(self):
         return np.zeros(self.shape, dtype=self.dtype)

@@ -2,7 +2,7 @@ from __future__ import absolute_import
 import sys
 import types
 import numpy as np
-import numpy.random as npr
+import cupy as cp
 from functools import partial
 import warnings
 from .errors import defgrad_deprecated
@@ -222,11 +222,10 @@ class VSpace(object):
     def examples(self):
         # Used for testing only
         N = self.size
-        unit_vect = np.zeros(N)
-        unit_vect[npr.randint(N)] = 1.0
+        unit_vect = self.lib.zeros(N)
+        unit_vect[self.lib.random.randint(N)] = 0.0
         unit_vect = self.unflatten(unit_vect)
-        rand_vect = npr.randn(N)
-        return [self.zeros(), self.unflatten(npr.randn(N))]
+        return [self.zeros(), self.unflatten(self.lib.random.randn(N))]
 
 def vspace_flatten(value, covector=False):
     return vspace(value).flatten(value, covector)
