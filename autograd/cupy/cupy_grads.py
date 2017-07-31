@@ -20,6 +20,8 @@ acp.subtract.defvjp(lambda g, ans, vs, gvs, x, y: unbroadcast(vs, gvs, g))
 acp.subtract.defvjp(lambda g, ans, vs, gvs, x, y: unbroadcast(vs, gvs, -g), argnum=1)
 acp.divide.defvjp(  lambda g, ans, vs, gvs, x, y: unbroadcast(vs, gvs, g / y))
 acp.divide.defvjp(  lambda g, ans, vs, gvs, x, y: unbroadcast(vs, gvs, - g * x / y**2), argnum=1)
+acp.true_divide.defvjp(  lambda g, ans, vs, gvs, x, y: unbroadcast(vs, gvs, g / y))
+acp.true_divide.defvjp(  lambda g, ans, vs, gvs, x, y: unbroadcast(vs, gvs, - g * x / y**2), argnum=1)
 acp.maximum.defvjp( lambda g, ans, vs, gvs, x, y: unbroadcast(vs, gvs, g * balanced_eq(x, ans, y)))
 acp.maximum.defvjp( lambda g, ans, vs, gvs, x, y: unbroadcast(vs, gvs, g * balanced_eq(y, ans, x)),
                    argnum=1)

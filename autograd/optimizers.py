@@ -10,6 +10,7 @@ from __future__ import absolute_import
 
 import autograd.numpy as np
 from autograd.util import flatten_func
+from autograd.core import vspace
 from builtins import range
 
 
@@ -44,9 +45,10 @@ def adam(grad, init_params, callback=None, num_iters=100,
     """Adam as described in http://arxiv.org/pdf/1412.6980.pdf.
     It's basically RMSprop with momentum and some correction terms."""
     flattened_grad, unflatten, x = flatten_func(grad, init_params)
+    lib = vspace(x).lib
 
-    m = np.zeros(len(x))
-    v = np.zeros(len(x))
+    m = lib.zeros(len(x), dtype=x.dtype)
+    v = lib.zeros(len(x), dtype=x.dtype)
     for i in range(num_iters):
         g = flattened_grad(x, i)
         if callback: callback(unflatten(x), i, unflatten(g))
@@ -54,5 +56,5 @@ def adam(grad, init_params, callback=None, num_iters=100,
         v = (1 - b2) * (g**2) + b2 * v  # Second moment estimate.
         mhat = m / (1 - b1**(i + 1))    # Bias correction.
         vhat = v / (1 - b2**(i + 1))
-        x = x - step_size*mhat/(np.sqrt(vhat) + eps)
+        x = x - step_size*mhat/(lib.sqrt(vhat) + eps)
     return unflatten(x)

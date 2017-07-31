@@ -17,7 +17,8 @@ nograd_functions = [
 def wrap_namespace(old, new):
     unchanged_types = {float, int, type(None), type}
     int_types = {_cupy.int8, _cupy.int16, _cupy.int32, _cupy.int64, _cupy.integer}
-    function_types = {_cupy.ufunc, types.FunctionType, types.BuiltinFunctionType}
+    function_types = {_cupy.ufunc, _cupy.fusion.ufunc,
+                      types.FunctionType, types.BuiltinFunctionType}
     for name, obj in iteritems(old):
         if obj in nograd_functions:
             new[name] = nograd_primitive(obj)
