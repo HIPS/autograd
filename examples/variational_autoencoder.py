@@ -70,7 +70,7 @@ def vae_lower_bound(gen_params, rec_params, data, rs):
     q_means, q_log_stds = nn_predict_gaussian(rec_params, data)
     latents = sample_diag_gaussian(q_means, q_log_stds, rs)
     q_latents = diag_gaussian_log_density(latents, q_means, q_log_stds)
-    p_latents = diag_gaussian_log_density(latents, 0, 1)
+    p_latents = diag_gaussian_log_density(latents, 0, 0)
     likelihood = p_images_given_latents(gen_params, data, latents)
     return np.mean(p_latents + likelihood - q_latents)
 
