@@ -111,7 +111,8 @@ def make_jvp(fun, argnum=0):
     """Builds a function for evaluating the Jacobian-vector product at a
     point. Roughly 1.5x more FLOPs than forward-mode, plus memory requirements
     that scale with the number of primitives applied in the evaluation of f, as
-    well as other overheads. See github.com/BB-UCL/autograd-forward."""
+    well as other overheads. See j-towns.github.io/2017/06/12/A-new-trick.html
+    and github.com/BB-UCL/autograd-forward."""
     def jvp_maker(*args, **kwargs):
         vjp, y = make_vjp(fun, argnum)(*args, **kwargs)
         vjp_vjp, _ = make_vjp(vjp)(vspace(y).zeros())
