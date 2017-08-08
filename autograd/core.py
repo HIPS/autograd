@@ -29,15 +29,13 @@ def forward_pass(fun, args, kwargs, argnum=0):
 
 def backward_pass(g, end_node, start_box):
     outgrads = {end_node : (g, False)}
-    assert_vspace_match(outgrads[end_node][0], end_node.vspace, None)
+    assert_vspace_match(outgrads[end_node][0], end_node.vspace)
     for node in toposort(end_node, start_box):
         if node not in outgrads: continue
         cur_outgrad = outgrads.pop(node)
-        function, args, kwargs, parents, ans = node.recipe
-        for argnum, parent in parents:
-            outgrad = function.vjp(argnum, cur_outgrad[0], ans,
-                                   parent.vspace, node.vspace, args, kwargs)
-            assert_vspace_match(outgrad, parent.vspace, function)
+        for parent, vjp in node.parents_and_vjps:
+            outgrad = vjp(cur_outgrad[0])
+            assert_vspace_match(outgrad, parent.vspace)
             outgrads[parent] = add_outgrads(parent.vspace, outgrads.get(parent), outgrad)
     return cur_outgrad[0]
 
@@ -81,16 +79,20 @@ class primitive(object):
 
         result_value = self.fun(*argvals, **kwargs)
         if progenitors:
-            recipe = [self, args, kwargs, parents]
-            result_box = new_box(result_value, recipe, progenitors)
-            recipe.append(result_box)
+            vs = vspace(result_value)
+            result_box = new_box(result_value, [], progenitors)
+            parents_and_vjps = [
+                (parent,
+                 self.vjp(argnum, result_box, parent.vspace, vs, args, kwargs))
+                for argnum, parent in parents]
+            result_box.node.parents_and_vjps.extend(parents_and_vjps)
             return result_box
         else:
             return result_value
 
-    def vjp(self, argnum, outgrad, ans, vs, gvs, args, kwargs):
+    def vjp(self, argnum, ans, vs, gvs, args, kwargs):
         try:
-            return self.vjps[argnum](outgrad, ans, vs, gvs, *args, **kwargs)
+            return self.vjps[argnum](ans, vs, gvs, *args, **kwargs)
         except KeyError:
             if self.vjps == {}:
                 errstr = "Gradient of {0} not yet implemented."
@@ -139,26 +141,25 @@ def primitive_mut_add(vspace, x_prev, x_new):
         return x_new.mut_add(x_prev)
     else:
         return vspace.mut_add(x_prev, x_new)
-primitive_mut_add.vjp = lambda argnum, g, *args : g
+primitive_mut_add.vjp = lambda *args: lambda g: g
 
 def new_progenitor(x):
     if isbox(x):
-        box = new_box(x.value, (identity, (x,), {}, [(0, x.node)], x),
-                        x.node.progenitors)
+        box = new_box(x.value, [(x.node, identity)], x.node.progenitors)
     else:
-        box = new_box(x,       (identity, (x,), {}, [], x), set())
+        box = new_box(x, [], set())
     box.node.progenitors = box.node.progenitors | {box}
     return box
 
 @primitive
 def identity(x) : return x
-identity.defvjp(lambda g, ans, vs, gvs, x : g)
+identity.defvjp(lambda *args: lambda g: g)
 
 class Node(object):
-    __slots__ = ['recipe', 'progenitors', 'vspace']
+    __slots__ = ['parents_and_vjps', 'progenitors', 'vspace']
 
-    def __init__(self, recipe, progenitors, vspace):
-        self.recipe = recipe
+    def __init__(self, parents_and_vjps, progenitors, vspace):
+        self.parents_and_vjps = parents_and_vjps
         self.progenitors = progenitors
         self.vspace = vspace
 
@@ -181,7 +182,7 @@ class Box(object):
 
 def toposort(end_node, start_box):
     def relevant_parents(node):
-        return [parent for _, parent in node.recipe[3] if start_box in parent.progenitors]
+        return [parent for parent, _ in node.parents_and_vjps if start_box in parent.progenitors]
 
     child_counts = {}
     stack = [end_node]
@@ -251,9 +252,9 @@ def register_box(box_type, value_type):
 def register_vspace(vspace_maker, value_type):
     vspace_mappings[value_type] = vspace_maker
 
-def new_box(value, recipe, progenitors):
+def new_box(value, parents_and_vjps, progenitors):
     try:
-        node = Node(recipe, progenitors, vspace(value))
+        node = Node(parents_and_vjps, progenitors, vspace(value))
         return box_type_mappings[type(value)](value, node)
     except KeyError:
         raise TypeError("Can't differentiate w.r.t. type {}".format(type(value)))
@@ -276,11 +277,11 @@ class SparseObject(object):
 register_vspace(lambda x : x.vs, SparseObject)
 register_box(Box, SparseObject)
 
-def assert_vspace_match(x, expected_vspace, fun):
+def assert_vspace_match(x, expected_vspace):
     assert expected_vspace == vspace(x), \
-        "\nGrad of {} returned unexpected vector space" \
+        "\nGrad returned unexpected vector space" \
         "\nVector space is {}" \
-        "\nExpected        {}".format(fun, vspace(x), expected_vspace)
+        "\nExpected        {}".format(vspace(x), expected_vspace)
 
 isbox = lambda x: type(x) in box_types
 getval = lambda x: x.value if isbox(x) else x
