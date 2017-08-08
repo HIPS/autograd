@@ -10,11 +10,11 @@ from .errors import defgrad_deprecated
 def make_vjp(fun, argnum=0):
     def vjp_maker(*args, **kwargs):
         start_node, end_node = forward_pass(fun, args, kwargs, argnum)
-        if not isnode(end_node) or start_node not in end_node.progenitors:
+        if not isnode(end_node) or start_node not in end_node.rnode.progenitors:
             warnings.warn("Output seems independent of input.")
             def vjp(g): return start_node.vspace.zeros()
         else:
-            def vjp(g): return backward_pass(g, end_node, start_node)
+            def vjp(g): return backward_pass(g, end_node.rnode, start_node)
         return vjp, end_node
     return vjp_maker
 
@@ -27,16 +27,16 @@ def forward_pass(fun, args, kwargs, argnum=0):
     active_progenitors.remove(start_node)
     return start_node, end_node
 
-def backward_pass(g, end_node, start_node):
-    outgrads = {end_node : (g, False)}
-    assert_vspace_match(outgrads[end_node][0], end_node.vspace, None)
-    for node in toposort(end_node, start_node):
-        if node not in outgrads: continue
-        cur_outgrad = outgrads.pop(node)
-        function, args, kwargs, parents = node.recipe
+def backward_pass(g, end_rnode, start_node):
+    outgrads = {end_rnode : (g, False)}
+    assert_vspace_match(outgrads[end_rnode][0], end_rnode.vspace, None)
+    for rnode in toposort(end_rnode, start_node):
+        if rnode not in outgrads: continue
+        cur_outgrad = outgrads.pop(rnode)
+        function, args, kwargs, parents, ans = rnode.recipe
         for argnum, parent in parents:
-            outgrad = function.vjp(argnum, cur_outgrad[0], node,
-                                   parent.vspace, node.vspace, args, kwargs)
+            outgrad = function.vjp(argnum, cur_outgrad[0], ans,
+                                   parent.vspace, rnode.vspace, args, kwargs)
             assert_vspace_match(outgrad, parent.vspace, function)
             outgrads[parent] = add_outgrads(parent.vspace, outgrads.get(parent), outgrad)
     return cur_outgrad[0]
@@ -76,12 +76,15 @@ class primitive(object):
             if isnode(arg):
                 argvals[argnum] = arg.value
                 if argnum in self.zero_vjps: continue
-                parents.append((argnum, arg))
-                progenitors.update(arg.progenitors & active_progenitors)
+                parents.append((argnum, arg.rnode))
+                progenitors.update(arg.rnode.progenitors & active_progenitors)
 
         result_value = self.fun(*argvals, **kwargs)
         if progenitors:
-            return new_node(result_value, (self, args, kwargs, parents), progenitors)
+            recipe = [self, args, kwargs, parents]
+            result_node = new_node(result_value, recipe, progenitors)
+            recipe.append(result_node)
+            return result_node
         else:
             return result_value
 
@@ -140,24 +143,32 @@ primitive_mut_add.vjp = lambda argnum, g, *args : g
 
 def new_progenitor(x):
     if isnode(x):
-        node = new_node(x.value, (identity, (x,), {}, [(0, x)]), x.progenitors)
+        node = new_node(x.value, (identity, (x,), {}, [(0, x.rnode)], x),
+                        x.rnode.progenitors)
     else:
-        node = new_node(x,       (identity, (x,), {}, []      ), set())
-    node.progenitors = node.progenitors | {node}
+        node = new_node(x,       (identity, (x,), {}, [], x), set())
+    node.rnode.progenitors = node.rnode.progenitors | {node}
     return node
 
 @primitive
 def identity(x) : return x
 identity.defvjp(lambda g, ans, vs, gvs, x : g)
 
-class Node(object):
-    __slots__ = ['value', 'recipe', 'progenitors', 'vspace']
+class ReverseNode(object):
+    __slots__ = ['recipe', 'progenitors', 'vspace']
 
-    def __init__(self, value, recipe, progenitors):
-        self.value = value
+    def __init__(self, recipe, progenitors, vspace):
         self.recipe = recipe
         self.progenitors = progenitors
-        self.vspace = vspace(value)
+        self.vspace = vspace
+
+class Node(object):
+    __slots__ = ['vspace', 'value', 'rnode']
+
+    def __init__(self, value, rnode):
+        self.value = value
+        self.rnode = rnode
+        self.vspace = rnode.vspace
 
     def __bool__(self):
         return bool(self.value)
@@ -242,7 +253,8 @@ def register_vspace(vspace_maker, value_type):
 
 def new_node(value, recipe, progenitors):
     try:
-        return node_type_mappings[type(value)](value, recipe, progenitors)
+        rnode = ReverseNode(recipe, progenitors, vspace(value))
+        return node_type_mappings[type(value)](value, rnode)
     except KeyError:
         raise TypeError("Can't differentiate w.r.t. type {}".format(type(value)))
 
@@ -274,6 +286,6 @@ isnode = lambda x: type(x) in node_types
 getval = lambda x: x.value if isnode(x) else x
 
 def unbox_if_possible(node):
-    if isnode(node) and not active_progenitors.intersection(node.progenitors):
+    if isnode(node) and not active_progenitors.intersection(node.rnode.progenitors):
         return node.value
     return node
