@@ -4,7 +4,7 @@ from numpy.core.einsumfunc import _parse_einsum_input
 
 from autograd.core import primitive, getval, vspace
 from . import numpy_wrapper as anp
-from .numpy_extra import ArrayNode, take
+from .numpy_extra import ArrayBox, take
 from builtins import range, zip
 from future.utils import string_types
 
@@ -346,7 +346,7 @@ def wrapped_reshape(x, *args, **kwargs):
         return anp.reshape(x, args, **kwargs)
     else:
         return anp.reshape(x, *args, **kwargs)
-setattr(ArrayNode, 'reshape', wrapped_reshape)
+setattr(ArrayBox, 'reshape', wrapped_reshape)
 
 def grad_sort(g, ans, vs, gvs, x, axis=-1, kind='quicksort', order=None):
     #TODO: Cast input with np.asanyarray()

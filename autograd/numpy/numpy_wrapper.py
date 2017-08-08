@@ -71,9 +71,9 @@ def array(A, *args, **kwargs):
         return _np.array(A, *args, **kwargs)
     else:
         raw_array = _np.array(A, *args, **kwargs)
-        return wrap_if_nodes_inside(raw_array)
+        return wrap_if_boxes_inside(raw_array)
 
-def wrap_if_nodes_inside(raw_array, slow_op_name=None):
+def wrap_if_boxes_inside(raw_array, slow_op_name=None):
     if raw_array.dtype is _np.dtype('O'):
         if slow_op_name:
             warnings.warn("{0} is slow for array inputs. "
@@ -119,11 +119,11 @@ def stack(arrays, axis=0):
 class r_class():
     def __getitem__(self, args):
         raw_array = _np.r_[args]
-        return wrap_if_nodes_inside(raw_array, slow_op_name = "r_")
+        return wrap_if_boxes_inside(raw_array, slow_op_name = "r_")
 r_ = r_class()
 
 class c_class():
     def __getitem__(self, args):
         raw_array = _np.c_[args]
-        return wrap_if_nodes_inside(raw_array, slow_op_name = "c_")
+        return wrap_if_boxes_inside(raw_array, slow_op_name = "c_")
 c_ = c_class()

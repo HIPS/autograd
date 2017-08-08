@@ -1,8 +1,8 @@
 from __future__ import absolute_import
 import numpy as np
 
-from autograd.core import (Node, VSpace, SparseObject, primitive,
-                           register_node, register_vspace)
+from autograd.core import (Box, VSpace, SparseObject, primitive,
+                           register_box, register_vspace)
 from . import numpy_wrapper as anp
 
 @primitive
@@ -21,9 +21,9 @@ def untake(x, idx, vs):
 untake.defvjp(lambda g, ans, vs, gvs, x, idx, _: take(g, idx))
 untake.defvjp_is_zero(argnums=(1, 2))
 
-Node.__array_priority__ = 90.0
+Box.__array_priority__ = 90.0
 
-class ArrayNode(Node):
+class ArrayBox(Box):
     __slots__ = []
     __getitem__ = take
     __array_priority__ = 100.0
@@ -121,18 +121,18 @@ class ComplexArrayVSpace(ArrayVSpace):
         else:
             return anp.array(reshaped[0] + 1j * reshaped[1])
 
-register_node(ArrayNode, np.ndarray)
+register_box(ArrayBox, np.ndarray)
 register_vspace(lambda x: ComplexArrayVSpace(x)
                 if np.iscomplexobj(x)
                 else ArrayVSpace(x), np.ndarray)
-array_types = set([anp.ndarray, ArrayNode])
+array_types = set([anp.ndarray, ArrayBox])
 
 for type_ in [float, anp.float64, anp.float32, anp.float16]:
-    register_node(ArrayNode, type_)
+    register_box(ArrayBox, type_)
     register_vspace(ArrayVSpace, type_)
 
 for type_ in [complex, anp.complex64, anp.complex128]:
-    register_node(ArrayNode, type_)
+    register_box(ArrayBox, type_)
     register_vspace(ComplexArrayVSpace, type_)
 
 # These numpy.ndarray methods are just refs to an equivalent numpy function
@@ -143,7 +143,7 @@ diff_methods = ['clip', 'compress', 'cumprod', 'cumsum', 'diagonal',
                 'reshape', 'squeeze', 'std', 'sum', 'swapaxes', 'take',
                 'trace', 'transpose', 'var']
 for method_name in nondiff_methods + diff_methods:
-    setattr(ArrayNode, method_name, anp.__dict__[method_name])
+    setattr(ArrayBox, method_name, anp.__dict__[method_name])
 
 # Flatten has no function, only a method.
-setattr(ArrayNode, 'flatten', anp.__dict__['ravel'])
+setattr(ArrayBox, 'flatten', anp.__dict__['ravel'])

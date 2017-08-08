@@ -1,20 +1,20 @@
 from __future__ import absolute_import
-from autograd.core import (primitive, Node, VSpace, register_node, vspace,
+from autograd.core import (primitive, Box, VSpace, register_box, vspace,
                            register_vspace, SparseObject)
 from builtins import zip
 from future.utils import iteritems
 from functools import partial
 import autograd.numpy as np
 
-class SequenceNode(Node):
+class SequenceBox(Box):
     __slots__ = []
     def __getitem__(self, idx): return sequence_take(self, idx)
     def __len__(self): return len(self.value)
     def __add__(self, other): return sequence_extend_right(self, *other)
     def __radd__(self, other): return sequence_extend_left(self, *other)
 
-register_node(SequenceNode, tuple)
-register_node(SequenceNode, list)
+register_box(SequenceBox, tuple)
+register_box(SequenceBox, list)
 
 @primitive
 def sequence_take(A, idx):
@@ -94,7 +94,7 @@ class SequenceVSpace(VSpace):
 register_vspace(SequenceVSpace, list)
 register_vspace(SequenceVSpace, tuple)
 
-class DictNode(Node):
+class DictBox(Box):
     __slots__ = []
     def __getitem__(self, idx): return dict_take(self, idx)
     def __len__(self): return len(self.value)
@@ -106,7 +106,7 @@ class DictNode(Node):
     def iterkeys(self): return iter(self)
     def itervalues(self): return (self[k] for k in self)
 
-register_node(DictNode, dict)
+register_box(DictBox, dict)
 
 @primitive
 def dict_take(A, idx):
