@@ -5,6 +5,7 @@ from __future__ import print_function
 import autograd.numpy as np
 import autograd.numpy.random as npr
 import autograd.scipy.stats.norm as norm
+from autograd.scipy.special import expit as sigmoid
 
 from autograd import grad
 from autograd.optimizers import adam
@@ -29,7 +30,6 @@ def bernoulli_log_density(targets, unnormalized_logprobs):
     return np.sum(label_probabilities, axis=-1)   # Sum across pixels.
 
 def relu(x):    return np.maximum(0, x)
-def sigmoid(x): return 0.5 * (np.tanh(0.5 * x) + 1)
 
 def init_net_params(scale, layer_sizes, rs=npr.RandomState(0)):
     """Build a (weights, biases) tuples for all layers."""
