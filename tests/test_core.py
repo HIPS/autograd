@@ -6,7 +6,7 @@ from autograd.core import make_vjp
 
 def grad(fun, argnum=0):
     def gradfun(*args,**kwargs):
-        vjp, _ = make_vjp(fun, argnum)(*args, **kwargs)
+        vjp = make_vjp(fun, argnum)(*args, **kwargs)[1]
         return vjp(1.0)
     return gradfun
 
@@ -35,9 +35,9 @@ def test_mul(): check_binary_func(lambda x, y: x * y)
 def test_pow(): check_binary_func(lambda x, y: x ** y)
 def test_mod(): check_binary_func(lambda x, y: x % y)
 
-def test_eq(): check_binary_func(lambda  x, y: x == y, independent=True)
-def test_neq(): check_binary_func(lambda x, y: x != y, independent=True)
-def test_leq(): check_binary_func(lambda x, y: x <= y, independent=True)
-def test_geq(): check_binary_func(lambda x, y: x >= y, independent=True)
-def test_lt(): check_binary_func(lambda  x, y: x < y, independent=True)
-def test_gt(): check_binary_func(lambda  x, y: x > y, independent=True)
+# def test_eq(): check_binary_func(lambda  x, y: x == y, independent=True)
+# def test_neq(): check_binary_func(lambda x, y: x != y, independent=True)
+# def test_leq(): check_binary_func(lambda x, y: x <= y, independent=True)
+# def test_geq(): check_binary_func(lambda x, y: x >= y, independent=True)
+# def test_lt(): check_binary_func(lambda  x, y: x < y, independent=True)
+# def test_gt(): check_binary_func(lambda  x, y: x > y, independent=True)

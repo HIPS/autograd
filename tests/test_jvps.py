@@ -17,7 +17,7 @@ def check_vjp(fun, arg):
     vs_in  = vspace(arg)
     vs_out = vspace(fun(arg))
     autograd_jac  = linear_fun_to_matrix(
-        flatten_fun(make_vjp(fun)(arg)[0], vs_out), vs_out).T
+        flatten_fun(make_vjp(fun)(arg)[1], vs_out), vs_out).T
     numerical_jac = linear_fun_to_matrix(
         numerical_deriv(flatten_fun(fun, vs_in), vspace_flatten(arg)), vs_in)
 

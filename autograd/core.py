@@ -10,17 +10,16 @@ from .errors import defgrad_deprecated
 def make_vjp(fun, argnum=0, preserve_tape=True):
     def vjp_maker(*args, **kwargs):
         start_node, end_node = forward_pass(fun, args, kwargs, argnum)
+        start_vspace, end_vspace = map(vspace, (start_node, end_node))
         if not isnode(end_node) or start_node not in end_node.progenitors:
             warnings.warn("Output seems independent of input.")
-            start_vspace = start_node.vspace
             def vjp(g): return start_vspace.zeros()
         else:
-            end_vspace = end_node.vspace
             tape = toposort(end_node, start_node)
             def vjp(g):
                 assert_vspace_match(g, end_vspace, None)
                 return backward_pass(g, tape[:] if preserve_tape else tape)
-        return vjp, end_node
+        return end_vspace, vjp, unbox_if_possible(end_node)
     return vjp_maker
 
 def forward_pass(fun, args, kwargs, argnum=0):

@@ -25,7 +25,7 @@ def unflatten_tracing():
     val = [npr.randn(4), [npr.randn(3,4), 2.5], (), (2.0, [1.0, npr.randn(2)])]
     vect, unflatten = flatten(val)
     def f(vect): return unflatten(vect)
-    flatten2, _ = make_vjp(f)(vect)
+    flatten2 = make_vjp(f)(vect)[1]
     assert np.all(vect == flatten2(val))
 
 def test_flatten_nodes_in_containers():

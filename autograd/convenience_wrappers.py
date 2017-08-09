@@ -19,8 +19,8 @@ def grad(fun, argnum=0):
     def gradfun(*args,**kwargs):
         args = list(args)
         args[argnum] = safe_type(args[argnum])
-        vjp, ans = make_vjp(fun, argnum, preserve_tape=False)(*args, **kwargs)
-        return vjp(vspace(ans).ones())
+        ans_vspace, vjp = make_vjp(fun, argnum, preserve_tape=False)(*args, **kwargs)[:2]
+        return vjp(ans_vspace.ones())
 
     return gradfun
 
@@ -36,8 +36,7 @@ def jacobian(fun, argnum=0):
     @attach_name_and_doc(fun, argnum, 'Jacobian')
     @add_error_hints
     def jacfun(*args, **kwargs):
-        vjp, ans = make_vjp(fun, argnum)(*args, **kwargs)
-        ans_vspace = vspace(ans)
+        ans_vspace, vjp = make_vjp(fun, argnum)(*args, **kwargs)[:2]
         jacobian_shape = ans_vspace.shape + vspace(args[argnum]).shape
         grads = map(vjp, ans_vspace.standard_basis())
         return np.reshape(np.stack(grads), jacobian_shape)
@@ -83,7 +82,7 @@ def make_hvp(fun, argnum=0):
     which may be useful when evaluating many Hessian-vector products at the same
     point while caching the results of the forward pass."""
     def hvp_maker(*args, **kwargs):
-        return make_vjp(grad(fun, argnum), argnum)(*args, **kwargs)
+        return make_vjp(grad(fun, argnum), argnum)(*args, **kwargs)[1:]
     return hvp_maker
 
 def hessian_tensor_product(fun, argnum=0):
@@ -114,8 +113,8 @@ def make_jvp(fun, argnum=0):
     well as other overheads. See j-towns.github.io/2017/06/12/A-new-trick.html
     and github.com/BB-UCL/autograd-forward."""
     def jvp_maker(*args, **kwargs):
-        vjp, y = make_vjp(fun, argnum)(*args, **kwargs)
-        vjp_vjp, _ = make_vjp(vjp)(vspace(y).zeros())
+        ans_vspace, vjp = make_vjp(fun, argnum)(*args, **kwargs)[:2]
+        vjp_vjp = make_vjp(vjp)(ans_vspace.zeros())[1]
         return vjp_vjp  # vjp_vjp is just jvp by linearity
     return jvp_maker
 
@@ -123,9 +122,9 @@ def make_ggnvp(f, g=lambda x: 1./2*np.sum(x**2, axis=-1), f_argnum=0):
     """Builds a function for evaluating generalized-Gauss-Newton-vector products
     at a point. Slightly more expensive than mixed-mode."""
     def ggnvp_maker(*args, **kwargs):
-        f_vjp, f_x = make_vjp(f, f_argnum)(*args, **kwargs)
-        g_hvp, grad_g_x = make_vjp(grad(g))(f_x)
-        f_jvp, _ = make_vjp(f_vjp)(vspace(grad_g_x).zeros())
+        f_vjp, f_x = make_vjp(f, f_argnum)(*args, **kwargs)[1:]
+        ans_vspace, g_hvp = make_vjp(grad(g))(f_x)[:2]
+        f_jvp = make_vjp(f_vjp)(ans_vspace.zeros())[1]  # extra work here
         def ggnvp(v): return f_vjp(g_hvp(f_jvp(v)))
         return ggnvp
     return ggnvp_maker
@@ -203,7 +202,7 @@ def checkpoint(fun):
     and memory. See e.g. arxiv.org/abs/1604.06174.
     """
     def wrapped_grad(argnum, g, ans, vs, gvs, args, kwargs):
-        return make_vjp(fun, argnum)(*args, **kwargs)[0](g)
+        return make_vjp(fun, argnum)(*args, **kwargs)[1](g)
     wrapped = primitive(fun)
     wrapped.vjp = wrapped_grad
     return wrapped
