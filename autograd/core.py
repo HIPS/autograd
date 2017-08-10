@@ -12,9 +12,9 @@ def make_vjp(fun, argnum=0):
         start_node, end_node = forward_pass(fun, args, kwargs, argnum)
         if not isnode(end_node) or start_node not in end_node.progenitors:
             warnings.warn("Output seems independent of input.")
-            def vjp(g): return [lambda: start_node.vspace.zeros()]
+            def vjp(g): return start_node.vspace.zeros()
         else:
-            def vjp(g): return [backward_pass, g, [end_node], start_node]
+            def vjp(g): return TailCall(backward_pass, g, [end_node], start_node)
         return vjp, end_node
     return vjp_maker
 
@@ -44,10 +44,19 @@ def backward_pass(g, end_node, start_node):
             outgrads[parent] = add_outgrads(parent.vspace, outgrads.get(parent), outgrad)
     return cur_outgrad[0]
 
-def apply_list(arg_list):
-    f = [arg_list[0]]
-    del arg_list[0]
-    return f.pop()(*arg_list)
+class TailCall(object):
+    def __init__(self, f, *args, **kwargs):
+        self.f      = f
+        self.args   = args
+        self.kwargs = kwargs
+
+def trampoline(f):
+    def f_(*args, **kwargs):
+        ans = TailCall(f, *args, **kwargs)
+        while isinstance(ans, TailCall):
+            ans = ans.f(*ans.args, **ans.kwargs)
+        return ans
+    return f_
 
 def add_outgrads(vspace, prev_g_flagged, g):
     if prev_g_flagged is None:

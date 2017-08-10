@@ -1,7 +1,8 @@
 """Convenience functions built on top of `make_vjp`."""
 from __future__ import absolute_import
 import autograd.numpy as np
-from autograd.core import make_vjp, vspace, primitive, unbox_if_possible, apply_list
+from autograd.core import (make_vjp, vspace, primitive, unbox_if_possible,
+                           trampoline, TailCall)
 from autograd.container_types import make_tuple
 from .errors import add_error_hints
 from collections import OrderedDict
@@ -14,17 +15,13 @@ def grad(fun, argnum=0):
     positional argument number `argnum`. The returned function takes the same
     arguments as `fun`, but returns the gradient instead. The function `fun`
     should be scalar-valued. The gradient has the same type as the argument."""
+    @trampoline
     @attach_name_and_doc(fun, argnum, 'Gradient')
     @add_error_hints
     def gradfun(*args,**kwargs):
-        args = list(args)
-        args[argnum] = safe_type(args[argnum])
-        vjp_, ans_ = make_vjp(fun, argnum)(*args, **kwargs)
-        vjp = [vjp_]; del vjp_
-        ans = [ans_]; del ans_
-        vs = vspace(ans.pop())
-        return apply_list(vjp.pop()(vs.ones()))
-
+        vjp, ans = make_vjp(fun, argnum)(*args, **kwargs)
+        vs = vspace(ans)
+        return TailCall(vjp, vs.ones())
     return gradfun
 
 def jacobian(fun, argnum=0):
@@ -42,7 +39,7 @@ def jacobian(fun, argnum=0):
         vjp, ans = make_vjp(fun, argnum)(*args, **kwargs)
         ans_vspace = vspace(ans)
         jacobian_shape = ans_vspace.shape + vspace(args[argnum]).shape
-        grads = map(lambda g: apply_list(vjp(g)), ans_vspace.standard_basis())
+        grads = map(trampoline(vjp), ans_vspace.standard_basis())
         return np.reshape(np.stack(grads), jacobian_shape)
 
     return jacfun
