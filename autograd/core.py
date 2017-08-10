@@ -12,9 +12,9 @@ def make_vjp(fun, argnum=0):
         start_node, end_node = forward_pass(fun, args, kwargs, argnum)
         if not isnode(end_node) or start_node not in end_node.progenitors:
             warnings.warn("Output seems independent of input.")
-            def vjp(g): return start_node.vspace.zeros()
+            def vjp(g): return [lambda: start_node.vspace.zeros()]
         else:
-            def vjp(g): return backward_pass(g, end_node, start_node)
+            def vjp(g): return [backward_pass, g, [end_node], start_node]
         return vjp, end_node
     return vjp_maker
 
@@ -28,9 +28,12 @@ def forward_pass(fun, args, kwargs, argnum=0):
     return start_node, end_node
 
 def backward_pass(g, end_node, start_node):
+    end_node = end_node.pop()
     outgrads = {end_node : (g, False)}
     assert_vspace_match(outgrads[end_node][0], end_node.vspace, None)
-    for node in toposort(end_node, start_node):
+    sorted_nodes = toposort([end_node], start_node)
+    del end_node
+    for node in sorted_nodes:
         if node not in outgrads: continue
         cur_outgrad = outgrads.pop(node)
         function, args, kwargs, parents = node.recipe
@@ -40,6 +43,11 @@ def backward_pass(g, end_node, start_node):
             assert_vspace_match(outgrad, parent.vspace, function)
             outgrads[parent] = add_outgrads(parent.vspace, outgrads.get(parent), outgrad)
     return cur_outgrad[0]
+
+def apply_list(arg_list):
+    f = [arg_list[0]]
+    del arg_list[0]
+    return f.pop()(*arg_list)
 
 def add_outgrads(vspace, prev_g_flagged, g):
     if prev_g_flagged is None:
@@ -173,7 +181,7 @@ def toposort(end_node, start_node):
         return [parent for _, parent in node.recipe[3] if start_node in parent.progenitors]
 
     child_counts = {}
-    stack = [end_node]
+    stack = [end_node[0]]
     while stack:
         node = stack.pop()
         if node in child_counts:
@@ -182,9 +190,10 @@ def toposort(end_node, start_node):
             child_counts[node] = 1
             stack.extend(relevant_parents(node))
 
-    childless_nodes = [end_node]
+    childless_nodes = [end_node.pop()]
     while childless_nodes:
         node = childless_nodes.pop()
+        del child_counts[node]
         yield node
         for parent in relevant_parents(node):
             if child_counts[parent] == 1:

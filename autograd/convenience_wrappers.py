@@ -1,7 +1,7 @@
 """Convenience functions built on top of `make_vjp`."""
 from __future__ import absolute_import
 import autograd.numpy as np
-from autograd.core import make_vjp, vspace, primitive, unbox_if_possible
+from autograd.core import make_vjp, vspace, primitive, unbox_if_possible, apply_list
 from autograd.container_types import make_tuple
 from .errors import add_error_hints
 from collections import OrderedDict
@@ -19,8 +19,11 @@ def grad(fun, argnum=0):
     def gradfun(*args,**kwargs):
         args = list(args)
         args[argnum] = safe_type(args[argnum])
-        vjp, ans = make_vjp(fun, argnum)(*args, **kwargs)
-        return vjp(vspace(ans).ones())
+        vjp_, ans_ = make_vjp(fun, argnum)(*args, **kwargs)
+        vjp = [vjp_]; del vjp_
+        ans = [ans_]; del ans_
+        vs = vspace(ans.pop())
+        return apply_list(vjp.pop()(vs.ones()))
 
     return gradfun
 
@@ -39,7 +42,7 @@ def jacobian(fun, argnum=0):
         vjp, ans = make_vjp(fun, argnum)(*args, **kwargs)
         ans_vspace = vspace(ans)
         jacobian_shape = ans_vspace.shape + vspace(args[argnum]).shape
-        grads = map(vjp, ans_vspace.standard_basis())
+        grads = map(lambda g: apply_list(vjp(g)), ans_vspace.standard_basis())
         return np.reshape(np.stack(grads), jacobian_shape)
 
     return jacfun
