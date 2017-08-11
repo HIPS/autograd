@@ -86,8 +86,8 @@ def wrap_if_boxes_inside(raw_array, slow_op_name=None):
 def array_from_args(*args):
     return _np.array(args)
 
-def array_from_args_gradmaker(argnum, g, ans, vs, gvs, args, kwargs):
-    return g[argnum]
+def array_from_args_gradmaker(argnum, ans, vs, gvs, args, kwargs):
+    return lambda g: g[argnum]
 array_from_args.vjp = array_from_args_gradmaker
 
 def select(condlist, choicelist, default=0):

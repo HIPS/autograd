@@ -8,8 +8,8 @@ from . import numpy_wrapper as anp
 @primitive
 def take(A, idx):
     return A[idx]
-def grad_take(g, ans, vs, gvs, A, idx):
-    return untake(g, idx, vs)
+def grad_take(ans, vs, gvs, A, idx):
+    return lambda g: untake(g, idx, vs)
 take.defvjp(grad_take)
 
 @primitive
@@ -18,7 +18,7 @@ def untake(x, idx, vs):
         np.add.at(A, idx, x)
         return A
     return SparseObject(vs, mut_add)
-untake.defvjp(lambda g, ans, vs, gvs, x, idx, _: take(g, idx))
+untake.defvjp(lambda ans, vs, gvs, x, idx, _: lambda g: take(g, idx))
 untake.defvjp_is_zero(argnums=(1, 2))
 
 Box.__array_priority__ = 90.0

@@ -81,16 +81,16 @@ class primitive(object):
         if progenitors:
             result_boxed = new_box(result_value, progenitors)
             result_boxed.node.parents_and_vjps = [
-                (p, self.vjp(argnum, p.vspace, vspace(result_value),
-                             result_boxed, args, kwargs))
+                (p, self.vjp(argnum, result_boxed, p.vspace,
+                             vspace(result_value), args, kwargs))
                 for argnum, p in parents]
             return result_boxed
         else:
             return result_value
 
-    def vjp(self, argnum, vs, gvs, ans, args, kwargs):
+    def vjp(self, argnum, ans, vs, gvs, args, kwargs):
         try:
-            return self.vjps[argnum](vs, gvs, ans, *args, **kwargs)
+            return self.vjps[argnum](ans, vs, gvs, *args, **kwargs)
         except KeyError:
             if self.vjps == {}:
                 errstr = "Gradient of {0} not yet implemented."
