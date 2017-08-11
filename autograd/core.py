@@ -79,17 +79,18 @@ class primitive(object):
 
         result_value = self.fun(*argvals, **kwargs)
         if progenitors:
-            vs = vspace(result_value)
-            parents_and_vjps = [
-                (parent, self.vjp(argnum, parent.vspace, vs, args, kwargs))
-                for argnum, parent in parents]
-            return new_box(result_value, parents_and_vjps, progenitors)
+            result_boxed = new_box(result_value, progenitors)
+            result_boxed.node.parents_and_vjps = [
+                (p, self.vjp(argnum, p.vspace, vspace(result_value),
+                             result_boxed, args, kwargs))
+                for argnum, p in parents]
+            return result_boxed
         else:
             return result_value
 
-    def vjp(self, argnum, vs, gvs, args, kwargs):
+    def vjp(self, argnum, vs, gvs, ans, args, kwargs):
         try:
-            return self.vjps[argnum](vs, gvs, *args, **kwargs)
+            return self.vjps[argnum](vs, gvs, ans, *args, **kwargs)
         except KeyError:
             if self.vjps == {}:
                 errstr = "Gradient of {0} not yet implemented."
@@ -142,9 +143,10 @@ primitive_mut_add.vjp = lambda *args: lambda g: g
 
 def new_progenitor(x):
     if isbox(x):
-        box = new_box(x.value, [(x.node, identity)], x.node.progenitors)
+        box = new_box(x.value, x.node.progenitors)
+        box.node.parents_and_vjps = [(x.node, identity)]
     else:
-        box = new_box(x, [], set())
+        box = new_box(x, set())
     box.node.progenitors = box.node.progenitors | {box}
     return box
 
@@ -155,8 +157,8 @@ identity.defvjp(lambda *args: lambda g: g)
 class Node(object):
     __slots__ = ['parents_and_vjps', 'progenitors', 'vspace']
 
-    def __init__(self, parents_and_vjps, progenitors, vspace):
-        self.parents_and_vjps = parents_and_vjps
+    def __init__(self, progenitors, vspace):
+        self.parents_and_vjps = []
         self.progenitors = progenitors
         self.vspace = vspace
 
@@ -175,7 +177,7 @@ class Box(object):
 
     def __str__(self):
         return "Autograd {0} with value {1} and {2} progenitors(s)".format(
-            type(self).__name__, str(self.value), len(self.progenitors))
+            type(self).__name__, str(self.value), len(self.node.progenitors))
 
 def toposort(end_node, start_box):
     def relevant_parents(node):
@@ -249,9 +251,9 @@ def register_box(box_type, value_type):
 def register_vspace(vspace_maker, value_type):
     vspace_mappings[value_type] = vspace_maker
 
-def new_box(value, parents_and_vjps, progenitors):
+def new_box(value, progenitors):
     try:
-        node = Node(parents_and_vjps, progenitors, vspace(value))
+        node = Node(progenitors, vspace(value))
         return box_type_mappings[type(value)](value, node)
     except KeyError:
         raise TypeError("Can't differentiate w.r.t. type {}".format(type(value)))
