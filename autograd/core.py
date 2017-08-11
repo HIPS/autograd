@@ -14,7 +14,10 @@ def make_vjp(fun, argnum=0):
             warnings.warn("Output seems independent of input.")
             def vjp(g): return start_node.vspace.zeros()
         else:
-            def vjp(g): return TailCall(backward_pass, g, [end_node], start_node)
+            def vjp(g):
+                assert_vspace_match(g, end_node.vspace, None)
+                sorted_nodes = toposort(end_node, start_node)
+                return TailCall(backward_pass, {end_node: (g, False)}, sorted_nodes)
         return vjp, end_node
     return vjp_maker
 
@@ -27,13 +30,9 @@ def forward_pass(fun, args, kwargs, argnum=0):
     active_progenitors.remove(start_node)
     return start_node, end_node
 
-def backward_pass(g, end_node, start_node):
-    end_node = end_node.pop()
-    outgrads = {end_node : (g, False)}
-    assert_vspace_match(outgrads[end_node][0], end_node.vspace, None)
-    sorted_nodes = toposort([end_node], start_node)
-    del end_node
-    for node in sorted_nodes:
+def backward_pass(outgrads, sorted_nodes):
+    while sorted_nodes:
+        node = sorted_nodes.pop()
         if node not in outgrads: continue
         cur_outgrad = outgrads.pop(node)
         function, args, kwargs, parents = node.recipe
@@ -188,9 +187,8 @@ class Node(object):
 def toposort(end_node, start_node):
     def relevant_parents(node):
         return [parent for _, parent in node.recipe[3] if start_node in parent.progenitors]
-
     child_counts = {}
-    stack = [end_node[0]]
+    stack = [end_node]
     while stack:
         node = stack.pop()
         if node in child_counts:
@@ -199,16 +197,17 @@ def toposort(end_node, start_node):
             child_counts[node] = 1
             stack.extend(relevant_parents(node))
 
-    childless_nodes = [end_node.pop()]
+    childless_nodes = [end_node]
+    sorted_nodes = []
     while childless_nodes:
         node = childless_nodes.pop()
-        del child_counts[node]
-        yield node
+        sorted_nodes.append(node)
         for parent in relevant_parents(node):
             if child_counts[parent] == 1:
                 childless_nodes.append(parent)
             else:
                 child_counts[parent] -= 1
+    return sorted_nodes[::-1]
 
 class VSpace(object):
     __slots__ = []
