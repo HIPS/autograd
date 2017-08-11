@@ -9,9 +9,13 @@ rvs    = primitive(scipy.stats.dirichlet.rvs)
 pdf    = primitive(scipy.stats.dirichlet.pdf)
 logpdf = primitive(scipy.stats.dirichlet.logpdf)
 
-logpdf.defvjp(lambda g, ans, vs, gvs, x, alpha: g * (alpha - 1) / x, argnum=0)
-logpdf.defvjp(lambda g, ans, vs, gvs, x, alpha: g * (digamma(np.sum(alpha)) - digamma(alpha) + np.log(x)), argnum=1)
+logpdf.defvjp(lambda ans, vs, gvs, x, alpha: lambda g:
+              g * (alpha - 1) / x, argnum=0)
+logpdf.defvjp(lambda ans, vs, gvs, x, alpha: lambda g:
+              g * (digamma(np.sum(alpha)) - digamma(alpha) + np.log(x)), argnum=1)
 
 # Same as log pdf, but multiplied by the pdf (ans).
-pdf.defvjp(lambda g, ans, vs, gvs, x, alpha: g * ans * (alpha - 1) / x, argnum=0)
-pdf.defvjp(lambda g, ans, vs, gvs, x, alpha: g * ans * (digamma(np.sum(alpha)) - digamma(alpha) + np.log(x)), argnum=1)
+pdf.defvjp(lambda ans, vs, gvs, x, alpha: lambda g:
+           g * ans * (alpha - 1) / x, argnum=0)
+pdf.defvjp(lambda ans, vs, gvs, x, alpha: lambda g:
+           g * ans * (digamma(np.sum(alpha)) - digamma(alpha) + np.log(x)), argnum=1)

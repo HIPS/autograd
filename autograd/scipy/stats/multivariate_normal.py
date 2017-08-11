@@ -48,14 +48,21 @@ def solve(allow_singular):
     else:
         return np.linalg.solve
 
-logpdf.defvjp(lambda g, ans, vs, gvs, x, mean, cov, allow_singular=False: unbroadcast(vs, gvs, -np.expand_dims(g, 1) * solve(allow_singular)(cov, (x - mean).T).T), argnum=0)
-logpdf.defvjp(lambda g, ans, vs, gvs, x, mean, cov, allow_singular=False: unbroadcast(vs, gvs,  np.expand_dims(g, 1) * solve(allow_singular)(cov, (x - mean).T).T), argnum=1)
-logpdf.defvjp(lambda g, ans, vs, gvs, x, mean, cov, allow_singular=False: unbroadcast(vs, gvs, -np.reshape(g, np.shape(g) + (1, 1)) * covgrad(x, mean, cov, allow_singular)), argnum=2)
+logpdf.defvjp(lambda ans, vs, gvs, x, mean, cov, allow_singular=False: lambda g:
+              unbroadcast(vs, gvs, -np.expand_dims(g, 1) * solve(allow_singular)(cov, (x - mean).T).T), argnum=0)
+logpdf.defvjp(lambda ans, vs, gvs, x, mean, cov, allow_singular=False: lambda g:
+              unbroadcast(vs, gvs,  np.expand_dims(g, 1) * solve(allow_singular)(cov, (x - mean).T).T), argnum=1)
+logpdf.defvjp(lambda ans, vs, gvs, x, mean, cov, allow_singular=False: lambda g:
+              unbroadcast(vs, gvs, -np.reshape(g, np.shape(g) + (1, 1)) * covgrad(x, mean, cov, allow_singular)), argnum=2)
 
 # Same as log pdf, but multiplied by the pdf (ans).
-pdf.defvjp(lambda g, ans, vs, gvs, x, mean, cov, allow_singular=False: unbroadcast(vs, gvs, -np.expand_dims(ans * g, 1) * solve(allow_singular)(cov, (x - mean).T).T), argnum=0)
-pdf.defvjp(lambda g, ans, vs, gvs, x, mean, cov, allow_singular=False: unbroadcast(vs, gvs,  np.expand_dims(ans * g, 1) * solve(allow_singular)(cov, (x - mean).T).T), argnum=1)
-pdf.defvjp(lambda g, ans, vs, gvs, x, mean, cov, allow_singular=False: unbroadcast(vs, gvs, -np.reshape(ans * g, np.shape(g) + (1, 1)) * covgrad(x, mean, cov, allow_singular)), argnum=2)
+pdf.defvjp(lambda ans, vs, gvs, x, mean, cov, allow_singular=False: lambda g:
+           unbroadcast(vs, gvs, -np.expand_dims(ans * g, 1) * solve(allow_singular)(cov, (x - mean).T).T), argnum=0)
+pdf.defvjp(lambda ans, vs, gvs, x, mean, cov, allow_singular=False: lambda g:
+           unbroadcast(vs, gvs,  np.expand_dims(ans * g, 1) * solve(allow_singular)(cov, (x - mean).T).T), argnum=1)
+pdf.defvjp(lambda ans, vs, gvs, x, mean, cov, allow_singular=False: lambda g:
+           unbroadcast(vs, gvs, -np.reshape(ans * g, np.shape(g) + (1, 1)) * covgrad(x, mean, cov, allow_singular)), argnum=2)
 
 entropy.defvjp_is_zero(argnums=(0,))
-entropy.defvjp(lambda g, ans, vs, gvs, mean, cov: unbroadcast(vs, gvs, 0.5 * g * np.linalg.inv(cov).T), argnum=1)
+entropy.defvjp(lambda ans, vs, gvs, mean, cov: lambda g:
+               unbroadcast(vs, gvs, 0.5 * g * np.linalg.inv(cov).T), argnum=1)
