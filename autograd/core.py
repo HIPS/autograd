@@ -45,15 +45,13 @@ def backward_pass(outgrads, sorted_nodes):
 
 class TailCall(object):
     def __init__(self, f, *args, **kwargs):
-        self.f      = f
-        self.args   = args
-        self.kwargs = kwargs
+        self.thunk = lambda: f(*args, **kwargs)
 
 def trampoline(f):
     def f_(*args, **kwargs):
         ans = TailCall(f, *args, **kwargs)
         while isinstance(ans, TailCall):
-            ans = ans.f(*ans.args, **ans.kwargs)
+            ans = ans.thunk()
         return ans
     return f_
 
