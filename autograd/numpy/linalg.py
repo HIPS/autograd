@@ -127,8 +127,9 @@ def grad_cholesky(L, vs, gvs, A):
     return vjp
 cholesky.defvjp(grad_cholesky)
 
-def grad_svd(usv, vs, gvs, a, full_matrices=True, compute_uv=True):
+def grad_svd(usv_, vs, gvs, a, full_matrices=True, compute_uv=True):
     def vjp(g):
+        usv = usv_
         dot = anp.dot if a.ndim == 2 else partial(anp.einsum, '...ij,...jk->...ik')
 
         if not compute_uv:

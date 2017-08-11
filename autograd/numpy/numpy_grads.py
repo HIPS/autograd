@@ -53,7 +53,7 @@ anp.power.defvjp(
 
 anp.negative.defvjp(lambda ans, vs, gvs, x: lambda g: -g)
 anp.abs.defvjp(
-    lambda ans, vs, gvs, x : lambda g: g * replace_zero(anp.conj(x), 0.) / replace_zero(1.))
+    lambda ans, vs, gvs, x : lambda g: g * replace_zero(anp.conj(x), 0.) / replace_zero(ans, 1.))
 anp.fabs.defvjp(    lambda ans, vs, gvs, x : lambda g: anp.sign(x) * g)  # fabs doesn't take complex numbers.
 anp.absolute.defvjp(lambda ans, vs, gvs, x : lambda g: g * anp.conj(x) / ans)
 anp.reciprocal.defvjp(lambda ans, vs, gvs, x : lambda g: - g / x**2)
@@ -276,25 +276,21 @@ def grad_np_cumsum(ans, vs, gvs, x, axis=None):
 anp.cumsum.defvjp(grad_np_cumsum)
 
 def grad_inner(argnum, ans, vs, gvs, A, B):
-    def vjp(g):
-        if anp.ndim(A) == 0 or anp.ndim(B) == 0:
-            axes = ([], [])
-        else:
-            axes = ([A.ndim - 1], [B.ndim - 1])
-        return grad_tensordot(argnum, g, ans, vs, gvs, A, B, axes=axes)
-    return vjp
+    if anp.ndim(A) == 0 or anp.ndim(B) == 0:
+        axes = ([], [])
+    else:
+        axes = ([A.ndim - 1], [B.ndim - 1])
+    return grad_tensordot(argnum, ans, vs, gvs, A, B, axes=axes)
 anp.inner.defvjps(grad_inner, [0, 1])
 
 def grad_matmul(argnum, ans, vs, gvs, A, B):
-    def vjp(g):
-        if anp.ndim(A) == 0 or anp.ndim(B) == 0:
-            raise ValueError("Scalar operands are not allowed, use '*' instead")
-        elif anp.ndim(A) == 1 or anp.ndim(B) == 1 or (anp.ndim(A) == 2 and anp.ndim(B) == 2):
-            axes = ([A.ndim - 1], [max(0, B.ndim - 2)])
-            return grad_tensordot(argnum, g, ans, vs, gvs, A, B, axes=axes)
-        else:
-            return grad_einsum(argnum + 1, ans, vs, gvs, ("...ij,...jk->...ik", A, B), None)
-    return vjp
+    if anp.ndim(A) == 0 or anp.ndim(B) == 0:
+        raise ValueError("Scalar operands are not allowed, use '*' instead")
+    elif anp.ndim(A) == 1 or anp.ndim(B) == 1 or (anp.ndim(A) == 2 and anp.ndim(B) == 2):
+        axes = ([A.ndim - 1], [max(0, B.ndim - 2)])
+        return grad_tensordot(argnum, ans, vs, gvs, A, B, axes=axes)
+    else:
+        return grad_einsum(argnum + 1, ans, vs, gvs, ("...ij,...jk->...ik", A, B), None)
 anp.matmul.defvjps(grad_matmul, [0, 1])
 
 def grad_dot(argnum, ans, vs, gvs, A, B):
@@ -304,7 +300,7 @@ def grad_dot(argnum, ans, vs, gvs, A, B):
         axes = ([], [])
     else:
         axes = ([A_ndim - 1], [max(0, B_ndim - 2)])
-    return lambda g: grad_tensordot(argnum, ans, vs, gvs, A, B, axes=axes)(g)
+    return grad_tensordot(argnum, ans, vs, gvs, A, B, axes=axes)
 anp.dot.defvjps(grad_dot, [0, 1])
 
 def grad_tensordot(argnum, ans, vs, gvs, A, B, axes=2):

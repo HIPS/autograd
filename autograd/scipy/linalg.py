@@ -14,12 +14,14 @@ def _flip(a, trans):
     else:
         return 'T' if trans in ('N', 0) else 'N'
 
-def grad_solve_triangular(g, ans, vs, gvs, a, b, trans=0, lower=False, **kwargs):
+def grad_solve_triangular(ans, vs, gvs, a, b, trans=0, lower=False, **kwargs):
     tri = anp.tril if (lower ^ (_flip(a, trans) == 'N')) else anp.triu
     transpose = lambda x: x if _flip(a, trans) != 'N' else x.T
     al2d = lambda x: x if x.ndim > 1 else x[...,None]
-    v = al2d(solve_triangular(a, g, trans=_flip(a, trans), lower=lower))
-    return -transpose(tri(anp.dot(v, al2d(ans).T)))
+    def vjp(g):
+        v = al2d(solve_triangular(a, g, trans=_flip(a, trans), lower=lower))
+        return -transpose(tri(anp.dot(v, al2d(ans).T)))
+    return vjp
 
 solve_triangular.defvjp(grad_solve_triangular)
 solve_triangular.defvjp(lambda ans, vs, gvs, a, b, trans=0, lower=False, **kwargs:

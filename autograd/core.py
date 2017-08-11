@@ -122,8 +122,8 @@ class primitive(object):
 
     def defgrad(self, gradfun, argnum=0):
         warnings.warn(defgrad_deprecated)
-        def vjp(g, ans, vs, gvs, *args, **kwargs):
-            return gradfun(ans, *args, **kwargs)(g)
+        def vjp(ans, vs, gvs, *args, **kwargs):
+            return gradfun(ans, *args, **kwargs)
         self.defvjp(vjp, argnum)
 
 class nograd_primitive(primitive):
