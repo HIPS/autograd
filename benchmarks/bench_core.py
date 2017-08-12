@@ -13,7 +13,7 @@ def time_short_forward_pass():
 short_start_node, short_end_node = core.forward_pass(f_short, (2.,), {})
 
 def time_short_backward_pass():
-    core.backward_pass(1., short_end_node, short_start_node)
+    core.backward_pass(1., short_end_node.node, short_start_node)
 
 def time_short_grad():
     grad(f_short)(2.)
@@ -30,7 +30,7 @@ def time_long_forward_pass():
 long_start_node, long_end_node = core.forward_pass(f_long, (2.,), {})
 
 def time_long_backward_pass():
-    core.backward_pass(1., long_end_node, long_start_node)
+    core.backward_pass(1., long_end_node.node, long_start_node)
 
 def time_long_grad():
     grad(f_long)(2.)
@@ -47,7 +47,7 @@ def time_fan_out_fan_in_forward_pass():
 fan_start_node, fan_end_node = core.forward_pass(fan_out_fan_in, (2.,), {})
 
 def time_fan_out_fan_in_backward_pass():
-    core.backward_pass(1., fan_end_node, fan_start_node)
+    core.backward_pass(1., fan_end_node.node, fan_start_node)
 
 def time_fan_out_fan_in_grad():
     grad(fan_out_fan_in)(2.)
@@ -63,11 +63,11 @@ def time_vspace_array():
 
 progenitors = {'dummy'}
 
-def time_new_node_float():
-    core.new_node(1., (), progenitors)
+def time_new_box_float():
+    core.new_box(1., progenitors)
 
-def time_new_node_array():
-    core.new_node(A, (), progenitors)
+def time_new_box_array():
+    core.new_box(A, progenitors)
 
 def time_exp_call():
     onp.exp(2.)
