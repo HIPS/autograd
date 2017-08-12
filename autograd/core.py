@@ -10,30 +10,28 @@ from .errors import defgrad_deprecated
 def make_vjp(fun, argnum=0):
     def vjp_maker(*args, **kwargs):
         start_box, end_box = forward_pass(fun, args, kwargs, argnum)
-        if not isbox(end_box) or start_box not in end_box.node.progenitors:
+        if not isbox(end_box) or start_box._trace != end_box._trace:
             warnings.warn("Output seems independent of input.")
             def vjp(g): return start_box.vspace.zeros()
         else:
-            def vjp(g): return backward_pass(g, end_box.node, start_box)
+            def vjp(g): return backward_pass(g, end_box.node)
         return vjp, end_box
     return vjp_maker
 
 def forward_pass(fun, args, kwargs, argnum=0):
     args = list(args)
-    start_box = new_progenitor(args[argnum])
+    start_box = new_box(args[argnum], new_trace())
     args[argnum] = start_box
-    active_progenitors.add(start_box)
     end_box = fun(*args, **kwargs)
-    active_progenitors.remove(start_box)
     return start_box, end_box
 
-def backward_pass(g, end_node, start_box):
+def backward_pass(g, end_node):
     outgrads = {end_node : (g, False)}
     assert_vspace_match(outgrads[end_node][0], end_node.vspace)
-    for node in toposort(end_node, start_box):
+    for node in toposort(end_node):
         if node not in outgrads: continue
         cur_outgrad = outgrads.pop(node)
-        for parent, vjp in node.parents_and_vjps:
+        for parent, vjp in zip(node.parents, node.vjps):
             outgrad = vjp(cur_outgrad[0])
             assert_vspace_match(outgrad, parent.vspace)
             outgrads[parent] = add_outgrads(parent.vspace, outgrads.get(parent), outgrad)
@@ -53,7 +51,18 @@ def add_outgrads(vspace, prev_g_flagged, g):
             prev_g_mutable = primitive_mut_add(vspace, None, prev_g)
             return primitive_mut_add(vspace, prev_g_mutable, g), True
 
-active_progenitors = set()
+def find_top_boxed_args(args):
+    top_trace = -1
+    top_boxes = []
+    for argnum, arg in enumerate(args):
+        if isbox(arg):
+            trace = arg._trace
+            if trace > top_trace:
+                top_boxes = [(argnum, arg)]
+                top_trace = trace
+            elif trace == top_trace:
+                top_boxes.append((argnum, arg))
+    return top_boxes, top_trace
 
 class primitive(object):
     """
@@ -62,31 +71,21 @@ class primitive(object):
     def __init__(self, fun):
         self.fun = fun
         self.vjps = {}
-        self.zero_vjps = set()
         self.__name__ = fun.__name__
         self.__doc__ = fun.__doc__
 
     def __call__(self, *args, **kwargs):
-        argvals = list(args)
-        progenitors = set()
-        parents = []
-        for argnum, arg in enumerate(args):
-            if isbox(arg):
-                argvals[argnum] = arg.value
-                if argnum in self.zero_vjps: continue
-                parents.append((argnum, arg.node))
-                progenitors.update(arg.node.progenitors & active_progenitors)
-
-        result_value = self.fun(*argvals, **kwargs)
-        if progenitors:
-            result_boxed = new_box(result_value, progenitors)
-            result_boxed.node.parents_and_vjps = [
-                (p, self.vjp(argnum, result_boxed, p.vspace,
-                             vspace(result_value), args, kwargs))
-                for argnum, p in parents]
-            return result_boxed
+        boxed_args, trace = find_top_boxed_args(args)
+        if boxed_args:
+            argvals = subvals(args, [(argnum, box.value) for argnum, box in boxed_args])
+            result = self(*argvals, **kwargs)
+            parents = [box.node for _, box in boxed_args]
+            vjps = [self.vjp(argnum, result, box.node.vspace,
+                             vspace(result), argvals, kwargs)
+                    for argnum, box in boxed_args]
+            return new_box(result, trace, parents, vjps)
         else:
-            return result_value
+            return self.fun(*args, **kwargs)
 
     def vjp(self, argnum, ans, vs, gvs, args, kwargs):
         try:
@@ -108,7 +107,7 @@ class primitive(object):
 
     def defvjp_is_zero(self, argnums=(0,)):
         for argnum in argnums:
-            self.zero_vjps.add(argnum)
+            self.vjps[argnum] = zero_vjp
 
     def __repr__(self):
         return self.__name__
@@ -131,6 +130,9 @@ class nograd_primitive(primitive):
         argvals = map(getval, args)
         return self.fun(*argvals, **kwargs)
 
+def zero_vjp(ans, vs, gvs, *args, **kwargs):
+    return lambda g: vs.zeros()
+
 @primitive
 def primitive_mut_add(vspace, x_prev, x_new):
     if x_prev is None:
@@ -141,33 +143,29 @@ def primitive_mut_add(vspace, x_prev, x_new):
         return vspace.mut_add(x_prev, x_new)
 primitive_mut_add.vjp = lambda *args: lambda g: g
 
-def new_progenitor(x):
-    if isbox(x):
-        box = new_box(x.value, x.node.progenitors)
-        box.node.parents_and_vjps = [(x.node, identity)]
-    else:
-        box = new_box(x, set())
-    box.node.progenitors = box.node.progenitors | {box}
-    return box
+global_top_trace = 0
+def new_trace():
+    global global_top_trace
+    global_top_trace += 1
+    return global_top_trace
 
 @primitive
 def identity(x) : return x
 identity.defvjp(lambda *args: lambda g: g)
 
 class Node(object):
-    __slots__ = ['parents_and_vjps', 'progenitors', 'vspace']
-
-    def __init__(self, progenitors, vspace):
-        self.parents_and_vjps = []
-        self.progenitors = progenitors
+    __slots__ = ['vspace', 'parents', 'vjps']
+    def __init__(self, vspace, parents, vjps):
         self.vspace = vspace
+        self.parents = parents
+        self.vjps = vjps
 
 class Box(object):
-    __slots__ = ['vspace', 'value', 'node']
-
-    def __init__(self, value, node):
+    __slots__ = ['vspace', 'value', '_trace', 'node']
+    def __init__(self, value, trace, node):
         self.value = value
         self.node = node
+        self._trace = trace
         self.vspace = node.vspace
 
     def __bool__(self):
@@ -176,13 +174,10 @@ class Box(object):
     __nonzero__ = __bool__
 
     def __str__(self):
-        return "Autograd {0} with value {1} and {2} progenitors(s)".format(
-            type(self).__name__, str(self.value), len(self.node.progenitors))
+        return "Autograd {0} with value {1}".format(
+            type(self).__name__, str(self.value))
 
-def toposort(end_node, start_box):
-    def relevant_parents(node):
-        return [parent for parent, _ in node.parents_and_vjps if start_box in parent.progenitors]
-
+def toposort(end_node):
     child_counts = {}
     stack = [end_node]
     while stack:
@@ -191,13 +186,13 @@ def toposort(end_node, start_box):
             child_counts[node] += 1
         else:
             child_counts[node] = 1
-            stack.extend(relevant_parents(node))
+            stack.extend(node.parents)
 
     childless_nodes = [end_node]
     while childless_nodes:
         node = childless_nodes.pop()
         yield node
-        for parent in relevant_parents(node):
+        for parent in node.parents:
             if child_counts[parent] == 1:
                 childless_nodes.append(parent)
             else:
@@ -251,10 +246,10 @@ def register_box(box_type, value_type):
 def register_vspace(vspace_maker, value_type):
     vspace_mappings[value_type] = vspace_maker
 
-def new_box(value, progenitors):
+def new_box(value, trace, parents=(), vjps=()):
     try:
-        node = Node(progenitors, vspace(value))
-        return box_type_mappings[type(value)](value, node)
+        node = Node(vspace(value), parents, vjps)
+        return box_type_mappings[type(value)](value, trace, node)
     except KeyError:
         raise TypeError("Can't differentiate w.r.t. type {}".format(type(value)))
 
@@ -266,6 +261,12 @@ def vspace(value):
             return value.vspace
         else:
             raise TypeError("Can't find vspace for type {}".format(type(value)))
+
+def subvals(x, ivs):
+    x_ = list(x)
+    for i, v in ivs:
+        x_[i] = v
+    return tuple(x_)
 
 class SparseObject(object):
     __slots__ = ['vs', 'mut_add']
@@ -283,9 +284,6 @@ def assert_vspace_match(x, expected_vspace):
         "\nExpected        {}".format(vspace(x), expected_vspace)
 
 isbox = lambda x: type(x) in box_types
-getval = lambda x: x.value if isbox(x) else x
+getval = lambda x: getval(x.value) if isbox(x) else x
 
-def unbox_if_possible(box):
-    if isbox(box) and not active_progenitors.intersection(box.node.progenitors):
-        return box.value
-    return box
+unbox_if_possible = getval
