@@ -1,7 +1,7 @@
 """Convenience functions built on top of `make_vjp`."""
 from __future__ import absolute_import
 import autograd.numpy as np
-from autograd.core import make_vjp, vspace, primitive, unbox_if_possible
+from autograd.core import make_vjp, vspace, primitive
 from autograd.container_types import make_tuple
 from .errors import add_error_hints
 from collections import OrderedDict
@@ -133,12 +133,10 @@ def make_ggnvp(f, g=lambda x: 1./2*np.sum(x**2, axis=-1), f_argnum=0):
 def value_and_grad(fun, argnum=0):
     """Returns a function that returns both value and gradient. Suitable for use
     in scipy.optimize"""
-    def double_val_fun(*args, **kwargs):
-        val = fun(*args, **kwargs)
-        return make_tuple(val, unbox_if_possible(val))
-    gradval_and_val = grad_and_aux(double_val_fun, argnum)
-    flip = lambda x, y: make_tuple(y, x)
-    return lambda *args, **kwargs: flip(*gradval_and_val(*args, **kwargs))
+    def gradfun(*args,**kwargs):
+        vjp, ans = make_vjp(fun, argnum)(*args, **kwargs)
+        return ans, vjp(vspace(ans).ones())
+    return gradfun
 
 def grad_and_aux(fun, argnum=0):
     """Builds a function that returns the gradient of the first output and the
@@ -228,11 +226,5 @@ def safe_type(value):
     if isinstance(value, int):
         warnings.warn("Casting int to float to handle differentiation.")
         return float(value)
-    else:
-        return value
-
-def cast_to_same_dtype(value, example):
-    if hasattr(example, 'dtype') and example.dtype.type is not np.float64:
-        return np.array(value, dtype=example.dtype)
     else:
         return value

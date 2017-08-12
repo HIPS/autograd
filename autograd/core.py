@@ -13,9 +13,10 @@ def make_vjp(fun, argnum=0):
         if not isbox(end_box) or start_box._trace != end_box._trace:
             warnings.warn("Output seems independent of input.")
             def vjp(g): return start_box.vspace.zeros()
+            return vjp, end_box
         else:
             def vjp(g): return backward_pass(g, end_box.node)
-        return vjp, end_box
+            return vjp, end_box.value
     return vjp_maker
 
 def forward_pass(fun, args, kwargs, argnum=0):
@@ -285,5 +286,3 @@ def assert_vspace_match(x, expected_vspace):
 
 isbox = lambda x: type(x) in box_types
 getval = lambda x: getval(x.value) if isbox(x) else x
-
-unbox_if_possible = getval
