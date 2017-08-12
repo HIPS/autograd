@@ -10,8 +10,6 @@ def f_short(x):
 def time_short_forward_pass():
     core.forward_pass(f_short, (2.,), {})
 
-short_start_node, short_end_node = core.forward_pass(f_short, (2.,), {})
-
 def time_short_backward_pass():
     core.backward_pass(1., short_end_node.node, short_start_node)
 
@@ -26,8 +24,6 @@ def f_long(x):
 
 def time_long_forward_pass():
     core.forward_pass(f_long, (2.,), {})
-
-long_start_node, long_end_node = core.forward_pass(f_long, (2.,), {})
 
 def time_long_backward_pass():
     core.backward_pass(1., long_end_node.node, long_start_node)
@@ -44,8 +40,6 @@ def fan_out_fan_in(x):
 def time_fan_out_fan_in_forward_pass():
     core.forward_pass(fan_out_fan_in, (2.,), {})
 
-fan_start_node, fan_end_node = core.forward_pass(fan_out_fan_in, (2.,), {})
-
 def time_fan_out_fan_in_backward_pass():
     core.backward_pass(1., fan_end_node.node, fan_start_node)
 
@@ -61,8 +55,6 @@ A = np.array([[1., 2., 3.]])
 def time_vspace_array():
     core.vspace(A)
 
-progenitors = {'dummy'}
-
 def time_new_box_float():
     core.new_box(1., progenitors)
 
@@ -75,6 +67,20 @@ def time_exp_call():
 def time_exp_primitive_call_unboxed():
     np.exp(2.)
 
-progenitor = core.new_progenitor(2.)
 def time_exp_primitive_call_boxed():
     np.exp(progenitor)
+
+
+def time_no_autograd_control():
+    # Test whether the benchmarking machine is running slowly independent of autograd
+    A = np.random.randn(200, 200)
+    np.dot(A, A)
+
+try:
+    short_start_node, short_end_node = core.forward_pass(f_short       , (2.,), {})
+    long_start_node , long_end_node  = core.forward_pass(f_long        , (2.,), {})
+    fan_start_node  , fan_end_node   = core.forward_pass(fan_out_fan_in, (2.,), {})
+    progenitors = {'dummy'}
+    progenitor = core.new_progenitor(2.)
+except:
+    pass
