@@ -19,6 +19,8 @@ def grad(fun, argnum=0):
     @attach_name_and_doc(fun, argnum, 'Gradient')
     @add_error_hints
     def gradfun(*args,**kwargs):
+        args = list(args)
+        args[argnum] = safe_type(args[argnum])
         vjp, ans = make_vjp(fun, argnum)(*args, **kwargs)
         vs = vspace(ans)
         return TailCall(vjp, vs.ones())

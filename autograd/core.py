@@ -17,9 +17,7 @@ def make_vjp(fun, argnum=0):
         else:
             sorted_nodes = toposort(end_node, start_node)
             @trampoline
-            def vjp(g):
-                assert_vspace_match(g, end_node.vspace, None)
-                return TailCall(backward_pass, {end_node: (g, False)}, [sorted_nodes])
+            def vjp(g): return TailCall(backward_pass, g, [sorted_nodes])
         return vjp, end_node
     return vjp_maker
 
@@ -32,9 +30,10 @@ def forward_pass(fun, args, kwargs, argnum=0):
     active_progenitors.remove(start_node)
     return start_node, end_node
 
-@trampoline
-def backward_pass(outgrads, sorted_nodes):
+def backward_pass(g, sorted_nodes):
     sorted_nodes = sorted_nodes.pop()
+    assert_vspace_match(g, sorted_nodes[0].vspace, None)
+    outgrads = {sorted_nodes[0]: (g, False)}
     while sorted_nodes:
         node, sorted_nodes = sorted_nodes
         if node not in outgrads: continue
