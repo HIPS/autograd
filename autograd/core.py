@@ -38,33 +38,6 @@ def backward_pass(g, end_node):
             outgrads[parent] = add_outgrads(parent.vspace, outgrads.get(parent), outgrad)
     return cur_outgrad[0]
 
-def add_outgrads(vspace, prev_g_flagged, g):
-    if prev_g_flagged is None:
-        if type(getval(g)) == SparseObject:
-            return primitive_mut_add(vspace, None, g), True
-        else:
-            return g, False
-    else:
-        prev_g, mutable = prev_g_flagged
-        if mutable:
-            return primitive_mut_add(vspace, prev_g, g), True
-        else:
-            prev_g_mutable = primitive_mut_add(vspace, None, prev_g)
-            return primitive_mut_add(vspace, prev_g_mutable, g), True
-
-def find_top_boxed_args(args):
-    top_trace = -1
-    top_boxes = []
-    for argnum, arg in enumerate(args):
-        if isbox(arg):
-            trace = arg._trace
-            if trace > top_trace:
-                top_boxes = [(argnum, arg)]
-                top_trace = trace
-            elif trace == top_trace:
-                top_boxes.append((argnum, arg))
-    return top_boxes, top_trace
-
 class primitive(object):
     """
     Wraps a function so that its gradient can be specified and its invocation
@@ -135,24 +108,61 @@ def zero_vjp(ans, vs, gvs, *args, **kwargs):
     return lambda g: vs.zeros()
 
 @primitive
-def primitive_mut_add(vspace, x_prev, x_new):
-    if x_prev is None:
-        x_prev = vspace.zeros()
-    if type(x_new) == SparseObject:
-        return x_new.mut_add(x_prev)
+def identity(x) : return x
+identity_vjp = lambda *args: lambda g: g
+identity.defvjp(identity_vjp)
+
+def add_outgrads(vs, prev_g_flagged, g):
+    sparse = type(getval(g)) == SparseObject
+    if prev_g_flagged:
+        prev_g, mutable = prev_g_flagged
+        if mutable:
+            if sparse:
+                return vs_sparse_add(vs, prev_g, g), True
+            else:
+                return vs_mut_add(vs, prev_g, g), True
+        else:
+            if sparse:
+                prev_g_mutable = vs_mut_add(vs, vs.zeros(), prev_g)
+                return vs_sparse_add(vs, prev_g_mutable, g), True
+            else:
+                return vs_add(vs, prev_g, g), True
     else:
-        return vspace.mut_add(x_prev, x_new)
-primitive_mut_add.vjp = lambda *args: lambda g: g
+        if sparse:
+            return vs_sparse_add(vs, vs.zeros(), g), True
+        else:
+            return g, False
+
+@primitive
+def vs_add(vs, x_prev, x_new): return vs.add(x_prev, x_new)
+vs_add.defvjps(identity_vjp, argnums=[1,2])
+
+@primitive
+def vs_sparse_add(vs, x_prev, x_new): return x_new.mut_add(x_prev)
+vs_sparse_add.defvjps(identity_vjp, argnums=[1,2])
+
+@primitive
+def vs_mut_add(vs, x_prev, x_new): return vs.mut_add(x_prev, x_new)
+vs_mut_add.defvjps(identity_vjp, argnums=[1,2])
+
+def find_top_boxed_args(args):
+    top_trace = -1
+    top_boxes = []
+    for argnum, arg in enumerate(args):
+        if isbox(arg):
+            trace = arg._trace
+            if trace > top_trace:
+                top_boxes = [(argnum, arg)]
+                top_trace = trace
+            elif trace == top_trace:
+                top_boxes.append((argnum, arg))
+    return top_boxes, top_trace
 
 global_top_trace = 0
 def new_trace():
     global global_top_trace
     global_top_trace += 1
     return global_top_trace
-
-@primitive
-def identity(x) : return x
-identity.defvjp(lambda *args: lambda g: g)
 
 class Node(object):
     __slots__ = ['vspace', 'parents', 'vjps']
@@ -205,14 +215,12 @@ class VSpace(object):
     def __init__(self, value):
         pass
 
-    def zeros(self):
-        assert False
+    def zeros(self):          assert False
+    def ones(self):           assert False
+    def standard_basis(self): assert False
 
-    def ones(self):
-        assert False
-
-    def standard_basis(self):
-        assert False
+    def add(self, x, y):
+        return x + y
 
     def mut_add(self, x, y):
         x += y
