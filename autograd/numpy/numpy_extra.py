@@ -85,6 +85,12 @@ class ArrayVSpace(VSpace):
             vect[idxs] = 1
             yield vect
 
+    def randn(self):
+        return np.array(np.random.randn(*self.shape)).astype(self.dtype)
+
+    def inner_prod(self, x, y):
+        return np.dot(x.ravel(), y.ravel())
+
     def flatten(self, value, covector=False):
         return anp.ravel(value)
 

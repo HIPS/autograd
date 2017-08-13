@@ -145,6 +145,27 @@ vs_sparse_add.defvjps(identity_vjp, argnums=[1,2])
 def vs_mut_add(vs, x_prev, x_new): return vs.mut_add(x_prev, x_new)
 vs_mut_add.defvjps(identity_vjp, argnums=[1,2])
 
+@primitive
+def vs_covector(vs, x):
+    return vs.covector(x)
+vs_covector.defvjp(lambda ans, vs, gvs, x: lambda g: vs_covector(vs, g), argnum=1)
+
+@primitive
+def vs_scalar_mul(vs, x, a):
+    return vs.scalar_mul(x, a)
+vs_scalar_mul.defvjp(lambda ans, vs, gvs, x, a: lambda g:
+                     vs_scalar_mul(gvs, g, a), argnum=1)
+vs_scalar_mul.defvjp(lambda ans, vs, gvs, x, a: lambda g:
+                     vs_inner_prod(gvs, g, x), argnum=2)
+
+@primitive
+def vs_inner_prod(vs, x, y):
+    return vs.inner_prod(x, y)
+vs_inner_prod.defvjp(lambda ans, vs, gvs, x, y: lambda g:
+                     vs_scalar_mul(vs, y, g), argnum=1)
+vs_inner_prod.defvjp(lambda ans, vs, gvs, x, y: lambda g:
+                     vs_scalar_mul(vs, x, g), argnum=2)
+
 def find_top_boxed_args(args):
     top_trace = -1
     top_boxes = []
@@ -218,6 +239,7 @@ class VSpace(object):
     def zeros(self):          assert False
     def ones(self):           assert False
     def standard_basis(self): assert False
+    def randn(self):          assert False
 
     def add(self, x, y):
         return x + y
@@ -225,6 +247,15 @@ class VSpace(object):
     def mut_add(self, x, y):
         x += y
         return x
+
+    def covector(self, x):
+        return x
+
+    def scalar_mul(self, x, a):
+        return x * a
+
+    def inner_prod(self, x, y):
+        assert False
 
     def __eq__(self, other):
         return type(self) == type(other) and self.__dict__ == other.__dict__
