@@ -14,10 +14,10 @@ def make_vjp(fun, argnum=0):
             warnings.warn("Output seems independent of input.")
             def vjp(g): return start_node.vspace.zeros()
         else:
+            sorted_nodes = toposort(end_node, start_node)
             def vjp(g):
                 assert_vspace_match(g, end_node.vspace, None)
-                sorted_nodes = toposort(end_node, start_node)
-                return TailCall(backward_pass, {end_node: (g, False)}, sorted_nodes)
+                return TailCall(backward_pass, {end_node: (g, False)}, [sorted_nodes])
         return vjp, end_node
     return vjp_maker
 
@@ -31,8 +31,9 @@ def forward_pass(fun, args, kwargs, argnum=0):
     return start_node, end_node
 
 def backward_pass(outgrads, sorted_nodes):
+    sorted_nodes = sorted_nodes.pop()
     while sorted_nodes:
-        node = sorted_nodes.pop()
+        node, sorted_nodes = sorted_nodes
         if node not in outgrads: continue
         cur_outgrad = outgrads.pop(node)
         function, args, kwargs, parents = node.recipe
@@ -205,7 +206,11 @@ def toposort(end_node, start_node):
                 childless_nodes.append(parent)
             else:
                 child_counts[parent] -= 1
-    return sorted_nodes[::-1]
+
+    nodes_conslist = ()
+    while sorted_nodes:
+        nodes_conslist = (sorted_nodes.pop(), nodes_conslist)
+    return nodes_conslist
 
 class VSpace(object):
     __slots__ = []
