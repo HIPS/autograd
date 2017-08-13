@@ -6,6 +6,7 @@ import numpy.random as npr
 from functools import partial
 import warnings
 from .errors import defgrad_deprecated
+from .trampoline import trampoline, TailCall
 
 def make_vjp(fun, argnum=0):
     def vjp_maker(*args, **kwargs):
@@ -15,6 +16,7 @@ def make_vjp(fun, argnum=0):
             def vjp(g): return start_node.vspace.zeros()
         else:
             sorted_nodes = toposort(end_node, start_node)
+            @trampoline
             def vjp(g):
                 assert_vspace_match(g, end_node.vspace, None)
                 return TailCall(backward_pass, {end_node: (g, False)}, [sorted_nodes])
@@ -30,6 +32,7 @@ def forward_pass(fun, args, kwargs, argnum=0):
     active_progenitors.remove(start_node)
     return start_node, end_node
 
+@trampoline
 def backward_pass(outgrads, sorted_nodes):
     sorted_nodes = sorted_nodes.pop()
     while sorted_nodes:
@@ -43,18 +46,6 @@ def backward_pass(outgrads, sorted_nodes):
             assert_vspace_match(outgrad, parent.vspace, function)
             outgrads[parent] = add_outgrads(parent.vspace, outgrads.get(parent), outgrad)
     return cur_outgrad[0]
-
-class TailCall(object):
-    def __init__(self, f, *args, **kwargs):
-        self.thunk = lambda: f(*args, **kwargs)
-
-def trampoline(f):
-    def f_(*args, **kwargs):
-        ans = TailCall(f, *args, **kwargs)
-        while isinstance(ans, TailCall):
-            ans = ans.thunk()
-        return ans
-    return f_
 
 def add_outgrads(vspace, prev_g_flagged, g):
     if prev_g_flagged is None:
