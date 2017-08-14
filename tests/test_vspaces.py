@@ -24,7 +24,8 @@ def check_grad_unary(f, x):
     jvp = make_numerical_jvp(f, x)
     x_vs, y_vs = vspace(x), vspace(y)
     x_v, y_v = x_vs.randn(), y_vs.randn()
-    return scalar_close(x_vs.inner_prod(x_v, vjp(y_v)),
+    vjp_y = x_vs.covector(vjp(y_vs.covector(y_v)))
+    return scalar_close(x_vs.inner_prod(x_v, vjp_y),
                         y_vs.inner_prod(y_v, jvp(x_v)))
 
 def check_grad(f, argnums, *args, **kwargs):
@@ -153,5 +154,6 @@ def check_vspace(vs):
     assert check_grad_scalar_mul(randn(), rand_scalar())
     assert check_grad_inner_prod(*randns())
 
-def test_array_vspace(): check_vspace(ArrayVSpace(np.zeros((3,2))))
-def test_array_vspace_0_dim(): check_vspace(ArrayVSpace(0.0))
+def test_array_vspace(): check_vspace(vspace(np.zeros((3,2))))
+def test_array_vspace_0_dim(): check_vspace(vspace(0.0))
+def test_array_vspace_complex(): check_vspace(vspace(1.0j*np.zeros((2,1))))

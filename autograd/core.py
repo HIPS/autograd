@@ -154,17 +154,17 @@ vs_covector.defvjp(lambda ans, vs, gvs, vs_, x: lambda g:
 def vs_scalar_mul(vs, x, a):
     return vs._scalar_mul(x, a)
 vs_scalar_mul.defvjp(lambda ans, vs, gvs, vs_, x, a: lambda g:
-                     gvs.scalar_mul(g, a), argnum=1)
+                     vs.covector(gvs.scalar_mul(gvs.covector(g), a)), argnum=1)
 vs_scalar_mul.defvjp(lambda ans, vs, gvs, vs_, x, a: lambda g:
-                     gvs.inner_prod(g, x), argnum=2)
+                     gvs.inner_prod(g, gvs.covector(x)), argnum=2)
 
 @primitive
 def vs_inner_prod(vs, x, y):
     return vs._inner_prod(x, y)
 vs_inner_prod.defvjp(lambda ans, vs, gvs, vs_, x, y: lambda g:
-                     vs.scalar_mul(y, g), argnum=1)
+                     vs.covector(vs.scalar_mul(y, gvs.covector(g))), argnum=1)
 vs_inner_prod.defvjp(lambda ans, vs, gvs, vs_, x, y: lambda g:
-                     vs.scalar_mul(x, g), argnum=2)
+                     vs.covector(vs.scalar_mul(x, gvs.covector(g))), argnum=2)
 
 def find_top_boxed_args(args):
     top_trace = -1

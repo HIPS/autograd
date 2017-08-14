@@ -81,9 +81,9 @@ class ArrayVSpace(VSpace):
 
     def standard_basis(self):
       for idxs in np.ndindex(*self.shape):
-            vect = np.zeros(self.shape)
-            vect[idxs] = 1
-            yield vect
+          vect = np.zeros(self.shape, dtype=self.dtype)
+          vect[idxs] = 1
+          yield vect
 
     def randn(self):
         return np.array(np.random.randn(*self.shape)).astype(self.dtype)
@@ -113,6 +113,27 @@ class ComplexArrayVSpace(ArrayVSpace):
         super(ComplexArrayVSpace, self).__init__(value)
         self.size  = 2 * self.size
         self.scalartype = complex
+
+    def ones(self):
+        return (         np.ones(self.shape, dtype=self.dtype)
+                + 1.0j * np.ones(self.shape, dtype=self.dtype))
+
+    def standard_basis(self):
+      for idxs in np.ndindex(*self.shape):
+          for v in [1.0, 1.0j]:
+              vect = np.zeros(self.shape, dtype=self.dtype)
+              vect[idxs] = v
+              yield vect
+
+    def randn(self):
+        return (         np.array(np.random.randn(*self.shape)).astype(self.dtype)
+                + 1.0j * np.array(np.random.randn(*self.shape)).astype(self.dtype))
+
+    def _inner_prod(self, x, y):
+        return np.real(np.dot(np.conj(x.ravel()), y.ravel()))
+
+    def _covector(self, x):
+        return np.conj(x)
 
     def flatten(self, value, covector=False):
         if covector:

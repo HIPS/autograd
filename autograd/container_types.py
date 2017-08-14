@@ -71,14 +71,17 @@ class SequenceVSpace(VSpace):
     def zeros(self):
         return self.seq_type(x.zeros() for x in self.shape)
 
-    def _add(self, x, y):
-        return self.seq_type(vs._add(x, y) for x, y, vs in zip(x, y, self.shape))
+    def _add(self, xs, ys):
+        return self.seq_type(vs._add(x, y) for x, y, vs in zip(xs, ys, self.shape))
 
-    def _scalar_mul(self, x, a):
-        return self.seq_type(vs._scalar_mul(x, a) for x, vs in zip(x, self.shape))
+    def _scalar_mul(self, xs, a):
+        return self.seq_type(vs._scalar_mul(x, a) for x, vs in zip(xs, self.shape))
 
-    def _inner_prod(self, x, y):
-        return sum(vs._inner_prod(x, y) for x, y, vs in zip(x, y, self.shape))
+    def _inner_prod(self, xs, ys):
+        return sum(vs._inner_prod(x, y) for x, y, vs in zip(xs, ys, self.shape))
+
+    def _covector(self, xs):
+        return self.seq_type(vs._covector(x) for x, vs in zip(xs, self.shape))
 
     def randn(self):
         return self.seq_type(vs.randn() for vs in self.shape)
