@@ -148,22 +148,22 @@ vs_mut_add.defvjps(identity_vjp, argnums=[1,2])
 @primitive
 def vs_covector(vs, x):
     return vs.covector(x)
-vs_covector.defvjp(lambda ans, vs, gvs, x: lambda g: vs_covector(vs, g), argnum=1)
+vs_covector.defvjp(lambda ans, vs, gvs, vs_, x: lambda g: vs_covector(vs, g), argnum=1)
 
 @primitive
 def vs_scalar_mul(vs, x, a):
     return vs.scalar_mul(x, a)
-vs_scalar_mul.defvjp(lambda ans, vs, gvs, x, a: lambda g:
+vs_scalar_mul.defvjp(lambda ans, vs, gvs, vs_, x, a: lambda g:
                      vs_scalar_mul(gvs, g, a), argnum=1)
-vs_scalar_mul.defvjp(lambda ans, vs, gvs, x, a: lambda g:
+vs_scalar_mul.defvjp(lambda ans, vs, gvs, vs_, x, a: lambda g:
                      vs_inner_prod(gvs, g, x), argnum=2)
 
 @primitive
 def vs_inner_prod(vs, x, y):
     return vs.inner_prod(x, y)
-vs_inner_prod.defvjp(lambda ans, vs, gvs, x, y: lambda g:
+vs_inner_prod.defvjp(lambda ans, vs, gvs, vs_, x, y: lambda g:
                      vs_scalar_mul(vs, y, g), argnum=1)
-vs_inner_prod.defvjp(lambda ans, vs, gvs, x, y: lambda g:
+vs_inner_prod.defvjp(lambda ans, vs, gvs, vs_, x, y: lambda g:
                      vs_scalar_mul(vs, x, g), argnum=2)
 
 def find_top_boxed_args(args):

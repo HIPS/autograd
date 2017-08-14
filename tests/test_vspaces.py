@@ -1,7 +1,8 @@
-from autograd.core import vspace, make_vjp
+from autograd.core import vspace, make_vjp, vs_add, vs_scalar_mul, vs_inner_prod
 from autograd.numpy.numpy_extra import ArrayVSpace
 import autograd.numpy as np
 import itertools as it
+from functools import partial
 
 TOL = 1e-6
 EPS = 1e-4
@@ -12,6 +13,7 @@ def make_numerical_jvp(f, x):
     y = f(x)
     x_vs, y_vs = vspace(x), vspace(y)
     def jvp(v):
+        # (f(x + v*eps/2) - f(x - v*eps/2)) / eps
         f_x_plus  = f(x_vs.add(x, x_vs.scalar_mul(v,  EPS/2)))
         f_x_minus = f(x_vs.add(x, x_vs.scalar_mul(v, -EPS/2)))
         neg_f_x_minus = y_vs.scalar_mul(f_x_minus, -1.0)
@@ -33,7 +35,12 @@ def check_grad(f, argnums, *args, **kwargs):
             args_[argnum] = x
         return f(*args_, **kwargs)
 
-    return check_grad_unary(f_unary, tuple(args[argnum] for argnum in argnums))
+    unary_arg = tuple(args[argnum] for argnum in argnums)
+    v = vspace(f_unary(unary_arg)).randn()
+    f_unary_jvp = lambda unary_arg: make_vjp(f_unary)(unary_arg)[0](v)
+
+    return (check_grad_unary(f_unary,     unary_arg) and
+            check_grad_unary(f_unary_jvp, unary_arg))
 
 def check_vspace(vs):
     # --- required attributes ---
@@ -112,11 +119,11 @@ def check_vspace(vs):
         return all(vs == vspace(example) for example in examples())
     # --- grads of basic operations ---
     def check_grad_add(x, y):
-        return check_grad(add, [0,1], x, y)
+        return check_grad(partial(vs_add, vs), [0,1], x, y)
     def check_grad_scalar_mul(x, a):
-        return check_grad(scalar_mul, [0,1], x, a)
-    def check_grad_inner_prod_mul(x, y):
-        return check_grad(inner_prod, [0,1], x, y)
+        return check_grad(partial(vs_scalar_mul, vs), [0,1], x, a)
+    def check_grad_inner_prod(x, y):
+        return check_grad(partial(vs_inner_prod, vs), [0,1], x, y)
 
     # TODO: check grads of basic add/scalar_mul/inner_prod (will require covector)
 
@@ -144,7 +151,7 @@ def check_vspace(vs):
     assert examples_correct_vspace()
     assert check_grad_add(*randns())
     assert check_grad_scalar_mul(randn(), rand_scalar())
-    assert check_grad_inner_prod_mul(*randns())
+    assert check_grad_inner_prod(*randns())
 
 def test_array_vspace(): check_vspace(ArrayVSpace(np.zeros((3,2))))
 def test_array_vspace_0_dim(): check_vspace(ArrayVSpace(0.0))
