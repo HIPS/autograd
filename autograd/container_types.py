@@ -71,21 +71,21 @@ class SequenceVSpace(VSpace):
     def zeros(self):
         return self.seq_type(x.zeros() for x in self.shape)
 
-    def add(self, x, y):
-        return self.seq_type(vs.add(x, y) for x, y, vs in zip(x, y, self.shape))
+    def _add(self, x, y):
+        return self.seq_type(vs._add(x, y) for x, y, vs in zip(x, y, self.shape))
 
-    def scalar_mul(self, x, a):
-        return self.seq_type(vs.scalar_mul(x, a) for x, vs in zip(x, self.shape))
+    def _scalar_mul(self, x, a):
+        return self.seq_type(vs._scalar_mul(x, a) for x, vs in zip(x, self.shape))
 
-    def inner_prod(self, x, y):
-        return sum(vs.inner_prod(x, y) for x, y, vs in zip(x, y, self.shape))
+    def _inner_prod(self, x, y):
+        return sum(vs._inner_prod(x, y) for x, y, vs in zip(x, y, self.shape))
 
     def randn(self):
         return self.seq_type(vs.randn() for vs in self.shape)
 
-    def mut_add(self, xs, ys):
-        return self.seq_type(vs.mut_add(x, y)
-                                  for vs, x, y in zip(self.shape, xs, ys))
+    def _mut_add(self, xs, ys):
+        return self.seq_type(vs._mut_add(x, y)
+                             for vs, x, y in zip(self.shape, xs, ys))
 
     def flatten(self, value, covector=False):
         if self.shape:

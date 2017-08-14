@@ -1,8 +1,7 @@
-from autograd.core import vspace, make_vjp, vs_add, vs_scalar_mul, vs_inner_prod
+from autograd.core import vspace, make_vjp, primitive
 from autograd.numpy.numpy_extra import ArrayVSpace
 import autograd.numpy as np
 import itertools as it
-from functools import partial
 
 TOL = 1e-6
 EPS = 1e-4
@@ -53,6 +52,7 @@ def check_vspace(vs):
     ones       = vs.ones
     examples   = vs.examples
     standard_basis = vs.standard_basis
+
     # --- util ---
     def randns(N=2):
         return [randn() for i in range(N)]
@@ -119,11 +119,11 @@ def check_vspace(vs):
         return all(vs == vspace(example) for example in examples())
     # --- grads of basic operations ---
     def check_grad_add(x, y):
-        return check_grad(partial(vs_add, vs), [0,1], x, y)
+        return check_grad(add, [0,1], x, y)
     def check_grad_scalar_mul(x, a):
-        return check_grad(partial(vs_scalar_mul, vs), [0,1], x, a)
+        return check_grad(scalar_mul, [0,1], x, a)
     def check_grad_inner_prod(x, y):
-        return check_grad(partial(vs_inner_prod, vs), [0,1], x, y)
+        return check_grad(inner_prod, [0,1], x, y)
 
     # TODO: check grads of basic add/scalar_mul/inner_prod (will require covector)
 
