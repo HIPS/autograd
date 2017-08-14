@@ -6,6 +6,7 @@ import numpy.random as npr
 from functools import partial
 import warnings
 from .errors import defgrad_deprecated
+from contextlib import contextmanager
 
 def make_vjp(fun, argnum=0):
     def vjp_maker(*args, **kwargs):
@@ -21,9 +22,10 @@ def make_vjp(fun, argnum=0):
 
 def forward_pass(fun, args, kwargs, argnum=0):
     args = list(args)
-    start_box = new_box(args[argnum], new_trace())
-    args[argnum] = start_box
-    end_box = fun(*args, **kwargs)
+    with trace_stack.new_trace() as t:
+        start_box = new_box(args[argnum], t)
+        args[argnum] = start_box
+        end_box = fun(*args, **kwargs)
     return start_box, end_box
 
 def backward_pass(g, end_node):
@@ -179,11 +181,15 @@ def find_top_boxed_args(args):
                 top_boxes.append((argnum, arg))
     return top_boxes, top_trace
 
-global_top_trace = 0
-def new_trace():
-    global global_top_trace
-    global_top_trace += 1
-    return global_top_trace
+class TraceStack(object):
+    def __init__(self):
+        self.top = -1
+    @contextmanager
+    def new_trace(self):
+        self.top += 1
+        yield self.top
+        self.top -= 1
+trace_stack = TraceStack()
 
 class Node(object):
     __slots__ = ['vspace', 'parents', 'vjps']
