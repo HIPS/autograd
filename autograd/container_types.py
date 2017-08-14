@@ -49,15 +49,15 @@ def sequence_untake(x, idx, vs):
     def mut_add(A):
         result = list(A)
         result[idx] = accum(result[idx])
-        return vs.sequence_type(result)
+        return vs.seq_type(result)
     return SparseObject(vs, mut_add)
 sequence_untake.defvjp(lambda ans, vs, gvs, x, idx, _: lambda g: sequence_take(g, idx))
 sequence_untake.defvjp_is_zero(argnums=(1, 2))
 
 @primitive
-def make_sequence(sequence_type, *args):
-    return sequence_type(args)
-make_sequence.vjp = lambda argnum, sequence_type, *args: lambda g: g[argnum - 1]
+def make_sequence(seq_type, *args):
+    return seq_type(args)
+make_sequence.vjp = lambda argnum, seq_type, *args: lambda g: g[argnum - 1]
 make_tuple = partial(make_sequence, tuple)
 make_list  = partial(make_sequence, list)
 
@@ -65,14 +65,26 @@ class SequenceVSpace(VSpace):
     def __init__(self, value):
         self.shape = [vspace(x) for x in value]
         self.size = sum(s.size for s in self.shape)
-        self.sequence_type = type(value)
-        assert self.sequence_type in (tuple, list)
+        self.seq_type = type(value)
+        assert self.seq_type in (tuple, list)
 
     def zeros(self):
-        return self.sequence_type(x.zeros() for x in self.shape)
+        return self.seq_type(x.zeros() for x in self.shape)
+
+    def add(self, x, y):
+        return self.seq_type(vs.add(x, y) for x, y, vs in zip(x, y, self.shape))
+
+    def scalar_mul(self, x, a):
+        return self.seq_type(vs.scalar_mul(x, a) for x, vs in zip(x, self.shape))
+
+    def inner_prod(self, x, y):
+        return sum(vs.inner_prod(x, y) for x, y, vs in zip(x, y, self.shape))
+
+    def randn(self):
+        return self.seq_type(vs.randn() for vs in self.shape)
 
     def mut_add(self, xs, ys):
-        return self.sequence_type(vs.mut_add(x, y)
+        return self.seq_type(vs.mut_add(x, y)
                                   for vs, x, y in zip(self.shape, xs, ys))
 
     def flatten(self, value, covector=False):
@@ -89,7 +101,7 @@ class SequenceVSpace(VSpace):
             N = vs.size
             result.append(vs.unflatten(value[start:start + N], covector))
             start += N
-        return self.sequence_type(result)
+        return self.seq_type(result)
 
 register_vspace(SequenceVSpace, list)
 register_vspace(SequenceVSpace, tuple)
