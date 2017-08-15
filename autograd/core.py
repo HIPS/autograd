@@ -23,7 +23,8 @@ def make_vjp(fun, argnum=0):
 def forward_pass(fun, args, kwargs, argnum=0):
     args = list(args)
     with trace_stack.new_trace() as t:
-        start_box = new_box(args[argnum], t)
+        start_node = VJPNode(None, None, None, args[argnum], [], t)
+        start_box = new_box(args[argnum], start_node)
         args[argnum] = start_box
         end_box = fun(*args, **kwargs)
     return start_box, end_box
@@ -40,6 +41,16 @@ def backward_pass(g, end_node):
             outgrads[parent] = add_outgrads(parent.vspace, outgrads.get(parent), outgrad)
     return cur_outgrad[0]
 
+class Node(object): pass
+
+class VJPNode(Node):
+    def __init__(self, fun, args, kwargs, ans, numbered_parents, trace):
+        self.vspace = vspace(ans)
+        self.parents = [p for _, p in numbered_parents]
+        self.trace = trace
+        self.vjps = [fun.vjp(argnum, ans, parent.vspace, vspace(ans), args, kwargs)
+                     for argnum, parent in numbered_parents]
+
 class primitive(object):
     """
     Wraps a function so that its gradient can be specified and its invocation
@@ -51,15 +62,13 @@ class primitive(object):
         self.__doc__ = fun.__doc__
 
     def __call__(self, *args, **kwargs):
-        boxed_args, trace = find_top_boxed_args(args)
+        boxed_args, trace, node_constructor = find_top_boxed_args(args)
         if boxed_args:
             argvals = subvals(args, [(argnum, box.value) for argnum, box in boxed_args])
-            result = self(*argvals, **kwargs)
-            parents = [box.node for _, box in boxed_args]
-            vjps = [self.vjp(argnum, result, box.node.vspace,
-                             vspace(result), argvals, kwargs)
-                    for argnum, box in boxed_args]
-            return new_box(result, trace, parents, vjps)
+            numbered_parents = [(argnum, box.node) for argnum, box in boxed_args]
+            ans = self(*argvals, **kwargs)
+            node = node_constructor(self, argvals, kwargs, ans, numbered_parents, trace)
+            return new_box(ans, node)
         else:
             return self.fun(*args, **kwargs)
 
@@ -171,15 +180,17 @@ vs_inner_prod.defvjp(lambda ans, vs, gvs, vs_, x, y: lambda g:
 def find_top_boxed_args(args):
     top_trace = -1
     top_boxes = []
+    top_node_type = None
     for argnum, arg in enumerate(args):
         if isbox(arg):
             trace = arg._trace
             if trace > top_trace:
                 top_boxes = [(argnum, arg)]
                 top_trace = trace
+                top_node_type = type(arg.node)
             elif trace == top_trace:
                 top_boxes.append((argnum, arg))
-    return top_boxes, top_trace
+    return top_boxes, top_trace, top_node_type
 
 class TraceStack(object):
     def __init__(self):
@@ -191,19 +202,12 @@ class TraceStack(object):
         self.top -= 1
 trace_stack = TraceStack()
 
-class Node(object):
-    __slots__ = ['vspace', 'parents', 'vjps']
-    def __init__(self, vspace, parents, vjps):
-        self.vspace = vspace
-        self.parents = parents
-        self.vjps = vjps
-
 class Box(object):
     __slots__ = ['vspace', 'value', '_trace', 'node']
-    def __init__(self, value, trace, node):
+    def __init__(self, value, node):
         self.value = value
         self.node = node
-        self._trace = trace
+        self._trace = node.trace
         self.vspace = node.vspace
 
     def __bool__(self):
@@ -298,10 +302,9 @@ def register_box(box_type, value_type):
 def register_vspace(vspace_maker, value_type):
     vspace_mappings[value_type] = vspace_maker
 
-def new_box(value, trace, parents=(), vjps=()):
+def new_box(value, node):
     try:
-        node = Node(vspace(value), parents, vjps)
-        return box_type_mappings[type(value)](value, trace, node)
+        return box_type_mappings[type(value)](value, node)
     except KeyError:
         raise TypeError("Can't differentiate w.r.t. type {}".format(type(value)))
 
