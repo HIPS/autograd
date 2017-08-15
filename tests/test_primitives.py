@@ -1,7 +1,7 @@
 import autograd.numpy as np
 import autograd.numpy.random as npr
 import itertools as it
-from autograd.core import vspace, vspace_flatten
+from autograd.core import vspace, vspace_flatten, make_vjp
 import autograd.core as agc
 
 EPS, RTOL, ATOL = 1e-4, 1e-4, 1e-6
@@ -26,7 +26,7 @@ def check_args(fun, argnum, args, kwargs):
     ans_vspace = vspace(ans)
     jac = numerical_jacobian(fun, argnum, args, kwargs)
     for outgrad in ans_vspace.examples():
-        result = fun.vjps[argnum](ans, in_vspace, ans_vspace, *args, **kwargs)(outgrad)
+        result = make_vjp(fun, argnum)(*args, **kwargs)[0](outgrad)
         result_vspace = vspace(result)
         result_reals = vspace_flatten(result, True)
         nd_result_reals = np.dot(vspace_flatten(outgrad, True), jac)
@@ -84,6 +84,5 @@ def test_flatten_unflatten():
         assert np.all(v2 == v), \
             report_flatten_unflatten(vs, v, v2)
 
-def test_identity(): check_primitive(agc.identity, (everything,))
 def test_sin():      check_primitive(np.sin,       (all_arrays,))
 def test_np_sum():   check_primitive(np.add, (all_arrays, all_arrays), argnums=[0,1])

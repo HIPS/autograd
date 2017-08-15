@@ -3,7 +3,7 @@ import numpy.fft as ffto
 from .numpy_wrapper import wrap_namespace
 from .numpy_grads import match_complex
 from . import numpy_wrapper as anp
-from autograd.core import primitive
+from autograd.core import primitive, defvjp
 from builtins import zip
 
 wrap_namespace(ffto.__dict__, globals())
@@ -15,19 +15,19 @@ def fft_grad(get_args, fft_fun, ans, vs, gvs, x, *args, **kwargs):
     check_no_repeated_axes(axes)
     return lambda g: match_complex(vs, truncate_pad(fft_fun(g, *args, **kwargs), vs.shape))
 
-fft.defvjp(lambda *args, **kwargs:
+defvjp(fft, lambda *args, **kwargs:
         fft_grad(get_fft_args, fft, *args, **kwargs))
-ifft.defvjp(lambda *args, **kwargs:
+defvjp(ifft, lambda *args, **kwargs:
         fft_grad(get_fft_args, ifft, *args, **kwargs))
 
-fft2.defvjp(lambda *args, **kwargs:
+defvjp(fft2, lambda *args, **kwargs:
         fft_grad(get_fft_args, fft2, *args, **kwargs))
-ifft2.defvjp(lambda *args, **kwargs:
+defvjp(ifft2, lambda *args, **kwargs:
         fft_grad(get_fft_args, ifft2, *args, **kwargs))
 
-fftn.defvjp(lambda *args, **kwargs:
+defvjp(fftn, lambda *args, **kwargs:
         fft_grad(get_fft_args, fftn, *args, **kwargs))
-ifftn.defvjp(lambda *args, **kwargs:
+defvjp(ifftn, lambda *args, **kwargs:
         fft_grad(get_fft_args, ifftn, *args, **kwargs))
 
 def rfft_grad(get_args, irfft_fun, ans, vs, gvs, x, *args, **kwargs):
@@ -66,27 +66,27 @@ def irfft_grad(get_args, rfft_fun, ans, vs, gvs, x, *args, **kwargs):
         return r
     return vjp
 
-rfft.defvjp(lambda *args, **kwargs:
+defvjp(rfft, lambda *args, **kwargs:
         rfft_grad(get_fft_args, irfft, *args, **kwargs))
 
-irfft.defvjp(lambda *args, **kwargs:
+defvjp(irfft, lambda *args, **kwargs:
         irfft_grad(get_fft_args, rfft, *args, **kwargs))
 
-rfft2.defvjp(lambda *args, **kwargs:
+defvjp(rfft2, lambda *args, **kwargs:
         rfft_grad(get_fft2_args, irfft2, *args, **kwargs))
 
-irfft2.defvjp(lambda *args, **kwargs:
+defvjp(irfft2, lambda *args, **kwargs:
         irfft_grad(get_fft2_args, rfft2, *args, **kwargs))
 
-rfftn.defvjp(lambda *args, **kwargs:
+defvjp(rfftn, lambda *args, **kwargs:
         rfft_grad(get_fftn_args, irfftn, *args, **kwargs))
 
-irfftn.defvjp(lambda *args, **kwargs:
+defvjp(irfftn, lambda *args, **kwargs:
         irfft_grad(get_fftn_args, rfftn, *args, **kwargs))
 
-fftshift.defvjp( lambda ans, vs, gvs, x, axes=None : lambda g:
+defvjp(fftshift,  lambda ans, vs, gvs, x, axes=None : lambda g:
                  match_complex(vs, anp.conj(ifftshift(anp.conj(g), axes))))
-ifftshift.defvjp(lambda ans, vs, gvs, x, axes=None : lambda g:
+defvjp(ifftshift, lambda ans, vs, gvs, x, axes=None : lambda g:
                  match_complex(vs, anp.conj(fftshift(anp.conj(g), axes))))
 
 @primitive
@@ -96,8 +96,8 @@ def truncate_pad(x, shape):
     pads = list(zip(anp.zeros(len(shape), dtype=int),
                anp.maximum(0, anp.array(shape) - anp.array(x.shape))))
     return anp.pad(x, pads, 'constant')[slices]
-truncate_pad.defvjp(lambda ans, vs, gvs, x, shape: lambda g:
-                    match_complex(vs, truncate_pad(g, vs.shape)))
+defvjp(truncate_pad, lambda ans, vs, gvs, x, shape: lambda g:
+       match_complex(vs, truncate_pad(g, vs.shape)))
 
 ## TODO: could be made less stringent, to fail only when repeated axis has different values of s
 def check_no_repeated_axes(axes):

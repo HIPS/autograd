@@ -2,6 +2,8 @@ from __future__ import absolute_import
 from autograd.core import primitive
 import autograd.numpy as np
 import numpy as npo # original numpy
+from autograd.core import defvjps
+
 from numpy.lib.stride_tricks import as_strided
 from builtins import range, zip
 from future.utils import iteritems
@@ -132,4 +134,4 @@ def grad_convolve(argnum, ans, vs, gvs, A, B, axes=None, dot_axes=[(),()], mode=
         return np.transpose(result, new_order)
     return vjp
 
-convolve.defvjps(grad_convolve, [0, 1])
+defvjps(convolve, grad_convolve, [0, 1])

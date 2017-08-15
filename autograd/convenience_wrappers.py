@@ -1,7 +1,7 @@
 """Convenience functions built on top of `make_vjp`."""
 from __future__ import absolute_import
 import autograd.numpy as np
-from autograd.core import make_vjp, vspace, primitive
+from autograd.core import make_vjp, vspace, primitive, defvjp_argnum
 from autograd.container_types import make_tuple
 from .misc import unary_to_nary
 from collections import OrderedDict
@@ -204,7 +204,7 @@ def checkpoint(fun):
     def wrapped_grad(argnum, ans, vs, gvs, args, kwargs):
         return make_vjp(fun, argnum)(*args, **kwargs)[0]
     wrapped = primitive(fun)
-    wrapped.vjp = wrapped_grad
+    defvjp_argnum(wrapped, wrapped_grad)
     return wrapped
 
 def safe_type(value):

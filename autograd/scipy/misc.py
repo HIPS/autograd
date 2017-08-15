@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 import scipy.misc
 
-from autograd.core import primitive
+from autograd.core import primitive, defvjp
 import autograd.numpy as anp
 from autograd.numpy.numpy_grads import repeat_to_match_shape
 
@@ -14,4 +14,4 @@ def make_grad_logsumexp(ans, vs, gvs, x, axis=None, b=1.0, keepdims=False):
         return g_repeated * b * anp.exp(x - ans_repeated)
     return vjp
 
-logsumexp.defvjp(make_grad_logsumexp)
+defvjp(logsumexp, make_grad_logsumexp)

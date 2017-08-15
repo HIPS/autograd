@@ -3,7 +3,8 @@ from __future__ import print_function
 import types
 from future.utils import iteritems
 import warnings
-from autograd.core import primitive, nograd_primitive, getval
+from autograd.core import primitive, notrace_primitive, getval, defvjp_argnum
+
 import numpy as _np
 
 def unbox_args(f):
@@ -34,7 +35,7 @@ def wrap_namespace(old, new):
     function_types = {_np.ufunc, types.FunctionType, types.BuiltinFunctionType}
     for name, obj in iteritems(old):
         if obj in nograd_functions:
-            new[name] = nograd_primitive(obj)
+            new[name] = notrace_primitive(obj)
         elif type(obj) in function_types:
             new[name] = primitive(obj)
         elif type(obj) is type and obj in int_types:
@@ -88,7 +89,7 @@ def array_from_args(*args):
 
 def array_from_args_gradmaker(argnum, ans, vs, gvs, args, kwargs):
     return lambda g: g[argnum]
-array_from_args.vjp = array_from_args_gradmaker
+defvjp_argnum(array_from_args, array_from_args_gradmaker)
 
 def select(condlist, choicelist, default=0):
     raw_array = _np.select(list(condlist), list(choicelist), default=default)

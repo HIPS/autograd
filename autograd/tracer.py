@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 import sys
 import types
-from functools import partial
 import warnings
 from .errors import defgrad_deprecated
 from contextlib import contextmanager
@@ -31,7 +30,6 @@ class primitive(object):
     can be recorded. For examples, see the docs."""
     def __init__(self, fun):
         self.fun = fun
-        self.vjps = {}
         self.__name__ = fun.__name__
         self.__doc__ = fun.__doc__
 
@@ -46,30 +44,10 @@ class primitive(object):
         else:
             return self.fun(*args, **kwargs)
 
-    def vjp(self, argnum, ans, vs, gvs, args, kwargs):
-        try:
-            return self.vjps[argnum](ans, vs, gvs, *args, **kwargs)
-        except KeyError:
-            if self.vjps == {}:
-                errstr = "Gradient of {0} not yet implemented."
-            else:
-                errstr = "Gradient of {0} w.r.t. arg number {1} not yet implemented."
-            raise NotImplementedError(errstr.format(self.fun.__name__, argnum))
-
-    def defvjp(self, vjpmaker, argnum=0):
-        vjpmaker.__name__ = "VJP_{}_of_{}".format(argnum, self.__name__)
-        self.vjps[argnum] = vjpmaker
-
-    def defvjps(self, vjpmaker, argnums):
-        for argnum in argnums:
-            self.defvjp(partial(vjpmaker, argnum), argnum)
-
-    def defvjp_is_zero(self, argnums=(0,)):
-        for argnum in argnums:
-            self.vjps[argnum] = zero_vjp
-
     def __repr__(self):
-        return self.__name__
+        return 'wrapper' + repr(self.fun)
+
+    def _primitive(self): return self
 
     if sys.version_info >= (3,):
         def __get__(self, obj, objtype):
@@ -78,18 +56,20 @@ class primitive(object):
         def __get__(self, obj, objtype):
             return types.MethodType(self, obj, objtype)
 
-    def defgrad(self, gradfun, argnum=0):
-        warnings.warn(defgrad_deprecated)
-        def vjp(ans, vs, gvs, *args, **kwargs):
-            return gradfun(ans, *args, **kwargs)
-        self.defvjp(vjp, argnum)
+def subvals(x, ivs):
+    x_ = list(x)
+    for i, v in ivs:
+        x_[i] = v
+    return tuple(x_)
 
-def zero_vjp(ans, vs, gvs, *args, **kwargs):
-    return lambda g: vs.zeros()
-
-class nograd_primitive(primitive):
+class notrace_primitive(primitive):
     def __call__(self, *args, **kwargs):
         argvals = map(getval, args)
+
+        ans = self.fun(*argvals, **kwargs)
+        print self, args, ans
+        return ans
+
         return self.fun(*argvals, **kwargs)
 
 def find_top_boxed_args(args):
@@ -167,12 +147,6 @@ def new_box(value, node):
         return box_type_mappings[type(value)](value, node)
     except KeyError:
         raise TypeError("Can't differentiate w.r.t. type {}".format(type(value)))
-
-def subvals(x, ivs):
-    x_ = list(x)
-    for i, v in ivs:
-        x_[i] = v
-    return tuple(x_)
 
 isbox = lambda x: type(x) in box_types
 getval = lambda x: getval(x.value) if isbox(x) else x

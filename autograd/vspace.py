@@ -14,15 +14,15 @@ class VSpace(object):
     def randn(self):          assert False
 
     @primitive
-    def add(vs, x_prev, x_new):     return vs._add(x_prev, x_new)
+    def add(self, x_prev, x_new):     return self._add(x_prev, x_new)
     @primitive
-    def mut_add(vs, x_prev, x_new): return vs._mut_add(x_prev, x_new)
+    def mut_add(self, x_prev, x_new): return self._mut_add(x_prev, x_new)
     @primitive
-    def scalar_mul(vs, x, a):       return vs._scalar_mul(x, a)
+    def scalar_mul(self, x, a):       return self._scalar_mul(x, a)
     @primitive
-    def inner_prod(vs, x, y):       return vs._inner_prod(x, y)
+    def inner_prod(self, x, y):       return self._inner_prod(x, y)
     @primitive
-    def covector(vs, x):            return vs._covector(x)
+    def covector(self, x):            return self._covector(x)
 
     def _add(self, x, y):        return x + y
     def _mut_add(self, x, y):    x += y; return x
@@ -44,20 +44,6 @@ class VSpace(object):
         unit_vect = self.unflatten(unit_vect)
         rand_vect = npr.randn(N)
         return [self.zeros(), self.unflatten(npr.randn(N))]
-
-identity_vjp = lambda *args: lambda g: g
-VSpace.mut_add.defvjps(identity_vjp, argnums=[1,2])
-VSpace.inner_prod.defvjp(lambda ans, vs, gvs, vs_, x, y: lambda g:
-                         vs.covector(vs.scalar_mul(y, gvs.covector(g))), argnum=1)
-VSpace.inner_prod.defvjp(lambda ans, vs, gvs, vs_, x, y: lambda g:
-                         vs.covector(vs.scalar_mul(x, gvs.covector(g))), argnum=2)
-VSpace.add.defvjps(identity_vjp, argnums=[1,2])
-VSpace.covector.defvjp(lambda ans, vs, gvs, vs_, x: lambda g:
-                       gvs.covector(g), argnum=1)
-VSpace.scalar_mul.defvjp(lambda ans, vs, gvs, vs_, x, a: lambda g:
-                         vs.covector(gvs.scalar_mul(gvs.covector(g), a)), argnum=1)
-VSpace.scalar_mul.defvjp(lambda ans, vs, gvs, vs_, x, a: lambda g:
-                         gvs.inner_prod(g, gvs.covector(x)), argnum=2)
 
 def vspace_flatten(value, covector=False):
     return vspace(value).flatten(value, covector)

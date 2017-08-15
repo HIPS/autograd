@@ -3,10 +3,11 @@ import scipy.linalg
 
 import autograd.numpy as anp
 from autograd.numpy.numpy_wrapper import wrap_namespace
+from autograd.core import defvjp, defvjps, defvjp_is_zero, defvjp_argnum
 
 wrap_namespace(scipy.linalg.__dict__, globals())  # populates module namespace
 
-sqrtm.defvjp(lambda ans, vs, gvs, A, **kwargs: lambda g: solve_lyapunov(ans, g))
+defvjp(sqrtm,lambda ans, vs, gvs, A, **kwargs: lambda g: solve_lyapunov(ans, g))
 
 def _flip(a, trans):
     if anp.iscomplexobj(a):
@@ -23,6 +24,6 @@ def grad_solve_triangular(ans, vs, gvs, a, b, trans=0, lower=False, **kwargs):
         return -transpose(tri(anp.dot(v, al2d(ans).T)))
     return vjp
 
-solve_triangular.defvjp(grad_solve_triangular)
-solve_triangular.defvjp(lambda ans, vs, gvs, a, b, trans=0, lower=False, **kwargs:
+defvjp(solve_triangular,grad_solve_triangular)
+defvjp(solve_triangular,lambda ans, vs, gvs, a, b, trans=0, lower=False, **kwargs:
     lambda g: solve_triangular(a, g, trans=_flip(a, trans), lower=lower), argnum=1)

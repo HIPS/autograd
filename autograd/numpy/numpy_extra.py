@@ -2,7 +2,8 @@ from __future__ import absolute_import
 import numpy as np
 
 from autograd.core import (Box, VSpace, SparseObject, primitive,
-                           register_box, register_vspace)
+                           register_box, register_vspace,
+                           defvjp, defvjps, defvjp_is_zero)
 from . import numpy_wrapper as anp
 
 @primitive
@@ -10,7 +11,7 @@ def take(A, idx):
     return A[idx]
 def grad_take(ans, vs, gvs, A, idx):
     return lambda g: untake(g, idx, vs)
-take.defvjp(grad_take)
+defvjp(take, grad_take)
 
 @primitive
 def untake(x, idx, vs):
@@ -18,8 +19,8 @@ def untake(x, idx, vs):
         np.add.at(A, idx, x)
         return A
     return SparseObject(vs, mut_add)
-untake.defvjp(lambda ans, vs, gvs, x, idx, _: lambda g: take(g, idx))
-untake.defvjp_is_zero(argnums=(1, 2))
+defvjp(untake, lambda ans, vs, gvs, x, idx, _: lambda g: take(g, idx))
+defvjp_is_zero(untake, argnums=(1, 2))
 
 Box.__array_priority__ = 90.0
 

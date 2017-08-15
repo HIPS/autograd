@@ -2,6 +2,7 @@ from __future__ import division
 import autograd.numpy as np
 from autograd import grad
 from autograd.util import *
+from autograd.core import primitive_vjps, get_primitive
 
 def test_assert():
     # from https://github.com/HIPS/autograd/issues/43
@@ -21,22 +22,20 @@ def test_nograd():
         raise Exception('Expected non-differentiability exception')
 
 def test_falseyness():
-    fun = lambda x: x**2 if np.iscomplex(x) else np.sum(x)
+    fun = lambda x: np.real(x**2 if np.iscomplex(x) else np.sum(x))
     check_grads(fun, 2.)
     check_grads(fun, 2. + 1j)
 
 def test_unimplemented_falseyness():
     def remove_grad_definitions(fun):
-        grads = fun.vjps
-        fun.vjps = {}
-        return grads
+        return primitive_vjps[fun]
 
-    def restore_grad_definitions(fun, grad_defs):
-        fun.vjps = grad_defs
+    def restore_grad_definitions(fun, grads):
+        primitive_vjps[fun] = grads
 
     grad_defs = remove_grad_definitions(np.iscomplex)
 
-    fun = lambda x: x**2 if np.iscomplex(x) else np.sum(x)
+    fun = lambda x: np.real(x**2 if np.iscomplex(x) else np.sum(x))
     check_grads(fun, 5.)
     check_grads(fun, 2. + 1j)
 

@@ -722,6 +722,7 @@ def test_array_creation():
         arr = [x for i in range(N)]
         return np.sum(np.array(arr))
     grad(fun)(1.0)
+test_array_creation()
 
 def test_tensordot_kwargs_by_position():
     def fun(x):

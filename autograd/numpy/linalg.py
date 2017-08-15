@@ -3,6 +3,7 @@ from functools import partial
 import numpy.linalg as npla
 from .numpy_wrapper import wrap_namespace
 from . import numpy_wrapper as anp
+from autograd.core import defvjp, defvjps
 
 wrap_namespace(npla.__dict__, globals())
 
@@ -18,13 +19,13 @@ def T(x): return anp.swapaxes(x, -1, -2)
 # add two dimensions to the end of x
 def add2d(x): return anp.reshape(x, anp.shape(x) + (1, 1))
 
-det.defvjp(lambda ans, vs, gvs, x: lambda g: add2d(g) * add2d(ans) * T(inv(x)))
-slogdet.defvjp(lambda ans, vs, gvs, x: lambda g: add2d(g[1]) * T(inv(x)))
+defvjp(det, lambda ans, vs, gvs, x: lambda g: add2d(g) * add2d(ans) * T(inv(x)))
+defvjp(slogdet, lambda ans, vs, gvs, x: lambda g: add2d(g[1]) * T(inv(x)))
 
 def grad_inv(ans, vs, gvs, x):
     dot = anp.dot if ans.ndim == 2 else partial(anp.einsum, '...ij,...jk->...ik')
     return lambda g: -dot(dot(T(ans), g), T(ans))
-inv.defvjp(grad_inv)
+defvjp(inv, grad_inv)
 
 def grad_solve(argnum, ans, vs, gvs, a, b):
     updim = lambda x: x if x.ndim == a.ndim else x[...,None]
@@ -33,7 +34,7 @@ def grad_solve(argnum, ans, vs, gvs, a, b):
         return lambda g: -dot(updim(solve(T(a), g)), T(updim(ans)))
     else:
         return lambda g: solve(T(a), g)
-solve.defvjps(grad_solve, [0, 1])
+defvjps(solve, grad_solve, [0, 1])
 
 def grad_norm(ans, vs, gvs, x, ord=None, axis=None):
     def check_implemented():
@@ -90,7 +91,7 @@ def grad_norm(ans, vs, gvs, x, ord=None, axis=None):
             # see https://en.wikipedia.org/wiki/Norm_(mathematics)#p-norm
             return expand(g / ans**(ord-1)) * x * anp.abs(x)**(ord-2)
     return vjp
-norm.defvjp(grad_norm)
+defvjp(norm, grad_norm)
 
 def grad_eigh(ans, vs, gvs, x, UPLO='L'):
     """Gradient for eigenvalues and vectors of a symmetric matrix."""
@@ -104,7 +105,7 @@ def grad_eigh(ans, vs, gvs, x, UPLO='L'):
         F = off_diag / (T(w_repeated) - w_repeated + anp.eye(N))
         return dot(v * wg[..., anp.newaxis, :] + dot(v, F * dot(T(v), vg)), T(v))
     return vjp
-eigh.defvjp(grad_eigh)
+defvjp(eigh, grad_eigh)
 
 def grad_cholesky(L, vs, gvs, A):
     # Based on Iain Murray's note http://arxiv.org/abs/1602.07527
@@ -125,7 +126,7 @@ def grad_cholesky(L, vs, gvs, A):
         S = conjugate_solve(L, phi(anp.einsum('...ki,...kj->...ij', L, g)))
         return (S + T(S)) / 2.
     return vjp
-cholesky.defvjp(grad_cholesky)
+defvjp(cholesky, grad_cholesky)
 
 def grad_svd(usv_, vs, gvs, a, full_matrices=True, compute_uv=True):
     def vjp(g):
@@ -217,4 +218,4 @@ def grad_svd(usv_, vs, gvs, a, full_matrices=True, compute_uv=True):
 
                 return t1
     return vjp
-svd.defvjp(grad_svd)
+defvjp(svd, grad_svd)
