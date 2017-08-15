@@ -31,7 +31,6 @@ def backward_pass(g, end_node, start_node):
     outgrads = {end_node : (g, False)}
     assert_vspace_match(outgrads[end_node][0], end_node.vspace, None)
     for node in toposort(end_node, start_node):
-        if node not in outgrads: continue
         cur_outgrad = outgrads.pop(node)
         function, args, kwargs, parents = node.recipe
         for argnum, parent in parents:
