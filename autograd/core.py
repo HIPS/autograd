@@ -23,7 +23,7 @@ def make_vjp(fun, argnum=0):
 def forward_pass(fun, args, kwargs, argnum=0):
     args = list(args)
     with trace_stack.new_trace() as t:
-        start_node = VJPNode(None, None, None, args[argnum], [], t)
+        start_node = VJPNode(t, [], None, (), {}, args[argnum], [])
         start_box = new_box(args[argnum], start_node)
         args[argnum] = start_box
         end_box = fun(*args, **kwargs)
@@ -41,15 +41,20 @@ def backward_pass(g, end_node):
             outgrads[parent] = add_outgrads(parent.vspace, outgrads.get(parent), outgrad)
     return cur_outgrad[0]
 
-class Node(object): pass
+class Node(object):
+    def __init__(self, trace, parents, *local_data):
+        self.trace = trace
+        self.parents = parents
+        self.process_local_data(*local_data)
+
+    def process_local_data(fun, args, kwargs, ans, argnums): pass
 
 class VJPNode(Node):
-    def __init__(self, fun, args, kwargs, ans, numbered_parents, trace):
+    def process_local_data(self, fun, args, kwargs, ans, argnums):
         self.vspace = vspace(ans)
-        self.parents = [p for _, p in numbered_parents]
-        self.trace = trace
-        self.vjps = [fun.vjp(argnum, ans, parent.vspace, vspace(ans), args, kwargs)
-                     for argnum, parent in numbered_parents]
+        self.vjps = [
+            fun.vjp(argnum, ans, vspace(args[argnum]), vspace(ans), args, kwargs)
+            for argnum in argnums]
 
 class primitive(object):
     """
@@ -65,9 +70,9 @@ class primitive(object):
         boxed_args, trace, node_constructor = find_top_boxed_args(args)
         if boxed_args:
             argvals = subvals(args, [(argnum, box.value) for argnum, box in boxed_args])
-            numbered_parents = [(argnum, box.node) for argnum, box in boxed_args]
             ans = self(*argvals, **kwargs)
-            node = node_constructor(self, argvals, kwargs, ans, numbered_parents, trace)
+            parents, argnums = zip(*[(box.node, argnum) for argnum, box in boxed_args])
+            node = node_constructor(trace, parents, self, argvals, kwargs, ans, argnums)
             return new_box(ans, node)
         else:
             return self.fun(*args, **kwargs)
