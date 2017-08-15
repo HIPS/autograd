@@ -6,13 +6,11 @@ import warnings
 from .errors import defgrad_deprecated
 from contextlib import contextmanager
 
-def trace(node_type, fun, args, kwargs, argnum=0):
-    args = list(args)
+def trace(node_type, fun, x):
     with trace_stack.new_trace() as t:
-        start_node = node_type(t, [], None, (), {}, args[argnum], [])
-        start_box = new_box(args[argnum], start_node)
-        args[argnum] = start_box
-        end_box = fun(*args, **kwargs)
+        start_node = node_type(t, [], None, (), {}, x, [])
+        start_box = new_box(x, start_node)
+        end_box = fun(start_box)
     return start_box, end_box
 
 class Node(object):
@@ -89,7 +87,6 @@ class nograd_primitive(primitive):
     def __call__(self, *args, **kwargs):
         argvals = map(getval, args)
         return self.fun(*argvals, **kwargs)
-
 
 def find_top_boxed_args(args):
     top_trace = -1
@@ -172,9 +169,6 @@ def subvals(x, ivs):
     for i, v in ivs:
         x_[i] = v
     return tuple(x_)
-
-
-
 
 isbox = lambda x: type(x) in box_types
 getval = lambda x: getval(x.value) if isbox(x) else x
