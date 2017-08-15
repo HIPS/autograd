@@ -8,6 +8,7 @@ from autograd import (grad, elementwise_grad, jacobian, value_and_grad,
                       hessian_tensor_product, hessian, make_hvp, multigrad,
                       tensor_jacobian_product, primitive, checkpoint,
                       value_and_multigrad, make_jvp, make_ggnvp)
+from autograd.core import isbox
 from builtins import range
 
 npr.seed(1)
@@ -27,6 +28,7 @@ def test_value_and_grad():
     dfun = grad(fun)
     dfun_both = value_and_grad(fun)
     x = npr.randn(5)
+    assert not isbox(dfun_both(x)[0])
     check_equivalent(fun(x), dfun_both(x)[0])
     check_equivalent(dfun(x), dfun_both(x)[1])
 

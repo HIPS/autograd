@@ -11,7 +11,11 @@ def trace(node_type, fun, x):
         start_node = node_type(t, [], None, (), {}, x, [])
         start_box = new_box(x, start_node)
         end_box = fun(start_box)
-    return start_box, end_box
+        if isbox(end_box) and end_box._trace == start_box._trace:
+            return end_box.value, end_box.node
+        else:
+            warnings.warn("Output seems independent of input.")
+            return end_box, None
 
 class Node(object):
     def __init__(self, trace, parents, *local_data):

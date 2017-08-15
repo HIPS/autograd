@@ -1,22 +1,20 @@
-import warnings
-from .tracer import trace, Node, Box, isbox, register_box, toposort
+from .tracer import trace, Node, Box, register_box, toposort
 from .vspace import vspace, assert_vspace_match, register_vspace, identity_vjp
 from .misc import unary_to_nary
 
-from .tracer import getval, primitive, nograd_primitive # other modules expect these here
-from .vspace import VSpace, vspace_flatten              # but we don't actually need them
+ # other modules expect these here but we don't actually need them
+from .tracer import getval, primitive, nograd_primitive, isbox
+from .vspace import VSpace, vspace_flatten
 
 @unary_to_nary
 def make_vjp(fun):
     def vjp_maker(x):
-        start_box, end_box = trace(VJPNode, fun, x)
-        if not isbox(end_box) or start_box._trace != end_box._trace:
-            warnings.warn("Output seems independent of input.")
-            def vjp(g): return start_box.vspace.zeros()
-            return vjp, end_box
+        end_value, end_node =  trace(VJPNode, fun, x)
+        if end_node is None:
+            def vjp(g): return vspace(x).zeros()
         else:
-            def vjp(g): return backward_pass(g, end_box.node)
-            return vjp, end_box.value
+            def vjp(g): return backward_pass(g, end_node)
+        return vjp, end_value
     return vjp_maker
 
 def backward_pass(g, end_node):
