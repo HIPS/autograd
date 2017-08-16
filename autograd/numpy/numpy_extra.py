@@ -30,14 +30,14 @@ class ArrayBox(Box):
     __array_priority__ = 100.0
 
     # Constants w.r.t float data just pass though
-    shape = property(lambda self: self.value.shape)
-    ndim  = property(lambda self: self.value.ndim)
-    size  = property(lambda self: self.value.size)
-    dtype = property(lambda self: self.value.dtype)
+    shape = property(lambda self: self._value.shape)
+    ndim  = property(lambda self: self._value.ndim)
+    size  = property(lambda self: self._value.size)
+    dtype = property(lambda self: self._value.dtype)
     T = property(lambda self: anp.transpose(self))
 
     def __len__(self):
-        return len(self.value)
+        return len(self._value)
 
     def __neg__(self): return anp.negative(self)
     def __add__(self, other): return anp.add(     self, other)

@@ -10,7 +10,7 @@ import autograd.numpy as np
 class SequenceBox(Box):
     __slots__ = []
     def __getitem__(self, idx): return sequence_take(self, idx)
-    def __len__(self): return len(self.value)
+    def __len__(self): return len(self._value)
     def __add__(self, other): return sequence_extend_right(self, *other)
     def __radd__(self, other): return sequence_extend_left(self, *other)
 
@@ -113,8 +113,8 @@ register_vspace(SequenceVSpace, tuple)
 class DictBox(Box):
     __slots__ = []
     def __getitem__(self, idx): return dict_take(self, idx)
-    def __len__(self): return len(self.value)
-    def __iter__(self): return self.value.__iter__()
+    def __len__(self): return len(self._value)
+    def __iter__(self): return self._value.__iter__()
     def items(self): return list(self.iteritems())
     def keys(self): return list(self.iterkeys())
     def values(self): return list(self.itervalues())

@@ -53,7 +53,7 @@ def vspace(value):
         return vspace_mappings[type(value)](value)
     except KeyError:
         if isbox(value):
-            return value.vspace
+            return value._node.vspace
         else:
             raise TypeError("Can't find vspace for type {}".format(type(value)))
 

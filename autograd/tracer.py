@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 import warnings
 from contextlib import contextmanager
 from .misc import wraps
@@ -9,7 +8,7 @@ def trace(node_type, fun, x):
         start_box = new_box(x, start_node)
         end_box = fun(start_box)
         if isbox(end_box) and end_box._trace == start_box._trace:
-            return end_box.value, end_box.node
+            return end_box._value, end_box._node
         else:
             warnings.warn("Output seems independent of input.")
             return end_box, None
@@ -30,9 +29,9 @@ def primitive(f_raw):
     def f_wrapped(*args, **kwargs):
         boxed_args, trace, node_constructor = find_top_boxed_args(args)
         if boxed_args:
-            argvals = subvals(args, [(argnum, box.value) for argnum, box in boxed_args])
+            argvals = subvals(args, [(argnum, box._value) for argnum, box in boxed_args])
             ans = f_wrapped(*argvals, **kwargs)
-            parents, argnums = zip(*[(box.node, argnum) for argnum, box in boxed_args])
+            parents, argnums = zip(*[(box._node, argnum) for argnum, box in boxed_args])
             node = node_constructor(trace, parents, f_wrapped, argvals, kwargs, ans, argnums)
             return new_box(ans, node)
         else:
@@ -63,7 +62,7 @@ def find_top_boxed_args(args):
             if trace > top_trace:
                 top_boxes = [(argnum, arg)]
                 top_trace = trace
-                top_node_type = type(arg.node)
+                top_node_type = type(arg._node)
             elif trace == top_trace:
                 top_boxes.append((argnum, arg))
     return top_boxes, top_trace, top_node_type
@@ -79,21 +78,20 @@ class TraceStack(object):
 trace_stack = TraceStack()
 
 class Box(object):
-    __slots__ = ['vspace', 'value', '_trace', 'node']
+    __slots__ = ['_value', '_trace', '_node']
     def __init__(self, value, node):
-        self.value = value
-        self.node = node
+        self._value = value
+        self._node = node
         self._trace = node.trace
-        self.vspace = node.vspace
 
     def __bool__(self):
-        return bool(self.value)
+        return bool(self._value)
 
     __nonzero__ = __bool__
 
     def __str__(self):
         return "Autograd {0} with value {1}".format(
-            type(self).__name__, str(self.value))
+            type(self).__name__, str(self._value))
 
 def toposort(end_node):
     child_counts = {}
@@ -130,4 +128,4 @@ def new_box(value, node):
         raise TypeError("Can't differentiate w.r.t. type {}".format(type(value)))
 
 isbox = lambda x: type(x) in box_types
-getval = lambda x: getval(x.value) if isbox(x) else x
+getval = lambda x: getval(x._value) if isbox(x) else x
