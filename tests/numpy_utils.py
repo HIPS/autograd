@@ -2,7 +2,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 import itertools as it
 import autograd.numpy.random as npr
-from autograd import grad, primitive
+from autograd import grad
 from autograd.util import check_equivalent, check_grads, to_scalar
 from builtins import range
 import warnings
@@ -22,18 +22,6 @@ def combo_check(fun, argnums, *args, **kwargs):
 
 def check_fun_and_grads(fun, args, kwargs, argnums):
     wrt_args = [args[i] for i in argnums]
-    try:
-        if isinstance(fun, primitive):
-            wrapped   = fun(*args, **kwargs)
-            unwrapped = fun.fun(*args, **kwargs)
-            try:
-                assert wrapped == unwrapped
-            except:
-                check_equivalent(wrapped, unwrapped)
-    except:
-        print("Value test failed! Args were", args, kwargs)
-        raise
-
     with warnings.catch_warnings(record=True) as w:
         try:
             def scalar_fun(*new_args):

@@ -27,3 +27,12 @@ def attach_name_and_doc(fun, argnum, op):
         finally:
             return gradfun
     return wrap
+
+def wraps(f_raw):
+    def wrap(f_wrapped):
+        try:
+            f_wrapped.__name__ = f_raw.__name__
+            f_wrapped.__doc__  = f_raw.__doc__
+        finally:
+            return f_wrapped
+    return wrap

@@ -1,9 +1,7 @@
 from __future__ import absolute_import
-import sys
-import types
 import warnings
-from .errors import defgrad_deprecated
 from contextlib import contextmanager
+from .misc import wraps
 
 def trace(node_type, fun, x):
     with trace_stack.new_trace() as t:
@@ -24,53 +22,36 @@ class Node(object):
 
     def process_local_data(fun, args, kwargs, ans, argnums): pass
 
-class primitive(object):
+def primitive(f_raw):
     """
     Wraps a function so that its gradient can be specified and its invocation
     can be recorded. For examples, see the docs."""
-    def __init__(self, fun):
-        self.fun = fun
-        self.__name__ = fun.__name__
-        self.__doc__ = fun.__doc__
-
-    def __call__(self, *args, **kwargs):
+    @wraps(f_raw)
+    def f_wrapped(*args, **kwargs):
         boxed_args, trace, node_constructor = find_top_boxed_args(args)
         if boxed_args:
             argvals = subvals(args, [(argnum, box.value) for argnum, box in boxed_args])
-            ans = self(*argvals, **kwargs)
+            ans = f_wrapped(*argvals, **kwargs)
             parents, argnums = zip(*[(box.node, argnum) for argnum, box in boxed_args])
-            node = node_constructor(trace, parents, self, argvals, kwargs, ans, argnums)
+            node = node_constructor(trace, parents, f_wrapped, argvals, kwargs, ans, argnums)
             return new_box(ans, node)
         else:
-            return self.fun(*args, **kwargs)
+            return f_raw(*args, **kwargs)
+    return f_wrapped
 
-    def __repr__(self):
-        return 'wrapper' + repr(self.fun)
-
-    def _primitive(self): return self
-
-    if sys.version_info >= (3,):
-        def __get__(self, obj, objtype):
-            return types.MethodType(self, obj)
-    else:
-        def __get__(self, obj, objtype):
-            return types.MethodType(self, obj, objtype)
+def notrace_primitive(f_raw):
+    @wraps(f_raw)
+    def f_wrapped(*args, **kwargs):
+        argvals = map(getval, args)
+        return f_raw(*argvals, **kwargs)
+    f_wrapped._is_primitive = True
+    return f_wrapped
 
 def subvals(x, ivs):
     x_ = list(x)
     for i, v in ivs:
         x_[i] = v
     return tuple(x_)
-
-class notrace_primitive(primitive):
-    def __call__(self, *args, **kwargs):
-        argvals = map(getval, args)
-
-        ans = self.fun(*argvals, **kwargs)
-        print self, args, ans
-        return ans
-
-        return self.fun(*argvals, **kwargs)
 
 def find_top_boxed_args(args):
     top_trace = -1

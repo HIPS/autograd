@@ -2,7 +2,7 @@ from __future__ import division
 import autograd.numpy as np
 from autograd import grad
 from autograd.util import *
-from autograd.core import primitive_vjps, get_primitive
+from autograd.core import primitive_vjps
 
 def test_assert():
     # from https://github.com/HIPS/autograd/issues/43

@@ -1,12 +1,12 @@
 from collections import defaultdict
 from functools import partial
 from .tracer import trace, Node, Box, register_box, toposort
-from .vspace import vspace, assert_vspace_match, register_vspace
+from .vspace import vspace, assert_vspace_match, register_vspace, VSpace
 from .misc import unary_to_nary
 
  # other modules expect these here but we don't actually need them
 from .tracer import getval, primitive, notrace_primitive, isbox
-from .vspace import VSpace, vspace_flatten
+from .vspace import vspace_flatten
 
 @unary_to_nary
 def make_vjp(fun):
@@ -83,33 +83,21 @@ def primitive_vjp(fun, argnum, ans, vs, gvs, args, kwargs):
         raise NotImplementedError(errstr.format(repr(fun), argnum))
     return vjp(ans, vs, gvs, args, kwargs)
 
-def get_primitive(fun):
-    try:
-        return fun._primitive()
-    except AttributeError:
-        raise TypeError("Function {} has not been wrapped".format(fun))
-
 def defvjp(fun, vjpmaker, argnum=0):
     def vjp_fixed_args(ans, vs, gvs, args, kwargs):
         return vjpmaker(ans, vs, gvs, *args, **kwargs)
-    primitive_vjps[get_primitive(fun)][argnum] = vjp_fixed_args
+    primitive_vjps[fun][argnum] = vjp_fixed_args
 
 def defvjps(fun, vjpmaker, argnums):
     for argnum in argnums:
         defvjp(fun, partial(vjpmaker, argnum), argnum)
 
 def defvjp_argnum(fun, vjpmaker):
-    primitive_vjps[get_primitive(fun)] = first_arg_as_get(vjpmaker)
+    primitive_vjps[fun] = first_arg_as_get(vjpmaker)
 
 def defvjp_is_zero(fun, argnums=(0,)):
     for argnum in argnums:
         defvjp(fun, zero_vjp, argnum)
-
-def defgrad(fun, gradfun, argnum=0):
-    warnings.warn(defgrad_deprecated)
-    def vjp(ans, vs, gvs, *args, **kwargs):
-        return gradfun(ans, *args, **kwargs)
-    defvjp(fun, vjp, argnum)
 
 class first_arg_as_get(object):
     def __init__(self, f):
@@ -125,15 +113,15 @@ identity_vjp = lambda *args: lambda g: g
 def sparse_add(x_prev, x_new): return x_new.mut_add(x_prev)
 defvjps(sparse_add, identity_vjp, argnums=[0, 1])
 
-defvjps(VSpace.mut_add, identity_vjp, argnums=[1,2])
-defvjp(VSpace.inner_prod, lambda ans, vs, gvs, vs_, x, y: lambda g:
+defvjps(VSpace.mut_add.im_func, identity_vjp, argnums=[1,2])
+defvjp(VSpace.inner_prod.im_func, lambda ans, vs, gvs, vs_, x, y: lambda g:
        vs.covector(vs.scalar_mul(y, gvs.covector(g))), argnum=1)
-defvjp(VSpace.inner_prod, lambda ans, vs, gvs, vs_, x, y: lambda g:
+defvjp(VSpace.inner_prod.im_func, lambda ans, vs, gvs, vs_, x, y: lambda g:
        vs.covector(vs.scalar_mul(x, gvs.covector(g))), argnum=2)
-defvjps(VSpace.add, identity_vjp, argnums=[1,2])
-defvjp(VSpace.covector, lambda ans, vs, gvs, vs_, x: lambda g:
+defvjps(VSpace.add.im_func, identity_vjp, argnums=[1,2])
+defvjp(VSpace.covector.im_func, lambda ans, vs, gvs, vs_, x: lambda g:
        gvs.covector(g), argnum=1)
-defvjp(VSpace.scalar_mul, lambda ans, vs, gvs, vs_, x, a: lambda g:
+defvjp(VSpace.scalar_mul.im_func, lambda ans, vs, gvs, vs_, x, a: lambda g:
        vs.covector(gvs.scalar_mul(gvs.covector(g), a)), argnum=1)
-defvjp(VSpace.scalar_mul, lambda ans, vs, gvs, vs_, x, a: lambda g:
+defvjp(VSpace.scalar_mul.im_func, lambda ans, vs, gvs, vs_, x, a: lambda g:
        gvs.inner_prod(g, gvs.covector(x)), argnum=2)
