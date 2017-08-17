@@ -2,8 +2,9 @@ from __future__ import absolute_import
 import autograd.numpy.random as npr
 import autograd.numpy as np
 import operator as op
-from numpy_utils import (combo_check, stat_check, unary_ufunc_check,
+from numpy_utils import (stat_check, unary_ufunc_check,
                          binary_ufunc_check, binary_ufunc_check_no_same_args)
+from autograd.test_util import combo_check
 npr.seed(0)
 
 # Array statistics functions

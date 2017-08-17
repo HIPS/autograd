@@ -3,45 +3,11 @@ from __future__ import print_function
 import itertools as it
 import autograd.numpy.random as npr
 from autograd import grad
-from autograd.test_util import check_equivalent, check_grads
+from autograd.test_util import combo_check
 from builtins import range
 import warnings
 
 test_complex = True
-
-def combo_check(fun, argnums, *args, **kwargs):
-    # Tests all combinations of args given.
-    args = list(args)
-    kwarg_key_vals = [[(key, val) for val in kwargs[key]] for key in kwargs]
-    num_args = len(args)
-    for args_and_kwargs in it.product(*(args + kwarg_key_vals)):
-        cur_args = args_and_kwargs[:num_args]
-        cur_kwargs = dict(args_and_kwargs[num_args:])
-        check_fun_and_grads(fun, cur_args, cur_kwargs, argnums=argnums)
-        print(".", end=' ')
-
-def check_fun_and_grads(fun, args, kwargs, argnums):
-    wrt_args = [args[i] for i in argnums]
-    with warnings.catch_warnings(record=True) as w:
-        try:
-            def scalar_fun(*new_args):
-                full_args = list(args)
-                for i, argnum in enumerate(argnums):
-                    full_args[argnum] = new_args[i]
-                return fun(*full_args, **kwargs)
-            check_grads(scalar_fun, *wrt_args)
-        except:
-            print("First derivative test failed! Args were", args, kwargs)
-            raise
-
-        try:
-            for i in range(len(argnums)):
-                def d_scalar_fun(*args):
-                    return grad(scalar_fun, argnum=i)(*args)
-                check_grads(d_scalar_fun, *wrt_args)
-        except:
-            print("Second derivative test failed! Args were", args, kwargs)
-            raise
 
 def stat_check(fun, test_complex=test_complex):
     # Tests functions that compute statistics, like sum, mean, etc

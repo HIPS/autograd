@@ -1,3 +1,4 @@
+import itertools as it
 from .vspace import vspace
 from .core import make_vjp
 from .util import subvals
@@ -57,3 +58,13 @@ def check_equivalent(x, y):
     v = x_vs.randn()
     assert scalar_close(x_vs.inner_prod(x, v), x_vs.inner_prod(y, v)), \
         "Value mismatch:\nx: {}\ny: {}".format(x, y)
+
+def combo_check(fun, argnums, *args, **kwargs):
+    # Tests all combinations of args given.
+    args = list(args)
+    kwarg_key_vals = [[(key, val) for val in kwargs[key]] for key in kwargs]
+    num_args = len(args)
+    for args_and_kwargs in it.product(*(args + kwarg_key_vals)):
+        cur_args = args_and_kwargs[:num_args]
+        cur_kwargs = dict(args_and_kwargs[num_args:])
+        check_vjp(fun, argnums)(*cur_args, **cur_kwargs)

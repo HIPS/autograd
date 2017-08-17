@@ -12,7 +12,8 @@ import autograd.scipy.stats.multivariate_normal as mvn
 import autograd.scipy.special as special
 from autograd import grad
 
-from numpy_utils import combo_check, check_grads, unary_ufunc_check
+from autograd.test_util import combo_check, check_grads
+from numpy_utils import  unary_ufunc_check
 
 npr.seed(1)
 R = npr.randn
