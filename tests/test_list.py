@@ -1,6 +1,6 @@
 import autograd.numpy as np
 import autograd.numpy.random as npr
-from autograd.util import check_grads
+from autograd.test_util import check_grads
 from autograd import grad
 npr.seed(1)
 

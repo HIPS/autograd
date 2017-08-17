@@ -1,6 +1,7 @@
 import warnings
 from contextlib import contextmanager
 from .misc import wraps
+from .util import subvals
 
 def trace(node_type, fun, x):
     with trace_stack.new_trace() as t:
@@ -45,12 +46,6 @@ def notrace_primitive(f_raw):
         return f_raw(*argvals, **kwargs)
     f_wrapped._is_primitive = True
     return f_wrapped
-
-def subvals(x, ivs):
-    x_ = list(x)
-    for i, v in ivs:
-        x_[i] = v
-    return tuple(x_)
 
 def find_top_boxed_args(args):
     top_trace = -1

@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 import autograd.numpy as np
 import autograd.numpy.random as npr
-from autograd.util import *
+from autograd.test_util import check_grads
 from autograd import grad
 import warnings
 from nose.tools import raises
@@ -59,7 +59,7 @@ def test_mutating_outgrad():
         c = b + 1.5
         d = a + b
         e = d + c
-        return to_scalar(e)
+        return e
 
     A = npr.randn(5)
     check_grads(fun, A)
@@ -70,7 +70,7 @@ def test_mutating_outgrad_from_indexing():
         c = b[0] + 1.5
         d = a + b
         e = d + c
-        return to_scalar(e)
+        return e
 
     A = npr.randn(5)
     check_grads(fun, A)
@@ -81,19 +81,19 @@ def test_complex_mutating_outgrad_from_indexing():
         c = b[0] + 1.5
         d = a + b
         e = d + c
-        return to_scalar(e)
+        return e
 
     A = npr.randn(5)
     check_grads(fun, A)
-    d_fun = lambda x : to_scalar(grad(fun)(x))
+    d_fun = lambda x : grad(fun)(x)
     check_grads(d_fun, A)
 
 def test_complex_separate_real_and_imaginary():
     def fun(a):
         r, i = np.real(a), np.imag(a)
         a = np.abs(r)**1.4 + np.abs(i)**1.3
-        return to_scalar(a)
-    d_fun = lambda x : to_scalar(grad(fun)(x))
+        return a
+    d_fun = lambda x : grad(fun)(x)
     A = npr.randn(5, 3) + 0.1j*npr.randn(5, 3)
     check_grads(fun, A)
     check_grads(d_fun, A)
@@ -157,7 +157,7 @@ def test_singleton_array_output_axis1_keepdims():
 def test_assignment_raises_error():
     def fun(A, b):
         A[1] = b
-        return to_scalar(A)
+        return A
     A = npr.randn(5)
     check_grads(fun, A, 3.0)
 

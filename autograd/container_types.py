@@ -5,6 +5,7 @@ from autograd.core import (primitive, Box, VSpace, register_box, vspace,
 from builtins import zip
 from future.utils import iteritems
 from functools import partial
+from .util import subvals
 import autograd.numpy as np
 
 class SequenceBox(Box):
@@ -68,45 +69,27 @@ class SequenceVSpace(VSpace):
         self.size = sum(s.size for s in self.shape)
         self.seq_type = type(value)
         assert self.seq_type in (tuple, list)
-
     def zeros(self):
-        return self.seq_type(x.zeros() for x in self.shape)
-
-    def _add(self, xs, ys):
-        return self.seq_type(vs._add(x, y) for x, y, vs in zip(xs, ys, self.shape))
-
-    def _scalar_mul(self, xs, a):
-        return self.seq_type(vs._scalar_mul(x, a) for x, vs in zip(xs, self.shape))
-
-    def _inner_prod(self, xs, ys):
-        return sum(vs._inner_prod(x, y) for x, y, vs in zip(xs, ys, self.shape))
-
-    def _covector(self, xs):
-        return self.seq_type(vs._covector(x) for x, vs in zip(xs, self.shape))
-
+        return self.seq_type(vs.zeros() for vs in self.shape)
+    def ones(self):
+        return self.seq_type(vs.ones() for vs in self.shape)
+    def standard_basis(self):
+        zero = self.zeros()
+        for i, vs in enumerate(self.shape):
+            for x in vs.standard_basis():
+                yield self.seq_type(subvals(zero, [(i, x)]))
     def randn(self):
         return self.seq_type(vs.randn() for vs in self.shape)
-
+    def _add(self, xs, ys):
+        return self.seq_type(vs._add(x, y) for x, y, vs in zip(xs, ys, self.shape))
     def _mut_add(self, xs, ys):
-        return self.seq_type(vs._mut_add(x, y)
-                             for vs, x, y in zip(self.shape, xs, ys))
-
-    def flatten(self, value, covector=False):
-        if self.shape:
-            return np.concatenate(
-                [vs.flatten(v, covector) for vs, v in zip(self.shape, value)])
-        else:
-            return np.zeros((0,))
-
-    def unflatten(self, value, covector=False):
-        result = []
-        start = 0
-        for vs in self.shape:
-            N = vs.size
-            result.append(vs.unflatten(value[start:start + N], covector))
-            start += N
-        return self.seq_type(result)
-
+        return self.seq_type(vs._mut_add(x, y) for vs, x, y in zip(self.shape, xs, ys))
+    def _scalar_mul(self, xs, a):
+        return self.seq_type(vs._scalar_mul(x, a) for x, vs in zip(xs, self.shape))
+    def _inner_prod(self, xs, ys):
+        return sum(vs._inner_prod(x, y) for x, y, vs in zip(xs, ys, self.shape))
+    def _covector(self, xs):
+        return self.seq_type(vs._covector(x) for x, vs in zip(xs, self.shape))
 register_vspace(SequenceVSpace, list)
 register_vspace(SequenceVSpace, tuple)
 
@@ -121,7 +104,6 @@ class DictBox(Box):
     def iteritems(self): return ((k, self[k]) for k in self)
     def iterkeys(self): return iter(self)
     def itervalues(self): return (self[k] for k in self)
-
 register_box(DictBox, dict)
 
 @primitive
@@ -154,25 +136,26 @@ class DictVSpace(VSpace):
         self.shape = {k : vspace(v) for k, v in iteritems(value)}
         self.size  = sum(s.size for s in self.shape.values())
     def zeros(self):
-        return {k : v.zeros() for k, v in iteritems(self.shape)}
-    def mut_add(self, xs, ys):
-        return {k : v.mut_add(xs[k], ys[k])
-                for k, v in iteritems(self.shape)}
-    def flatten(self, value, covector=False):
-        if self.shape:
-            return np.concatenate(
-                [s.flatten(value[k], covector)
-                 for k, s in sorted(iteritems(self.shape))])
-        else:
-            return np.zeros((0,))
-
-    def unflatten(self, value, covector=False):
-        result = {}
-        start = 0
-        for k, s in sorted(iteritems(self.shape)):
-            N = s.size
-            result[k] = s.unflatten(value[start:start + N], covector)
-            start += N
-        return result
-
+        return {k: vs.zeros()                  for k, vs in iteritems(self.shape)}
+    def ones(self):
+        return {k: vs.ones()                   for k, vs in iteritems(self.shape)}
+    def standard_basis(self):
+        zero = self.zeros()
+        for k, vs in iteritems(self.shape):
+            for x in vs.standard_basis():
+                v = dict(iteritems(zero))
+                v[k] = x
+                yield v
+    def randn(self):
+        return {k: vs.randn()                  for k, vs in iteritems(self.shape)}
+    def _add(self, xs, ys):
+        return {k: vs._add(xs[k], ys[k])       for k, vs in iteritems(self.shape)}
+    def _mut_add(self, xs, ys):
+        return {k: vs._mut_add(xs[k], ys[k])   for k, vs in iteritems(self.shape)}
+    def _scalar_mul(self, xs, a):
+        return {k: vs._scalar_mul(xs[k], a)    for k, vs in iteritems(self.shape)}
+    def _inner_prod(self, xs, ys):
+        return sum(vs._inner_prod(xs[k], ys[k]) for k, vs in iteritems(self.shape))
+    def _covector(self, xs):
+        return {k: vs._covector(xs[k])         for k, vs in iteritems(self.shape)}
 register_vspace(DictVSpace, dict)

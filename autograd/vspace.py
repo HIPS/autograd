@@ -8,10 +8,10 @@ class VSpace(object):
     iscomplex = False
     def __init__(self, value): pass
 
-    def zeros(self):          assert False
-    def ones(self):           assert False
-    def standard_basis(self): assert False
-    def randn(self):          assert False
+    def zeros(self):          assert False, repr(self)
+    def ones(self):           assert False, repr(self)
+    def standard_basis(self): assert False, repr(self)
+    def randn(self):          assert False, repr(self)
 
     @primitive
     def add(self, x_prev, x_new):     return self._add(x_prev, x_new)
@@ -35,18 +35,6 @@ class VSpace(object):
 
     def __repr__(self):
         return "{}_{}".format(type(self).__name__, self.__dict__)
-
-    def examples(self):
-        # Used for testing only
-        N = self.size
-        unit_vect = np.zeros(N)
-        unit_vect[npr.randint(N)] = 1.0
-        unit_vect = self.unflatten(unit_vect)
-        rand_vect = npr.randn(N)
-        return [self.zeros(), self.unflatten(npr.randn(N))]
-
-def vspace_flatten(value, covector=False):
-    return vspace(value).flatten(value, covector)
 
 def vspace(value):
     try:

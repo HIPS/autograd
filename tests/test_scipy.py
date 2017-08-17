@@ -12,7 +12,7 @@ import autograd.scipy.stats.multivariate_normal as mvn
 import autograd.scipy.special as special
 from autograd import grad
 
-from numpy_utils import combo_check, check_grads, unary_ufunc_check, to_scalar
+from numpy_utils import combo_check, check_grads, unary_ufunc_check
 
 npr.seed(1)
 R = npr.randn
@@ -76,7 +76,7 @@ def test_logsumexp6():
     x = npr.randn(1,5)
     def f(a): return autograd.scipy.misc.logsumexp(a, axis=1, keepdims=True)
     check_grads(f, x)
-    check_grads(lambda a: to_scalar(grad(f)(a)), x)
+    check_grads(lambda a: grad(f)(a), x)
 
 ### Signal ###
 def test_convolve_generalization():

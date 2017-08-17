@@ -8,8 +8,8 @@ npr.seed(0)
 
 # Array statistics functions
 def test_max():  stat_check(np.max)
-def test_all():  stat_check(np.all)
-def test_any():  stat_check(np.any)
+# def test_all():  stat_check(np.all)
+# def test_any():  stat_check(np.any)
 def test_max():  stat_check(np.max)
 def test_mean(): stat_check(np.mean)
 def test_min():  stat_check(np.min)

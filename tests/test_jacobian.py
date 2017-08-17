@@ -1,7 +1,7 @@
 from __future__ import division
 import autograd.numpy as np
 import autograd.numpy.random as npr
-from autograd.util import check_grads
+from autograd.test_util import check_grads
 from autograd import grad, jacobian
 
 npr.seed(1)
@@ -35,9 +35,9 @@ def test_jacobian_against_stacked_grads():
 def test_jacobian_higher_order():
     fun = lambda x: np.sin(np.outer(x,x)) + np.cos(np.dot(x,x))
 
-    assert jacobian(fun)(npr.randn(3)).shape == (3,3,3)
-    assert jacobian(jacobian(fun))(npr.randn(3)).shape == (3,3,3,3)
-    # assert jacobian(jacobian(jacobian(fun)))(npr.randn(3)).shape == (3,3,3,3,3)
+    assert jacobian(fun)(npr.randn(2)).shape == (2,2,2)
+    assert jacobian(jacobian(fun))(npr.randn(2)).shape == (2,2,2,2)
+    # assert jacobian(jacobian(jacobian(fun)))(npr.randn(2)).shape == (2,2,2,2,2)
 
-    check_grads(lambda x: np.sum(np.sin(jacobian(fun)(x))), npr.randn(3))
-    check_grads(lambda x: np.sum(np.sin(jacobian(jacobian(fun))(x))), npr.randn(3))
+    check_grads(lambda x: np.sum(np.sin(jacobian(fun)(x))), npr.randn(2))
+    check_grads(lambda x: np.sum(np.sin(jacobian(jacobian(fun))(x))), npr.randn(2))

@@ -74,11 +74,8 @@ class ArrayVSpace(VSpace):
         self.ndim  = value.ndim
         self.scalartype = float
 
-    def zeros(self):
-        return np.zeros(self.shape, dtype=self.dtype)
-
-    def ones(self):
-        return np.ones(self.shape, dtype=self.dtype)
+    def zeros(self): return np.zeros(self.shape, dtype=self.dtype)
+    def ones(self):  return np.ones( self.shape, dtype=self.dtype)
 
     def standard_basis(self):
       for idxs in np.ndindex(*self.shape):
@@ -91,22 +88,6 @@ class ArrayVSpace(VSpace):
 
     def _inner_prod(self, x, y):
         return np.dot(x.ravel(), y.ravel())
-
-    def flatten(self, value, covector=False):
-        return anp.ravel(value)
-
-    def unflatten(self, value, covector=False):
-        return value.reshape(self.shape)
-
-    def examples(self):
-        # many possible instantiations
-        original_examples = super(ArrayVSpace, self).examples()
-        if self.shape == ():
-            np_scalar_examples = [ex[()] for ex in original_examples]
-            py_scalar_examples = list(map(self.scalartype, np_scalar_examples))
-            return original_examples + np_scalar_examples + py_scalar_examples
-        else:
-            return original_examples
 
 class ComplexArrayVSpace(ArrayVSpace):
     iscomplex = True
@@ -135,19 +116,6 @@ class ComplexArrayVSpace(ArrayVSpace):
 
     def _covector(self, x):
         return np.conj(x)
-
-    def flatten(self, value, covector=False):
-        if covector:
-            return anp.ravel(anp.stack([anp.real(value), - anp.imag(value)]))
-        else:
-            return anp.ravel(anp.stack([anp.real(value), anp.imag(value)]))
-
-    def unflatten(self, value, covector=False):
-        reshaped = anp.reshape(value, (2,) + self.shape)
-        if covector:
-            return anp.array(reshaped[0] - 1j * reshaped[1])
-        else:
-            return anp.array(reshaped[0] + 1j * reshaped[1])
 
 register_box(ArrayBox, np.ndarray)
 register_vspace(lambda x: ComplexArrayVSpace(x)

@@ -3,7 +3,7 @@ import warnings
 from functools import partial
 import autograd.numpy as np
 import autograd.numpy.random as npr
-from autograd.util import *
+from autograd.test_util import check_grads, check_equivalent, nd
 from autograd import (grad, elementwise_grad, jacobian, value_and_grad,
                       hessian_tensor_product, hessian, make_hvp, multigrad,
                       tensor_jacobian_product, primitive, checkpoint,
@@ -61,7 +61,7 @@ def test_multigrad():
     G = -0.1
 
     exact = multigrad(complicated_fun, argnums=[3, 1])(A, B, C, D, E, f=F, g=G)
-    numeric = nd(complicated_fun_3_1, D, B)
+    numeric = tuple(nd(complicated_fun_3_1, D, B))
     check_equivalent(exact, numeric)
 
 def test_value_and_multigrad():
@@ -174,7 +174,7 @@ def test_tensor_jacobian_product():
 #         new_mul.defgrad(lambda ans, x, y : lambda g : x * g, argnum=1)
 
 #     def fun(x, y):
-#         return to_scalar(new_mul(x, y))
+#         return new_mul(x, y)
 
 #     mat1 = npr.randn(2, 2)
 #     mat2 = npr.randn(2, 2)

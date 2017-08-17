@@ -1,7 +1,7 @@
 from __future__ import division
 import autograd.numpy as np
 from autograd import grad
-from autograd.util import *
+from autograd.test_util import check_grads
 from autograd.core import primitive_vjps
 
 def test_assert():

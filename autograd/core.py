@@ -6,7 +6,6 @@ from .misc import unary_to_nary
 
  # other modules expect these here but we don't actually need them
 from .tracer import getval, primitive, notrace_primitive, isbox
-from .vspace import vspace_flatten
 
 @unary_to_nary
 def make_vjp(fun):
