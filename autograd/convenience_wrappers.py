@@ -1,12 +1,15 @@
 """Convenience functions built on top of `make_vjp`."""
 from __future__ import absolute_import
-import autograd.numpy as np
-from autograd.core import make_vjp, vspace, primitive, defvjp_argnum
-from autograd.container_types import make_tuple
-from .misc import unary_to_nary
 from collections import OrderedDict
 from inspect import getargspec
 import warnings
+
+from .util import unary_to_nary
+from .tracer import primitive
+from .core import make_vjp, defvjp_argnum, vspace
+from .container_types import make_tuple
+
+import autograd.numpy as np
 
 @unary_to_nary
 def grad(fun):

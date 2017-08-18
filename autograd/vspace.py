@@ -1,6 +1,4 @@
 from __future__ import absolute_import
-import numpy as np
-import numpy.random as npr
 from .tracer import primitive, isbox
 
 class VSpace(object):

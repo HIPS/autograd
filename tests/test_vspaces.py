@@ -1,5 +1,5 @@
 from autograd.vspace import vspace
-from autograd.numpy.numpy_extra import ArrayVSpace
+from autograd.numpy.numpy_vspaces import ArrayVSpace
 from autograd.test_util import check_vjp, scalar_close
 import numpy as np
 import itertools as it

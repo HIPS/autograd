@@ -1,13 +1,12 @@
 from __future__ import absolute_import
+from future.utils import string_types
 import numpy as onp
 from numpy.core.einsumfunc import _parse_einsum_input
-
-from autograd.core import (primitive, getval, vspace,
-                           defvjp, defvjps, defvjp_is_zero, defvjp_argnum)
+from autograd.tracer import primitive, getval
+from autograd.vspace import vspace
+from autograd.core import defvjp, defvjps, defvjp_is_zero, defvjp_argnum, SparseObject
 from . import numpy_wrapper as anp
-from .numpy_extra import ArrayBox, take
-from builtins import range, zip
-from future.utils import string_types
+from .numpy_boxes import ArrayBox
 
 # ----- Functions that are constant w.r.t. continuous inputs -----
 
@@ -48,7 +47,6 @@ defvjp(anp.power,
 defvjp(anp.power,
     lambda ans, vs, gvs, x, y : lambda g:
     unbroadcast(vs, gvs, g * anp.log(replace_zero(x, 1.)) * x ** y), argnum=1)
-
 
 # ----- Simple grads -----
 
@@ -359,7 +357,7 @@ def grad_concatenate_args(argnum, ans, vs, gvs, axis_args, kwargs):
     start = sum(sizes[:-1])
     idxs = [slice(None)] * ans.ndim
     idxs[axis] = slice(start, start + sizes[-1])
-    return lambda g: take(g, idxs)
+    return lambda g: g[idxs]
 defvjp_argnum(anp.concatenate_args, grad_concatenate_args)
 
 def wrapped_reshape(x, *args, **kwargs):
@@ -445,23 +443,6 @@ def grad_einsum(argnum, ans, vs, gvs, operands_, kwargs):
     return vjp
 defvjp_argnum(anp.einsum, grad_einsum)
 
-@primitive
-def make_diagonal(D, offset=0, axis1=0, axis2=1):
-    # Numpy doesn't offer a complement to np.diagonal: a function to create new
-    # diagonal arrays with extra dimensions. We need such a function for the
-    # gradient of np.diagonal and it's also quite handy to have. So here it is.
-    if not (offset==0 and axis1==-1 and axis2==-2):
-        raise NotImplementedError("Currently make_diagonal only supports offset=0, axis1=-1, axis2=-2")
-
-    # We use a trick: calling np.diagonal returns a view on the original array,
-    # so we can modify it in-place. (only valid for numpy version >= 1.10.)
-    new_array = onp.zeros(D.shape + (D.shape[-1],))
-    new_array_diag = onp.diagonal(new_array, offset=0, axis1=-1, axis2=-2)
-    new_array_diag.flags.writeable = True
-    new_array_diag[:] = D
-    return new_array
-
-anp.make_diagonal = make_diagonal
 defvjp(anp.diagonal,
     lambda ans, vs, gvs, A, offset=0, axis1=0, axis2=1 :
     lambda g: anp.make_diagonal(g, offset, axis1, axis2))
@@ -503,3 +484,20 @@ def balanced_eq(x, z, y):
 
 def replace_zero(x, val):
     return anp.where(x, x, val)
+
+# ----- extra functions used internally  -----
+
+def array_from_args_gradmaker(argnum, ans, vs, gvs, args, kwargs):
+    return lambda g: g[argnum]
+defvjp_argnum(anp.array_from_args, array_from_args_gradmaker)
+
+
+@primitive
+def untake(x, idx, vs):
+    def mut_add(A):
+        onp.add.at(A, idx, x)
+        return A
+    return SparseObject(vs, mut_add)
+defvjp(ArrayBox.__getitem__.im_func, lambda ans, vs, gvs, A, idx: lambda g: untake(g, idx, vs))
+defvjp(untake, lambda ans, vs, gvs, x, idx, _: lambda g: g[idx])
+defvjp_is_zero(untake, argnums=(1, 2))

@@ -5,10 +5,10 @@ from .util import subvals
 
 TOL  = 1e-6
 RTOL = 1e-6
-EPS  = 1e-6
 def scalar_close(a, b):
     return abs(a - b) < TOL or  abs(a - b) / abs(a + b) < RTOL
 
+EPS  = 1e-6
 def make_numerical_jvp(f, x):
     y = f(x)
     x_vs, y_vs = vspace(x), vspace(y)

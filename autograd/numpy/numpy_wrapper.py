@@ -1,10 +1,7 @@
 from __future__ import absolute_import
-from __future__ import print_function
 import types
-from future.utils import iteritems
 import warnings
-from autograd.core import primitive, notrace_primitive, getval, defvjp_argnum
-
+from autograd.tracer import primitive, notrace_primitive, getval
 import numpy as _np
 
 def unbox_args(f):
@@ -33,7 +30,7 @@ def wrap_namespace(old, new):
     unchanged_types = {float, int, type(None), type}
     int_types = {_np.int, _np.int8, _np.int16, _np.int32, _np.int64, _np.integer}
     function_types = {_np.ufunc, types.FunctionType, types.BuiltinFunctionType}
-    for name, obj in iteritems(old):
+    for name, obj in old.items():
         if obj in nograd_functions:
             new[name] = notrace_primitive(obj)
         elif type(obj) in function_types:
@@ -87,10 +84,6 @@ def wrap_if_boxes_inside(raw_array, slow_op_name=None):
 def array_from_args(*args):
     return _np.array(args)
 
-def array_from_args_gradmaker(argnum, ans, vs, gvs, args, kwargs):
-    return lambda g: g[argnum]
-defvjp_argnum(array_from_args, array_from_args_gradmaker)
-
 def select(condlist, choicelist, default=0):
     raw_array = _np.select(list(condlist), list(choicelist), default=default)
     return array(list(raw_array.ravel())).reshape(raw_array.shape)
@@ -128,3 +121,20 @@ class c_class():
         raw_array = _np.c_[args]
         return wrap_if_boxes_inside(raw_array, slow_op_name = "c_")
 c_ = c_class()
+
+# ----- misc -----
+@primitive
+def make_diagonal(D, offset=0, axis1=0, axis2=1):
+    # Numpy doesn't offer a complement to np.diagonal: a function to create new
+    # diagonal arrays with extra dimensions. We need such a function for the
+    # gradient of np.diagonal and it's also quite handy to have. So here it is.
+    if not (offset==0 and axis1==-1 and axis2==-2):
+        raise NotImplementedError("Currently make_diagonal only supports offset=0, axis1=-1, axis2=-2")
+
+    # We use a trick: calling np.diagonal returns a view on the original array,
+    # so we can modify it in-place. (only valid for numpy version >= 1.10.)
+    new_array = _np.zeros(D.shape + (D.shape[-1],))
+    new_array_diag = _np.diagonal(new_array, offset=0, axis1=-1, axis2=-2)
+    new_array_diag.flags.writeable = True
+    new_array_diag[:] = D
+    return new_array

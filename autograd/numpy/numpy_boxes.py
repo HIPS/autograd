@@ -1,33 +1,16 @@
 from __future__ import absolute_import
 import numpy as np
-
-from autograd.core import (Box, VSpace, SparseObject, primitive,
-                           register_box, register_vspace,
-                           defvjp, defvjps, defvjp_is_zero)
+from autograd.tracer import Box, register_box, primitive
 from . import numpy_wrapper as anp
-
-@primitive
-def take(A, idx):
-    return A[idx]
-def grad_take(ans, vs, gvs, A, idx):
-    return lambda g: untake(g, idx, vs)
-defvjp(take, grad_take)
-
-@primitive
-def untake(x, idx, vs):
-    def mut_add(A):
-        np.add.at(A, idx, x)
-        return A
-    return SparseObject(vs, mut_add)
-defvjp(untake, lambda ans, vs, gvs, x, idx, _: lambda g: take(g, idx))
-defvjp_is_zero(untake, argnums=(1, 2))
 
 Box.__array_priority__ = 90.0
 
 class ArrayBox(Box):
     __slots__ = []
-    __getitem__ = take
     __array_priority__ = 100.0
+
+    @primitive
+    def __getitem__(A, idx): return A[idx]
 
     # Constants w.r.t float data just pass though
     shape = property(lambda self: self._value.shape)
@@ -35,9 +18,7 @@ class ArrayBox(Box):
     size  = property(lambda self: self._value.size)
     dtype = property(lambda self: self._value.dtype)
     T = property(lambda self: anp.transpose(self))
-
-    def __len__(self):
-        return len(self._value)
+    def __len__(self): return len(self._value)
 
     def __neg__(self): return anp.negative(self)
     def __add__(self, other): return anp.add(     self, other)
@@ -65,71 +46,10 @@ class ArrayBox(Box):
     def __abs__(self): return anp.abs(self)
     def __hash__(self): return id(self)
 
-class ArrayVSpace(VSpace):
-    def __init__(self, value):
-        value = np.array(value, copy=False)
-        self.shape = value.shape
-        self.size  = value.size
-        self.dtype = value.dtype
-        self.ndim  = value.ndim
-        self.scalartype = float
-
-    def zeros(self): return np.zeros(self.shape, dtype=self.dtype)
-    def ones(self):  return np.ones( self.shape, dtype=self.dtype)
-
-    def standard_basis(self):
-      for idxs in np.ndindex(*self.shape):
-          vect = np.zeros(self.shape, dtype=self.dtype)
-          vect[idxs] = 1
-          yield vect
-
-    def randn(self):
-        return np.array(np.random.randn(*self.shape)).astype(self.dtype)
-
-    def _inner_prod(self, x, y):
-        return np.dot(x.ravel(), y.ravel())
-
-class ComplexArrayVSpace(ArrayVSpace):
-    iscomplex = True
-    def __init__(self, value):
-        super(ComplexArrayVSpace, self).__init__(value)
-        self.size  = 2 * self.size
-        self.scalartype = complex
-
-    def ones(self):
-        return (         np.ones(self.shape, dtype=self.dtype)
-                + 1.0j * np.ones(self.shape, dtype=self.dtype))
-
-    def standard_basis(self):
-      for idxs in np.ndindex(*self.shape):
-          for v in [1.0, 1.0j]:
-              vect = np.zeros(self.shape, dtype=self.dtype)
-              vect[idxs] = v
-              yield vect
-
-    def randn(self):
-        return (         np.array(np.random.randn(*self.shape)).astype(self.dtype)
-                + 1.0j * np.array(np.random.randn(*self.shape)).astype(self.dtype))
-
-    def _inner_prod(self, x, y):
-        return np.real(np.dot(np.conj(x.ravel()), y.ravel()))
-
-    def _covector(self, x):
-        return np.conj(x)
-
 register_box(ArrayBox, np.ndarray)
-register_vspace(lambda x: ComplexArrayVSpace(x)
-                if np.iscomplexobj(x)
-                else ArrayVSpace(x), np.ndarray)
-array_types = set([anp.ndarray, ArrayBox])
-
-for type_ in [float, anp.float64, anp.float32, anp.float16]:
+for type_ in [float, np.float64, np.float32, np.float16,
+              complex, np.complex64, np.complex128]:
     register_box(ArrayBox, type_)
-    register_vspace(ArrayVSpace, type_)
-
-for type_ in [complex, anp.complex64, anp.complex128]:
-    register_box(ArrayBox, type_)
-    register_vspace(ComplexArrayVSpace, type_)
 
 # These numpy.ndarray methods are just refs to an equivalent numpy function
 nondiff_methods = ['all', 'any', 'argmax', 'argmin', 'argpartition',

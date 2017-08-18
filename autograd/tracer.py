@@ -1,7 +1,6 @@
 import warnings
 from contextlib import contextmanager
-from .misc import wraps
-from .util import subvals
+from .util import subvals, wraps
 
 def trace(node_type, fun, x):
     with trace_stack.new_trace() as t:

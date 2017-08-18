@@ -4,11 +4,11 @@ from functools import partial
 import autograd.numpy as np
 import autograd.numpy.random as npr
 from autograd.test_util import check_grads, check_equivalent, nd
+from autograd.tracer import primitive, isbox
 from autograd import (grad, elementwise_grad, jacobian, value_and_grad,
                       hessian_tensor_product, hessian, make_hvp, multigrad,
-                      tensor_jacobian_product, primitive, checkpoint,
+                      tensor_jacobian_product, checkpoint,
                       value_and_multigrad, make_jvp, make_ggnvp)
-from autograd.core import isbox
 from builtins import range
 
 npr.seed(1)

@@ -1,11 +1,9 @@
 from collections import defaultdict
 from functools import partial
-from .tracer import trace, Node, Box, register_box, toposort
+from .tracer import (trace, primitive, notrace_primitive, Node, Box,
+                     register_box, toposort, getval)
 from .vspace import vspace, assert_vspace_match, register_vspace, VSpace
-from .misc import unary_to_nary
-
- # other modules expect these here but we don't actually need them
-from .tracer import getval, primitive, notrace_primitive, isbox
+from .util import unary_to_nary
 
 @unary_to_nary
 def make_vjp(fun):
