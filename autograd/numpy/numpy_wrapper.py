@@ -4,16 +4,9 @@ import warnings
 from autograd.tracer import primitive, notrace_primitive, getval
 import numpy as _np
 
-def unbox_args(f):
-    def wrapped(*args, **kwargs):
-        unboxed_args = map(getval, args)
-        unboxed_kwargs = {key: getval(kwargs[key]) for key in kwargs}
-        return f(*unboxed_args, **unboxed_kwargs)
-    return wrapped
-
 def wrap_intdtype(cls):
     class IntdtypeSubclass(cls):
-        __new__ = unbox_args(cls.__new__)
+        __new__ = notrace_primitive(cls.__new__)
     return IntdtypeSubclass
 
 nograd_functions = [
