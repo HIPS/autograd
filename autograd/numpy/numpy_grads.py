@@ -9,8 +9,6 @@ from autograd.core import defvjp, defvjps, defvjp_is_zero, defvjp_argnum, Sparse
 from . import numpy_wrapper as anp
 from .numpy_boxes import ArrayBox
 
-
-
 # ----- Functions that are constant w.r.t. continuous inputs -----
 
 defvjp_is_zero(anp.where, argnums=(0,))

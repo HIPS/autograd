@@ -5,16 +5,13 @@ from .tracer import (trace, primitive, notrace_primitive, Node, Box,
 from .vspace import vspace, assert_vspace_match, register_vspace, VSpace
 from .util import unary_to_nary, func
 
-@unary_to_nary
-def make_vjp(fun):
-    def vjp_maker(x):
-        end_value, end_node =  trace(VJPNode, fun, x)
-        if end_node is None:
-            def vjp(g): return vspace(x).zeros()
-        else:
-            def vjp(g): return backward_pass(g, end_node)
-        return vjp, end_value
-    return vjp_maker
+def make_vjp(fun, x):
+    end_value, end_node =  trace(VJPNode, fun, x)
+    if end_node is None:
+        def vjp(g): return vspace(x).zeros()
+    else:
+        def vjp(g): return backward_pass(g, end_node)
+    return vjp, end_value
 
 def backward_pass(g, end_node):
     outgrads = {end_node : (g, False)}

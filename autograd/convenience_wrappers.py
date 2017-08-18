@@ -1,31 +1,31 @@
 """Convenience functions built on top of `make_vjp`."""
 from __future__ import absolute_import
+from functools import partial
 from collections import OrderedDict
 from inspect import getargspec
 import warnings
 
 from .util import unary_to_nary
 from .tracer import primitive
-from .core import make_vjp, defvjp_argnum, vspace
+from .core import make_vjp as _make_vjp, defvjp_argnum, vspace
 from .container_types import make_tuple
 
 import autograd.numpy as np
 
+make_vjp = unary_to_nary(_make_vjp)
+
 @unary_to_nary
-def grad(fun):
+def grad(fun, x):
     """
     Returns a function which computes the gradient of `fun` with respect to
     positional argument number `argnum`. The returned function takes the same
     arguments as `fun`, but returns the gradient instead. The function `fun`
     should be scalar-valued. The gradient has the same type as the argument."""
-    def gradfun(x):
-        vjp, ans = make_vjp(fun)(safe_type(x))
-        return vjp(vspace(ans).ones())
-
-    return gradfun
+    vjp, ans = _make_vjp(fun, safe_type(x))
+    return vjp(vspace(ans).ones())
 
 @unary_to_nary
-def jacobian(fun):
+def jacobian(fun, x):
     """
     Returns a function which computes the Jacobian of `fun` with respect to
     positional argument number `argnum`, which must be a scalar or array. Unlike
@@ -34,14 +34,11 @@ def jacobian(fun):
     If the input to `fun` has shape (in1, in2, ...) and the output has shape
     (out1, out2, ...) then the Jacobian has shape (out1, out2, ..., in1, in2, ...).
     """
-    def jacfun(x):
-        vjp, ans = make_vjp(fun)(x)
-        ans_vspace = vspace(ans)
-        jacobian_shape = ans_vspace.shape + vspace(x).shape
-        grads = map(vjp, ans_vspace.standard_basis())
-        return np.reshape(np.stack(grads), jacobian_shape)
-
-    return jacfun
+    vjp, ans = _make_vjp(fun, x)
+    ans_vspace = vspace(ans)
+    jacobian_shape = ans_vspace.shape + vspace(x).shape
+    grads = map(vjp, ans_vspace.standard_basis())
+    return np.reshape(np.stack(grads), jacobian_shape)
 
 def grad_named(fun, argname):
     '''Takes gradients with respect to a named argument.
@@ -74,16 +71,16 @@ def multigrad(fun, argnums=[0]):
 elementwise_grad = grad  # backward compatibility
 
 @unary_to_nary
-def hessian(fun):
+def hessian(fun, x):
     "Returns a function that computes the exact Hessian."
-    return jacobian(jacobian(fun))
+    return jacobian(jacobian(fun))(x)
 
 @unary_to_nary
-def make_hvp(fun):
+def make_hvp(fun, x):
     """Builds a function for evaluating the Hessian-vector product at a point,
     which may be useful when evaluating many Hessian-vector products at the same
     point while caching the results of the forward pass."""
-    return make_vjp(grad(fun))
+    return _make_vjp(grad(fun), x)
 
 def hessian_tensor_product(fun, argnum=0):
     """Builds a function that returns the exact Hessian-tensor product.
@@ -107,40 +104,34 @@ def tensor_jacobian_product(fun, argnum=0):
 vector_jacobian_product = tensor_jacobian_product
 
 @unary_to_nary
-def make_jvp(fun):
+def make_jvp(fun, x):
     """Builds a function for evaluating the Jacobian-vector product at a
     point. Roughly 1.5x more FLOPs than forward-mode, plus memory requirements
     that scale with the number of primitives applied in the evaluation of f, as
     well as other overheads. See j-towns.github.io/2017/06/12/A-new-trick.html
     and github.com/BB-UCL/autograd-forward."""
-    def jvp_maker(x):
-        vjp, y = make_vjp(fun)(x)
-        vjp_vjp, _ = make_vjp(vjp)(vspace(y).zeros())
-        return vjp_vjp  # vjp_vjp is just jvp by linearity
-    return jvp_maker
+    vjp, y = _make_vjp(fun, x)
+    vjp_vjp, _ = _make_vjp(vjp, vspace(y).zeros())
+    return vjp_vjp  # vjp_vjp is just jvp by linearity
 
 def make_ggnvp(f, g=lambda x: 1./2*np.sum(x**2, axis=-1), f_argnum=0):
     """Builds a function for evaluating generalized-Gauss-Newton-vector products
     at a point. Slightly more expensive than mixed-mode."""
     @unary_to_nary
-    def _make_ggnvp(f):
-        def ggnvp_maker(x):
-            f_vjp, f_x = make_vjp(f)(x)
-            g_hvp, grad_g_x = make_vjp(grad(g))(f_x)
-            f_jvp, _ = make_vjp(f_vjp)(vspace(grad_g_x).zeros())
-            def ggnvp(v): return f_vjp(g_hvp(f_jvp(v)))
-            return ggnvp
-        return ggnvp_maker
+    def _make_ggnvp(f, x):
+        f_vjp, f_x = _make_vjp(f, x)
+        g_hvp, grad_g_x = _make_vjp(grad(g), f_x)
+        f_jvp, _ = _make_vjp(f_vjp, vspace(grad_g_x).zeros())
+        def ggnvp(v): return f_vjp(g_hvp(f_jvp(v)))
+        return ggnvp
     return _make_ggnvp(f, f_argnum)
 
 @unary_to_nary
-def value_and_grad(fun):
+def value_and_grad(fun, x):
     """Returns a function that returns both value and gradient. Suitable for use
     in scipy.optimize"""
-    def gradfun(x):
-        vjp, ans = make_vjp(fun)(x)
-        return ans, vjp(vspace(ans).ones())
-    return gradfun
+    vjp, ans = _make_vjp(fun, x)
+    return ans, vjp(vspace(ans).ones())
 
 def grad_and_aux(fun, argnum=0):
     """Builds a function that returns the gradient of the first output and the

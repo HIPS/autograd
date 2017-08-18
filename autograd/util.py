@@ -1,17 +1,19 @@
 import sys
-from .errors import add_error_hints
+from .errors import add_extra_error_message
+from future.utils import raise_
 
 def unary_to_nary(unary_function_modifier):
     def nary_function_modifier(nary_f_in, argnum=0):
         @attach_name_and_doc(nary_f_in, argnum, unary_function_modifier)
-        @add_error_hints
-        def nary_f_out(*args, **kwargs):
-            def unary_f_in(x):
-                _args = list(args)
-                _args[argnum] = x
-                return nary_f_in(*_args, **kwargs)
-            return unary_function_modifier(unary_f_in)(args[argnum])
-        return nary_f_out
+        def nary_f(*args, **kwargs):
+            def unary_f(x):
+                try:
+                    return nary_f_in(*subvals(args, [(argnum, x)]), **kwargs)
+                except Exception as e:
+                    raise_(*add_extra_error_message(e))
+
+            return unary_function_modifier(unary_f, args[argnum])
+        return nary_f
     return nary_function_modifier
 
 def attach_name_and_doc(fun, argnum, op):

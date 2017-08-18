@@ -21,7 +21,7 @@ def make_numerical_jvp(f, x):
     return jvp
 
 def check_vjp_unary(f, x):
-    vjp, y = make_vjp(f)(x)
+    vjp, y = make_vjp(f, x)
     jvp = make_numerical_jvp(f, x)
     x_vs, y_vs = vspace(x), vspace(y)
     x_v, y_v = x_vs.randn(), y_vs.randn()
@@ -42,7 +42,7 @@ def check_vjp(f, argnums=None, order=2):
         check_vjp_unary(f_unary, x)
 
         v = vspace(f_unary(x)).randn()
-        f_unary_vjp = lambda x, v: make_vjp(f_unary)(x)[0](v)
+        f_unary_vjp = lambda x, v: make_vjp(f_unary, x)[0](v)
         check_vjp(f_unary_vjp, order=order-1)(x, v)
     return _check_vjp
 
