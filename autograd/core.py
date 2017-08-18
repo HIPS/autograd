@@ -3,7 +3,7 @@ from functools import partial
 from .tracer import (trace, primitive, notrace_primitive, Node, Box,
                      register_box, toposort, getval)
 from .vspace import vspace, assert_vspace_match, register_vspace, VSpace
-from .util import unary_to_nary
+from .util import unary_to_nary, func
 
 @unary_to_nary
 def make_vjp(fun):
@@ -110,15 +110,15 @@ identity_vjp = lambda *args: lambda g: g
 def sparse_add(x_prev, x_new): return x_new.mut_add(x_prev)
 defvjps(sparse_add, identity_vjp, argnums=[0, 1])
 
-defvjps(VSpace.mut_add.im_func, identity_vjp, argnums=[1,2])
-defvjp(VSpace.inner_prod.im_func, lambda ans, vs, gvs, vs_, x, y: lambda g:
+defvjps(func(VSpace.mut_add), identity_vjp, argnums=[1,2])
+defvjp(func(VSpace.inner_prod), lambda ans, vs, gvs, vs_, x, y: lambda g:
        vs.covector(vs.scalar_mul(y, gvs.covector(g))), argnum=1)
-defvjp(VSpace.inner_prod.im_func, lambda ans, vs, gvs, vs_, x, y: lambda g:
+defvjp(func(VSpace.inner_prod), lambda ans, vs, gvs, vs_, x, y: lambda g:
        vs.covector(vs.scalar_mul(x, gvs.covector(g))), argnum=2)
-defvjps(VSpace.add.im_func, identity_vjp, argnums=[1,2])
-defvjp(VSpace.covector.im_func, lambda ans, vs, gvs, vs_, x: lambda g:
+defvjps(func(VSpace.add), identity_vjp, argnums=[1,2])
+defvjp(func(VSpace.covector), lambda ans, vs, gvs, vs_, x: lambda g:
        gvs.covector(g), argnum=1)
-defvjp(VSpace.scalar_mul.im_func, lambda ans, vs, gvs, vs_, x, a: lambda g:
+defvjp(func(VSpace.scalar_mul), lambda ans, vs, gvs, vs_, x, a: lambda g:
        vs.covector(gvs.scalar_mul(gvs.covector(g), a)), argnum=1)
-defvjp(VSpace.scalar_mul.im_func, lambda ans, vs, gvs, vs_, x, a: lambda g:
+defvjp(func(VSpace.scalar_mul), lambda ans, vs, gvs, vs_, x, a: lambda g:
        gvs.inner_prod(g, gvs.covector(x)), argnum=2)

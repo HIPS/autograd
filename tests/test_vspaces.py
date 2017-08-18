@@ -1,3 +1,4 @@
+from functools import reduce
 from autograd.vspace import vspace
 from autograd.numpy.numpy_vspaces import ArrayVSpace
 from autograd.test_util import check_vjp, scalar_close

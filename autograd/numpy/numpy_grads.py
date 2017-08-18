@@ -2,11 +2,14 @@ from __future__ import absolute_import
 from future.utils import string_types
 import numpy as onp
 from numpy.core.einsumfunc import _parse_einsum_input
+from ..util import func
 from autograd.tracer import primitive, getval
 from autograd.vspace import vspace
 from autograd.core import defvjp, defvjps, defvjp_is_zero, defvjp_argnum, SparseObject
 from . import numpy_wrapper as anp
 from .numpy_boxes import ArrayBox
+
+
 
 # ----- Functions that are constant w.r.t. continuous inputs -----
 
@@ -498,6 +501,6 @@ def untake(x, idx, vs):
         onp.add.at(A, idx, x)
         return A
     return SparseObject(vs, mut_add)
-defvjp(ArrayBox.__getitem__.im_func, lambda ans, vs, gvs, A, idx: lambda g: untake(g, idx, vs))
+defvjp(func(ArrayBox.__getitem__), lambda ans, vs, gvs, A, idx: lambda g: untake(g, idx, vs))
 defvjp(untake, lambda ans, vs, gvs, x, idx, _: lambda g: g[idx])
 defvjp_is_zero(untake, argnums=(1, 2))

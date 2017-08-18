@@ -1,3 +1,4 @@
+import sys
 from .errors import add_error_hints
 
 def unary_to_nary(unary_function_modifier):
@@ -42,3 +43,8 @@ def wraps(f_raw):
         finally:
             return f_wrapped
     return wrap
+
+if sys.version_info >= (3,):
+    def func(f): return f
+else:
+    def func(f): return f.im_func
