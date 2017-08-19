@@ -1,6 +1,6 @@
 import sys
 import re
-from future.utils import raise_from, raise_
+from future.utils import raise_from
 
 class AutogradHint(Exception):
     def __init__(self, message, subexception_type=None, subexception_val=None):

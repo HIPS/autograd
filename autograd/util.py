@@ -2,33 +2,32 @@ import sys
 from .errors import add_extra_error_message
 from future.utils import raise_
 
-def unary_to_nary(unary_function_modifier):
-    def nary_function_modifier(nary_f_in, argnum=0):
-        @attach_name_and_doc(nary_f_in, argnum, unary_function_modifier)
+def unary_to_nary(unary_operator):
+    @wraps(unary_operator)
+    def nary_operator(fun, argnum=0):
+        @attach_name_and_doc(fun, argnum, unary_operator)
         def nary_f(*args, **kwargs):
             def unary_f(x):
                 try:
-                    return nary_f_in(*subvals(args, [(argnum, x)]), **kwargs)
+                    return fun(*subvals(args, [(argnum, x)]), **kwargs)
                 except Exception as e:
                     raise_(*add_extra_error_message(e))
-
-            return unary_function_modifier(unary_f, args[argnum])
+            return unary_operator(unary_f, args[argnum])
         return nary_f
-    return nary_function_modifier
+    return nary_operator
 
 def attach_name_and_doc(fun, argnum, op):
-    fname = lambda f: getattr(fun, '__name__', '[unknown name]')
-    namestr = "{0}_{1}_wrt_argnum_{2}".format(fname(op), fname(fun), argnum)
-    docstr = ("{0} of function {1} with respect to argument number {2}. "
-              "Has the same arguments as {1} but the return value has type of "
-              "argument {2}.".format(fname(op), fname(fun), argnum))
-
-    def wrap(gradfun):
-        try:
-            gradfun.__name__ = namestr
-            gradfun.__doc__ = docstr
-        finally:
-            return gradfun
+    fname = lambda f: getattr(f, '__name__', '[unknown name]')
+    namestr = "{op}_of_{fun}_wrt_argnum_{argnum}"
+    docstr = """\
+    {op} of function {fun} with respect to argument number {argnum}. Takes the
+    same arguments as {fun} but returns the {op}.
+    """
+    def wrap(f):
+        data = dict(op=fname(op), fun=fname(fun), argnum=argnum)
+        f.__name__ = namestr.format(**data)
+        f.__doc__  = docstr.format(**data)
+        return f
     return wrap
 
 def subvals(x, ivs):

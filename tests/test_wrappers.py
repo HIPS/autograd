@@ -290,3 +290,10 @@ def test_make_ggnvp_broadcasting():
   res1 = np.stack([_make_explicit_ggnvp(fun)(xi)(vi) for xi, vi in zip(x, v)])
   res2 = make_ggnvp(fun)(x)(v)
   check_equivalent(res1, res2)
+
+def test_wrapped_name_and_docs():
+    def foo(x): pass
+    assert grad.__name__ == 'grad'
+    assert grad.__doc__.startswith("\n    Returns a function which")
+    assert grad(foo, 1).__name__ == 'grad_of_foo_wrt_argnum_1'
+    assert grad(foo, 1).__doc__.startswith("    grad of function foo with")
