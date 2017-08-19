@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-from .tracer import primitive, isbox
+from .tracer import primitive, isbox, getval
 
 class VSpace(object):
     __slots__ = []
@@ -39,7 +39,10 @@ def vspace(value):
         return vspace_mappings[type(value)](value)
     except KeyError:
         if isbox(value):
-            return value._node.vspace
+            try:
+                return value._node.vspace
+            except AttributeError:
+                return vspace(getval(value))
         else:
             raise TypeError("Can't find vspace for type {}".format(type(value)))
 
