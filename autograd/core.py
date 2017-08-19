@@ -17,9 +17,8 @@ def backward_pass(g, end_node):
     outgrads = {end_node : (g, False)}
     assert_vspace_match(outgrads[end_node][0], end_node.vspace)
     for node in toposort(end_node):
-        if node not in outgrads: continue
         cur_outgrad = outgrads.pop(node)
-        for parent, vjp in zip(node.parents, node.vjps):
+        for parent, vjp in node.parents_and_vjps:
             outgrad = vjp(cur_outgrad[0])
             assert_vspace_match(outgrad, parent.vspace)
             outgrads[parent] = add_outgrads(parent.vspace, outgrads.get(parent), outgrad)
@@ -28,9 +27,10 @@ def backward_pass(g, end_node):
 class VJPNode(Node):
     def process_local_data(self, fun, args, kwargs, ans, argnums):
         self.vspace = vspace(ans)
-        self.vjps = [
-            primitive_vjp(fun, argnum, ans, vspace(args[argnum]), vspace(ans), args, kwargs)
-            for argnum in argnums]
+        self.parents_and_vjps = [
+            (parent, primitive_vjp(fun, argnum, ans, parent.vspace,
+                                   self.vspace, args, kwargs))
+            for argnum, parent in zip(argnums, self.parents)]
 
 def add_outgrads(vs, prev_g_flagged, g):
     sparse = type(getval(g)) == SparseObject

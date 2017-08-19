@@ -30,8 +30,9 @@ def primitive(f_raw):
         boxed_args, trace, node_constructor = find_top_boxed_args(args)
         if boxed_args:
             argvals = subvals(args, [(argnum, box._value) for argnum, box in boxed_args])
+            parents = [box._node for _     , box in boxed_args]
+            argnums = [argnum    for argnum, _   in boxed_args]
             ans = f_wrapped(*argvals, **kwargs)
-            parents, argnums = zip(*[(box._node, argnum) for argnum, box in boxed_args])
             node = node_constructor(trace, parents, f_wrapped, argvals, kwargs, ans, argnums)
             return new_box(ans, node)
         else:
@@ -121,5 +122,5 @@ def new_box(value, node):
     except KeyError:
         raise TypeError("Can't differentiate w.r.t. type {}".format(type(value)))
 
-isbox = lambda x: type(x) in box_types
+isbox  = lambda x: type(x) in box_types  # almost 3X faster than isinstance(x, Box)
 getval = lambda x: getval(x._value) if isbox(x) else x

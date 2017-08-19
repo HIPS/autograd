@@ -5,11 +5,12 @@ class ArrayVSpace(VSpace):
     def __init__(self, value):
         value = np.array(value, copy=False)
         self.shape = value.shape
-        self.size  = value.size
         self.dtype = value.dtype
-        self.ndim  = value.ndim
-        self.scalartype = float
 
+    @property
+    def size(self): return np.prod(self.shape)
+    @property
+    def ndim(self): return sum(self.shape)
     def zeros(self): return np.zeros(self.shape, dtype=self.dtype)
     def ones(self):  return np.ones( self.shape, dtype=self.dtype)
 
@@ -27,10 +28,9 @@ class ArrayVSpace(VSpace):
 
 class ComplexArrayVSpace(ArrayVSpace):
     iscomplex = True
-    def __init__(self, value):
-        super(ComplexArrayVSpace, self).__init__(value)
-        self.size  = 2 * self.size
-        self.scalartype = complex
+
+    @property
+    def size(self): return np.prod(self.shape) * 2
 
     def ones(self):
         return (         np.ones(self.shape, dtype=self.dtype)
