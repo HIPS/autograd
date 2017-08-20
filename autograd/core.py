@@ -1,7 +1,7 @@
 from collections import defaultdict
 from functools import partial
 from .tracer import (trace, primitive, notrace_primitive, Node, Box,
-                     register_box, toposort, getval)
+                     register_box, toposort)
 from .vspace import vspace, assert_vspace_match, register_vspace, VSpace
 from .util import unary_to_nary, func, subval
 
@@ -68,7 +68,7 @@ class JVPNode(Node):
         self.g = g
 
 def add_outgrads(vs, prev_g_flagged, g):
-    sparse = type(getval(g)) == SparseObject
+    sparse = type(g) in sparse_object_types
     if prev_g_flagged:
         prev_g, mutable = prev_g_flagged
         if mutable:
@@ -88,13 +88,16 @@ def add_outgrads(vs, prev_g_flagged, g):
         else:
             return g, False
 
+class SparseBox(Box):
+    __slots__ = []
 class SparseObject(object):
     __slots__ = ['vs', 'mut_add']
     def __init__(self, vs, mut_add):
         self.vs = vs
         self.mut_add = mut_add
 register_vspace(lambda x : x.vs, SparseObject)
-register_box(Box, SparseObject)
+register_box(SparseBox, SparseObject)
+sparse_object_types = set((SparseObject, SparseBox))
 
 def zero_vjp(ans, vs, gvs, *args, **kwargs):
     return lambda g: vs.zeros()
