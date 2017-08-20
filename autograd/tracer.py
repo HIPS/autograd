@@ -2,10 +2,9 @@ import warnings
 from contextlib import contextmanager
 from .util import subvals, wraps
 
-def trace(node_type, fun, x):
+def trace(start_node, fun, x):
     with trace_stack.new_trace() as t:
-        start_node = node_type(t, [], None, (), {}, x, [])
-        start_box = new_box(x, start_node)
+        start_box = new_box(x, t, start_node)
         end_box = fun(start_box)
         if isbox(end_box) and end_box._trace == start_box._trace:
             return end_box._value, end_box._node
@@ -14,12 +13,17 @@ def trace(node_type, fun, x):
             return end_box, None
 
 class Node(object):
-    def __init__(self, trace, parents, *local_data):
-        self.trace = trace
-        self.parents = parents
-        self.process_local_data(*local_data)
+    def __init__(self, value, fun, args, kwargs, parent_argnums, parents):
+        assert False
 
-    def process_local_data(fun, args, kwargs, ans, argnums): pass
+    def initialize_root(self, *args, **kwargs):
+        assert False
+
+    @classmethod
+    def new_root(cls, *args, **kwargs):
+        root = cls.__new__(cls)
+        root.initialize_root(*args, **kwargs)
+        return root
 
 def primitive(f_raw):
     """
@@ -33,8 +37,8 @@ def primitive(f_raw):
             parents = [box._node for _     , box in boxed_args]
             argnums = [argnum    for argnum, _   in boxed_args]
             ans = f_wrapped(*argvals, **kwargs)
-            node = node_constructor(trace, parents, f_wrapped, argvals, kwargs, ans, argnums)
-            return new_box(ans, node)
+            node = node_constructor(ans, f_wrapped, argvals, kwargs, argnums, parents)
+            return new_box(ans, trace, node)
         else:
             return f_raw(*args, **kwargs)
     return f_wrapped
@@ -74,10 +78,10 @@ trace_stack = TraceStack()
 
 class Box(object):
     __slots__ = ['_value', '_trace', '_node']
-    def __init__(self, value, node):
+    def __init__(self, value, trace, node):
         self._value = value
         self._node = node
-        self._trace = node.trace
+        self._trace = trace
 
     def __bool__(self):
         return bool(self._value)
@@ -116,9 +120,9 @@ def register_box(box_type, value_type):
     box_type_mappings[value_type] = box_type
     box_type_mappings[box_type] = box_type
 
-def new_box(value, node):
+def new_box(value, trace, node):
     try:
-        return box_type_mappings[type(value)](value, node)
+        return box_type_mappings[type(value)](value, trace, node)
     except KeyError:
         raise TypeError("Can't differentiate w.r.t. type {}".format(type(value)))
 

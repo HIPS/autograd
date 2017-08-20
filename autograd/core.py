@@ -6,7 +6,8 @@ from .vspace import vspace, assert_vspace_match, register_vspace, VSpace
 from .util import unary_to_nary, func
 
 def make_vjp(fun, x):
-    end_value, end_node =  trace(VJPNode, fun, x)
+    start_node = VJPNode.new_root(x)
+    end_value, end_node =  trace(start_node, fun, x)
     if end_node is None:
         def vjp(g): return vspace(x).zeros()
     else:
@@ -25,12 +26,18 @@ def backward_pass(g, end_node):
     return cur_outgrad[0]
 
 class VJPNode(Node):
-    def process_local_data(self, fun, args, kwargs, ans, argnums):
-        self.vspace = vspace(ans)
+    def __init__(self, value, fun, args, kwargs, parent_argnums, parents):
+        self.vspace = vspace(value)
+        self.parents = parents
         self.parents_and_vjps = [
-            (parent, primitive_vjp(fun, argnum, ans, parent.vspace,
+            (parent, primitive_vjp(fun, argnum, value, parent.vspace,
                                    self.vspace, args, kwargs))
-            for argnum, parent in zip(argnums, self.parents)]
+            for argnum, parent in zip(parent_argnums, self.parents)]
+
+    def initialize_root(self, value):
+        self.vspace = vspace(value)
+        self.parents = []
+        self.parents_and_vjps = []
 
 def add_outgrads(vs, prev_g_flagged, g):
     sparse = type(getval(g)) == SparseObject

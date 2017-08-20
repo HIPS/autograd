@@ -4,38 +4,39 @@ evaluated"""
 import autograd.numpy as np  # autograd has already wrapped numpy for us
 from autograd.tracer import trace, Node
 
-num_vars = 0  # global counter to create unique variable names
 class PrintNode(Node):
-    def process_local_data(self, fun, args, kwargs, ans, argnums):
-        global num_vars
-        self.varname = chr(num_vars + 65)
-        num_vars += 1
+    def __init__(self, value, fun, args, kwargs, parent_argnums, parents):
+        self.varname_generator = parents[0].varname_generator
+        self.varname = self.varname_generator.next()
         args_or_vars = list(args)
-        for argnum, parent in zip(argnums, self.parents):
+        for argnum, parent in zip(parent_argnums, parents):
             args_or_vars[argnum] = parent.varname
-        if fun:
-            print '{} = {}({}) = {}'.format(
-                self.varname,
-                fun.__name__,
-                ','.join(map(str, args_or_vars)),
-                ans)
-        else:
-            print '{} = {}'.format(self.varname, ans)
+        print '{} = {}({}) = {}'.format(
+            self.varname, fun.__name__, ','.join(map(str, args_or_vars)), value)
+
+    def initialize_root(self, x):
+        self.varname_generator = make_varname_generator()
+        self.varname = self.varname_generator.next()
+        print '{} = {}'.format(self.varname, x)
+
+def make_varname_generator():
+    for i in range(65, 91):
+        yield chr(i)
+    raise Exception("Ran out of alphabet!")
 
 def print_trace(f, x):
-    print '----- starting trace -----'
-    trace(PrintNode, f, x)
-    print '----- done -----'
+    start_node = PrintNode.new_root(x)
+    trace(start_node, f, x)
+    print
 
 def avg(x, y):
     return (x + y) / 2
-
 def fun(x):
     y = np.sin(x + x)
     return avg(y, y)
 
 print_trace(fun, 1.23)
 
-# Traces can be neseted, so we can also trace through grad(fun)
+# Traces can be nested, so we can also trace through grad(fun)
 from autograd import grad
 print_trace(grad(fun), 1.0)
