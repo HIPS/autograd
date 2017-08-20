@@ -7,12 +7,13 @@ import warnings
 
 from .util import unary_to_nary
 from .tracer import primitive
-from .core import make_vjp as _make_vjp, defvjp_argnum, vspace
+from .core import make_vjp as _make_vjp, make_jvp as _make_jvp, defvjp_argnum, vspace
 from .container_types import make_tuple
 
 import autograd.numpy as np
 
 make_vjp = unary_to_nary(_make_vjp)
+make_jvp = unary_to_nary(_make_jvp)
 
 @unary_to_nary
 def grad(fun, x):
@@ -23,6 +24,10 @@ def grad(fun, x):
     should be scalar-valued. The gradient has the same type as the argument."""
     vjp, ans = _make_vjp(fun, safe_type(x))
     return vjp(vspace(ans).ones())
+
+@unary_to_nary
+def deriv(fun, x):
+    return _make_jvp(fun, x)(vspace(x).ones())
 
 @unary_to_nary
 def jacobian(fun, x):

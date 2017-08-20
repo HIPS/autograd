@@ -3,7 +3,7 @@ from __future__ import absolute_import
 import scipy.stats
 import autograd.numpy as anp
 from autograd.core import primitive, defvjp, defvjps, defvjp_is_zero, defvjp_argnum
-from autograd.numpy.numpy_grads import unbroadcast
+from autograd.numpy.numpy_vjps import unbroadcast
 
 pdf = primitive(scipy.stats.norm.pdf)
 cdf = primitive(scipy.stats.norm.cdf)

@@ -38,7 +38,7 @@ defgrad_deprecated = \
 ------------------------------
 Use defvjp instead ("define vector-Jacobian product").
 The interface is a little different - look at
-autograd/numpy/numpy_grads.py for examples.
+autograd/numpy/numpy_vjps.py for examples.
 '''
 
 def check_common_errors(error_type, error_message):

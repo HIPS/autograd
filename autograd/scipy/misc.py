@@ -3,7 +3,7 @@ import scipy.misc
 
 from autograd.core import primitive, defvjp
 import autograd.numpy as anp
-from autograd.numpy.numpy_grads import repeat_to_match_shape
+from autograd.numpy.numpy_vjps import repeat_to_match_shape
 
 logsumexp = primitive(scipy.misc.logsumexp)
 

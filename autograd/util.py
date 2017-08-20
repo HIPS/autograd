@@ -36,6 +36,11 @@ def subvals(x, ivs):
         x_[i] = v
     return tuple(x_)
 
+def subval(x, i, v):
+    x_ = list(x)
+    x_[i] = v
+    return tuple(x_)
+
 def wraps(f_raw):
     def wrap(f_wrapped):
         try:

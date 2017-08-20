@@ -3,7 +3,7 @@ import scipy.stats
 
 import autograd.numpy as np
 from autograd.core import primitive
-from autograd.numpy.numpy_grads import unbroadcast
+from autograd.numpy.numpy_vjps import unbroadcast
 from autograd.core import primitive, defvjp, defvjps, defvjp_is_zero, defvjp_argnum
 
 

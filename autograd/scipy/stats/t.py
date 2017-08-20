@@ -3,7 +3,7 @@ from __future__ import absolute_import
 import scipy.stats
 import autograd.numpy as np
 from autograd.core import primitive, defvjp, defvjps, defvjp_is_zero, defvjp_argnum
-from autograd.numpy.numpy_grads import unbroadcast
+from autograd.numpy.numpy_vjps import unbroadcast
 from autograd.scipy.special import psi
 
 pdf = primitive(scipy.stats.t.pdf)

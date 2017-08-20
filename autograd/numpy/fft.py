@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 import numpy.fft as ffto
 from .numpy_wrapper import wrap_namespace
-from .numpy_grads import match_complex
+from .numpy_vjps import match_complex
 from . import numpy_wrapper as anp
 from autograd.core import primitive, defvjp
 from builtins import zip
