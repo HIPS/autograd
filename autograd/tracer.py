@@ -13,6 +13,7 @@ def trace(start_node, fun, x):
             return end_box, None
 
 class Node(object):
+    __slots__ = []
     def __init__(self, value, fun, args, kwargs, parent_argnums, parents):
         assert False
 

@@ -36,6 +36,7 @@ def make_jvp(fun, x):
     return jvp
 
 class VJPNode(Node):
+    __slots__ = ['vspace', 'parents', 'parents_and_vjps']
     def __init__(self, value, fun, args, kwargs, parent_argnums, parents):
         self.vspace = vspace(value)
         self.parents = parents
@@ -50,6 +51,7 @@ class VJPNode(Node):
         self.parents_and_vjps = []
 
 class JVPNode(Node):
+    __slots__ = ['vspace', 'g']
     def __init__(self, value, fun, args, kwargs, parent_argnums, parents):
         self.vspace = vspace(value)
         cur_g = None
