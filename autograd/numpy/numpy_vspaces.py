@@ -10,7 +10,7 @@ class ArrayVSpace(VSpace):
     @property
     def size(self): return np.prod(self.shape)
     @property
-    def ndim(self): return sum(self.shape)
+    def ndim(self): return len(self.shape)
     def zeros(self): return np.zeros(self.shape, dtype=self.dtype)
     def ones(self):  return np.ones( self.shape, dtype=self.dtype)
 
