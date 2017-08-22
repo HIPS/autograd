@@ -56,7 +56,7 @@ class JVPNode(Node):
         self.vspace = vspace(value)
         cur_g = None
         for argnum, parent in zip(parent_argnums, parents):
-            new_g = primitive_jvp(fun, argnum, parent.g, value, args, kwargs)
+            new_g = primitive_jvp(fun, argnum, parent.g, value, vspace(parent.g), self.vspace, args, kwargs)
             assert_vspace_match(new_g, self.vspace)
             cur_g = add_outgrads(parent.vspace, cur_g, new_g)
 
@@ -130,14 +130,13 @@ def defvjp_argnum(fun, vjpmaker):
 def defvjp_is_zero(fun, argnums=(0,)):
     for argnum in argnums:
         defvjp(fun, zero_vjp, argnum)
+        defjvp(fun, zero_jvp, argnum)
 
 class first_arg_as_get(object):
     def __init__(self, f):
         self.f = f
     def __getitem__(self, argnum):
-        def vjp(ans, vs, gvs, args, kwargs):
-            return self.f(argnum, ans, vs, gvs, args, kwargs)
-        return vjp
+        return lambda *args, **kwargs: self.f(argnum, *args, **kwargs)
 
 identity_vjp = lambda *args: lambda g: g
 
@@ -158,16 +157,16 @@ defvjp(func(VSpace.scalar_mul), lambda ans, vs, gvs, vs_, x, a: lambda g:
 defvjp(func(VSpace.scalar_mul), lambda ans, vs, gvs, vs_, x, a: lambda g:
        gvs.inner_prod(g, gvs.covector(x)), argnum=2)
 
-def primitive_jvp(fun, argnum, g, ans, args, kwargs):
+def primitive_jvp(fun, argnum, g, ans, gvs, vs, args, kwargs):
     try:
-        return primitive_jvps[fun][argnum](g, ans, *args, **kwargs)
+        return primitive_jvps[fun][argnum](g, ans, gvs, vs, *args, **kwargs)
     except KeyError:
         raise NotImplementedError("JVP of {} wrt arg number {} not yet implemented"
                                   .format(fun.__name__, argnum))
 
 primitive_jvps = defaultdict(dict)
 
-def zero_jvp(g, ans, *args, **kwargs): vspace(ans).zeros()
+def zero_jvp(g, ans, *args, **kwargs): return vspace(ans).zeros()
 
 def defjvp(fun, jvpfun, argnum=0):
     primitive_jvps[fun][argnum] = jvpfun
@@ -176,10 +175,28 @@ def defjvps(fun, jvpfun, argnums):
     for argnum in argnums:
         defjvp(fun, partial(jvpfun, argnum), argnum)
 
-def defjvp_is_identical(fun, argnum=0):
-    defjvp(fun, lambda g, ans, *args, **kwargs:
+def defjvp_argnum(fun, jvpmaker):
+    primitive_jvps[fun] = first_arg_as_get(jvpmaker)
+
+def def_linear_wrt_arg(fun, argnum=0):
+    """
+    This signifies that a function is linear in the sense of linear
+    algebra/functional analysis:
+
+    fun(a*x + b*y) = a*fun(x) + b*fun(y)
+
+    In this case the jvp of fun is the same as fun itself.
+    """
+    defjvp(fun, lambda g, ans, gvs, vs, *args, **kwargs:
            fun(*subval(args, argnum, g), **kwargs), argnum=argnum)
 
-def defjvp_is_zero(fun, argnums=(0,)):
+def def_linear_wrt_args(fun, argnums):
     for argnum in argnums:
-        defjvp(fun, zero_jvp, argnum)
+        def_linear_wrt_arg(fun, argnum)
+
+def def_multilinear(fun):
+    """
+    This is to flag that a function is linear in all of its args.
+    """
+    defjvp_argnum(fun, lambda argnum, g, ans, gvs, vs, *args, **kwargs:
+                  fun(*subval(args, argnum, g), **kwargs))
