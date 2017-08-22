@@ -56,9 +56,9 @@ class JVPNode(Node):
         self.vspace = vspace(value)
         cur_g = None
         for argnum, parent in zip(parent_argnums, parents):
-            new_g = primitive_jvp(fun, argnum, parent.g, value, vspace(parent.g), self.vspace, args, kwargs)
+            new_g = primitive_jvp(fun, argnum, parent.g, value, parent.vspace, self.vspace, args, kwargs)
             assert_vspace_match(new_g, self.vspace)
-            cur_g = add_outgrads(parent.vspace, cur_g, new_g)
+            cur_g = add_outgrads(self.vspace, cur_g, new_g)
 
         self.g = cur_g[0]
 
