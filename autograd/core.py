@@ -166,7 +166,7 @@ def primitive_jvp(fun, argnum, g, ans, gvs, vs, args, kwargs):
 
 primitive_jvps = defaultdict(dict)
 
-def zero_jvp(g, ans, *args, **kwargs): return vspace(ans).zeros()
+def zero_jvp(g, ans, gvs, vs, *args, **kwargs): return vs.zeros()
 
 def defjvp(fun, jvpfun, argnum=0):
     primitive_jvps[fun][argnum] = jvpfun
