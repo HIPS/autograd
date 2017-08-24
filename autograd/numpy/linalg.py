@@ -105,16 +105,12 @@ eigh.defvjp(grad_eigh)
 def grad_cholesky(g, L, vs, gvs, A):
     # Based on Iain Murray's note http://arxiv.org/abs/1602.07527
     # scipy's dtrtrs wrapper, solve_triangular, doesn't broadcast along leading
-    # dimensions, so when A.ndim > 2 we just call a generic LU solve instead of
-    # directly using backsubstitution (also, we factor twice...)
-    from ..scipy.linalg import solve_triangular
-    if anp.ndim(A) == 2:
-        solve_trans = partial(solve_triangular, lower=True, trans='T')
-    else:
-        solve_trans = lambda a, b: solve(T(a), b)
+    # dimensions, so we just call a generic LU solve instead of directly using
+    # backsubstitution (also, we factor twice...)
+    solve_trans = lambda a, b: solve(T(a), b)
     phi = lambda X: anp.tril(X) / (1. + anp.eye(X.shape[-1]))
     def conjugate_solve(L, X):
-        'X -> L^{-T} X L^{-1}'
+        # X -> L^{-T} X L^{-1}
         return solve_trans(L, T(solve_trans(L, T(X))))
 
     S = conjugate_solve(L, phi(anp.einsum('...ki,...kj->...ij', L, g)))
