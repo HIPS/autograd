@@ -139,6 +139,7 @@ class first_arg_as_get(object):
         return lambda *args, **kwargs: self.f(argnum, *args, **kwargs)
 
 identity_vjp = lambda *args: lambda g: g
+identity_jvp = lambda argnum, g, *args, **kwargs: g
 
 @primitive
 def sparse_add(x_prev, x_new): return x_new.mut_add(x_prev)
@@ -200,3 +201,12 @@ def def_multilinear(fun):
     """
     defjvp_argnum(fun, lambda argnum, g, ans, gvs, vs, *args, **kwargs:
                   fun(*subval(args, argnum, g), **kwargs))
+
+defjvps(sparse_add, identity_jvp, argnums=[0, 1])
+
+defjvps(func(VSpace.mut_add), identity_jvp, argnums=[1,2])
+def_multilinear(func(VSpace.inner_prod))
+defjvps(func(VSpace.add), identity_jvp, argnums=[1,2])
+defjvp(func(VSpace.covector), lambda g, ans, gvs, vs, gvs_, x:
+       vs.covector(g), argnum=1)
+def_multilinear(func(VSpace.scalar_mul))

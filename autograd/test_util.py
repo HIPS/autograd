@@ -1,6 +1,6 @@
 import itertools as it
 from .vspace import vspace
-from .core import make_vjp
+from .core import make_vjp, make_jvp
 from .util import subvals
 
 TOL  = 1e-6
@@ -46,8 +46,34 @@ def check_vjp(f, argnums=None, order=2):
         check_vjp(f_unary_vjp, order=order-1)(x, v)
     return _check_vjp
 
+def check_jvp_unary(f, x):
+    y = f(x)
+    jvp = make_jvp(f, x)
+    jvp_numeric = make_numerical_jvp(f, x)
+    x_vs, y_vs = vspace(x), vspace(y)
+    x_v = x_vs.randn()
+
+    check_equivalent(jvp(x_v), jvp_numeric(x_v))
+
+def check_jvp(f, argnums=None, order=2):
+    def _check_jvp(*args, **kwargs):
+        if not order: return
+        _argnums = argnums if argnums else range(len(args))
+        x = tuple(args[argnum] for argnum in _argnums)
+        f_unary = lambda x: f(*subvals(args, zip(_argnums, x)), **kwargs)
+        check_jvp_unary(f_unary, x)
+
+        v = vspace(f_unary(x)).randn()
+        f_unary_vjp = lambda x, v: make_vjp(f_unary, x)[0](v)
+        check_jvp(f_unary_vjp, order=order-1)(x, v)
+    return _check_jvp
+
 # backwards compatibility
-def check_grads(f, *args): return check_vjp(f, order=1)(*args)
+def check_grads(f, *args, fwd=True): 
+    check_vjp(f, order=1)(*args)
+    if fwd:
+        check_jvp(f, order=1)(*args)
+
 def nd(f, *args):
     return [make_numerical_jvp(lambda args: f(*args), args)(v)
             for v in vspace(args).standard_basis()]
@@ -61,6 +87,7 @@ def check_equivalent(x, y):
 
 def combo_check(fun, argnums, *args, **kwargs):
     # Tests all combinations of args given.
+    fwd = kwargs.pop('fwd', True) 
     args = list(args)
     kwarg_key_vals = [[(key, val) for val in kwargs[key]] for key in kwargs]
     num_args = len(args)
@@ -68,3 +95,5 @@ def combo_check(fun, argnums, *args, **kwargs):
         cur_args = args_and_kwargs[:num_args]
         cur_kwargs = dict(args_and_kwargs[num_args:])
         check_vjp(fun, argnums)(*cur_args, **cur_kwargs)
+        if fwd:
+            check_jvp(fun, argnums)(*cur_args, **cur_kwargs)

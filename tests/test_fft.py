@@ -11,24 +11,24 @@ def test_fft():
     d_fun = lambda x : grad(fun)(x)
     D = 5
     mat = npr.randn(D, D)
-    check_grads(fun, mat)
-    check_grads(d_fun, mat)
+    check_grads(fun, mat, fwd=False)
+    check_grads(d_fun, mat, fwd=False)
 
 def test_fft_ortho():
     def fun(x): return np.fft.fft(x, norm='ortho')
     d_fun = lambda x : grad(fun)(x)
     D = 5
     mat = npr.randn(D, D)
-    check_grads(fun, mat)
-    check_grads(d_fun, mat)
+    check_grads(fun, mat, fwd=False)
+    check_grads(d_fun, mat, fwd=False)
 
 def test_fft_axis():
     def fun(x): return np.fft.fft(x, axis=0)
     d_fun = lambda x : grad(fun)(x)
     D = 5
     mat = npr.randn(D, D)
-    check_grads(fun, mat)
-    check_grads(d_fun, mat)
+    check_grads(fun, mat, fwd=False)
+    check_grads(d_fun, mat, fwd=False)
 
 def match_complex(fft_fun, mat):
     # ensure hermitian by doing a fft
@@ -43,8 +43,8 @@ def check_fft_n(fft_fun, D, n):
     mat = npr.randn(D, D)
     mat = match_complex(fft_fun, mat)
     assert_array_equal(grad(fun)(mat).shape, mat.shape)
-    check_grads(fun, mat)
-    check_grads(d_fun, mat)
+    check_grads(fun, mat, fwd=False)
+    check_grads(d_fun, mat, fwd=False)
 
 def test_fft_n_smaller(): check_fft_n(np.fft.fft, 5, -2)
 def test_fft_n_bigger(): check_fft_n(np.fft.fft, 5, 2)
@@ -65,8 +65,8 @@ def check_fft_s(fft_fun, D):
    s = [D + 2, D - 2]
    axes = [0,2]
 
-   check_grads(fun, mat)
-   check_grads(d_fun, mat)
+   check_grads(fun, mat, fwd=False)
+   check_grads(d_fun, mat, fwd=False)
 
 def test_fft2_s():  check_fft_s(np.fft.fft2, 5)
 def test_ifft2_s(): check_fft_s(np.fft.ifft2, 5)
@@ -97,64 +97,64 @@ def test_ifft():
     d_fun = lambda x : grad(fun)(x)
     D = 5
     mat = npr.randn(D, D)
-    check_grads(fun, mat)
-    check_grads(d_fun, mat)
+    check_grads(fun, mat, fwd=False)
+    check_grads(d_fun, mat, fwd=False)
 
 def test_fft2():
     def fun(x): return np.fft.fft2(x)
     d_fun = lambda x : grad(fun)(x)
     D = 5
     mat = npr.randn(D, D) / 10.0
-    check_grads(fun, mat)
-    check_grads(d_fun, mat)
+    check_grads(fun, mat, fwd=False)
+    check_grads(d_fun, mat, fwd=False)
 
 def test_ifft2():
     def fun(x): return np.fft.ifft2(x)
     d_fun = lambda x : grad(fun)(x)
     D = 5
     mat = npr.randn(D, D)
-    check_grads(fun, mat)
-    check_grads(d_fun, mat)
+    check_grads(fun, mat, fwd=False)
+    check_grads(d_fun, mat, fwd=False)
 
 def test_fftn():
     def fun(x): return np.fft.fftn(x)
     d_fun = lambda x : grad(fun)(x)
     D = 5
     mat = npr.randn(D, D) / 10.0
-    check_grads(fun, mat)
-    check_grads(d_fun, mat)
+    check_grads(fun, mat, fwd=False)
+    check_grads(d_fun, mat, fwd=False)
 
 def test_ifftn():
     def fun(x): return np.fft.ifftn(x)
     d_fun = lambda x : grad(fun)(x)
     D = 5
     mat = npr.randn(D, D)
-    check_grads(fun, mat)
-    check_grads(d_fun, mat)
+    check_grads(fun, mat, fwd=False)
+    check_grads(d_fun, mat, fwd=False)
 
 def test_rfft():
     def fun(x): return np.fft.rfft(x)
     d_fun = lambda x : grad(fun)(x)
     D = 4
     mat = npr.randn(D, D) / 10.0
-    check_grads(fun, mat)
-    check_grads(d_fun, mat)
+    check_grads(fun, mat, fwd=False)
+    check_grads(d_fun, mat, fwd=False)
 
 def test_rfft_ortho():
     def fun(x): return np.fft.rfft(x, norm='ortho')
     d_fun = lambda x : grad(fun)(x)
     D = 4
     mat = npr.randn(D, D) / 10.0
-    check_grads(fun, mat)
-    check_grads(d_fun, mat)
+    check_grads(fun, mat, fwd=False)
+    check_grads(d_fun, mat, fwd=False)
 
 def test_rfft_axes():
     def fun(x): return np.fft.rfft(x, axis=0)
     d_fun = lambda x : grad(fun)(x)
     D = 4
     mat = npr.randn(D, D) / 10.0
-    check_grads(fun, mat)
-    check_grads(d_fun, mat)
+    check_grads(fun, mat, fwd=False)
+    check_grads(d_fun, mat, fwd=False)
 
 def test_irfft():
     def fun(x): return np.fft.irfft(x)
@@ -163,8 +163,8 @@ def test_irfft():
     mat = npr.randn(D, D) / 10.0
     # ensure hermitian by doing a fft
     mat = np.fft.rfft(mat)
-    check_grads(fun, mat)
-    check_grads(d_fun, mat)
+    check_grads(fun, mat, fwd=False)
+    check_grads(d_fun, mat, fwd=False)
 
 def test_irfft_ortho():
     def fun(x): return np.fft.irfft(x, norm='ortho')
@@ -173,16 +173,16 @@ def test_irfft_ortho():
     mat = npr.randn(D, D) / 10.0
     # ensure hermitian by doing a fft
     mat = np.fft.rfft(mat)
-    check_grads(fun, mat)
-    check_grads(d_fun, mat)
+    check_grads(fun, mat, fwd=False)
+    check_grads(d_fun, mat, fwd=False)
 
 def test_rfft2():
     def fun(x): return np.fft.rfft2(x)
     d_fun = lambda x : grad(fun)(x)
     D = 4
     mat = npr.randn(D, D) / 10.0
-    check_grads(fun, mat)
-    check_grads(d_fun, mat)
+    check_grads(fun, mat, fwd=False)
+    check_grads(d_fun, mat, fwd=False)
 
 def test_irfft2():
     def fun(x): return np.fft.irfft2(x)
@@ -191,16 +191,16 @@ def test_irfft2():
     mat = npr.randn(D, D) / 10.0
     # ensure hermitian by doing a fft
     mat = np.fft.rfft2(mat)
-    check_grads(fun, mat)
-    check_grads(d_fun, mat)
+    check_grads(fun, mat, fwd=False)
+    check_grads(d_fun, mat, fwd=False)
 
 def test_rfftn():
     def fun(x): return np.fft.rfftn(x)
     d_fun = lambda x : grad(fun)(x)
     D = 4
     mat = npr.randn(D, D, D) / 10.0
-    check_grads(fun, mat)
-    check_grads(d_fun, mat)
+    check_grads(fun, mat, fwd=False)
+    check_grads(d_fun, mat, fwd=False)
 
 def test_rfftn_odd_not_implemented():
     def fun(x): return np.fft.rfftn(x)
@@ -214,16 +214,16 @@ def test_rfftn_subset():
     d_fun = lambda x : grad(fun)(x)
     D = 4
     mat = npr.randn(D, D, D) / 10.0
-    check_grads(fun, mat)
-    check_grads(d_fun, mat)
+    check_grads(fun, mat, fwd=False)
+    check_grads(d_fun, mat, fwd=False)
 
 def test_rfftn_axes():
     def fun(x): return np.fft.rfftn(x, axes=(0, 2))
     d_fun = lambda x : grad(fun)(x)
     D = 4
     mat = npr.randn(D, D, D) / 10.0
-    check_grads(fun, mat)
-    check_grads(d_fun, mat)
+    check_grads(fun, mat, fwd=False)
+    check_grads(d_fun, mat, fwd=False)
 
 def test_irfftn():
     def fun(x): return np.fft.irfftn(x)
@@ -232,8 +232,8 @@ def test_irfftn():
     mat = npr.randn(D, D, D) / 10.0
     # ensure hermitian by doing a fft
     mat = np.fft.rfftn(mat)
-    check_grads(fun, mat)
-    check_grads(d_fun, mat)
+    check_grads(fun, mat, fwd=False)
+    check_grads(d_fun, mat, fwd=False)
 
 def test_irfftn_subset():
     def fun(x): return np.fft.irfftn(x)[(0, 1, 0), (3, 3, 2)]
@@ -242,53 +242,53 @@ def test_irfftn_subset():
     mat = npr.randn(D, D, D) / 10.0
     # ensure hermitian by doing a fft
     mat = np.fft.rfftn(mat)
-    check_grads(fun, mat)
-    check_grads(d_fun, mat)
+    check_grads(fun, mat, fwd=False)
+    check_grads(d_fun, mat, fwd=False)
 
 def test_fftshift():
     def fun(x): return np.fft.fftshift(x)
     d_fun = lambda x : grad(fun)(x)
     D = 5
     mat = npr.randn(D, D) / 10.0
-    check_grads(fun, mat)
-    check_grads(d_fun, mat)
+    check_grads(fun, mat, fwd=False)
+    check_grads(d_fun, mat, fwd=False)
 
 def test_fftshift_even():
     def fun(x): return np.fft.fftshift(x)
     d_fun = lambda x : grad(fun)(x)
     D = 4
     mat = npr.randn(D, D) / 10.0
-    check_grads(fun, mat)
-    check_grads(d_fun, mat)
+    check_grads(fun, mat, fwd=False)
+    check_grads(d_fun, mat, fwd=False)
 
 def test_fftshift_axes():
     def fun(x): return np.fft.fftshift(x, axes=1)
     d_fun = lambda x : grad(fun)(x)
     D = 5
     mat = npr.randn(D, D) / 10.0
-    check_grads(fun, mat)
-    check_grads(d_fun, mat)
+    check_grads(fun, mat, fwd=False)
+    check_grads(d_fun, mat, fwd=False)
 
 def test_ifftshift():
     def fun(x): return np.fft.ifftshift(x)
     d_fun = lambda x : grad(fun)(x)
     D = 5
     mat = npr.randn(D, D)
-    check_grads(fun, mat)
-    check_grads(d_fun, mat)
+    check_grads(fun, mat, fwd=False)
+    check_grads(d_fun, mat, fwd=False)
 
 def test_ifftshift_even():
     def fun(x): return np.fft.ifftshift(x)
     d_fun = lambda x : grad(fun)(x)
     D = 4
     mat = npr.randn(D, D)
-    check_grads(fun, mat)
-    check_grads(d_fun, mat)
+    check_grads(fun, mat, fwd=False)
+    check_grads(d_fun, mat, fwd=False)
 
 def test_ifftshift_axes():
     def fun(x): return np.fft.ifftshift(x, axes=1)
     d_fun = lambda x : grad(fun)(x)
     D = 5
     mat = npr.randn(D, D)
-    check_grads(fun, mat)
-    check_grads(d_fun, mat)
+    check_grads(fun, mat, fwd=False)
+    check_grads(d_fun, mat, fwd=False)

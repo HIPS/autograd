@@ -608,8 +608,8 @@ def test_r_slicing():
             return b
         A = npr.randn(10)
         d_fun = lambda x : grad(fun)(x)
-        check_grads(fun, A)
-        check_grads(d_fun, A)
+        check_grads(fun, A, fwd=False)
+        check_grads(d_fun, A, fwd=False)
 
 def test_c_():
     with warnings.catch_warnings(record=True) as w:

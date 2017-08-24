@@ -68,6 +68,8 @@ def_linear_wrt_arg(anp.ravel)
 def_linear_wrt_arg(anp.expand_dims)
 def_linear_wrt_arg(anp.squeeze)
 def_linear_wrt_arg(anp.diag)
+def_linear_wrt_arg(anp.diagonal)
+def_linear_wrt_arg(anp.make_diagonal)
 def_linear_wrt_arg(anp.flipud)
 def_linear_wrt_arg(anp.fliplr)
 def_linear_wrt_arg(anp.rot90)
@@ -126,6 +128,8 @@ def_linear_wrt_arg(anp.transpose)
 def_linear_wrt_arg(anp.sum)
 def_linear_wrt_arg(anp.mean)
 defjvp(anp.prod, lambda g, ans, gvs, vs, x, axis=None, keepdims=False: ans * anp.sum(g / x, axis=axis, keepdims=keepdims))
+defjvp(anp.linspace, lambda g, ans, gvs, vs, start, stop, *args, **kwargs: anp.linspace(g, 0, *args, **kwargs), argnum=0)
+defjvp(anp.linspace, lambda g, ans, gvs, vs, start, stop, *args, **kwargs: anp.linspace(0, g, *args, **kwargs), argnum=1)
 
 def forward_grad_np_var(g, ans, gvs, vs, x, axis=None, ddof=0, keepdims=False):
     if axis is None:

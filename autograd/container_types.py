@@ -2,7 +2,8 @@ from functools import partial
 from .util import subvals
 from .tracer import Box, register_box, primitive
 from .vspace import VSpace, vspace, register_vspace
-from .core import defvjp, defvjp_is_zero, defvjp_argnum, SparseObject, def_linear_wrt_arg
+from .core import (defvjp, defvjp_is_zero, defvjp_argnum, SparseObject,
+                   def_linear_wrt_arg, defjvp_argnum)
 
 @primitive
 def container_take(A, idx):
@@ -69,6 +70,12 @@ defvjp_argnum(sequence_extend_left, grad_sequence_extend_left)
 def make_sequence(seq_type, *args):
     return seq_type(args)
 defvjp_argnum(make_sequence, lambda argnum, seq_type, *args: lambda g: g[argnum - 1])
+def fwd_grad_make_sequence(argnum, g, ans, gvs, vs, *args, **kwargs):
+    typ, elts = args[0], args[1:]
+    zeros = list(vspace(elt).zeros() for elt in elts)
+    zeros[argnum - 1] = g
+    return make_sequence(typ, *zeros)
+defjvp_argnum(make_sequence, fwd_grad_make_sequence)
 make_tuple = partial(make_sequence, tuple)
 make_list  = partial(make_sequence, list)
 
