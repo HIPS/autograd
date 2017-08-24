@@ -1,8 +1,6 @@
 from __future__ import absolute_import
-import itertools
 import autograd.numpy as np
 import autograd.numpy.random as npr
-import autograd.scipy.linalg as spla
 from autograd.util import *
 from autograd import grad
 from builtins import range
@@ -244,41 +242,6 @@ def test_cholesky_reparameterization_trick():
         z = np.dot(np.linalg.cholesky(A), rng.randn(A.shape[0]))
         return np.linalg.norm(z)
     check_symmetric_matrix_grads(fun, rand_psd(6))
-
-def test_sqrtm():
-    def fun(A):
-        return to_scalar(spla.sqrtm(A))
-    check_symmetric_matrix_grads(fun, rand_psd(6))
-
-def test_solve_triangular_arg1():
-    D = 6
-    b = npr.randn(D)
-    trans_options = ['T', 'N', 'C', 0, 1, 2]
-    lower_options = [True, False]
-    for trans, lower in itertools.product(trans_options, lower_options):
-        def fun(A):
-            return to_scalar(spla.solve_triangular(A, b, trans=trans, lower=lower))
-        yield check_grads, fun, npr.randn(D, D) + 10*np.eye(D)
-
-def test_solve_triangular_arg2_1d():
-    D = 6
-    A = npr.randn(D, D) + 10*np.eye(D)
-    trans_options = ['T', 'N', 'C', 0, 1, 2]
-    lower_options = [True, False]
-    for trans, lower in itertools.product(trans_options, lower_options):
-        def fun(b):
-            return to_scalar(spla.solve_triangular(A, b, trans=trans, lower=lower))
-        yield check_grads, fun, npr.randn(D)
-
-def test_solve_triangular_arg2_2d():
-    D = 6
-    A = npr.randn(D, D) + 10*np.eye(D)
-    trans_options = ['T', 'N', 'C', 0, 1, 2]
-    lower_options = [True, False]
-    for trans, lower in itertools.product(trans_options, lower_options):
-        def fun(B):
-            return to_scalar(spla.solve_triangular(A, B, trans=trans, lower=lower))
-        yield check_grads, fun, npr.randn(D, D-1)
 
 def test_svd_wide_2d():
     def fun(x):
