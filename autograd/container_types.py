@@ -2,7 +2,7 @@ from functools import partial
 from .util import subvals
 from .tracer import Box, register_box, primitive
 from .vspace import VSpace, vspace, register_vspace
-from .core import defvjp, defvjp_is_zero, defvjp_argnum, SparseObject
+from .core import defvjp, defvjp_is_zero, defvjp_argnum, SparseObject, def_linear_wrt_arg
 
 @primitive
 def container_take(A, idx):
@@ -10,6 +10,7 @@ def container_take(A, idx):
 def grad_container_take(ans, vs, gvs, A, idx):
     return lambda g: container_untake(g, idx, vs)
 defvjp(container_take, grad_container_take)
+def_linear_wrt_arg(container_take)
 
 class SequenceBox(Box):
     __slots__ = []
@@ -45,6 +46,7 @@ def container_untake(x, idx, vs):
     return SparseObject(vs, mut_add)
 defvjp(container_untake, lambda ans, vs, gvs, x, idx, _:
        lambda g: container_take(g, idx))
+def_linear_wrt_arg(container_untake)
 defvjp_is_zero(container_untake, argnums=(1, 2))
 
 @primitive

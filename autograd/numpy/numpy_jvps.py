@@ -1,6 +1,22 @@
 from . import numpy_wrapper as anp
-from autograd.core import defjvp, defjvps, def_linear_wrt_arg, defjvp_argnum, def_multilinear
+from .numpy_vjps import untake, balanced_eq, match_complex, replace_zero
+from autograd.core import (defjvp, defjvps, def_linear_wrt_arg, defjvp_argnum,
+                           def_multilinear, vspace)
+from ..util import func
+from .numpy_boxes import ArrayBox
 
+def_linear_wrt_arg(func(ArrayBox.__getitem__))
+def_linear_wrt_arg(untake)
+
+def array_from_args_fwd_gradmaker(argnum, g, ans, gvs, vs, *args, **kwargs):
+    result = list()
+    for i, arg in enumerate(args):
+        if i == argnum:
+            result.append(g)
+        else:
+            result.append(vspace(arg).zeros())
+    return anp.array_from_args(*result)
+defjvp_argnum(anp.array_from_args, array_from_args_fwd_gradmaker)
 # ----- Functions that are constant w.r.t. continuous inputs -----
 defjvp(anp.nan_to_num, lambda g, ans, gvs, vs, x: anp.where(anp.isfinite(x), g, 0.))
 
@@ -15,14 +31,14 @@ defjvp(anp.add,        lambda g, ans, gvs, vs, x, y : broadcast(gvs, vs, g), arg
 defjvp(anp.subtract,   lambda g, ans, gvs, vs, x, y : broadcast(gvs, vs, g))
 defjvp(anp.subtract,   lambda g, ans, gvs, vs, x, y : broadcast(gvs, vs, -g), argnum=1)
 defjvp(anp.divide,     lambda g, ans, gvs, vs, x, y : - g * x / y**2, argnum=1)
-defjvp(anp.maximum,    lambda g, ans, gvs, vs, x, y : g * npg.balanced_eq(x, ans, y))
-defjvp(anp.maximum,    lambda g, ans, gvs, vs, x, y : g * npg.balanced_eq(y, ans, x), argnum=1)
-defjvp(anp.minimum,    lambda g, ans, gvs, vs, x, y : g * npg.balanced_eq(x, ans, y))
-defjvp(anp.minimum,    lambda g, ans, gvs, vs, x, y : g * npg.balanced_eq(y, ans, x), argnum=1)
-defjvp(anp.fmax,       lambda g, ans, gvs, vs, x, y : g * npg.balanced_eq(x, ans, y))
-defjvp(anp.fmax,       lambda g, ans, gvs, vs, x, y : g * npg.balanced_eq(y, ans, x), argnum=1)
-defjvp(anp.fmin,       lambda g, ans, gvs, vs, x, y : g * npg.balanced_eq(x, ans, y))
-defjvp(anp.fmin,       lambda g, ans, gvs, vs, x, y : g * npg.balanced_eq(y, ans, x), argnum=1)
+defjvp(anp.maximum,    lambda g, ans, gvs, vs, x, y : g * balanced_eq(x, ans, y))
+defjvp(anp.maximum,    lambda g, ans, gvs, vs, x, y : g * balanced_eq(y, ans, x), argnum=1)
+defjvp(anp.minimum,    lambda g, ans, gvs, vs, x, y : g * balanced_eq(x, ans, y))
+defjvp(anp.minimum,    lambda g, ans, gvs, vs, x, y : g * balanced_eq(y, ans, x), argnum=1)
+defjvp(anp.fmax,       lambda g, ans, gvs, vs, x, y : g * balanced_eq(x, ans, y))
+defjvp(anp.fmax,       lambda g, ans, gvs, vs, x, y : g * balanced_eq(y, ans, x), argnum=1)
+defjvp(anp.fmin,       lambda g, ans, gvs, vs, x, y : g * balanced_eq(x, ans, y))
+defjvp(anp.fmin,       lambda g, ans, gvs, vs, x, y : g * balanced_eq(y, ans, x), argnum=1)
 defjvp(anp.logaddexp,  lambda g, ans, gvs, vs, x, y : g * anp.exp(x-ans))
 defjvp(anp.logaddexp,  lambda g, ans, gvs, vs, x, y : g * anp.exp(y-ans), argnum=1)
 defjvp(anp.logaddexp2, lambda g, ans, gvs, vs, x, y : g * 2**(x-ans))
@@ -33,7 +49,7 @@ defjvp(anp.remainder,  lambda g, ans, gvs, vs, x, y : broadcast(gvs, vs, g))
 defjvp(anp.mod,        lambda g, ans, gvs, vs, x, y : -g * anp.floor(x/y), argnum=1)
 defjvp(anp.remainder,  lambda g, ans, gvs, vs, x, y : -g * anp.floor(x/y), argnum=1)
 defjvp(anp.power,      lambda g, ans, gvs, vs, x, y : g * y * x ** anp.where(y, y - 1, 1.))
-defjvp(anp.power,      lambda g, ans, gvs, vs, x, y : g * anp.log(npg.replace_zero(x, 1.)) * x ** y, argnum=1)
+defjvp(anp.power,      lambda g, ans, gvs, vs, x, y : g * anp.log(replace_zero(x, 1.)) * x ** y, argnum=1)
 
 # ----- Simple grads (linear) -----
 def_linear_wrt_arg(anp.negative)
@@ -61,11 +77,12 @@ def_linear_wrt_arg(anp.triu)
 def_linear_wrt_arg(anp.tril)
 def_linear_wrt_arg(anp.swapaxes)
 def_linear_wrt_arg(anp.rollaxis)
+def_linear_wrt_arg(anp.moveaxis)
 def_multilinear(anp.cross)
 
 # ----- Simple grads -----
 defjvp(anp.abs, 
-    lambda g, ans, gvs, vs, x : anp.real(g * npg.replace_zero(anp.conj(x), 0.)) / npg.replace_zero(ans, 1.))
+    lambda g, ans, gvs, vs, x : anp.real(g * replace_zero(anp.conj(x), 0.)) / replace_zero(ans, 1.))
 defjvp(anp.fabs,        lambda g, ans, gvs, vs, x : anp.sign(x) * g)  # fabs doesn't take complex numbers.
 defjvp(anp.absolute,    lambda g, ans, gvs, vs, x : anp.real(g * anp.conj(x)) / ans)
 defjvp(anp.reciprocal,  lambda g, ans, gvs, vs, x : - g / x**2)
@@ -92,11 +109,11 @@ defjvp(anp.square,      lambda g, ans, gvs, vs, x : g * 2 * x)
 defjvp(anp.sqrt,        lambda g, ans, gvs, vs, x : g * 0.5 * x**-0.5)
 defjvp(anp.sinc,        lambda g, ans, gvs, vs, x : g * (anp.cos(anp.pi*x)*anp.pi*x - anp.sin(anp.pi*x))/(anp.pi*x**2))
 defjvp(anp.clip,        lambda g, ans, gvs, vs, x, a_min, a_max : g * anp.logical_and(ans != a_min, ans != a_max))
-defjvp(anp.real_if_close, lambda g, ans, gvs, vs, x : npg.match_complex(vs, g))
+defjvp(anp.real_if_close, lambda g, ans, gvs, vs, x : match_complex(vs, g))
 defjvp(anp.real,   lambda g, ans, gvs, vs, x   : anp.real(g))
-defjvp(anp.imag,   lambda g, ans, gvs, vs, x   : npg.match_complex(vs, -1j * g))
+defjvp(anp.imag,   lambda g, ans, gvs, vs, x   : match_complex(vs, -1j * g))
 defjvp(anp.conj,   lambda g, ans, gvs, vs, x   : anp.conj(g))
-defjvp(anp.angle,  lambda g, ans, gvs, vs, x   : npg.match_complex(vs, g * anp.conj(x * 1j) / anp.abs(x)**2))
+defjvp(anp.angle,  lambda g, ans, gvs, vs, x   : match_complex(vs, g * anp.conj(x * 1j) / anp.abs(x)**2))
 defjvp(anp.where,  lambda g, ans, gvs, vs, c, x=None, y=None : anp.where(c, g, anp.zeros(anp.shape(g))), argnum=1)
 defjvp(anp.where,  lambda g, ans, gvs, vs, c, x=None, y=None : anp.where(c, anp.zeros(g.shape), g), argnum=2)
 
@@ -169,13 +186,13 @@ def_multilinear(anp.dot)
 def_multilinear(anp.tensordot)
 def_multilinear(anp.outer)
 
-def fwd_grad_concatenate_args(argnum, g, ans, gvs, vs, axis_args, kwargs):
+def fwd_grad_concatenate_args(argnum, g, ans, gvs, vs, *axis_args, **kwargs):
     result = []
     for i in range(1, len(axis_args)):
         if i == argnum:
             result.append(g)
         else:
-            result.append(anp.zeros_like(getval(axis_args[i])))
+            result.append(vspace(axis_args[i]).zeros())
     return anp.concatenate_args(axis_args[0], *result)
 defjvp_argnum(anp.concatenate_args, fwd_grad_concatenate_args)
 
