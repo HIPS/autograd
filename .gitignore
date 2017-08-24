@@ -11,3 +11,10 @@ MANIFEST
 *.c
 .asv/
 autograd.egg-info/
+
+# Unit test / coverage reports
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*,cover

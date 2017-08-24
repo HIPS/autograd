@@ -8,6 +8,11 @@ from autograd.convenience_wrappers import grad
 from autograd.core import vspace, vspace_flatten, getval
 
 EPS, RTOL, ATOL = 1e-4, 1e-4, 1e-6
+COVERAGE_CHECKING = False
+
+if COVERAGE_CHECKING:
+    import coverage
+    cover = coverage.Coverage()
 
 def nd(f, *args):
     unary_f = lambda x : f(*x)
@@ -48,12 +53,18 @@ def check_equivalent(A, B, rtol=RTOL, atol=ATOL):
             A_flat - B_flat, A_flat, B_flat)
 
 def check_grads(fun, *args):
+    if COVERAGE_CHECKING:
+        cover.load()
+        cover.start()
     if not args:
         raise Exception("No args given")
     exact = tuple([grad(fun, i)(*args) for i in range(len(args))])
     args = [float(x) if isinstance(x, int) else x for x in args]
     numeric = nd(fun, *args)
     check_equivalent(exact, numeric)
+    if COVERAGE_CHECKING:
+        cover.stop()
+        cover.save()
 
 def to_scalar(x):
     if isinstance(getval(x), list)  or isinstance(getval(x), tuple):
