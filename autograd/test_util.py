@@ -66,6 +66,10 @@ def check_jvp(f, argnums=None, order=2):
         v = vspace(f_unary(x)).randn()
         f_unary_vjp = lambda x, v: make_vjp(f_unary, x)[0](v)
         check_jvp(f_unary_vjp, order=order-1)(x, v)
+
+        u = vspace(x).randn()
+        f_unary_jvp = lambda x, v: make_jvp(f_unary, x)(v)
+        check_vjp(f_unary_jvp, order=order-1)(x, u)
     return _check_jvp
 
 # backwards compatibility

@@ -24,7 +24,7 @@ class ArrayVSpace(VSpace):
         return np.array(np.random.randn(*self.shape)).astype(self.dtype)
 
     def _inner_prod(self, x, y):
-        return np.dot(x.ravel(), y.ravel())
+        return np.dot(np.ravel(x), np.ravel(y))
 
 class ComplexArrayVSpace(ArrayVSpace):
     iscomplex = True
@@ -48,7 +48,7 @@ class ComplexArrayVSpace(ArrayVSpace):
                 + 1.0j * np.array(np.random.randn(*self.shape)).astype(self.dtype))
 
     def _inner_prod(self, x, y):
-        return np.real(np.dot(np.conj(x.ravel()), y.ravel()))
+        return np.real(np.dot(np.conj(np.ravel(x)), np.ravel(y)))
 
     def _covector(self, x):
         return np.conj(x)
