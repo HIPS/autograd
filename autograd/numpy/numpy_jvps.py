@@ -171,7 +171,8 @@ def fwd_grad_chooser(g, ans, gvs, vs, x, axis=None, keepdims=False):
             for ax in sorted(axis):
                 ans = anp.expand_dims(ans, ax)
     chosen_locations = x == ans
-    return anp.sum(g * chosen_locations, axis=axis, keepdims=keepdims)
+    return (anp.sum((g * chosen_locations), axis=axis, keepdims=keepdims) /
+            anp.sum(chosen_locations, axis=axis, keepdims=keepdims))
 
 defjvp(anp.max, fwd_grad_chooser)
 defjvp(anp.min, fwd_grad_chooser)
