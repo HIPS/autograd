@@ -461,7 +461,7 @@ def match_complex(vs, x):
         return x
 
 def unbroadcast(vs, gvs, result, broadcast_idx=0):
-    while anp.ndim(result) > len(vs.shape):
+    while anp.ndim(result) > vs.ndim:
         result = anp.sum(result, axis=broadcast_idx)
     for axis, size in enumerate(vs.shape):
         if size == 1:
