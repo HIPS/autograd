@@ -15,8 +15,8 @@ def make_vjp(fun, x):
     return vjp, end_value
 
 def backward_pass(g, end_node):
+    assert_vspace_match(g, end_node.vspace)
     outgrads = {end_node : (g, False)}
-    assert_vspace_match(outgrads[end_node][0], end_node.vspace)
     for node in toposort(end_node):
         cur_outgrad = outgrads.pop(node)
         for parent, vjp in node.parents_and_vjps:
