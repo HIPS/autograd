@@ -50,7 +50,7 @@ def check_jvp_unary(f, x):
     y = f(x)
     jvp = make_jvp(f, x)
     jvp_numeric = make_numerical_jvp(f, x)
-    x_vs, y_vs = vspace(x), vspace(y)
+    x_vs = vspace(x)
     x_v = x_vs.randn()
 
     check_equivalent(jvp(x_v), jvp_numeric(x_v))
