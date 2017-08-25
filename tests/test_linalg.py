@@ -11,7 +11,8 @@ from functools import partial
 
 npr.seed(1)
 
-def check_symmetric_matrix_grads(fun, *args, fwd=False):
+def check_symmetric_matrix_grads(fun, *args, **kwargs):
+    fwd = kwargs.pop('fwd', True)
     def symmetrize(A):
         L = np.tril(A)
         return (L + T(L))/2.

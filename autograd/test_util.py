@@ -73,7 +73,8 @@ def check_jvp(f, argnums=None, order=2):
     return _check_jvp
 
 # backwards compatibility
-def check_grads(f, *args, fwd=True): 
+def check_grads(f, *args, **kwargs):
+    fwd = kwargs.pop('fwd', True)
     check_vjp(f, order=1)(*args)
     if fwd:
         check_jvp(f, order=1)(*args)
@@ -91,7 +92,7 @@ def check_equivalent(x, y):
 
 def combo_check(fun, argnums, *args, **kwargs):
     # Tests all combinations of args given.
-    fwd = kwargs.pop('fwd', True) 
+    fwd = kwargs.pop('fwd', True)
     args = list(args)
     kwarg_key_vals = [[(key, val) for val in kwargs[key]] for key in kwargs]
     num_args = len(args)
