@@ -83,7 +83,7 @@ def_linear_wrt_arg(anp.moveaxis)
 def_multilinear(anp.cross)
 
 # ----- Simple grads -----
-defjvp(anp.abs, 
+defjvp(anp.abs,
     lambda g, ans, gvs, vs, x : anp.real(g * replace_zero(anp.conj(x), 0.)) / replace_zero(ans, 1.))
 defjvp(anp.fabs,        lambda g, ans, gvs, vs, x : anp.sign(x) * g)  # fabs doesn't take complex numbers.
 defjvp(anp.absolute,    lambda g, ans, gvs, vs, x : anp.real(g * anp.conj(x)) / ans)
