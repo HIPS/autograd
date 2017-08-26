@@ -26,6 +26,20 @@ class ArrayVSpace(VSpace):
     def _inner_prod(self, x, y):
         return np.dot(np.ravel(x), np.ravel(y))
 
+    def _product(self, other_vspace):
+        product_vspace = self.__new__(self.__class__)
+        product_vspace.shape = self.shape + other_vspace.shape
+        product_vspace.dtype = np.promote_types(self.dtype, other_vspace.dtype)
+        return product_vspace
+
+    def _contract(self, other_vspace):
+        ndim = other_vspace.ndim
+        if not self.shape[-ndim:] == other_vspace.shape[:ndim]: raise ValueError
+        contraction_vspace = self.__new__(self.__class__)
+        contraction_vspace.shape = self.shape[:-ndim] + other_vspace.shape[ndim:]
+        contraction_vspace.dtype = np.promote_types(self.dtype, other_vspace.dtype)
+        return contraction_vspace
+
 class ComplexArrayVSpace(ArrayVSpace):
     iscomplex = True
 
