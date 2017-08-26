@@ -1,8 +1,7 @@
 from collections import defaultdict
-from .tracer import (trace, primitive, Node, toposort)
-from .vspace import vspace, assert_vspace_match, register_vspace, VSpace
-from .util import unary_to_nary, func, subval
-from .core import add_outgrads
+from .tracer import trace, primitive, Node, toposort
+from .vspace import vspace
+from .core import add_outgrads, primitive_vjps
 
 def make_tjp(fun, x):
     start_node = TJPNode.new_root(x)
@@ -18,7 +17,7 @@ def tjp_backward_pass(G, end_node):
     assert_vspace_compatible(G, end_node.vspace)
     outgrads = {end_node : (G, False)}
     for node in toposort(end_node):
-        cur_outgrad = outgrad.pop(node)
+        cur_outgrad = outgrads.pop(node)
         for parent, tjp in node.parents_and_tjps:
             outgrad = tjp(cur_outgrad[0])
             assert_vspace_compatible(outgrad, parent.vspace)
@@ -40,11 +39,10 @@ class TJPNode(Node):
         self.parents = []
         self.parents_and_tjps = []
 
-
 primitive_tjps = defaultdict(dict)
 
 def primitive_tjp(fun, argnum, ans, in_vs, out_vs, args, kwargs):
-    return primitive_tjps[fun][argnum](ans, in_vs, out_vs, *args, **kwargs)
+    return primitive_tjps[fun][argnum](ans, in_vs, out_vs, args, kwargs)
 
 def deftjp(fun, tjpmaker, argnum=0):
     def tjp_fixed_args(ans, vs, gvs, args, kwargs):
@@ -55,5 +53,17 @@ def deftjps(fun, tjpmaker, argnums):
     for argnum in argnums:
         deftjp(fun, partial(tjpmaker, argnum), argnum)
 
+def vjps_are_tjps(fun):
+    primitive_tjps[fun] = primitive_vjps[fun]
+
 def assert_vspace_compatible(x, vs):
-    assert vspace(x).shape[-vs.ndim:] == vs.shape
+    assert vs.ndim == 0 or vspace(x).shape[-vs.ndim:] == vs.shape
+
+# convenience-wrapper stuff
+
+from .util import unary_to_nary
+
+@unary_to_nary
+def jacobian(fun, x):
+    tjp, ans = make_tjp(fun, x)
+    return tjp(vspace(ans)._kronecker_tensor())

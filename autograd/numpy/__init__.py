@@ -4,6 +4,7 @@ from . import numpy_boxes
 from . import numpy_vspaces
 from . import numpy_vjps
 from . import numpy_jvps
+from . import numpy_tjps
 from . import linalg
 from . import fft
 from . import random
