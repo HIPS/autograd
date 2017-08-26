@@ -714,16 +714,6 @@ def test_expand_dims():
     check_grads(fun, A)
     check_grads(d_fun, A)
 
-def test_array_creation():
-    # Will always pass, but will take ages (like a minute) if the complexity of
-    # array creation is O(N^2)
-    N = 30000
-    def fun(x):
-        arr = [x for i in range(N)]
-        return np.sum(np.array(arr))
-    grad(fun)(1.0)
-test_array_creation()
-
 def test_tensordot_kwargs_by_position():
     def fun(x):
         return np.tensordot(x * np.ones((2,2)),
