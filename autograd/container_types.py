@@ -69,13 +69,13 @@ defvjp_argnum(sequence_extend_left, grad_sequence_extend_left)
 @primitive
 def make_sequence(seq_type, *args):
     return seq_type(args)
-defvjp_argnum(make_sequence, lambda argnum, seq_type, *args: lambda g: g[argnum - 1])
-def fwd_grad_make_sequence(argnum, g, ans, gvs, vs, *args, **kwargs):
-    typ, elts = args[0], args[1:]
-    zeros = list(vspace(elt).zeros() for elt in elts)
-    zeros[argnum - 1] = g
-    return make_sequence(typ, *zeros)
+defvjp_argnum(make_sequence, lambda argnum, *args: lambda g: g[argnum - 1])
+
+def fwd_grad_make_sequence(argnum, g, ans, gvs, vs, seq_type, *args, **kwargs):
+    return container_untake(g, argnum-1, vs)
+
 defjvp_argnum(make_sequence, fwd_grad_make_sequence)
+
 make_tuple = partial(make_sequence, tuple)
 make_list  = partial(make_sequence, list)
 

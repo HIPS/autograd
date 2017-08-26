@@ -8,15 +8,8 @@ from .numpy_boxes import ArrayBox
 def_linear_wrt_arg(func(ArrayBox.__getitem__))
 def_linear_wrt_arg(untake)
 
-def array_from_args_fwd_gradmaker(argnum, g, ans, gvs, vs, *args, **kwargs):
-    result = list()
-    for i, arg in enumerate(args):
-        if i == argnum:
-            result.append(g)
-        else:
-            result.append(vspace(arg).zeros())
-    return anp.array_from_args(*result)
-defjvp_argnum(anp.array_from_args, array_from_args_fwd_gradmaker)
+defjvp_argnum(anp.array_from_args, lambda argnum, g, ans, gvs, vs, *args: untake(g, argnum, vs))
+
 # ----- Functions that are constant w.r.t. continuous inputs -----
 defjvp(anp.nan_to_num, lambda g, ans, gvs, vs, x: anp.where(anp.isfinite(x), g, 0.))
 
