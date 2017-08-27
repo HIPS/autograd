@@ -87,17 +87,10 @@ vjps_are_tjps(anp.conjugate)
 # ----- Trickier grads -----
 
 def tjp_dot_arg0(ans, vs, out_vs, A, B):
-    if anp.ndim(B) == 0:
-        # B didn't add or remove any dimensions, just scalar multiplication
-        return lambda G: G * B
-    elif anp.ndim(B) != 0 and anp.ndim(A) == 0:
-        # B added dimensions but didn't remove any, so we contract over them
-        return lambda G: anp.tensordot(G, B, anp.ndim(B))
-    elif anp.ndim(B) == 1 and anp.ndim(A) != 0:
-        # B took away a dimension and added no new ones, so we broadcast
-        return lambda G: anp.expand_dims(G, -1) * B
+    if anp.ndim(B) == 0 or anp.ndim(A) == 0 or anp.ndim(B) == 1:
+        contract_dims = max(0, anp.ndim(B) - (anp.ndim(A) != 0))
+        return lambda G: anp.tensordot(G, B, contract_dims)
     else:
-        # B added and removed dimensions
         return lambda G: anp.tensordot(G, anp.swapaxes(B, -1, -2), anp.ndim(B) - 1)
 deftjp(anp.dot, tjp_dot_arg0)
 
