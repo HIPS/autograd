@@ -43,7 +43,6 @@ class ArrayVSpace(VSpace):
     def _kronecker_tensor(self):
         return np.reshape(np.eye(self.size), self.shape + self.shape)
 
-
 class ComplexArrayVSpace(ArrayVSpace):
     iscomplex = True
 
