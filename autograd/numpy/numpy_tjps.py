@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 import numpy as onp
+from functools import partial
 from ..util import func  # TODO(mattjj): should this import use autograd.util, not ..util?
 from autograd.tracer import primitive, getval
 from autograd.vspace import vspace
@@ -87,7 +88,7 @@ vjps_are_tjps(anp.conjugate)
 # ----- Trickier grads -----
 
 def tjp_dot_arg0(ans, vs, out_vs, A, B):
-    if anp.ndim(B) == 0 or anp.ndim(A) == 0 or anp.ndim(B) == 1:
+    if anp.ndim(B) == 0 or anp.ndim(B) == 1 or anp.ndim(A) == 0:
         contract_dims = max(0, anp.ndim(B) - (anp.ndim(A) != 0))
         return lambda G: anp.tensordot(G, B, contract_dims)
     else:
@@ -95,29 +96,15 @@ def tjp_dot_arg0(ans, vs, out_vs, A, B):
 deftjp(anp.dot, tjp_dot_arg0)
 
 def tjp_dot_arg1(ans, vs, out_vs, A, B):
-    if anp.ndim(A) == 0:
-        # A didn't add or remove any dimensions, just scalar multiplication
-        return lambda G: A * G
-    elif anp.ndim(A) != 0 and anp.ndim(B) == 0:
-        # A added dimensions but didn't remove any, so we contract over them
-        return lambda G: anp.tensordot(G, A, anp.ndim(A))
-    elif anp.ndim(A) == 1 and anp.ndim(B) != 0:
-        # A took away a dimension and added no new ones, so we broadcast, though
-        # when B.ndim == 1 the scalar case is special
-        if anp.ndim(B) == 1:
-            return lambda G: anp.expand_dims(G, -1) * A
-        else:
-            return lambda G: anp.expand_dims(G, -2) * anp.expand_dims(A, -1)
+    needs_transpose = anp.ndim(B) > 1 and anp.ndim(A) != 0
+    swap = (lambda x: anp.swapaxes(x, -1, -2)) if needs_transpose else (lambda x: x)
+    if anp.ndim(A) == 0 or anp.ndim(A) == 1 or anp.ndim(B) == 0:
+        contract_dims = max(0, anp.ndim(A) - (anp.ndim(B) != 0))
+        return lambda G: swap(anp.tensordot(G, A, contract_dims))
     else:
-        # A added and removed dimensions
-        if anp.ndim(B) == 1:
-            return lambda G: anp.tensordot(
-                G, A, [range(-anp.ndim(A) - anp.ndim(B) + 2, -anp.ndim(B) + 1),
-                       range(anp.ndim(A) - 1)])
-        else:
-            return lambda G: anp.swapaxes(anp.tensordot(
-                G, A, [range(-anp.ndim(A) - anp.ndim(B) + 2, -anp.ndim(B) + 1),
-                       range(anp.ndim(A) - 1)]), -1, -2)
+        return lambda G: swap(anp.tensordot(
+            G, A, [range(-anp.ndim(A) - anp.ndim(B) + 2, -anp.ndim(B) + 1),
+                   range(anp.ndim(A) - 1)]))
 deftjp(anp.dot, tjp_dot_arg1, argnum=1)
 
 def tjp_transpose(ans, in_vs, out_vs, x, axes=None):
