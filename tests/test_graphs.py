@@ -81,7 +81,7 @@ def test_complex_mutating_outgrad_from_indexing():
         c = b[0] + 1.5
         d = a + b
         e = d + c
-        return e
+        return np.real(e)
 
     A = npr.randn(5)
     check_grads(fun, A)

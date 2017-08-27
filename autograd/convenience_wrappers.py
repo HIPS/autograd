@@ -22,7 +22,10 @@ def grad(fun, x):
     positional argument number `argnum`. The returned function takes the same
     arguments as `fun`, but returns the gradient instead. The function `fun`
     should be scalar-valued. The gradient has the same type as the argument."""
-    vjp, ans = _make_vjp(fun, safe_type(x))
+    vjp, ans = _make_vjp(fun, x)
+    if vspace(ans).iscomplex:
+        raise TypeError("Grad only applies to real-output functions. "
+                        "For complex functions, try holomorphic_grad.")
     return vjp(vspace(ans).ones())
 
 @unary_to_nary
@@ -44,6 +47,12 @@ def jacobian(fun, x):
     jacobian_shape = ans_vspace.shape + vspace(x).shape
     grads = map(vjp, ans_vspace.standard_basis())
     return np.reshape(np.stack(grads), jacobian_shape)
+
+@unary_to_nary
+def holomorphic_grad(fun, x):
+    if not vspace(x).iscomplex:
+        warnings.warn("Input to holomorphic grad is not complex")
+    return grad(lambda x: np.real(fun(x)))(x)
 
 def grad_named(fun, argname):
     '''Takes gradients with respect to a named argument.
@@ -205,10 +214,3 @@ def checkpoint(fun):
     wrapped = primitive(fun)
     defvjp_argnum(wrapped, wrapped_grad)
     return wrapped
-
-def safe_type(value):
-    if isinstance(value, int):
-        warnings.warn("Casting int to float to handle differentiation.")
-        return float(value)
-    else:
-        return value

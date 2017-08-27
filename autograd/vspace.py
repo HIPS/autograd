@@ -44,7 +44,9 @@ def vspace(value):
             except AttributeError:
                 return vspace(getval(value))
         else:
-            raise TypeError("Can't find vspace for type {}".format(type(value)))
+            raise TypeError("Can't find vector space for value {} of type {}. "
+                            "Valid types are {}".format(
+                                value, type(value), vspace_mappings.keys()))
 
 vspace_mappings = {}
 def register_vspace(vspace_maker, value_type):
