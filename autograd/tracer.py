@@ -2,15 +2,46 @@ import warnings
 from contextlib import contextmanager
 from .util import subvals, wraps
 
-def trace(start_node, fun, x):
-    with trace_stack.new_trace() as t:
-        start_box = new_box(x, t, start_node)
-        end_box = fun(start_box)
-        if isbox(end_box) and end_box._trace == start_box._trace:
-            return end_box._value, end_box._node
+def trace(start_nodes, fun, x):
+    with trace_stack.new_trace() as trace:
+        start_boxes = box(x, start_nodes, trace)
+        end_boxes = fun(start_boxes)
+        return unbox(end_boxes, trace)
+
+def box(xs, nodes, trace):
+    return umap(lambda x, node: new_box(x, trace, node), xs, nodes)
+
+def unbox(xs, trace):
+    def unbox_noncontainer(x):
+        if isbox(x) and x._trace == trace:
+            return NotATuple((x._value, x._node))
         else:
             warnings.warn("Output seems independent of input.")
-            return end_box, None
+            return NotATuple((x, None))
+
+    return uunzip(umap(unbox_noncontainer, xs))
+
+class NotATuple(tuple): pass
+
+def umap(f, *args):
+    xs = args[0]
+    t = type(xs)
+    if t is tuple:
+        return tuple([umap(f, *args) for args in zip(*args)])
+    else:
+        return f(*args)
+
+def uunzip(xs):
+    t = type(xs)
+    if t is tuple:
+        return tuple(zip(*map(uunzip, xs)))
+    else:
+        return xs
+
+def uflatten(xs):
+    L = []
+    umap(L.append, xs)
+    return L
 
 class Node(object):
     __slots__ = []
@@ -93,9 +124,9 @@ class Box(object):
         return "Autograd {0} with value {1}".format(
             type(self).__name__, str(self._value))
 
-def toposort(end_node):
+def toposort(end_nodes):
     child_counts = {}
-    stack = [end_node]
+    stack = list(end_nodes)
     while stack:
         node = stack.pop()
         if node in child_counts:
@@ -104,7 +135,7 @@ def toposort(end_node):
             child_counts[node] = 1
             stack.extend(node.parents)
 
-    childless_nodes = [end_node]
+    childless_nodes = list(end_nodes)
     while childless_nodes:
         node = childless_nodes.pop()
         yield node

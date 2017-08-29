@@ -1,38 +1,44 @@
 from collections import defaultdict
 from functools import partial
 from .tracer import (trace, primitive, notrace_primitive, Node, Box,
-                     register_box, toposort)
+                     register_box, toposort, umap, uflatten)
 from .vspace import vspace, assert_vspace_match, register_vspace, VSpace
 from .util import unary_to_nary, func, subval
 
 def make_vjp(fun, x):
-    start_node = VJPNode.new_root(x)
-    end_value, end_node =  trace(start_node, fun, x)
-    if end_node is None:
-        def vjp(g): return vspace(x).zeros()
-    else:
-        def vjp(g): return backward_pass(g, end_node)
-    return vjp, end_value
+    start_nodes = umap(VJPNode.new_root, x)
+    end_values, end_nodes =  trace(start_nodes, fun, x)
+    def vjp(g): return backward_pass(g, start_nodes, end_nodes)
+    return vjp, end_values
 
-def backward_pass(g, end_node):
-    assert_vspace_match(g, end_node.vspace)
-    outgrads = {end_node : (g, False)}
-    for node in toposort(end_node):
-        cur_outgrad = outgrads.pop(node)
+def backward_pass(gs, start_nodes, end_nodes):
+    outgrads = {}
+    for node, g in zip(uflatten(end_nodes), uflatten(gs)):
+        if node:
+            assert_vspace_match(g, node.vspace)
+            outgrads[node] = (g, False)
+
+    for node in toposort(filter(bool, uflatten(end_nodes))):
+        cur_outgrad = outgrads[node]  # not able to free memory yet
         for parent, vjp in node.parents_and_vjps:
             outgrad = vjp(cur_outgrad[0])
             assert_vspace_match(outgrad, parent.vspace)
             outgrads[parent] = add_outgrads(parent.vspace, outgrads.get(parent), outgrad)
-    return cur_outgrad[0]
+
+    def instantiate_outgrad(node):
+        try:
+            return outgrads[node][0]
+        except KeyError:
+            return node.vspace.zeros()
+
+    return umap(instantiate_outgrad, start_nodes)
 
 def make_jvp(fun, x):
     def jvp(g):
-        start_node = JVPNode.new_root(x, g)
-        end_value, end_node = trace(start_node, fun, x)
-        if end_node is None:
-            return vspace(end_value).zeros()
-        else:
-            return end_node.g
+        start_nodes = umap(JVPNode.new_root, x, g)
+        end_values, end_nodes = trace(start_nodes, fun, x)
+        return umap(lambda node, value: node.g if node else vspace(value).zeros(),
+                    end_nodes, end_values)
     return jvp
 
 class VJPNode(Node):

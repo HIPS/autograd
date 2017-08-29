@@ -19,7 +19,7 @@ class SequenceBox(Box):
     def __len__(self): return len(self._value)
     def __add__(self, other): return sequence_extend_right(self, *other)
     def __radd__(self, other): return sequence_extend_left(self, *other)
-register_box(SequenceBox, tuple)
+# register_box(SequenceBox, tuple)
 register_box(SequenceBox, list)
 
 class DictBox(Box):
