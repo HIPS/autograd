@@ -2,7 +2,7 @@ import autograd.numpy as np
 from autograd.test_util import scalar_close
 from autograd import grad
 from autograd.tracer import primitive
-from autograd.misc import const_graph
+from autograd.misc import const_graph, flatten
 
 def test_const_graph():
     L = []
@@ -51,3 +51,11 @@ def test_const_graph_args():
     assert scalar_close(foo(1., 2., 3.),
                         foo_wrapped(2.))
     assert L == ['x', 'y', 'z', 'y']
+
+def test_flatten():
+    r = np.random.randn
+    x = (1.0, r(2,3), [r(1,4), {'x': 2.0, 'y': r(4,2)}])
+    x_flat, unflatten = flatten(x)
+    assert x_flat.shape == (20,)
+    assert x_flat[0] == 1.0
+    assert np.all(x_flat == flatten(unflatten(x_flat))[0])

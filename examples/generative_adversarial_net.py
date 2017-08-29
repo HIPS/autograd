@@ -8,7 +8,7 @@ from __future__ import print_function
 import autograd.numpy as np
 import autograd.numpy.random as npr
 from autograd import multigrad
-from autograd.util import flatten
+from autograd.misc import flatten
 
 from data import load_mnist, save_images
 

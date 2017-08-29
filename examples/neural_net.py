@@ -5,8 +5,8 @@ import autograd.numpy as np
 import autograd.numpy.random as npr
 from autograd.scipy.misc import logsumexp
 from autograd import grad
-from autograd.util import flatten
-from autograd.optimizers import adam
+from autograd.misc import flatten
+from autograd.misc.optimizers import adam
 from data import load_mnist
 
 
