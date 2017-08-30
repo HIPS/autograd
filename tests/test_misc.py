@@ -59,3 +59,8 @@ def test_flatten():
     assert x_flat.shape == (20,)
     assert x_flat[0] == 1.0
     assert np.all(x_flat == flatten(unflatten(x_flat))[0])
+
+    y = (1.0, 2.0, [3.0, {'x': 2.0, 'y': 4.0}])
+    y_flat, unflatten = flatten(y)
+    assert y_flat.shape == (5,)
+    assert y == unflatten(y_flat)
