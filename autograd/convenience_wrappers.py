@@ -26,6 +26,16 @@ def grad(fun, x):
     if vspace(ans).iscomplex:
         raise TypeError("Grad only applies to real-output functions. "
                         "For complex functions, try holomorphic_grad.")
+    if not vspace(ans).size == 1:
+        raise TypeError("Grad only applies to scalar-output functions. "
+                        "Try jacobian or elementwise_grad.")
+    return vjp(vspace(ans).ones())
+
+@unary_to_nary
+def elementwise_grad(fun, x):
+    vjp, ans = _make_vjp(fun, x)
+    if vspace(ans).iscomplex:
+        raise TypeError("Elementwise_grad only applies to real-output functions.")
     return vjp(vspace(ans).ones())
 
 @unary_to_nary
@@ -51,7 +61,7 @@ def jacobian(fun, x):
 @unary_to_nary
 def holomorphic_grad(fun, x):
     if not vspace(x).iscomplex:
-        warnings.warn("Input to holomorphic grad is not complex")
+        warnings.warn("Input to holomorphic_grad is not complex")
     return grad(lambda x: np.real(fun(x)))(x)
 
 def grad_named(fun, argname):
@@ -81,8 +91,6 @@ def multigrad(fun, argnums=[0]):
     def multigrad_fun(*args, **kwargs):
         return double_val_fun(*args, **kwargs)[1]
     return multigrad_fun
-
-elementwise_grad = grad  # backward compatibility
 
 @unary_to_nary
 def hessian(fun, x):
