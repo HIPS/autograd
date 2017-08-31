@@ -7,7 +7,8 @@ setup(
     author='Dougal Maclaurin and David Duvenaud and Matthew Johnson',
     author_email="maclaurin@physics.harvard.edu, duvenaud@cs.toronto.edu, mattjj@csail.mit.edu",
     packages=['autograd', 'autograd.numpy', 'autograd.scipy', 'autograd.scipy.stats'],
-    install_requires=['numpy>=1.12', 'future>=0.15.2'],
+    # opt_einsum lets us use numpy=1.11 rather than numpy>=1.12
+    install_requires=['numpy>=1.11', 'future>=0.15.2', 'opt_einsum'],
     keywords=['Automatic differentiation', 'backpropagation', 'gradients',
               'machine learning', 'optimization', 'neural networks',
               'Python', 'Numpy', 'Scipy'],
