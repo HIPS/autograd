@@ -293,67 +293,57 @@ def grad_matmul(argnum, ans, vs, gvs, A, B):
         return grad_einsum(argnum + 1, ans, vs, gvs, ("...ij,...jk->...ik", A, B), None)
 defvjps(anp.matmul, grad_matmul, [0, 1])
 
-def grad_dot(argnum, ans, vs, gvs, A, B):
-    # TODO: rewrite to allow garbage collection of A or B (depending on argnum)
-    if argnum == 0:
-        return dot_0_adjoint(vs, gvs, B)
-    else:
-        return dot_1_adjoint(vs, gvs, A)
-    A_ndim, B_ndim = anp.ndim(A), anp.ndim(B)
-    if A_ndim == 0 or B_ndim == 0:
-        axes = ([], [])
-    else:
-        axes = ([A_ndim - 1], [max(0, B_ndim - 2)])
-    return grad_tensordot(argnum, ans, vs, gvs, A, B, axes=axes)
-defvjps(anp.dot, grad_dot, [0, 1])
-
-def dot_0_adjoint(A_vs, ans_vs, B):
+@primitive
+def dot_0_adjoint(B, g, A_vs, ans_vs):
     # Returns the adjoint of the operator
     # A |--> np.dot(A, B)
     A_ndim, B_ndim = A_vs.ndim, anp.ndim(B)
 
     if B_ndim == 0 or ans_vs.ndim == 0:
-        return lambda g: g * B
+        return g * B
     elif A_ndim == 0:
-        return lambda g: anp.dot(anp.ravel(g), anp.ravel(B))
+        return anp.dot(anp.ravel(g), anp.ravel(B))
     elif B_ndim == 1:
-        return lambda g: g[..., anp.newaxis] * B
+        return g[..., anp.newaxis] * B
     else:
         B = anp.swapaxes(B, B_ndim-2, B_ndim-1)
         if B_ndim > 2:
             B = anp.reshape(B, (-1, anp.shape(B)[-1]))
-        def transposed(g):
-            if B_ndim > 2:
-                g = anp.reshape(g, A_vs.shape[:-1] + (-1,))
-            return anp.dot(g, B)
-        return transposed
+            g = anp.reshape(g, A_vs.shape[:-1] + (-1,))
+        return anp.dot(g, B)
 
-def dot_1_adjoint(B_vs, ans_vs, A):
+@primitive
+def dot_1_adjoint(A, g, B_vs, ans_vs):
     # Returns the adjoint of the operator
     # B |--> np.dot(A, B)
     A_ndim, B_ndim = anp.ndim(A), B_vs.ndim
 
     if A_ndim == 0 or ans_vs.ndim == 0:
-        return lambda g: A * g
+        return A * g
     elif B_ndim == 0:
-        return lambda g: anp.dot(anp.ravel(A), anp.ravel(g))
+        return anp.dot(anp.ravel(A), anp.ravel(g))
     elif A_ndim == 1:
-        return lambda g: A[:, anp.newaxis] * g[..., anp.newaxis, :]
+        return A[:, anp.newaxis] * g[..., anp.newaxis, :]
     else:
-        # shape(g) = shape(A)[:-1] + shape(B)[:-2] + (shape(B)[-1],)
         if A_ndim > 2:
             A = anp.reshape(A, (-1, anp.shape(A)[-1]))
+            g = anp.reshape(g, (-1,) + ans_vs.shape[A_ndim-1:])
         A = anp.transpose(A)
-        def transposed(g):
-            if A_ndim > 2:
-                g = anp.reshape(g, (-1,) + ans_vs.shape[A_ndim-1:])
-            if B_ndim > 1:
-                g = anp.moveaxis(g, 0, -2)
-            result = anp.dot(A, g)
-            if B_ndim > 1:
-                result = anp.moveaxis(result, 0, -2)
-            return result
-        return transposed
+        if B_ndim > 1:
+            g = anp.moveaxis(g, 0, -2)
+        result = anp.dot(A, g)
+        if B_ndim > 1:
+            result = anp.moveaxis(result, 0, -2)
+        return result
+
+defvjp(anp.dot, lambda ans, vs, gvs, A, B: lambda g: dot_0_adjoint(B, g, vs, gvs))
+defvjp(anp.dot, lambda ans, vs, gvs, A, B: lambda g: dot_1_adjoint(A, g, vs, gvs), 1)
+
+defvjp(dot_0_adjoint, lambda ans, vs, gvs, B, g, A_vs, ans_vs: lambda A: dot_1_adjoint(A, g, vs, ans_vs))
+defvjp(dot_0_adjoint, lambda ans, vs, gvs, B, g, *args: lambda A: anp.dot(A, B), 1)
+
+defvjp(dot_1_adjoint, lambda ans, vs, gvs, A, g, B_vs, ans_vs: lambda B: dot_0_adjoint(B, g, vs, ans_vs))
+defvjp(dot_1_adjoint, lambda ans, vs, gvs, A, g, *args: lambda B: anp.dot(A, B), 1)
 
 def grad_tensordot(argnum, ans, vs, gvs, A, B, axes=2):
     def vjp(g):
