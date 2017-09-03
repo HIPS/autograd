@@ -295,7 +295,7 @@ defvjps(anp.matmul, grad_matmul, [0, 1])
 
 @primitive
 def dot_0_adjoint(B, g, A_vs, ans_vs):
-    # Returns the adjoint of the operator
+    # The adjoint of the operator
     # A |--> np.dot(A, B)
     A_ndim, B_ndim = A_vs.ndim, anp.ndim(B)
 
@@ -314,7 +314,7 @@ def dot_0_adjoint(B, g, A_vs, ans_vs):
 
 @primitive
 def dot_1_adjoint(A, g, B_vs, ans_vs):
-    # Returns the adjoint of the operator
+    # The adjoint of the operator
     # B |--> np.dot(A, B)
     A_ndim, B_ndim = anp.ndim(A), B_vs.ndim
 
