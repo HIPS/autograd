@@ -297,6 +297,8 @@ def grad_dot(argnum, ans, vs, gvs, A, B):
     # TODO: rewrite to allow garbage collection of A or B (depending on argnum)
     if argnum == 0:
         return dot_0_adjoint(vs, gvs, B)
+    else:
+        return dot_1_adjoint(vs, gvs, A)
     A_ndim, B_ndim = anp.ndim(A), anp.ndim(B)
     if A_ndim == 0 or B_ndim == 0:
         axes = ([], [])
@@ -324,6 +326,33 @@ def dot_0_adjoint(A_vs, ans_vs, B):
             if B_ndim > 2:
                 g = anp.reshape(g, A_vs.shape[:-1] + (-1,))
             return anp.dot(g, B)
+        return transposed
+
+def dot_1_adjoint(B_vs, ans_vs, A):
+    # Returns the adjoint of the operator
+    # B |--> np.dot(A, B)
+    A_ndim, B_ndim = anp.ndim(A), B_vs.ndim
+
+    if A_ndim == 0 or ans_vs.ndim == 0:
+        return lambda g: A * g
+    elif B_ndim == 0:
+        return lambda g: anp.dot(anp.ravel(A), anp.ravel(g))
+    elif A_ndim == 1:
+        return lambda g: A[:, anp.newaxis] * g[..., anp.newaxis, :]
+    else:
+        # shape(g) = shape(A)[:-1] + shape(B)[:-2] + (shape(B)[-1],)
+        if A_ndim > 2:
+            A = anp.reshape(A, (-1, anp.shape(A)[-1]))
+        A = anp.transpose(A)
+        def transposed(g):
+            if A_ndim > 2:
+                g = anp.reshape(g, (-1,) + ans_vs.shape[A_ndim-1:])
+            if B_ndim > 1:
+                g = anp.moveaxis(g, 0, -2)
+            result = anp.dot(A, g)
+            if B_ndim > 1:
+                result = anp.moveaxis(result, 0, -2)
+            return result
         return transposed
 
 def grad_tensordot(argnum, ans, vs, gvs, A, B, axes=2):
