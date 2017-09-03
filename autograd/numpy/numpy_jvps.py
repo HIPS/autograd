@@ -1,5 +1,6 @@
 from . import numpy_wrapper as anp
-from .numpy_vjps import untake, balanced_eq, match_complex, replace_zero
+from .numpy_vjps import (untake, balanced_eq, match_complex, replace_zero,
+                         dot_0_adjoint, dot_1_adjoint)
 from autograd.core import (defjvp, defjvps, def_linear_wrt_arg, defjvp_argnum,
                            def_multilinear, vspace)
 from ..util import func
@@ -183,6 +184,9 @@ def_multilinear(anp.matmul)
 def_multilinear(anp.dot)
 def_multilinear(anp.tensordot)
 def_multilinear(anp.outer)
+
+def_multilinear(dot_0_adjoint)
+def_multilinear(dot_1_adjoint)
 
 def fwd_grad_concatenate_args(argnum, g, ans, gvs, vs, *axis_args, **kwargs):
     result = []
