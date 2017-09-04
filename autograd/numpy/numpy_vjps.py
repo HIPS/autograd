@@ -294,47 +294,29 @@ def grad_matmul(argnum, ans, vs, gvs, A, B):
 defvjps(anp.matmul, grad_matmul, [0, 1])
 
 @primitive
-def dot_0_adjoint(B, g, A_vs, ans_vs):
+def dot_0_adjoint(B, G, A_vs, ans_vs):
     # The adjoint of the operator
     # A |--> np.dot(A, B)
-    A_ndim, B_ndim = A_vs.ndim, anp.ndim(B)
-
-    if B_ndim == 0 or ans_vs.ndim == 0:
-        return g * B
-    elif A_ndim == 0:
-        return anp.dot(anp.ravel(g), anp.ravel(B))
-    elif B_ndim == 1:
-        return g[..., anp.newaxis] * B
+    A_ndim, B_ndim = A_vs.ndim, onp.ndim(B)
+    if B_ndim == 0 or B_ndim == 1 or A_ndim == 0:
+        contract_num = max(0, B_ndim - (A_ndim != 0))
+        return onp.tensordot(G, B, contract_num)
     else:
-        B = anp.swapaxes(B, B_ndim-2, B_ndim-1)
-        if B_ndim > 2:
-            B = anp.reshape(B, (-1, anp.shape(B)[-1]))
-            g = anp.reshape(g, A_vs.shape[:-1] + (-1,))
-        return anp.dot(g, B)
+        return onp.tensordot(G, onp.swapaxes(B, -1, -2), B_ndim - 1)
 
 @primitive
-def dot_1_adjoint(A, g, B_vs, ans_vs):
+def dot_1_adjoint(A, G, B_vs, ans_vs):
     # The adjoint of the operator
     # B |--> np.dot(A, B)
-    A_ndim, B_ndim = anp.ndim(A), B_vs.ndim
-
-    if A_ndim == 0 or ans_vs.ndim == 0:
-        return A * g
-    elif B_ndim == 0:
-        return anp.dot(anp.ravel(A), anp.ravel(g))
-    elif A_ndim == 1:
-        return A[:, anp.newaxis] * g[..., anp.newaxis, :]
+    A_ndim, B_ndim = onp.ndim(A), B_vs.ndim
+    needs_transpose = B_ndim > 1 and A_ndim != 0
+    swap = (lambda x: onp.swapaxes(x, -1, -2)) if needs_transpose else (lambda x: x)
+    if A_ndim == 0 or A_ndim == 1 or B_ndim == 0:
+        contract_num = max(0, A_ndim - (B_ndim != 0))
+        return swap(onp.tensordot(G, A, contract_num))
     else:
-        if A_ndim > 2:
-            A = anp.reshape(A, (-1, anp.shape(A)[-1]))
-            g = anp.reshape(g, (-1,) + ans_vs.shape[A_ndim-1:])
-        A = anp.transpose(A)
-        if B_ndim > 1:
-            g = anp.moveaxis(g, 0, -2)
-        result = anp.dot(A, g)
-        if B_ndim > 1:
-            result = anp.moveaxis(result, 0, -2)
-        return result
+        return swap(onp.tensordot(
+            G, A, [range(-A_ndim - B_ndim + 2, -B_ndim + 1), range(A_ndim - 1)]))
 
 defvjp(anp.dot, lambda ans, vs, gvs, A, B: lambda g: dot_0_adjoint(B, g, vs, gvs))
 defvjp(anp.dot, lambda ans, vs, gvs, A, B: lambda g: dot_1_adjoint(A, g, vs, gvs), 1)
