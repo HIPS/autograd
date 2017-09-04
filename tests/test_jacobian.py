@@ -39,5 +39,5 @@ def test_jacobian_higher_order():
     assert jacobian(jacobian(fun))(npr.randn(2)).shape == (2,2,2,2)
     # assert jacobian(jacobian(jacobian(fun)))(npr.randn(2)).shape == (2,2,2,2,2)
 
-    check_grads(lambda x: np.sum(np.sin(jacobian(fun)(x))), npr.randn(2))
-    check_grads(lambda x: np.sum(np.sin(jacobian(jacobian(fun))(x))), npr.randn(2))
+    check_grads(lambda x: np.sum(np.sin(jacobian(fun)(x))))(npr.randn(2))
+    check_grads(lambda x: np.sum(np.sin(jacobian(jacobian(fun))(x))))(npr.randn(2))

@@ -39,8 +39,8 @@ def test_grads():
                   npr.randn(4, 3),
                   npr.randn(2, 4)]
 
-    check_grads(fun, input_list)
-    check_grads(d_fun, input_list)
+    check_grads(fun)(input_list)
+    check_grads(d_fun)(input_list)
 
 def test_slices():
     def f(x):
@@ -62,10 +62,9 @@ def test_nested_list():
     def fun(x):
         return x[1:][0]
 
-    check_grads(fun, A)
+    check_grads(fun)(A)
 
 def test_make_list():
     def fun(x):
         return make_list(x, x)
-    check_vjp(fun)(1.0)
-    check_jvp(fun)(1.0)
+    check_grads(fun)(1.0)

@@ -39,8 +39,8 @@ def test_grads():
                   'item_2' : npr.randn(4, 3),
                   'item_X' : npr.randn(2, 4)}
 
-    check_grads(fun, input_dict)
-    check_grads(d_fun, input_dict)
+    check_grads(fun)(input_dict)
+    check_grads(d_fun)(input_dict)
 
 def test_iter():
     def fun(input_dict):
@@ -62,8 +62,8 @@ def test_iter():
                   'item_2' : npr.randn(4, 3),
                   'item_X' : npr.randn(2, 4)}
 
-    check_grads(fun, input_dict)
-    check_grads(d_fun, input_dict)
+    check_grads(fun)(input_dict)
+    check_grads(d_fun)(input_dict)
 
 def test_items_values_keys():
     def fun(input_dict):
@@ -89,5 +89,5 @@ def test_items_values_keys():
                   'item_2' : npr.randn(4, 3),
                   'item_X' : npr.randn(2, 4)}
 
-    check_grads(fun, input_dict)
-    check_grads(d_fun, input_dict)
+    check_grads(fun)(input_dict)
+    check_grads(d_fun)(input_dict)

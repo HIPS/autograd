@@ -42,8 +42,8 @@ def test_grads():
                    npr.randn(4, 3),
                    npr.randn(2, 4))
 
-    check_grads(fun, input_tuple)
-    check_grads(d_fun, input_tuple)
+    check_grads(fun)(input_tuple)
+    check_grads(d_fun)(input_tuple)
 
 def test_nested_higher_order():
     def outer_fun(x):
@@ -51,6 +51,6 @@ def test_nested_higher_order():
             return y[0] * y[1]
         return np.sum(np.sin(np.array(grad(inner_fun)(make_tuple(x,x)))))
 
-    check_grads(outer_fun, 5.)
-    check_grads(grad(outer_fun), 10.)
-    check_grads(grad(grad(outer_fun)), 10.)
+    check_grads(outer_fun)(5.)
+    check_grads(grad(outer_fun))(10.)
+    check_grads(grad(grad(outer_fun)))(10.)

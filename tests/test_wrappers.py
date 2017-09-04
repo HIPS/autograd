@@ -32,7 +32,7 @@ def test_value_and_grad():
     check_equivalent(dfun(x), dfun_both(x)[1])
 
     def fun2(x): return dfun_both(x)[0]
-    check_grads(fun2, x)
+    check_grads(fun2)(x)
 
 def test_hessian():
     # Check Hessian of a quadratic function.
@@ -48,7 +48,8 @@ def test_multigrad():
     def complicated_fun(a,b,c,d,e,f=1.1, g=9.0):
         return a + np.sin(b) + np.cosh(c) + np.cos(d) + np.tan(e) + f + g
 
-    def complicated_fun_3_1(d, b):
+    def complicated_fun_3_1(d_b):
+        d, b = d_b
         return complicated_fun(A, b, C, d, E, f=F, g=G)
 
     A = 0.5
@@ -59,9 +60,9 @@ def test_multigrad():
     F = 0.6
     G = -0.1
 
-    exact = grad(complicated_fun, argnum=[3, 1])(A, B, C, D, E, f=F, g=G)
-    numeric = tuple(nd(complicated_fun_3_1, D, B))
-    check_equivalent(exact, numeric)
+    wrapped = grad(complicated_fun, argnum=[3, 1])(A, B, C, D, E, f=F, g=G)
+    explicit = grad(complicated_fun_3_1)((D, B))
+    check_equivalent(wrapped, explicit)
 
 def test_value_and_multigrad():
     def complicated_fun(a,b,c,d,e,f=1.1, g=9.0):
@@ -97,9 +98,9 @@ def test_elementwise_grad():
 
     A = npr.randn(10)
 
-    exact = elementwise_grad(simple_fun)(A)
-    numeric = np.squeeze(np.array([nd(simple_fun, A[i]) for i in range(len(A))]))
-    check_equivalent(exact, numeric)
+    wrapped = elementwise_grad(simple_fun)(A)
+    explicit = np.array([grad(simple_fun)(A[i]) for i in range(len(A))])
+    check_equivalent(wrapped, explicit)
 
 def test_elementwise_grad_multiple_args():
     def simple_fun(a, b):
@@ -109,9 +110,9 @@ def test_elementwise_grad_multiple_args():
     B = npr.randn(10)
     argnum = 1
 
-    exact = elementwise_grad(simple_fun, argnum=argnum)(A, B)
-    numeric = np.squeeze(np.array([nd(simple_fun, A, B[i])[argnum] for i in range(len(B))]))
-    check_equivalent(exact, numeric)
+    wrapped = elementwise_grad(simple_fun, argnum)(A, B)
+    explicit = np.array([grad(simple_fun, argnum)(A, B[i]) for i in range(len(B))])
+    check_equivalent(wrapped, explicit)
 
 def test_hessian_tensor_product():
     fun = lambda a: np.sum(np.sin(a))
@@ -177,7 +178,7 @@ def test_tensor_jacobian_product():
 
 #     mat1 = npr.randn(2, 2)
 #     mat2 = npr.randn(2, 2)
-#     check_grads(fun, mat1, mat2)
+#     check_grads(fun)(mat1, mat2)
 
 def test_partial():
     def f(x, y):
@@ -280,15 +281,16 @@ def test_make_ggnvp_nondefault_g():
     fun2 = lambda x: np.tanh(np.dot(A, x))
     check_equivalent(make_ggnvp(fun2, g)(x)(v), _make_explicit_ggnvp(fun2, g)(x)(v))
 
-def test_make_ggnvp_broadcasting():
-  A = npr.randn(4, 5)
-  x = npr.randn(10, 4)
-  v = npr.randn(10, 4)
+## No longer support this behavior
+# def test_make_ggnvp_broadcasting():
+#   A = npr.randn(4, 5)
+#   x = npr.randn(10, 4)
+#   v = npr.randn(10, 4)
 
-  fun = lambda x: np.tanh(np.dot(x, A))
-  res1 = np.stack([_make_explicit_ggnvp(fun)(xi)(vi) for xi, vi in zip(x, v)])
-  res2 = make_ggnvp(fun)(x)(v)
-  check_equivalent(res1, res2)
+#   fun = lambda x: np.tanh(np.dot(x, A))
+#   res1 = np.stack([_make_explicit_ggnvp(fun)(xi)(vi) for xi, vi in zip(x, v)])
+#   res2 = make_ggnvp(fun)(x)(v)
+#   check_equivalent(res1, res2)
 
 def test_wrapped_name_and_docs():
     def foo(x): pass

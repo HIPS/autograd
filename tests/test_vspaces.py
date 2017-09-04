@@ -1,7 +1,7 @@
 from functools import reduce
 from autograd.vspace import vspace
 from autograd.numpy.numpy_vspaces import ArrayVSpace
-from autograd.test_util import check_vjp, scalar_close
+from autograd.test_util import check_grads, scalar_close
 import numpy as np
 import itertools as it
 
@@ -103,9 +103,9 @@ def check_vspace(value):
     assert randn_correct_vspace()
 
     # --- grads of basic operations ---
-    check_vjp(add)(*randns())
-    check_vjp(scalar_mul)(randn(), rand_scalar())
-    check_vjp(inner_prod)(*randns())
+    check_grads(add)(*randns())
+    check_grads(scalar_mul)(randn(), rand_scalar())
+    check_grads(inner_prod)(*randns())
 
 def test_array_vspace(): check_vspace(np.zeros((3,2)))
 def test_array_vspace_0_dim(): check_vspace(0.0)

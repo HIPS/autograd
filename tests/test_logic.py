@@ -9,7 +9,7 @@ def test_assert():
     def fun(x):
         assert np.allclose(x, (x*3.0)/3.0)
         return np.sum(x)
-    check_grads(fun, np.array([1.0, 2.0, 3.0]))
+    check_grads(fun)(np.array([1.0, 2.0, 3.0]))
 
 def test_nograd():
     # we want this to raise non-differentiability error
@@ -23,8 +23,8 @@ def test_nograd():
 
 def test_falseyness():
     fun = lambda x: np.real(x**2 if np.iscomplex(x) else np.sum(x))
-    check_grads(fun, 2.)
-    check_grads(fun, 2. + 1j)
+    check_grads(fun)(2.)
+    check_grads(fun)(2. + 1j)
 
 def test_unimplemented_falseyness():
     def remove_grad_definitions(fun):
@@ -36,7 +36,7 @@ def test_unimplemented_falseyness():
     grad_defs = remove_grad_definitions(np.iscomplex)
 
     fun = lambda x: np.real(x**2 if np.iscomplex(x) else np.sum(x))
-    check_grads(fun, 5.)
-    check_grads(fun, 2. + 1j)
+    check_grads(fun)(5.)
+    check_grads(fun)(2. + 1j)
 
     restore_grad_definitions(np.iscomplex, grad_defs)
