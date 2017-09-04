@@ -18,6 +18,9 @@ A = npr.randn(2, 3, 4, 5)
 B = npr.randn(2, 3, 5, 4)
 g = npr.randn(2, 3, 4, 2, 3, 4)
 
+def time_dot():
+    np.dot(A, B)
+
 def time_dot_0():
     dot_0(A, B, g)
 
