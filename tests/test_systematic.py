@@ -104,7 +104,7 @@ def test_kron():
 def test_inner(): combo_check(np.inner, [0, 1])(
                             [1.5, R(3), R(2, 3)],
                             [0.3, R(3), R(4, 3)])
-def test_dot(): combo_check(np.dot, [0, 1])(
+def test_dot(): combo_check(np.dot, [0, 1], order=3)(
                             [1.5, R(3), R(2, 3), R(2, 2, 3)],
                             [0.3, R(3), R(3, 4), R(2, 3, 4)])
 def test_matmul(): combo_check(np.matmul, [0, 1])(
