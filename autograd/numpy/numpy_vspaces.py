@@ -8,7 +8,7 @@ class ArrayVSpace(VSpace):
         self.dtype = value.dtype
 
     @property
-    def size(self): return np.prod(self.shape)
+    def size(self): return int(np.prod(self.shape))
     @property
     def ndim(self): return len(self.shape)
     def zeros(self): return np.zeros(self.shape, dtype=self.dtype)
@@ -25,6 +25,22 @@ class ArrayVSpace(VSpace):
 
     def _inner_prod(self, x, y):
         return np.dot(np.ravel(x), np.ravel(y))
+
+    def _product(self, other_vspace):
+        return self._contract(other_vspace, ndim=0)
+
+    def _contract(self, other_vspace, ndim=None):
+        ndim = other_vspace.ndim if ndim is None else ndim
+        if not self.shape[-ndim % self.ndim:] == other_vspace.shape[:ndim]:
+            raise ValueError
+
+        result = self.__new__(self.__class__)
+        result.shape = self.shape[:-ndim % self.ndim] + other_vspace.shape[ndim:]
+        result.dtype = np.promote_types(self.dtype, other_vspace.dtype)
+        return result
+
+    def _kronecker_tensor(self):
+        return np.reshape(np.eye(self.size), self.shape + self.shape)
 
 class ComplexArrayVSpace(ArrayVSpace):
     iscomplex = True
