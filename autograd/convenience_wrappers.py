@@ -23,11 +23,8 @@ def grad(fun, x):
     arguments as `fun`, but returns the gradient instead. The function `fun`
     should be scalar-valued. The gradient has the same type as the argument."""
     vjp, ans = _make_vjp(fun, x)
-    if vspace(ans).iscomplex:
-        raise TypeError("Grad only applies to real-output functions. "
-                        "For complex functions, try holomorphic_grad.")
     if not vspace(ans).size == 1:
-        raise TypeError("Grad only applies to scalar-output functions. "
+        raise TypeError("Grad only applies to real scalar-output functions. "
                         "Try jacobian or elementwise_grad.")
     return vjp(vspace(ans).ones())
 
@@ -69,28 +66,6 @@ def grad_named(fun, argname):
        Doesn't work on *args or **kwargs.'''
     arg_index = getargspec(fun).args.index(argname)
     return grad(fun, arg_index)
-
-def value_and_multigrad(fun, argnums=[0]):
-    """Returns a function that returns both value and gradients wrt multiple
-    arguments simultaneously."""
-    def combined_arg_fun(multi_arg, *args, **kwargs):
-        extra_args_list = list(args)
-        for argnum_ix, arg_ix in enumerate(argnums):
-            extra_args_list[arg_ix] = multi_arg[argnum_ix]
-        return fun(*extra_args_list, **kwargs)
-    gradfun = value_and_grad(combined_arg_fun, argnum=0)
-    def gradfun_rearranged(*args, **kwargs):
-        multi_arg = make_tuple(*[args[i] for i in argnums])
-        return gradfun(multi_arg, *args, **kwargs)
-    return gradfun_rearranged
-
-def multigrad(fun, argnums=[0]):
-    """Returns a function that returns gradients wrt multiple arguments
-    simultaneously."""
-    double_val_fun = value_and_multigrad(fun, argnums=argnums)
-    def multigrad_fun(*args, **kwargs):
-        return double_val_fun(*args, **kwargs)[1]
-    return multigrad_fun
 
 @unary_to_nary
 def hessian(fun, x):

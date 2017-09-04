@@ -1,7 +1,7 @@
 import itertools as it
 from .vspace import vspace
 from .core import make_vjp, make_jvp
-from .util import subvals
+from .util import subvals, unary_to_nary
 
 TOL  = 1e-6
 RTOL = 1e-6
@@ -46,28 +46,22 @@ def check_equivalent(x, y):
     assert scalar_close(x_vs.inner_prod(x, v), x_vs.inner_prod(y, v)), \
         "Value mismatch:\nx: {}\ny: {}".format(x, y)
 
-def check_grads(f_nary, argnums, modes=['fwd', 'rev'], order=2):
+@unary_to_nary
+def check_grads(f, x, modes=['fwd', 'rev'], order=2):
     assert all(m in ['fwd', 'rev'] for m in modes)
-    def _check_grads(*args, **kwargs):
-        def f(x):
-            return f_nary(*subvals(args, zip(argnums, x)), **kwargs)
-        x = tuple(args[i] for i in argnums)
+    if 'fwd' in modes:
+        check_jvp(f, x)
+        if order > 1:
+            grad_f = lambda x_v: make_jvp(f, x_v[0])(x_v[1])
+            v = vspace(x).randn()
+            check_grads(grad_f, [0], modes=modes, order=order-1)((x, v))
 
-        if 'fwd' in modes:
-            check_jvp(f, x)
-            if order > 1:
-                grad_f = lambda x_v: make_jvp(f, x_v[0])(x_v[1])
-                v = vspace(x).randn()
-                check_grads(grad_f, [0], modes, order-1)((x, v))
-
-        if 'rev' in modes:
-            check_vjp(f, x)
-            if order > 1:
-                grad_f = lambda x_v: make_vjp(f, x_v[0])[0](x_v[1])
-                v = vspace(f(x)).randn()
-                check_grads(grad_f, [0], modes, order-1)((x, v))
-
-    return _check_grads
+    if 'rev' in modes:
+        check_vjp(f, x)
+        if order > 1:
+            grad_f = lambda x_v: make_vjp(f, x_v[0])[0](x_v[1])
+            v = vspace(f(x)).randn()
+            check_grads(grad_f, [0], modes=modes, order=order-1)((x, v))
 
 def combo_check(fun, argnums, *args, **kwargs):
     # Tests all combinations of args given.
@@ -78,6 +72,6 @@ def combo_check(fun, argnums, *args, **kwargs):
         cur_args = args_and_kwargs[:num_args]
         cur_kwargs = dict(args_and_kwargs[num_args:])
         if fwd:
-            check_grads(fun, argnums, ['fwd', 'rev'])(*cur_args, **cur_kwargs)
+            check_grads(fun, argnums, modes=['fwd', 'rev'])(*cur_args, **cur_kwargs)
         else:
-            check_grads(fun, argnums, ['rev'])(*cur_args, **cur_kwargs)
+            check_grads(fun, argnums, modes=['rev'])(*cur_args, **cur_kwargs)
