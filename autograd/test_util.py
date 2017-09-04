@@ -63,15 +63,14 @@ def check_grads(f, x, modes=['fwd', 'rev'], order=2):
             v = vspace(f(x)).randn()
             check_grads(grad_f, [0], modes=modes, order=order-1)((x, v))
 
-def combo_check(fun, argnums, *args, **kwargs):
-    # Tests all combinations of args given.
-    fwd = kwargs.pop('fwd', True)
-    kwarg_key_vals = [[(key, val) for val in kwargs[key]] for key in kwargs]
-    num_args = len(args)
-    for args_and_kwargs in it.product(*(args + tuple(kwarg_key_vals))):
-        cur_args = args_and_kwargs[:num_args]
-        cur_kwargs = dict(args_and_kwargs[num_args:])
-        if fwd:
-            check_grads(fun, argnums, modes=['fwd', 'rev'])(*cur_args, **cur_kwargs)
-        else:
-            check_grads(fun, argnums, modes=['rev'])(*cur_args, **cur_kwargs)
+def combo_check(fun, argnums, modes=['fwd', 'rev'], order=2):
+    def _combo_check(*args, **kwargs):
+        # Tests all combinations of args given.
+        kwarg_key_vals = [[(key, val) for val in kwargs[key]] for key in kwargs]
+        num_args = len(args)
+        for args_and_kwargs in it.product(*(args + tuple(kwarg_key_vals))):
+            cur_args = args_and_kwargs[:num_args]
+            cur_kwargs = dict(args_and_kwargs[num_args:])
+            check_grads(fun, argnums, modes=modes)(*cur_args, **cur_kwargs)
+
+    return _combo_check

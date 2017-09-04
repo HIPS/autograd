@@ -3,12 +3,11 @@ import warnings
 from functools import partial
 import autograd.numpy as np
 import autograd.numpy.random as npr
-from autograd.test_util import check_grads, check_equivalent, nd
+from autograd.test_util import check_grads, check_equivalent # , nd
 from autograd.tracer import primitive, isbox
 from autograd import (grad, elementwise_grad, jacobian, value_and_grad,
-                      hessian_tensor_product, hessian, make_hvp, multigrad,
-                      tensor_jacobian_product, checkpoint,
-                      value_and_multigrad, make_jvp, make_ggnvp)
+                      hessian_tensor_product, hessian, make_hvp,
+                      tensor_jacobian_product, checkpoint, make_jvp, make_ggnvp)
 from builtins import range
 
 npr.seed(1)
@@ -60,7 +59,7 @@ def test_multigrad():
     F = 0.6
     G = -0.1
 
-    exact = multigrad(complicated_fun, argnums=[3, 1])(A, B, C, D, E, f=F, g=G)
+    exact = grad(complicated_fun, argnum=[3, 1])(A, B, C, D, E, f=F, g=G)
     numeric = tuple(nd(complicated_fun_3_1, D, B))
     check_equivalent(exact, numeric)
 
@@ -76,8 +75,8 @@ def test_value_and_multigrad():
     F = 0.6
     G = -0.1
 
-    dfun = multigrad(complicated_fun, argnums=[3, 1])
-    dfun_both = value_and_multigrad(complicated_fun, argnums=[3, 1])
+    dfun = grad(complicated_fun, argnum=[3, 1])
+    dfun_both = value_and_grad(complicated_fun, argnum=[3, 1])
 
     check_equivalent(complicated_fun(A, B, C, D, E, f=F, g=G),
                      dfun_both(A, B, C, D, E, f=F, g=G)[0])
@@ -90,7 +89,7 @@ def test_multigrad_onearg():
     fun = lambda x, y: np.sum(x + np.sin(y))
     packed_fun = lambda xy: np.sum(xy[0] + np.sin(xy[1]))
     A, B = npr.randn(3), npr.randn(3)
-    check_equivalent(multigrad(fun)(A,B), (grad(packed_fun)((A,B))[0],))
+    check_equivalent(grad(fun, argnum=[0])(A,B), (grad(packed_fun)((A,B))[0],))
 
 def test_elementwise_grad():
     def simple_fun(a):
