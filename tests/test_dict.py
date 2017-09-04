@@ -2,6 +2,7 @@ import autograd.numpy as np
 import autograd.numpy.random as npr
 from autograd.test_util import check_grads
 from autograd import grad
+import operator as op
 
 npr.seed(0)
 
@@ -69,12 +70,12 @@ def test_items_values_keys():
     def fun(input_dict):
         A = 0.
         B = 0.
-        for i, (k, v) in enumerate(input_dict.items()):
+        for i, (k, v) in enumerate(sorted(input_dict.items(), key=op.itemgetter(0))):
             A = A + np.sum(np.sin(v)) * (i + 1.0)
             B = B + np.sum(np.cos(v))
         for v in input_dict.values():
             A = A + np.sum(np.sin(v))
-        for k in input_dict.keys():
+        for k in sorted(input_dict.keys()):
             A = A + np.sum(np.cos(input_dict[k]))
         return A + B
 
