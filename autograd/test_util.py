@@ -20,7 +20,7 @@ def make_numerical_jvp(f, x):
         return y_vs.scalar_mul(y_vs.add(f_x_plus, neg_f_x_minus), 1.0 / EPS)
     return jvp
 
-def check_vjp_unary(f, x):
+def check_vjp(f, x):
     vjp, y = make_vjp(f, x)
     jvp = make_numerical_jvp(f, x)
     x_vs, y_vs = vspace(x), vspace(y)
@@ -33,55 +33,11 @@ def check_vjp_unary(f, x):
         "Derivative check failed with arg {}:\nanalytic: {}\nnumeric: {}".format(
             x, vjv_numeric, vjv_exact)
 
-def check_vjp(f, argnums=None, order=2):
-    def _check_vjp(*args, **kwargs):
-        if not order: return
-        _argnums = argnums if argnums else range(len(args))
-        x = tuple(args[argnum] for argnum in _argnums)
-        f_unary = lambda x: f(*subvals(args, zip(_argnums, x)), **kwargs)
-        check_vjp_unary(f_unary, x)
-
-        v = vspace(f_unary(x)).randn()
-        f_unary_vjp = lambda x, v: make_vjp(f_unary, x)[0](v)
-        check_vjp(f_unary_vjp, order=order-1)(x, v)
-    return _check_vjp
-
-def check_jvp_unary(f, x):
-    y = f(x)
+def check_jvp(f, x):
     jvp = make_jvp(f, x)
     jvp_numeric = make_numerical_jvp(f, x)
-    x_vs = vspace(x)
-    x_v = x_vs.randn()
-
+    x_v = vspace(x).randn()
     check_equivalent(jvp(x_v), jvp_numeric(x_v))
-
-def check_jvp(f, argnums=None, order=2):
-    def _check_jvp(*args, **kwargs):
-        if not order: return
-        _argnums = argnums if argnums else range(len(args))
-        x = tuple(args[argnum] for argnum in _argnums)
-        f_unary = lambda x: f(*subvals(args, zip(_argnums, x)), **kwargs)
-        check_jvp_unary(f_unary, x)
-
-        v = vspace(f_unary(x)).randn()
-        f_unary_vjp = lambda x, v: make_vjp(f_unary, x)[0](v)
-        check_jvp(f_unary_vjp, order=order-1)(x, v)
-
-        u = vspace(x).randn()
-        f_unary_jvp = lambda x, v: make_jvp(f_unary, x)(v)
-        check_vjp(f_unary_jvp, order=order-1)(x, u)
-    return _check_jvp
-
-# backwards compatibility
-def check_grads(f, *args, **kwargs):
-    fwd = kwargs.pop('fwd', True)
-    check_vjp(f, order=1)(*args)
-    if fwd:
-        check_jvp(f, order=1)(*args)
-
-def nd(f, *args):
-    return [make_numerical_jvp(lambda args: f(*args), args)(v)
-            for v in vspace(args).standard_basis()]
 
 def check_equivalent(x, y):
     x_vs, y_vs = vspace(x), vspace(y)
@@ -90,15 +46,38 @@ def check_equivalent(x, y):
     assert scalar_close(x_vs.inner_prod(x, v), x_vs.inner_prod(y, v)), \
         "Value mismatch:\nx: {}\ny: {}".format(x, y)
 
+def check_grads(f_nary, argnums, modes=['fwd', 'rev'], order=2):
+    assert all(m in ['fwd', 'rev'] for m in modes)
+    def _check_grads(*args, **kwargs):
+        def f(x):
+            return f_nary(*subvals(args, zip(argnums, x)), **kwargs)
+        x = tuple(args[i] for i in argnums)
+
+        if 'fwd' in modes:
+            check_jvp(f, x)
+            if order > 1:
+                grad_f = lambda x_v: make_jvp(f, x_v[0])(x_v[1])
+                v = vspace(x).randn()
+                check_grads(grad_f, [0], modes, order-1)((x, v))
+
+        if 'rev' in modes:
+            check_vjp(f, x)
+            if order > 1:
+                grad_f = lambda x_v: make_vjp(f, x_v[0])[0](x_v[1])
+                v = vspace(f(x)).randn()
+                check_grads(grad_f, [0], modes, order-1)((x, v))
+
+    return _check_grads
+
 def combo_check(fun, argnums, *args, **kwargs):
     # Tests all combinations of args given.
     fwd = kwargs.pop('fwd', True)
-    args = list(args)
     kwarg_key_vals = [[(key, val) for val in kwargs[key]] for key in kwargs]
     num_args = len(args)
-    for args_and_kwargs in it.product(*(args + kwarg_key_vals)):
+    for args_and_kwargs in it.product(*(args + tuple(kwarg_key_vals))):
         cur_args = args_and_kwargs[:num_args]
         cur_kwargs = dict(args_and_kwargs[num_args:])
-        check_vjp(fun, argnums)(*cur_args, **cur_kwargs)
         if fwd:
-            check_jvp(fun, argnums)(*cur_args, **cur_kwargs)
+            check_grads(fun, argnums, ['fwd', 'rev'])(*cur_args, **cur_kwargs)
+        else:
+            check_grads(fun, argnums, ['rev'])(*cur_args, **cur_kwargs)
