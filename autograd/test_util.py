@@ -1,4 +1,5 @@
-import itertools as it
+from functools import partial
+from itertools import product
 from .vspace import vspace
 from .core import make_vjp, make_jvp
 from .util import subvals, unary_to_nary
@@ -52,25 +53,22 @@ def check_grads(f, x, modes=['fwd', 'rev'], order=2):
     if 'fwd' in modes:
         check_jvp(f, x)
         if order > 1:
-            grad_f = lambda x_v: make_jvp(f, x_v[0])(x_v[1])
+            grad_f = lambda x, v: make_jvp(f, x)(v)
             v = vspace(x).randn()
-            check_grads(grad_f, [0], modes=modes, order=order-1)((x, v))
-
+            check_grads(grad_f, (0, 1), modes, order=order-1)(x, v)
     if 'rev' in modes:
         check_vjp(f, x)
         if order > 1:
-            grad_f = lambda x_v: make_vjp(f, x_v[0])[0](x_v[1])
+            grad_f = lambda x, v: make_vjp(f, x)[0](v)
             v = vspace(f(x)).randn()
-            check_grads(grad_f, [0], modes=modes, order=order-1)((x, v))
+            check_grads(grad_f, (0, 1), modes, order=order-1)(x, v)
 
-def combo_check(fun, argnums, modes=['fwd', 'rev'], order=2):
+def combo_check(fun, *args, **kwargs):
+    # Tests all combinations of args and kwargs given.
+    _check_grads = lambda f: check_grads(f, *args, **kwargs)
     def _combo_check(*args, **kwargs):
-        # Tests all combinations of args given.
-        kwarg_key_vals = [[(key, val) for val in kwargs[key]] for key in kwargs]
-        num_args = len(args)
-        for args_and_kwargs in it.product(*(args + tuple(kwarg_key_vals))):
-            cur_args = args_and_kwargs[:num_args]
-            cur_kwargs = dict(args_and_kwargs[num_args:])
-            check_grads(fun, argnums, modes=modes)(*cur_args, **cur_kwargs)
-
+        kwarg_key_vals = [[(k, x) for x in xs] for k, xs in kwargs.items()]
+        for _args in product(*args):
+            for _kwargs in product(*kwarg_key_vals):
+                _check_grads(fun)(*_args, **dict(_kwargs))
     return _combo_check

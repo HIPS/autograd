@@ -4,8 +4,8 @@ from future.utils import raise_
 
 def unary_to_nary(unary_operator):
     @wraps(unary_operator)
-    def nary_operator(fun, argnum=0, **nary_op_kwargs):
-        assert type(argnum) in (int, tuple, list)
+    def nary_operator(fun, argnum=0, *nary_op_args, **nary_op_kwargs):
+        assert type(argnum) in (int, tuple, list), argnum
         @attach_name_and_doc(fun, argnum, unary_operator)
         def nary_f(*args, **kwargs):
             def unary_f(x):
@@ -21,7 +21,7 @@ def unary_to_nary(unary_operator):
                 x = args[argnum]
             else:
                 x = tuple(args[i] for i in argnum)
-            return unary_operator(unary_f, x, **nary_op_kwargs)
+            return unary_operator(unary_f, x, *nary_op_args, **nary_op_kwargs)
         return nary_f
     return nary_operator
 
