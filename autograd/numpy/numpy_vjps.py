@@ -294,7 +294,7 @@ def grad_matmul(argnum, ans, vs, gvs, A, B):
 defvjps(anp.matmul, grad_matmul, [0, 1])
 
 @primitive
-def dot_0_adjoint(B, G, A_vs, ans_vs):
+def dot_0_adjoint(B, G, A_vs):
     # The adjoint of the operator
     # A |--> np.dot(A, B)
     A_ndim, B_ndim = A_vs.ndim, onp.ndim(B)
@@ -305,7 +305,7 @@ def dot_0_adjoint(B, G, A_vs, ans_vs):
         return onp.tensordot(G, onp.swapaxes(B, -1, -2), B_ndim - 1)
 
 @primitive
-def dot_1_adjoint(A, G, B_vs, ans_vs):
+def dot_1_adjoint(A, G, B_vs):
     # The adjoint of the operator
     # B |--> np.dot(A, B)
     A_ndim, B_ndim = onp.ndim(A), B_vs.ndim
@@ -318,13 +318,13 @@ def dot_1_adjoint(A, G, B_vs, ans_vs):
         return swap(onp.tensordot(
             G, A, [range(-A_ndim - B_ndim + 2, -B_ndim + 1), range(A_ndim - 1)]))
 
-defvjp(anp.dot, lambda ans, vs, gvs, A, B: lambda g: dot_0_adjoint(B, g, vs, gvs))
-defvjp(anp.dot, lambda ans, vs, gvs, A, B: lambda g: dot_1_adjoint(A, g, vs, gvs), 1)
+defvjp(anp.dot, lambda ans, vs, gvs, A, B: lambda g: dot_0_adjoint(B, g, vs))
+defvjp(anp.dot, lambda ans, vs, gvs, A, B: lambda g: dot_1_adjoint(A, g, vs), 1)
 
-defvjp(dot_0_adjoint, lambda ans, vs, gvs, B, g, A_vs, ans_vs: lambda A: dot_1_adjoint(A, g, vs, ans_vs))
+defvjp(dot_0_adjoint, lambda ans, vs, gvs, B, g, A_vs: lambda A: dot_1_adjoint(A, g, vs))
 defvjp(dot_0_adjoint, lambda ans, vs, gvs, B, g, *args: lambda A: anp.dot(A, B), 1)
 
-defvjp(dot_1_adjoint, lambda ans, vs, gvs, A, g, B_vs, ans_vs: lambda B: dot_0_adjoint(B, g, vs, ans_vs))
+defvjp(dot_1_adjoint, lambda ans, vs, gvs, A, g, B_vs: lambda B: dot_0_adjoint(B, g, vs))
 defvjp(dot_1_adjoint, lambda ans, vs, gvs, A, g, *args: lambda B: anp.dot(A, B), 1)
 
 def grad_tensordot(argnum, ans, vs, gvs, A, B, axes=2):
