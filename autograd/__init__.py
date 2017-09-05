@@ -6,3 +6,6 @@ from .convenience_wrappers import (
     jacobian, tensor_jacobian_product, vector_jacobian_product, grad_named,
     checkpoint, make_hvp, make_jvp, make_ggnvp, make_jvp,
     deriv, holomorphic_grad)
+from .core import primitive, notrace_primitive
+
+isinstance = notrace_primitive(isinstance)
