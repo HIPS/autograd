@@ -3,7 +3,7 @@ from functools import partial
 from .tracer import (trace, primitive, notrace_primitive, Node, Box,
                      register_box, toposort)
 from .vspace import vspace, assert_vspace_match, register_vspace, VSpace
-from .util import unary_to_nary, func, subval
+from .util import func, subval
 
 def make_vjp(fun, x):
     start_node = VJPNode.new_root(x)

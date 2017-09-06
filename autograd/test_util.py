@@ -2,7 +2,8 @@ from functools import partial
 from itertools import product
 from .vspace import vspace
 from .core import make_vjp, make_jvp
-from .util import subvals, unary_to_nary
+from .util import subvals
+from .wrap_util import unary_to_nary
 
 TOL  = 1e-6
 RTOL = 1e-6
@@ -31,8 +32,9 @@ def check_vjp(f, x):
     vjv_numeric = x_vs.inner_prod(x_v, vjp_y)
     vjv_exact   = y_vs.inner_prod(y_v, jvp(x_v))
     assert scalar_close(vjv_numeric, vjv_exact), \
-        "Derivative check failed with arg {}:\nanalytic: {}\nnumeric: {}".format(
-            x, vjv_numeric, vjv_exact)
+        ("Derivative (VJP) check of {} failed with arg {}:\n"
+         "analytic: {}\nnumeric:  {}".format(
+            f, x, vjv_numeric, vjv_exact))
 
 def check_jvp(f, x):
     jvp = make_jvp(f, x)

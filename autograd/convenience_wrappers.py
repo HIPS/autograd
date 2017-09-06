@@ -5,7 +5,7 @@ from collections import OrderedDict
 from inspect import getargspec
 import warnings
 
-from .util import unary_to_nary
+from .wrap_util import unary_to_nary
 from .tracer import primitive
 from .core import make_vjp as _make_vjp, make_jvp as _make_jvp, defvjp_argnum, vspace
 from .container_types import make_tuple

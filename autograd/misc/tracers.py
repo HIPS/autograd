@@ -1,5 +1,6 @@
 from itertools import repeat
-from autograd.util import subvals, wraps
+from autograd.wrap_util import wraps
+from autograd.util import subvals
 from autograd.tracer import trace, Node, toposort
 from functools import partial
 

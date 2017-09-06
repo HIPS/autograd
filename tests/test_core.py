@@ -3,7 +3,7 @@
 from __future__ import absolute_import
 import warnings
 from autograd.core import make_vjp
-from autograd.util import unary_to_nary
+from autograd.wrap_util import unary_to_nary
 
 @unary_to_nary
 def grad(fun, x):
