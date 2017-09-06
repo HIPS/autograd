@@ -280,7 +280,10 @@ def grad_inner(argnum, ans, vs, gvs, A, B):
         axes = ([], [])
     else:
         axes = ([A.ndim - 1], [B.ndim - 1])
-    return grad_tensordot(argnum, ans, vs, gvs, A, B, axes=axes)
+    if argnum == 0:
+        return lambda G: tensordot_adjoint_0(B, G, axes, vs)
+    elif argnum == 1:
+        return lambda G: tensordot_adjoint_1(A, G, axes, vs)
 defvjps(anp.inner, grad_inner, [0, 1])
 
 def grad_matmul(argnum, ans, vs, gvs, A, B):
@@ -288,13 +291,16 @@ def grad_matmul(argnum, ans, vs, gvs, A, B):
         raise ValueError("Scalar operands are not allowed, use '*' instead")
     elif anp.ndim(A) == 1 or anp.ndim(B) == 1 or (anp.ndim(A) == 2 and anp.ndim(B) == 2):
         axes = ([A.ndim - 1], [max(0, B.ndim - 2)])
-        return grad_tensordot(argnum, ans, vs, gvs, A, B, axes=axes)
+        if argnum == 0:
+            return lambda G: tensordot_adjoint_0(B, G, axes, vs)
+        elif argnum == 1:
+            return lambda G: tensordot_adjoint_1(A, G, axes, vs)
     else:
         return grad_einsum(argnum + 1, ans, vs, gvs, ("...ij,...jk->...ik", A, B), None)
 defvjps(anp.matmul, grad_matmul, [0, 1])
 
 @primitive
-def dot_0_adjoint(B, G, A_vs):
+def dot_adjoint_0(B, G, A_vs):
     # The adjoint of the operator
     # A |--> np.dot(A, B)
     A_ndim, B_ndim = A_vs.ndim, onp.ndim(B)
@@ -305,7 +311,7 @@ def dot_0_adjoint(B, G, A_vs):
         return onp.tensordot(G, onp.swapaxes(B, -1, -2), B_ndim - 1)
 
 @primitive
-def dot_1_adjoint(A, G, B_vs):
+def dot_adjoint_1(A, G, B_vs):
     # The adjoint of the operator
     # B |--> np.dot(A, B)
     A_ndim, B_ndim = onp.ndim(A), B_vs.ndim
@@ -318,60 +324,85 @@ def dot_1_adjoint(A, G, B_vs):
         return swap(onp.tensordot(
             G, A, [range(-A_ndim - B_ndim + 2, -B_ndim + 1), range(A_ndim - 1)]))
 
-defvjp(anp.dot, lambda ans, vs, gvs, A, B: lambda g: dot_0_adjoint(B, g, vs))
-defvjp(anp.dot, lambda ans, vs, gvs, A, B: lambda g: dot_1_adjoint(A, g, vs), 1)
+defvjp(anp.dot, lambda ans, vs, gvs, A, B: lambda g: dot_adjoint_0(B, g, vs))
+defvjp(anp.dot, lambda ans, vs, gvs, A, B: lambda g: dot_adjoint_1(A, g, vs), 1)
 
-defvjp(dot_0_adjoint, lambda ans, vs, gvs, B, g, A_vs: lambda A: dot_1_adjoint(A, g, vs))
-defvjp(dot_0_adjoint, lambda ans, vs, gvs, B, g, *args: lambda A: anp.dot(A, B), 1)
+defvjp(dot_adjoint_0, lambda ans, vs, gvs, B, g, A_vs: lambda A: dot_adjoint_1(A, g, vs))
+defvjp(dot_adjoint_0, lambda ans, vs, gvs, B, g, *args: lambda A: anp.dot(A, B), 1)
 
-defvjp(dot_1_adjoint, lambda ans, vs, gvs, A, g, B_vs: lambda B: dot_0_adjoint(B, g, vs))
-defvjp(dot_1_adjoint, lambda ans, vs, gvs, A, g, *args: lambda B: anp.dot(A, B), 1)
+defvjp(dot_adjoint_1, lambda ans, vs, gvs, A, g, B_vs: lambda B: dot_adjoint_0(B, g, vs))
+defvjp(dot_adjoint_1, lambda ans, vs, gvs, A, g, *args: lambda B: anp.dot(A, B), 1)
 
-def grad_tensordot(argnum, ans, vs, gvs, A, B, axes=2):
-    def vjp(g):
-        axes_ = axes
-        if anp.size(A) == anp.size(B) == 0:
-            return g * B if argnum == 0 else g * A
+@primitive
+def tensordot_adjoint_0(B, G, axes, A_vs):
+    # The adjoint of the operator
+    # A |--> np.tensordot(A, B, axes)
+    if onp.ndim(B) == 0:
+        return G * B
 
-        A_ndim = anp.ndim(A)
-        g_axes = onp.arange(anp.ndim(g))
-        if type(axes_) is int:
-            axes_ = max(axes_, 0)
-            if argnum == 0:
-                B_axes = onp.arange(anp.ndim(B))
-                return anp.tensordot(g, B, [g_axes[A_ndim-axes_:], B_axes[axes_:]])
-            else:
-                A_axes = onp.arange(A_ndim)
-                return anp.tensordot(A, g, [A_axes[:A_ndim-axes_], g_axes[:A_ndim-axes_]])
-        elif type(axes_[0]) is int:
-            B_ndim = anp.ndim(B)
-            axes_ = [axes_[0] % A_ndim, axes_[1] % B_ndim]
-            if argnum == 0:
-                B_axes = onp.arange(B_ndim)
-                return anp.tensordot(g, B, [g_axes[A_ndim-1:], onp.delete(B_axes, axes_[1])])
-            else:
-                A_axes = onp.arange(A_ndim)
-                return anp.tensordot(A, g, [onp.delete(A_axes, axes_[0]), g_axes[:A_ndim-1]])
-        else:
-            B_ndim = anp.ndim(B)
-            A_axes = onp.arange(A_ndim)
-            B_axes = onp.arange(B_ndim)
-            summed_axes = [onp.asarray(axes_[0]) % A_ndim,
-                           onp.asarray(axes_[1]) % B_ndim]
-            other_axes  = [onp.delete(A_axes, summed_axes[0]),
-                           onp.delete(B_axes, summed_axes[1])]
-            if argnum == 0:
-                out = anp.tensordot(g, B, [g_axes[len(other_axes[0]):], other_axes[1]])
-                perm = onp.argsort(onp.concatenate(
-                    (other_axes[0], summed_axes[0][onp.argsort(summed_axes[1])])))
-                return anp.transpose(out, perm)
-            else:
-                out = anp.tensordot(A, g, [other_axes[0], g_axes[:len(other_axes[0])]])
-                perm = onp.argsort(onp.concatenate(
-                    (summed_axes[1][onp.argsort(summed_axes[0])], other_axes[1])))
-                return anp.transpose(out, perm)
-    return vjp
-defvjps(anp.tensordot, grad_tensordot, [0, 1])
+    A_ndim = A_vs.ndim
+    G_axes = onp.arange(onp.ndim(G))
+    if type(axes) is int:
+        axes = max(axes, 0)
+        B_axes = onp.arange(onp.ndim(B))
+        return onp.tensordot(G, B, [G_axes[A_ndim-axes:], B_axes[axes:]])
+    elif type(axes[0]) is int:
+        B_ndim = onp.ndim(B)
+        axes = [axes[0] % A_ndim, axes[1] % B_ndim]
+        B_axes = onp.arange(B_ndim)
+        return onp.tensordot(G, B, [G_axes[A_ndim-1:], onp.delete(B_axes, axes[1])])
+    else:
+        B_ndim = onp.ndim(B)
+        A_axes = onp.arange(A_ndim)
+        B_axes = onp.arange(B_ndim)
+        summed_axes = [onp.asarray(axes[0]) % A_ndim,
+                       onp.asarray(axes[1]) % B_ndim]
+        other_axes  = [onp.delete(A_axes, summed_axes[0]),
+                       onp.delete(B_axes, summed_axes[1])]
+        out = onp.tensordot(G, B, [G_axes[len(other_axes[0]):], other_axes[1]])
+        perm = onp.argsort(onp.concatenate(
+            (other_axes[0], summed_axes[0][onp.argsort(summed_axes[1])])))
+        return onp.transpose(out, perm)
+
+@primitive
+def tensordot_adjoint_1(A, G, axes, B_vs):
+    # The adjoint of the operator
+    # B |--> np.tensordot(A, B, axes)
+    if onp.ndim(A) == 0:
+        return G * A
+
+    A_ndim = onp.ndim(A)
+    G_axes = onp.arange(onp.ndim(G))
+    if type(axes) is int:
+        axes = max(axes, 0)
+        A_axes = onp.arange(A_ndim)
+        return onp.tensordot(A, G, [A_axes[:A_ndim-axes], G_axes[:A_ndim-axes]])
+    elif type(axes[0]) is int:
+        B_ndim = B_vs.ndim
+        axes = [axes[0] % A_ndim, axes[1] % B_ndim]
+        A_axes = onp.arange(A_ndim)
+        return onp.tensordot(A, G, [onp.delete(A_axes, axes[0]), G_axes[:A_ndim-1]])
+    else:
+        B_ndim = B_vs.ndim
+        A_axes = onp.arange(A_ndim)
+        B_axes = onp.arange(B_ndim)
+        summed_axes = [onp.asarray(axes[0]) % A_ndim,
+                       onp.asarray(axes[1]) % B_ndim]
+        other_axes  = [onp.delete(A_axes, summed_axes[0]),
+                       onp.delete(B_axes, summed_axes[1])]
+        out = onp.tensordot(A, G, [other_axes[0], G_axes[:len(other_axes[0])]])
+        perm = onp.argsort(onp.concatenate(
+            (summed_axes[1][onp.argsort(summed_axes[0])], other_axes[1])))
+        return onp.transpose(out, perm)
+
+defvjp(anp.tensordot, lambda ans, vs, gvs, A, B, axes=2: lambda G: tensordot_adjoint_0(B, G, axes, vs))
+defvjp(anp.tensordot, lambda ans, vs, gvs, A, B, axes=2: lambda G: tensordot_adjoint_1(A, G, axes, vs), 1)
+
+defvjp(tensordot_adjoint_0, lambda ans, vs, gvs, B, G, axes, A_vs: lambda A: tensordot_adjoint_1(A, G, axes, vs))
+defvjp(tensordot_adjoint_0, lambda ans, vs, gvs, B, G, axes, A_vs: lambda A: anp.tensordot(A, B, axes), 1)
+
+defvjp(tensordot_adjoint_1, lambda ans, vs, gvs, A, G, axes, B_vs: lambda B: tensordot_adjoint_0(B, G, axes, vs))
+defvjp(tensordot_adjoint_1, lambda ans, vs, gvs, A, G, axes, B_vs: lambda B: anp.tensordot(A, B, axes), 1)
 
 defvjp(anp.outer, lambda ans, vs, gvs, a, b : lambda g: anp.dot(g, b.T))
 defvjp(anp.outer, lambda ans, vs, gvs, a, b : lambda g: anp.dot(a.T, g), argnum=1)
