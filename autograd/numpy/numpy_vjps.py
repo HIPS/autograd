@@ -543,10 +543,17 @@ def replace_zero(x, val):
 
 # ----- extra functions used internally  -----
 
-def array_from_args_gradmaker(argnum, ans, vs, gvs, args, kwargs):
-    return lambda g: g[argnum]
+def array_from_args_gradmaker(argnum, ans, vs, gvs, *args, **kwargs):
+    return lambda g: g[argnum-2]
 defvjp_argnum(anp.array_from_args, array_from_args_gradmaker)
 
+def array_from_scalar_or_array_gradmaker(ans, vs, gvs, array_args, array_kwargs, scarray):
+    ndmin = array_kwargs.get('ndmin', 0)
+    if ndmin > vs.ndim:
+        return lambda g: anp.squeeze(g, axis=tuple(range(ndmin - vs.ndim)))
+    else:
+        return lambda g: g
+defvjp(anp._array_from_scalar_or_array, array_from_scalar_or_array_gradmaker, argnum=2)
 
 @primitive
 def untake(x, idx, vs):
