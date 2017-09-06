@@ -101,16 +101,16 @@ def tensor_jacobian_product(fun, argnum=0):
 vector_jacobian_product = tensor_jacobian_product
 
 @unary_to_nary
-def make_jvp(fun, x):
+def make_jvp_reversemode(fun, x):
     """Builds a function for evaluating the Jacobian-vector product at a
     point. Roughly 1.5x more FLOPs than forward-mode, plus memory requirements
     that scale with the number of primitives applied in the evaluation of f, as
-    well as other overheads. See j-towns.github.io/2017/06/12/A-new-trick.html
-    and github.com/BB-UCL/autograd-forward."""
+    well as other overheads."""
     vjp, y = _make_vjp(fun, x)
     vjp_vjp, _ = _make_vjp(vjp, vspace(y).zeros())
     return vjp_vjp  # vjp_vjp is just jvp by linearity
 
+# TODO(mattjj): update this function using make_jvp and const_graph
 def make_ggnvp(f, g=lambda x: 1./2*np.sum(x**2, axis=-1), f_argnum=0):
     """Builds a function for evaluating generalized-Gauss-Newton-vector products
     at a point. Slightly more expensive than mixed-mode."""

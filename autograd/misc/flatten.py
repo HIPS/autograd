@@ -2,8 +2,8 @@
 Handy functions for flattening nested containers containing numpy
 arrays. The main purpose is to make examples and optimizers simpler.
 """
-from autograd.tracer import getval
 from autograd import make_vjp
+from autograd.builtins import type
 import autograd.numpy as np
 
 def flatten(value):
@@ -15,10 +15,14 @@ def flatten(value):
     return flat_value, unflatten
 
 def _flatten(value):
-    t = type(getval(value))
+    t = type(value)
     if t in (list, tuple):
-        return np.concatenate(map(_flatten, value))
+      return _concatenate(map(_flatten, value))
     elif t is dict:
-        return np.concatenate([_flatten(value[k]) for k in sorted(value)])
+        return _concatenate(_flatten(value[k]) for k in sorted(value))
     else:
         return np.ravel(value)
+
+def _concatenate(lst):
+  lst = list(lst)
+  return np.concatenate(lst) if lst else np.array([])
