@@ -1,5 +1,3 @@
-from .errors import add_extra_error_message
-from future.utils import raise_
 from .util import subvals
 
 def unary_to_nary(unary_operator):
@@ -10,14 +8,11 @@ def unary_to_nary(unary_operator):
         def nary_f(*args, **kwargs):
             @wraps(fun)
             def unary_f(x):
-                try:
-                    if isinstance(argnum, int):
-                        subargs = subvals(args, [(argnum, x)])
-                    else:
-                        subargs = subvals(args, zip(argnum, x))
-                    return fun(*subargs, **kwargs)
-                except Exception as e:
-                    raise_(*add_extra_error_message(e))
+                if isinstance(argnum, int):
+                    subargs = subvals(args, [(argnum, x)])
+                else:
+                    subargs = subvals(args, zip(argnum, x))
+                return fun(*subargs, **kwargs)
             if isinstance(argnum, int):
                 x = args[argnum]
             else:
