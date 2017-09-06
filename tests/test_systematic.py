@@ -111,25 +111,25 @@ def test_matmul(): combo_check(np.matmul, [0, 1])(
                                [R(3), R(2, 3), R(2, 2, 3)],
                                [R(3), R(3, 4), R(2, 3, 4)])
 def test_matmul_broadcast(): combo_check(np.matmul, [0, 1])([R(1, 2, 2)], [R(3, 2, 1)])
-def test_tensordot_1(): combo_check(np.tensordot, [0, 1])(
+def test_tensordot_1(): combo_check(np.tensordot, [0, 1], order=3)(
                                     [R(1, 3), R(2, 3, 2)],
                                     [R(3),    R(3, 1),    R(3, 4, 2)],
                                     axes=[ [(1,), (0,)] ])
-def test_tensordot_2(): combo_check(np.tensordot, [0, 1])(
+def test_tensordot_2(): combo_check(np.tensordot, [0, 1], order=3)(
                                     [R(3),    R(3, 1),    R(3, 4, 2)],
                                     [R(1, 3), R(2, 3, 2)],
                                     axes=[ [(0,), (1,)] ])
-def test_tensordot_3(): combo_check(np.tensordot, [0, 1])(
+def test_tensordot_3(): combo_check(np.tensordot, [0, 1], order=3)(
                                     [R(2, 3),    R(2, 3, 4)],
                                     [R(1, 2, 3), R(2, 2, 3, 4)],
                                     axes=[ [(0, 1), (1, 2)] ,  [(1, 0), (2, 1)] ])
-def test_tensordot_4(): combo_check(np.tensordot, [0, 1])(
+def test_tensordot_4(): combo_check(np.tensordot, [0, 1], order=3)(
                                     [R(2, 2), R(4, 2, 2)],
                                     [R(2, 2), R(2, 2, 4)],
                                     axes=[1, 2])
-def test_tensordot_5(): combo_check(np.tensordot, [0, 1])([R(4)], [R()], axes=[0])
-def test_tensordot_6(): combo_check(np.tensordot, [0, 1])([R(2,6)], [R(6,3)], axes=[[[-1], [0]]])
-def test_tensordot_7(): combo_check(np.tensordot, [0, 1])([R(2,6)], [R(6,3)], axes=[[-1, 0]])
+def test_tensordot_5(): combo_check(np.tensordot, [0, 1], order=3)([R(4)], [R()], axes=[0])
+def test_tensordot_6(): combo_check(np.tensordot, [0, 1], order=3)([R(2,6)], [R(6,3)], axes=[[[-1], [0]]])
+def test_tensordot_7(): combo_check(np.tensordot, [0, 1], order=3)([R(2,6)], [R(6,3)], axes=[[-1, 0]])
 
 # Need custom tests because gradient is undefined when arguments are identical.
 def test_maximum(): combo_check(np.maximum, [0, 1])(
