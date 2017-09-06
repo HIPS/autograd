@@ -10,7 +10,7 @@ def test_check_vjp_1st_order_fail():
     defvjp(foo, lambda ans, vs, gvs, x : lambda g: g * 2.001)
 
     assert_raises_regexp(AssertionError,
-                         "\(VJP\) check of .* foo .* failed",
+                         "\(VJP\) check of foo failed",
                          lambda: check_grads(foo, modes=['rev'])(1.0))
 
 def test_check_vjp_2nd_order_fail():
@@ -25,5 +25,5 @@ def test_check_vjp_2nd_order_fail():
     defvjp(bar, lambda ans, vs, gvs, x : lambda g: g * 1.001)
 
     assert_raises_regexp(AssertionError,
-                         "\(VJP\) check of .* vjp_foo .* failed",
+                         "\(VJP\) check of vjp_foo failed",
                          lambda: check_grads(foo, modes=['rev'])(1.0))
