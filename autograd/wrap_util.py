@@ -8,7 +8,7 @@ def unary_to_nary(unary_operator):
         assert type(argnum) in (int, tuple, list), argnum
         @wrap_nary_f(fun, unary_operator, argnum)
         def nary_f(*args, **kwargs):
-            @wrap_unary_f(fun, argnum)
+            @wraps(fun)
             def unary_f(x):
                 try:
                     if isinstance(argnum, int):
@@ -42,11 +42,6 @@ def wrap_nary_f(fun, op, argnum):
     same arguments as {fun} but returns the {op}.
     """
     return wraps(fun, namestr, docstr, op=get_name(op), argnum=argnum)
-
-def wrap_unary_f(fun, argnum):
-    namestr = "{fun}_wrt_argnum_{argnum}"
-    docstr = "Function {fun} with all args except {argnum} bound to values"
-    return wraps(fun, namestr, docstr, argnum=argnum)
 
 get_name = lambda f: getattr(f, '__name__', '[unknown name]')
 get_doc  = lambda f: getattr(f, '__doc__' , '')
