@@ -543,7 +543,7 @@ def replace_zero(x, val):
 
 # ----- extra functions used internally  -----
 
-def array_from_args_gradmaker(argnum, ans, vs, gvs, *args, **kwargs):
+def array_from_args_gradmaker(argnum, ans, vs, gvs, args, kwargs):
     return lambda g: g[argnum-2]
 defvjp_argnum(anp.array_from_args, array_from_args_gradmaker)
 

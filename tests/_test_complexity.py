@@ -40,9 +40,9 @@ def test_list_creation():
     assert_linear_time(lambda N: deriv(fun)(0.0, 20*N))
 
 # This fails. Need to figure out why
-# def test_array_creation_fwd():
-#     def fun(x, N):
-#         arr = [x for i in range(N)]
-#         return np.sum(np.array(arr))
+def test_array_creation_fwd():
+    def fun(x, N):
+        arr = [x for i in range(N)]
+        return np.sum(np.array(arr))
 
-#     assert_linear_time(lambda N: deriv(fun)(1.0, 400*N))
+    assert_linear_time(lambda N: deriv(fun)(1.0, 400*N))

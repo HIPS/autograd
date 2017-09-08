@@ -10,7 +10,7 @@ from .numpy_boxes import ArrayBox
 def_linear_wrt_arg(func(ArrayBox.__getitem__))
 def_linear_wrt_arg(untake)
 
-defjvp_argnum(anp.array_from_args, lambda argnum, g, ans, gvs, vs, *args: untake(g, argnum-2, vs))
+defjvp_argnum(anp.array_from_args, lambda argnum, g, ans, gvs, vs, args, kwargs: untake(g, argnum-2, vs))
 defjvp(anp._array_from_scalar_or_array, lambda g, ans, gvs, vs, args, kwargs, _: anp._array_from_scalar_or_array(args, kwargs, g), argnum=2)
 
 # ----- Functions that are constant w.r.t. continuous inputs -----
@@ -193,7 +193,7 @@ def_multilinear(dot_adjoint_1)
 def_multilinear(tensordot_adjoint_0)
 def_multilinear(tensordot_adjoint_1)
 
-def fwd_grad_concatenate_args(argnum, g, ans, gvs, vs, *axis_args, **kwargs):
+def fwd_grad_concatenate_args(argnum, g, ans, gvs, vs, axis_args, kwargs):
     result = []
     for i in range(1, len(axis_args)):
         if i == argnum:

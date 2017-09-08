@@ -161,7 +161,7 @@ defvjp(func(VSpace.scalar_mul), lambda ans, vs, gvs, vs_, x, a: lambda g:
 
 def primitive_jvp(fun, argnum, g, ans, gvs, vs, args, kwargs):
     try:
-        return primitive_jvps[fun][argnum](g, ans, gvs, vs, *args, **kwargs)
+        return primitive_jvps[fun][argnum](g, ans, gvs, vs, args, kwargs)
     except KeyError:
         raise NotImplementedError("JVP of {} wrt arg number {} not yet implemented"
                                   .format(fun.__name__, argnum))
@@ -171,7 +171,9 @@ primitive_jvps = defaultdict(dict)
 def zero_jvp(g, ans, gvs, vs, *args, **kwargs): return vs.zeros()
 
 def defjvp(fun, jvpfun, argnum=0):
-    primitive_jvps[fun][argnum] = jvpfun
+    def jvpfun_fixed_args(g, ans, gvs, vs, args, kwargs):
+        return jvpfun(g, ans, gvs, vs, *args, **kwargs)
+    primitive_jvps[fun][argnum] = jvpfun_fixed_args
 
 def defjvps(fun, jvpfun, argnums):
     for argnum in argnums:
@@ -200,7 +202,7 @@ def def_multilinear(fun):
     """
     This is to flag that a function is linear in all of its args.
     """
-    defjvp_argnum(fun, lambda argnum, g, ans, gvs, vs, *args, **kwargs:
+    defjvp_argnum(fun, lambda argnum, g, ans, gvs, vs, args, kwargs:
                   fun(*subval(args, argnum, g), **kwargs))
 
 defjvps(sparse_add, identity_jvp, argnums=[0, 1])
