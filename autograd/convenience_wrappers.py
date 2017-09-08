@@ -105,7 +105,7 @@ def make_jvp_reversemode(fun, x):
     """Builds a function for evaluating the Jacobian-vector product at a
     point. Roughly 1.5x more FLOPs than forward-mode, plus memory requirements
     that scale with the number of primitives applied in the evaluation of f, as
-    well as other overheads."""
+    well as other overheads. See j-towns.github.io/2017/06/12/A-new-trick.html."""
     vjp, y = _make_vjp(fun, x)
     vjp_vjp, _ = _make_vjp(vjp, vspace(y).zeros())
     return vjp_vjp  # vjp_vjp is just jvp by linearity
