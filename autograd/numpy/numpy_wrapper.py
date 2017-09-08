@@ -3,6 +3,7 @@ import types
 import warnings
 from autograd.tracer import primitive, notrace_primitive, getval
 import numpy as _np
+import autograd.builtins as builtins
 
 def wrap_intdtype(cls):
     class IntdtypeSubclass(cls):
@@ -58,24 +59,28 @@ def column_stack(tup):
     return concatenate(arrays, 1)
 
 def array(A, *args, **kwargs):
-    if isinstance(A, _np.ndarray):
-        return _np.array(A, *args, **kwargs)
+    t = builtins.type(A)
+    if t in (list, tuple):
+        return array_from_args(args, kwargs, *map(array, A))
     else:
-        raw_array = _np.array(A, *args, **kwargs)
-        return wrap_if_boxes_inside(raw_array)
+        return _array_from_scalar_or_array(args, kwargs, A)
 
 def wrap_if_boxes_inside(raw_array, slow_op_name=None):
     if raw_array.dtype is _np.dtype('O'):
         if slow_op_name:
             warnings.warn("{0} is slow for array inputs. "
                           "np.concatenate() is faster.".format(slow_op_name))
-        return array_from_args(*raw_array.ravel()).reshape(raw_array.shape)
+        return array_from_args((), {}, *raw_array.ravel()).reshape(raw_array.shape)
     else:
         return raw_array
 
 @primitive
-def array_from_args(*args):
-    return _np.array(args)
+def _array_from_scalar_or_array(array_args, array_kwargs, scalar):
+    return _np.array(scalar, *array_args, **array_kwargs)
+
+@primitive
+def array_from_args(array_args, array_kwargs, *args):
+    return _np.array(args, *array_args, **array_kwargs)
 
 def select(condlist, choicelist, default=0):
     raw_array = _np.select(list(condlist), list(choicelist), default=default)
