@@ -16,13 +16,13 @@ multigammaln = primitive(scipy.special.multigammaln)
 
 defvjp_is_zero(gammasgn)
 defvjp_is_zero(polygamma, argnums=(0,))
-defvjp(polygamma, lambda ans, vs, gvs, n, x: lambda g: g * polygamma(n + 1, x), argnum=1)
-defvjp(psi,      lambda ans, vs, gvs, x: lambda g: g * polygamma(1, x))
-defvjp(digamma,  lambda ans, vs, gvs, x: lambda g: g * polygamma(1, x))
-defvjp(gamma,    lambda ans, vs, gvs, x: lambda g: g * ans * psi(x))
-defvjp(gammaln,  lambda ans, vs, gvs, x: lambda g: g * psi(x))
-defvjp(rgamma,   lambda ans, vs, gvs, x: lambda g: g * psi(x) / -gamma(x))
-defvjp(multigammaln,lambda ans, vs, gvs, a, d: lambda g:
+defvjp(polygamma, lambda ans, n, x: lambda g: g * polygamma(n + 1, x), argnum=1)
+defvjp(psi,      lambda ans, x: lambda g: g * polygamma(1, x))
+defvjp(digamma,  lambda ans, x: lambda g: g * polygamma(1, x))
+defvjp(gamma,    lambda ans, x: lambda g: g * ans * psi(x))
+defvjp(gammaln,  lambda ans, x: lambda g: g * psi(x))
+defvjp(rgamma,   lambda ans, x: lambda g: g * psi(x) / -gamma(x))
+defvjp(multigammaln,lambda ans, a, d: lambda g:
     g * np.sum(digamma(np.expand_dims(a, -1) - np.arange(d)/2.), -1))
 defvjp_is_zero(multigammaln,argnums=(1,))
 
@@ -34,22 +34,22 @@ y1 = primitive(scipy.special.y1)
 jn = primitive(scipy.special.jn)
 yn = primitive(scipy.special.yn)
 
-defvjp(j0,lambda ans, vs, gvs, x: lambda g: -g * j1(x))
-defvjp(y0,lambda ans, vs, gvs, x: lambda g: -g * y1(x))
-defvjp(j1,lambda ans, vs, gvs, x: lambda g: g * (j0(x) - jn(2, x)) / 2.0)
-defvjp(y1,lambda ans, vs, gvs, x: lambda g: g * (y0(x) - yn(2, x)) / 2.0)
+defvjp(j0,lambda ans, x: lambda g: -g * j1(x))
+defvjp(y0,lambda ans, x: lambda g: -g * y1(x))
+defvjp(j1,lambda ans, x: lambda g: g * (j0(x) - jn(2, x)) / 2.0)
+defvjp(y1,lambda ans, x: lambda g: g * (y0(x) - yn(2, x)) / 2.0)
 defvjp_is_zero(jn,argnums=(0,))
 defvjp_is_zero(yn,argnums=(0,))
-defvjp(jn,lambda ans, vs, gvs, n, x: lambda g: g * (jn(n - 1, x) - jn(n + 1, x)) / 2.0, argnum=1)
-defvjp(yn,lambda ans, vs, gvs, n, x: lambda g: g * (yn(n - 1, x) - yn(n + 1, x)) / 2.0, argnum=1)
+defvjp(jn,lambda ans, n, x: lambda g: g * (jn(n - 1, x) - jn(n + 1, x)) / 2.0, argnum=1)
+defvjp(yn,lambda ans, n, x: lambda g: g * (yn(n - 1, x) - yn(n + 1, x)) / 2.0, argnum=1)
 
 ### Error Function ###
 inv_root_pi = 0.56418958354775627928
 erf = primitive(scipy.special.erf)
 erfc = primitive(scipy.special.erfc)
 
-defvjp(erf, lambda ans, vs, gvs, x: lambda g:  2.*g*inv_root_pi*np.exp(-x**2))
-defvjp(erfc,lambda ans, vs, gvs, x: lambda g: -2.*g*inv_root_pi*np.exp(-x**2))
+defvjp(erf, lambda ans, x: lambda g:  2.*g*inv_root_pi*np.exp(-x**2))
+defvjp(erfc,lambda ans, x: lambda g: -2.*g*inv_root_pi*np.exp(-x**2))
 
 
 ### Inverse error function ###
@@ -57,12 +57,12 @@ root_pi = 1.7724538509055159
 erfinv = primitive(scipy.special.erfinv)
 erfcinv = primitive(scipy.special.erfcinv)
 
-defvjp(erfinv,lambda ans, vs, gvs, x: lambda g: g * root_pi / 2 * np.exp(erfinv(x)**2))
-defvjp(erfcinv,lambda ans, vs, gvs, x: lambda g: -g * root_pi / 2 * np.exp(erfcinv(x)**2))
+defvjp(erfinv,lambda ans, x: lambda g: g * root_pi / 2 * np.exp(erfinv(x)**2))
+defvjp(erfcinv,lambda ans, x: lambda g: -g * root_pi / 2 * np.exp(erfcinv(x)**2))
 
 ### Logit and Expit ###
 logit = primitive(scipy.special.logit)
 expit = primitive(scipy.special.expit)
 
-defvjp(logit,lambda ans, vs, gvs, x: lambda g: g / ( x * (1 - x)))
-defvjp(expit,lambda ans, vs, gvs, x: lambda g: g * ans * (1 - ans))
+defvjp(logit,lambda ans, x: lambda g: g / ( x * (1 - x)))
+defvjp(expit,lambda ans, x: lambda g: g * ans * (1 - ans))

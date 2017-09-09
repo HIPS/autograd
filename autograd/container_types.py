@@ -8,8 +8,8 @@ from .core import (defvjp, defvjp_is_zero, defvjp_argnum, SparseObject,
 @primitive
 def container_take(A, idx):
     return A[idx]
-def grad_container_take(ans, vs, gvs, A, idx):
-    return lambda g: container_untake(g, idx, vs)
+def grad_container_take(ans, A, idx):
+    return lambda g: container_untake(g, idx, vspace(A))
 defvjp(container_take, grad_container_take)
 def_linear_wrt_arg(container_take)
 
@@ -45,7 +45,7 @@ def container_untake(x, idx, vs):
     def mut_add(A):
         return vs._subval(A, idx, accum(A[idx]))
     return SparseObject(vs, mut_add)
-defvjp(container_untake, lambda ans, vs, gvs, x, idx, _:
+defvjp(container_untake, lambda ans, x, idx, _:
        lambda g: container_take(g, idx))
 def_linear_wrt_arg(container_untake)
 defvjp_is_zero(container_untake, argnums=(1, 2))
@@ -53,7 +53,7 @@ defvjp_is_zero(container_untake, argnums=(1, 2))
 @primitive
 def sequence_extend_right(seq, *elts):
     return seq + type(seq)(elts)
-def grad_sequence_extend_right(argnum, ans, vs, gvs, args, kwargs):
+def grad_sequence_extend_right(argnum, ans, args, kwargs):
     seq, elts = args[0], args[1:]
     return lambda g: g[:len(seq)] if argnum == 0 else g[len(seq) + argnum - 1]
 defvjp_argnum(sequence_extend_right, grad_sequence_extend_right)
@@ -61,7 +61,7 @@ defvjp_argnum(sequence_extend_right, grad_sequence_extend_right)
 @primitive
 def sequence_extend_left(seq, *elts):
     return type(seq)(elts) + seq
-def grad_sequence_extend_left(argnum, ans, vs, gvs, args, kwargs):
+def grad_sequence_extend_left(argnum, ans, args, kwargs):
     seq, elts = args[0], args[1:]
     return lambda g: g[len(elts):] if argnum == 0 else g[argnum - 1]
 defvjp_argnum(sequence_extend_left, grad_sequence_extend_left)
@@ -71,8 +71,8 @@ def make_sequence(seq_type, *args):
     return seq_type(args)
 defvjp_argnum(make_sequence, lambda argnum, *args: lambda g: g[argnum - 1])
 
-def fwd_grad_make_sequence(argnum, g, ans, gvs, vs, seq_type, *args, **kwargs):
-    return container_untake(g, argnum-1, vs)
+def fwd_grad_make_sequence(argnum, g, ans, seq_type, *args, **kwargs):
+    return container_untake(g, argnum-1, vspace(ans))
 
 defjvp_argnum(make_sequence, fwd_grad_make_sequence)
 
@@ -85,7 +85,7 @@ def make_dict(pairs):
 @primitive
 def _make_dict(keys, vals):
     return dict(zip(keys, vals))
-defvjp(_make_dict, lambda ans, vs, gvs, keys, vals: lambda g:
+defvjp(_make_dict, lambda ans, keys, vals: lambda g:
        make_list(*[g[key] for key in keys]), argnum=1)
 
 class ContainerVSpace(VSpace):

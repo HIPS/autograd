@@ -91,8 +91,8 @@ register_vspace(lambda x : x.vs, SparseObject)
 register_box(SparseBox, SparseObject)
 sparse_object_types = set((SparseObject, SparseBox))
 
-def zero_vjp(ans, vs, gvs, *args, **kwargs):
-    return lambda g: vs.zeros()
+def zero_vjp(argnum):
+    return lambda ans, *args, **kwargs: lambda g: vspace(args[argnum]).zeros()
 
 primitive_vjps = defaultdict(dict)
 
@@ -105,11 +105,11 @@ def primitive_vjp(fun, argnum, ans, args, kwargs):
         else:
             errstr = "Gradient of {0} not yet implemented."
         raise NotImplementedError(errstr.format(repr(fun), argnum))
-    return vjp(ans, vspace(args[argnum]), vspace(ans), args, kwargs)
+    return vjp(ans, args, kwargs)
 
 def defvjp(fun, vjpmaker, argnum=0):
-    def vjp_fixed_args(ans, vs, gvs, args, kwargs):
-        return vjpmaker(ans, vs, gvs, *args, **kwargs)
+    def vjp_fixed_args(ans, args, kwargs):
+        return vjpmaker(ans, *args, **kwargs)
     primitive_vjps[fun][argnum] = vjp_fixed_args
 
 def defvjps(fun, vjpmaker, argnums):
@@ -121,7 +121,7 @@ def defvjp_argnum(fun, vjpmaker):
 
 def defvjp_is_zero(fun, argnums=(0,)):
     for argnum in argnums:
-        defvjp(fun, zero_vjp, argnum)
+        defvjp(fun, zero_vjp(argnum), argnum)
         defjvp(fun, zero_jvp, argnum)
 
 class first_arg_as_get(object):
@@ -138,32 +138,32 @@ def sparse_add(x_prev, x_new): return x_new.mut_add(x_prev)
 defvjps(sparse_add, identity_vjp, argnums=[0, 1])
 
 defvjps(func(VSpace.mut_add), identity_vjp, argnums=[1,2])
-defvjp(func(VSpace.inner_prod), lambda ans, vs, gvs, vs_, x, y: lambda g:
-       vs.covector(vs.scalar_mul(y, gvs.covector(g))), argnum=1)
-defvjp(func(VSpace.inner_prod), lambda ans, vs, gvs, vs_, x, y: lambda g:
-       vs.covector(vs.scalar_mul(x, gvs.covector(g))), argnum=2)
+defvjp(func(VSpace.inner_prod), lambda ans, vs_, x, y: lambda g:
+       vspace(x).covector(vspace(x).scalar_mul(y, vspace(g).covector(g))), argnum=1)
+defvjp(func(VSpace.inner_prod), lambda ans, vs_, x, y: lambda g:
+       vspace(x).covector(vspace(x).scalar_mul(x, vspace(g).covector(g))), argnum=2)
 defvjps(func(VSpace.add), identity_vjp, argnums=[1,2])
-defvjp(func(VSpace.covector), lambda ans, vs, gvs, vs_, x: lambda g:
-       gvs.covector(g), argnum=1)
-defvjp(func(VSpace.scalar_mul), lambda ans, vs, gvs, vs_, x, a: lambda g:
-       vs.covector(gvs.scalar_mul(gvs.covector(g), a)), argnum=1)
-defvjp(func(VSpace.scalar_mul), lambda ans, vs, gvs, vs_, x, a: lambda g:
-       gvs.inner_prod(g, gvs.covector(x)), argnum=2)
+defvjp(func(VSpace.covector), lambda ans, vs_, x: lambda g:
+       vspace(g).covector(g), argnum=1)
+defvjp(func(VSpace.scalar_mul), lambda ans, vs_, x, a: lambda g:
+       vspace(x).covector(vspace(g).scalar_mul(vspace(g).covector(g), a)), argnum=1)
+defvjp(func(VSpace.scalar_mul), lambda ans, vs_, x, a: lambda g:
+       vspace(g).inner_prod(g, vspace(g).covector(x)), argnum=2)
 
 def primitive_jvp(fun, argnum, g, ans, args, kwargs):
     try:
-        return primitive_jvps[fun][argnum](g, ans, vspace(args[argnum]), vspace(ans), args, kwargs)
+        return primitive_jvps[fun][argnum](g, ans, args, kwargs)
     except KeyError:
         raise NotImplementedError("JVP of {} wrt arg number {} not yet implemented"
                                   .format(fun.__name__, argnum))
 
 primitive_jvps = defaultdict(dict)
 
-def zero_jvp(g, ans, gvs, vs, *args, **kwargs): return vs.zeros()
+def zero_jvp(g, ans, *args, **kwargs): return vspace(ans).zeros()
 
 def defjvp(fun, jvpfun, argnum=0):
-    def jvpfun_fixed_args(g, ans, gvs, vs, args, kwargs):
-        return jvpfun(g, ans, gvs, vs, *args, **kwargs)
+    def jvpfun_fixed_args(g, ans, args, kwargs):
+        return jvpfun(g, ans, *args, **kwargs)
     primitive_jvps[fun][argnum] = jvpfun_fixed_args
 
 def defjvps(fun, jvpfun, argnums):
@@ -182,7 +182,7 @@ def def_linear_wrt_arg(fun, argnum=0):
 
     In this case the jvp of fun is the same as fun itself.
     """
-    defjvp(fun, lambda g, ans, gvs, vs, *args, **kwargs:
+    defjvp(fun, lambda g, ans, *args, **kwargs:
            fun(*subval(args, argnum, g), **kwargs), argnum=argnum)
 
 def def_linear_wrt_args(fun, argnums):
@@ -193,7 +193,7 @@ def def_multilinear(fun):
     """
     This is to flag that a function is linear in all of its args.
     """
-    defjvp_argnum(fun, lambda argnum, g, ans, gvs, vs, args, kwargs:
+    defjvp_argnum(fun, lambda argnum, g, ans, args, kwargs:
                   fun(*subval(args, argnum, g), **kwargs))
 
 defjvps(sparse_add, identity_jvp, argnums=[0, 1])
@@ -201,6 +201,6 @@ defjvps(sparse_add, identity_jvp, argnums=[0, 1])
 defjvps(func(VSpace.mut_add), identity_jvp, argnums=[1,2])
 def_multilinear(func(VSpace.inner_prod))
 defjvps(func(VSpace.add), identity_jvp, argnums=[1,2])
-defjvp(func(VSpace.covector), lambda g, ans, gvs, vs, gvs_, x:
-       vs.covector(g), argnum=1)
+defjvp(func(VSpace.covector), lambda g, ans, gvs_, x:
+       vspace(x).covector(g), argnum=1)
 def_multilinear(func(VSpace.scalar_mul))
