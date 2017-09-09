@@ -9,6 +9,11 @@ from autograd.core import defvjp, defvjps, defvjp_is_zero, defvjp_argnum, Sparse
 from . import numpy_wrapper as anp
 from .numpy_boxes import ArrayBox
 
+shape     = anp.shape
+ndim      = anp.ndim
+iscomplex = anp.iscomplexobj
+metadata  = anp.metadata
+
 # ----- Functions that are constant w.r.t. continuous inputs -----
 
 defvjp_is_zero(anp.where, argnums=(0,))
@@ -16,38 +21,38 @@ defvjp(anp.nan_to_num, lambda ans, x: lambda g: anp.where(anp.isfinite(x), g, 0.
 
 # ----- Binary ufuncs -----
 
-defvjp(anp.add,         lambda ans, x, y : lambda g: unbroadcast(x, g, g))
-defvjp(anp.add,         lambda ans, x, y : lambda g: unbroadcast(y, g, g), argnum=1)
-defvjp(anp.multiply,    lambda ans, x, y : lambda g: unbroadcast(x, g, y * g))
-defvjp(anp.multiply,    lambda ans, x, y : lambda g: unbroadcast(y, g, x * g), argnum=1)
-defvjp(anp.subtract,    lambda ans, x, y : lambda g: unbroadcast(x, g, g))
-defvjp(anp.subtract,    lambda ans, x, y : lambda g: unbroadcast(y, g, -g), argnum=1)
-defvjp(anp.divide,      lambda ans, x, y : lambda g: unbroadcast(x, g,   g / y))
-defvjp(anp.divide,      lambda ans, x, y : lambda g: unbroadcast(y, g, - g * x / y**2), argnum=1)
-defvjp(anp.maximum,     lambda ans, x, y : lambda g: unbroadcast(x, g, g * balanced_eq(x, ans, y)))
-defvjp(anp.maximum,     lambda ans, x, y : lambda g: unbroadcast(y, g, g * balanced_eq(y, ans, x)), argnum=1)
-defvjp(anp.minimum,     lambda ans, x, y : lambda g: unbroadcast(x, g, g * balanced_eq(x, ans, y)))
-defvjp(anp.minimum,     lambda ans, x, y : lambda g: unbroadcast(y, g, g * balanced_eq(y, ans, x)), argnum=1)
-defvjp(anp.fmax,        lambda ans, x, y : lambda g: unbroadcast(x, g, g * balanced_eq(x, ans, y)))
-defvjp(anp.fmax,        lambda ans, x, y : lambda g: unbroadcast(y, g, g * balanced_eq(y, ans, x)), argnum=1)
-defvjp(anp.fmin,        lambda ans, x, y : lambda g: unbroadcast(x, g, g * balanced_eq(x, ans, y)))
-defvjp(anp.fmin,        lambda ans, x, y : lambda g: unbroadcast(y, g, g * balanced_eq(y, ans, x)), argnum=1)
-defvjp(anp.logaddexp,   lambda ans, x, y : lambda g: unbroadcast(x, g, g * anp.exp(x-ans)))
-defvjp(anp.logaddexp,   lambda ans, x, y : lambda g: unbroadcast(y, g, g * anp.exp(y-ans)), argnum=1)
-defvjp(anp.logaddexp2,  lambda ans, x, y : lambda g: unbroadcast(x, g, g * 2**(x-ans)))
-defvjp(anp.logaddexp2,  lambda ans, x, y : lambda g: unbroadcast(y, g, g * 2**(y-ans)), argnum=1)
-defvjp(anp.true_divide, lambda ans, x, y : lambda g: unbroadcast(x, g, g / y))
-defvjp(anp.true_divide, lambda ans, x, y : lambda g: unbroadcast(y, g, - g * x / y**2), argnum=1)
-defvjp(anp.mod,         lambda ans, x, y : lambda g: unbroadcast(x, g, g))
-defvjp(anp.remainder,   lambda ans, x, y : lambda g: unbroadcast(x, g, g))
-defvjp(anp.mod,         lambda ans, x, y : lambda g: unbroadcast(y, g, -g * anp.floor(x/y)), argnum=1)
-defvjp(anp.remainder,   lambda ans, x, y : lambda g: unbroadcast(y, g, -g * anp.floor(x/y)), argnum=1)
+defvjp(anp.add,         lambda ans, x, y : unbroadcast_f(x, lambda g: g))
+defvjp(anp.add,         lambda ans, x, y : unbroadcast_f(y, lambda g: g), argnum=1)
+defvjp(anp.multiply,    lambda ans, x, y : unbroadcast_f(x, lambda g: y * g))
+defvjp(anp.multiply,    lambda ans, x, y : unbroadcast_f(y, lambda g: x * g), argnum=1)
+defvjp(anp.subtract,    lambda ans, x, y : unbroadcast_f(x, lambda g: g))
+defvjp(anp.subtract,    lambda ans, x, y : unbroadcast_f(y, lambda g: -g), argnum=1)
+defvjp(anp.divide,      lambda ans, x, y : unbroadcast_f(x, lambda g:   g / y))
+defvjp(anp.divide,      lambda ans, x, y : unbroadcast_f(y, lambda g: - g * x / y**2), argnum=1)
+defvjp(anp.maximum,     lambda ans, x, y : unbroadcast_f(x, lambda g: g * balanced_eq(x, ans, y)))
+defvjp(anp.maximum,     lambda ans, x, y : unbroadcast_f(y, lambda g: g * balanced_eq(y, ans, x)), argnum=1)
+defvjp(anp.minimum,     lambda ans, x, y : unbroadcast_f(x, lambda g: g * balanced_eq(x, ans, y)))
+defvjp(anp.minimum,     lambda ans, x, y : unbroadcast_f(y, lambda g: g * balanced_eq(y, ans, x)), argnum=1)
+defvjp(anp.fmax,        lambda ans, x, y : unbroadcast_f(x, lambda g: g * balanced_eq(x, ans, y)))
+defvjp(anp.fmax,        lambda ans, x, y : unbroadcast_f(y, lambda g: g * balanced_eq(y, ans, x)), argnum=1)
+defvjp(anp.fmin,        lambda ans, x, y : unbroadcast_f(x, lambda g: g * balanced_eq(x, ans, y)))
+defvjp(anp.fmin,        lambda ans, x, y : unbroadcast_f(y, lambda g: g * balanced_eq(y, ans, x)), argnum=1)
+defvjp(anp.logaddexp,   lambda ans, x, y : unbroadcast_f(x, lambda g: g * anp.exp(x-ans)))
+defvjp(anp.logaddexp,   lambda ans, x, y : unbroadcast_f(y, lambda g: g * anp.exp(y-ans)), argnum=1)
+defvjp(anp.logaddexp2,  lambda ans, x, y : unbroadcast_f(x, lambda g: g * 2**(x-ans)))
+defvjp(anp.logaddexp2,  lambda ans, x, y : unbroadcast_f(y, lambda g: g * 2**(y-ans)), argnum=1)
+defvjp(anp.true_divide, lambda ans, x, y : unbroadcast_f(x, lambda g: g / y))
+defvjp(anp.true_divide, lambda ans, x, y : unbroadcast_f(y, lambda g: - g * x / y**2), argnum=1)
+defvjp(anp.mod,         lambda ans, x, y : unbroadcast_f(x, lambda g: g))
+defvjp(anp.remainder,   lambda ans, x, y : unbroadcast_f(x, lambda g: g))
+defvjp(anp.mod,         lambda ans, x, y : unbroadcast_f(y, lambda g: -g * anp.floor(x/y)), argnum=1)
+defvjp(anp.remainder,   lambda ans, x, y : unbroadcast_f(y, lambda g: -g * anp.floor(x/y)), argnum=1)
 defvjp(anp.power,
-    lambda ans, x, y : lambda g:
-    unbroadcast(x, g, g * y * x ** anp.where(y, y - 1, 1.)))
+    lambda ans, x, y : unbroadcast_f(x, lambda g:
+    g * y * x ** anp.where(y, y - 1, 1.)))
 defvjp(anp.power,
-    lambda ans, x, y : lambda g:
-    unbroadcast(y, g, g * anp.log(replace_zero(x, 1.)) * x ** y), argnum=1)
+    lambda ans, x, y : unbroadcast_f(y, lambda g:
+    g * anp.log(replace_zero(x, 1.)) * x ** y), argnum=1)
 
 # ----- Simple grads -----
 
@@ -467,6 +472,7 @@ defvjp(anp.atleast_2d, grad_reshape_list)
 defvjp(anp.atleast_3d, grad_reshape_list)
 
 def grad_einsum(argnum, ans, operands_, kwargs):
+    result_meta = metadata(operands_[argnum])
     def vjp(g):
         operands = operands_
         if isinstance(operands[0], string_types):  # using "ijk" convention.
@@ -497,14 +503,14 @@ def grad_einsum(argnum, ans, operands_, kwargs):
                 new_operands = (g,) + rest_of_ops
 
             new_subscripts = new_input_subs + '->' + subs_wrt
-            return unbroadcast(operands_[argnum], ans, anp.einsum(new_subscripts, *new_operands))
+            return unbroadcast(anp.einsum(new_subscripts, *new_operands), result_meta)
         else:  # using (op0, sublist0, op1, sublist1, ..., sublistout) convention
             if len(operands) % 2 == 0:
                 raise NotImplementedError("Need sublistout argument")
             operands = list(operands)
             rest_of_ops = [operands[-1]] + operands[:argnum] + \
                     operands[(argnum+2):-1] + [operands[argnum+1]]
-            return unbroadcast_einsum(operands_[argnum], ans, anp.einsum(g, *rest_of_ops), operands[argnum + 1])
+            return unbroadcast_einsum(anp.einsum(g, *rest_of_ops), result_meta, operands[argnum + 1])
     return vjp
 defvjp_argnum(anp.einsum, grad_einsum)
 
@@ -525,27 +531,30 @@ def match_complex(model, x):
     else:
         return x
 
-def unbroadcast(x, g, result, broadcast_idx=0):
-    vs = vspace(x)
-    gvs = vspace(g)
-    while anp.ndim(result) > vs.ndim:
-        result = anp.sum(result, axis=broadcast_idx)
-    for axis, size in enumerate(vs.shape):
+def unbroadcast(x, target_meta, broadcast_idx=0):
+    target_shape, target_ndim, target_iscomplex = target_meta
+    while anp.ndim(x) > target_ndim:
+        x = anp.sum(x, axis=broadcast_idx)
+    for axis, size in enumerate(target_shape):
         if size == 1:
-            result = anp.sum(result, axis=axis, keepdims=True)
-    if gvs.iscomplex and not vs.iscomplex:
-        result = anp.real(result)
-    return result
+            x = anp.sum(x, axis=axis, keepdims=True)
+    if iscomplex(x) and not target_iscomplex:
+        x = anp.real(x)
+    return x
 
-def unbroadcast_einsum(x, ans, result, subscript):
+def unbroadcast_f(target, f):
+    target_meta = metadata(target)
+    return lambda g: unbroadcast(f(g), target_meta)
+
+def unbroadcast_einsum(x, target_meta, subscript):
     if Ellipsis not in subscript:
-        return result
+        return x
     elif subscript[0] == Ellipsis:
-        return unbroadcast(x, ans, result, 0)
+        return unbroadcast(x, target_meta, 0)
     elif subscript[-1] == Ellipsis:
-        return unbroadcast(x, ans, result, -1)
+        return unbroadcast(x, target_meta, -1)
     else:
-        return unbroadcast(x, ans, result, subscript.index(Ellipsis))
+        return unbroadcast(x, target_meta, subscript.index(Ellipsis))
 
 def balanced_eq(x, z, y):
     return (x == z) / (1.0 + (x == y))

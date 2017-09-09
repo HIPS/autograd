@@ -136,3 +136,7 @@ def make_diagonal(D, offset=0, axis1=0, axis2=1):
     new_array_diag.flags.writeable = True
     new_array_diag[:] = D
     return new_array
+
+@notrace_primitive
+def metadata(A):
+    return _np.shape(A), _np.ndim(A), _np.iscomplexobj(A)
