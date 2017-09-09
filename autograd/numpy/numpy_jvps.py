@@ -157,7 +157,7 @@ def forward_grad_np_std(g, ans, x, axis=None, ddof=0, keepdims=False):
         num_reps = anp.prod(anp.array(gvs.shape)[list(axis)])
 
     if num_reps <= 1:
-        return vs.zeros()
+        return vspace(ans).zeros()
     x_minus_mean = anp.conj(x - anp.mean(x, axis=axis, keepdims=True))
     return (anp.sum(anp.real(g * x_minus_mean), axis=axis, keepdims=keepdims) /
             ((num_reps - ddof) * ans))
@@ -209,8 +209,7 @@ def fwd_grad_sort(g, ans, x, axis=-1, kind='quicksort', order=None):
     sort_perm = anp.argsort(x, axis, kind, order)
     return g[sort_perm]
 defjvp(anp.sort, fwd_grad_sort)
-defjvp(anp.msort, lambda g, ans, x: fwd_grad_sort(g, ans, vspace(g), vspace(ans), x,
-                                                          axis=0))
+defjvp(anp.msort, lambda g, ans, x: fwd_grad_sort(g, ans, x, axis=0))
 
 def fwd_grad_partition(g, ans, x, kth, axis=-1, kind='introselect', order=None):
     partition_perm = anp.argpartition(x, kth, axis, kind, order)

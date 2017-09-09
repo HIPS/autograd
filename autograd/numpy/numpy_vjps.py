@@ -336,7 +336,7 @@ def dot_adjoint_1(A, G, B_vs):
 defvjp(anp.dot, lambda ans, A, B: lambda g: dot_adjoint_0(B, g, vspace(A)))
 defvjp(anp.dot, lambda ans, A, B: lambda g: dot_adjoint_1(A, g, vspace(B)), 1)
 
-defvjp(dot_adjoint_0, lambda ans, B, g, A_vs: lambda A: dot_adjoint_1(A, g, vspace(A)))
+defvjp(dot_adjoint_0, lambda ans, B, g, A_vs: lambda A: dot_adjoint_1(A, g, vspace(B)))
 defvjp(dot_adjoint_0, lambda ans, B, g, *args: lambda A: anp.dot(A, B), 1)
 
 defvjp(dot_adjoint_1, lambda ans, A, g, B_vs: lambda B: dot_adjoint_0(B, g, vspace(A)))
