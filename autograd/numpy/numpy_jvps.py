@@ -22,10 +22,10 @@ def_linear_wrt_arg(anp.divide)
 def_linear_wrt_arg(anp.true_divide)
 
 # ----- Binary ufuncs -----
-defjvp(anp.add,        lambda g, ans, x, y : broadcast(x, ans, g))
-defjvp(anp.add,        lambda g, ans, x, y : broadcast(y, ans, g), argnum=1)
-defjvp(anp.subtract,   lambda g, ans, x, y : broadcast(x, ans, g))
-defjvp(anp.subtract,   lambda g, ans, x, y : broadcast(y, ans, -g), argnum=1)
+defjvp(anp.add,        lambda g, ans, x, y : broadcast(g, ans))
+defjvp(anp.add,        lambda g, ans, x, y : broadcast(g, ans), argnum=1)
+defjvp(anp.subtract,   lambda g, ans, x, y : broadcast(g, ans))
+defjvp(anp.subtract,   lambda g, ans, x, y : broadcast(-g, ans), argnum=1)
 defjvp(anp.divide,     lambda g, ans, x, y : - g * x / y**2, argnum=1)
 defjvp(anp.maximum,    lambda g, ans, x, y : g * balanced_eq(x, ans, y))
 defjvp(anp.maximum,    lambda g, ans, x, y : g * balanced_eq(y, ans, x), argnum=1)
@@ -40,8 +40,8 @@ defjvp(anp.logaddexp,  lambda g, ans, x, y : g * anp.exp(y-ans), argnum=1)
 defjvp(anp.logaddexp2, lambda g, ans, x, y : g * 2**(x-ans))
 defjvp(anp.logaddexp2, lambda g, ans, x, y : g * 2**(y-ans), argnum=1)
 defjvp(anp.true_divide,lambda g, ans, x, y : - g * x / y**2, argnum=1)
-defjvp(anp.mod,        lambda g, ans, x, y : broadcast(x, ans, g))
-defjvp(anp.remainder,  lambda g, ans, x, y : broadcast(x, ans, g))
+defjvp(anp.mod,        lambda g, ans, x, y : broadcast(g, ans))
+defjvp(anp.remainder,  lambda g, ans, x, y : broadcast(g, ans))
 defjvp(anp.mod,        lambda g, ans, x, y : -g * anp.floor(x/y), argnum=1)
 defjvp(anp.remainder,  lambda g, ans, x, y : -g * anp.floor(x/y), argnum=1)
 defjvp(anp.power,      lambda g, ans, x, y : g * y * x ** anp.where(y, y - 1, 1.))
@@ -128,16 +128,12 @@ defjvp(anp.linspace, lambda g, ans, start, stop, *args, **kwargs: anp.linspace(g
 defjvp(anp.linspace, lambda g, ans, start, stop, *args, **kwargs: anp.linspace(0, g, *args, **kwargs), argnum=1)
 
 def forward_grad_np_var(g, ans, x, axis=None, ddof=0, keepdims=False):
-    gvs = vspace(x)
     if axis is None:
-        if gvs.iscomplex:
-            num_reps = gvs.size / 2
-        else:
-            num_reps = gvs.size
+        num_reps = anp.size(g)
     elif isinstance(axis, int):
-        num_reps = gvs.shape[axis]
+        num_reps = anp.shape(g)[axis]
     elif isinstance(axis, tuple):
-        num_reps = anp.prod(anp.array(gvs.shape)[list(axis)])
+        num_reps = anp.prod(anp.array(np.shape(g))[list(axis)])
 
     x_minus_mean = anp.conj(x - anp.mean(x, axis=axis, keepdims=True))
     return (2.0 * anp.sum(anp.real(g * x_minus_mean), axis=axis, keepdims=keepdims) /
@@ -145,19 +141,15 @@ def forward_grad_np_var(g, ans, x, axis=None, ddof=0, keepdims=False):
 defjvp(anp.var, forward_grad_np_var)
 
 def forward_grad_np_std(g, ans, x, axis=None, ddof=0, keepdims=False):
-    gvs = vspace(x)
     if axis is None:
-        if gvs.iscomplex:
-            num_reps = gvs.size / 2
-        else:
-            num_reps = gvs.size
+        num_reps = anp.size(g)
     elif isinstance(axis, int):
-        num_reps = gvs.shape[axis]
+        num_reps = anp.shape(g)[axis]
     elif isinstance(axis, tuple):
-        num_reps = anp.prod(anp.array(gvs.shape)[list(axis)])
+        num_reps = anp.prod(anp.array(anp.shape(g))[list(axis)])
 
     if num_reps <= 1:
-        return vspace(ans).zeros()
+        return anp.zeros_like(ans)
     x_minus_mean = anp.conj(x - anp.mean(x, axis=axis, keepdims=True))
     return (anp.sum(anp.real(g * x_minus_mean), axis=axis, keepdims=keepdims) /
             ((num_reps - ddof) * ans))
@@ -201,7 +193,7 @@ def fwd_grad_concatenate_args(argnum, g, ans, axis_args, kwargs):
         if i == argnum:
             result.append(g)
         else:
-            result.append(vspace(axis_args[i]).zeros())
+            result.append(anp.zeros_like(axis_args[i]))
     return anp.concatenate_args(axis_args[0], *result)
 defjvp_argnum(anp.concatenate_args, fwd_grad_concatenate_args)
 
@@ -228,15 +220,13 @@ defjvp(anp.atleast_3d, atleast_jvpmaker(anp.atleast_3d))
 
 def_multilinear(anp.einsum)
 
-def broadcast(x, ans, result, broadcast_idx=0):
-    vs = vspace(ans)
-    gvs = vspace(x)
-
-    while anp.ndim(result) < len(vs.shape):
-        result = anp.expand_dims(result, 0)
-    for axis, size in enumerate(anp.shape(result)):
+def broadcast(x, target):
+    target_shape, target_ndim, target_iscomplex = anp.metadata(target)
+    while anp.ndim(x) < target_ndim:
+        x = anp.expand_dims(x, 0)
+    for axis, size in enumerate(anp.shape(x)):
         if size == 1:
-            result = anp.repeat(result, vs.shape[axis], axis=axis)
-    if vs.iscomplex and not gvs.iscomplex:
-        result = result + 0j
-    return result
+            x = anp.repeat(x, target_shape[axis], axis=axis)
+    if target_iscomplex and not anp.iscomplexobj(x):
+        x = x + 0j
+    return x
