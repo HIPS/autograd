@@ -17,11 +17,11 @@ def make_vjp(fun, x):
 def backward_pass(g, end_node):
     outgrads = {end_node : (g, False)}
     for node in toposort(end_node):
-        cur_outgrad = outgrads.pop(node)
-        for parent, vjp in node.parents_and_vjps:
-            outgrad = vjp(cur_outgrad[0])
-            outgrads[parent] = add_outgrads(outgrads.get(parent), outgrad)
-    return cur_outgrad[0]
+        outgrad = outgrads.pop(node)
+        ingrads = node.vjp(outgrad[0])
+        for parent, ingrad in zip(node.parents, ingrads):
+            outgrads[parent] = add_outgrads(outgrads.get(parent), ingrad)
+    return outgrad[0]
 
 def make_jvp(fun, x):
     def jvp(g):
@@ -34,19 +34,17 @@ def make_jvp(fun, x):
     return jvp
 
 class VJPNode(Node):
-    __slots__ = ['vspace', 'parents', 'parents_and_vjps']
+    __slots__ = ['parents', 'vjp']
     def __init__(self, value, fun, args, kwargs, parent_argnums, parents):
         self.parents = parents
-        self.parents_and_vjps = [
-            (parent, primitive_vjp(fun, argnum, value, args, kwargs))
-            for argnum, parent in zip(parent_argnums, parents)]
+        self.vjp = primitive_vjp(fun, parent_argnums, value, args, kwargs)
 
     def initialize_root(self, value):
         self.parents = []
-        self.parents_and_vjps = []
+        self.vjp = lambda g: (g,)
 
 class JVPNode(Node):
-    __slots__ = ['vspace', 'g']
+    __slots__ = ['g']
     def __init__(self, value, fun, args, kwargs, parent_argnums, parents):
         cur_g = None
         for argnum, parent in zip(parent_argnums, parents):
@@ -96,15 +94,25 @@ def zero_vjp(argnum):
 
 primitive_vjps = defaultdict(dict)
 
+def make_combo_vjp(vjps):
+    def combo_vjp(ans, args, kwargs):
+        vjps_ = [vjp(ans, args, kwargs) for vjp in vjps]
+        return lambda g: (vjp(g) for vjp in vjps_)
+    return combo_vjp
+
 def primitive_vjp(fun, argnum, ans, args, kwargs):
     try:
         vjp = primitive_vjps[fun][argnum]
     except KeyError:
-        if primitive_vjps[fun]:
-            errstr = "Gradient of {0} w.r.t. arg number {1} not yet implemented."
-        else:
-            errstr = "Gradient of {0} not yet implemented."
-        raise NotImplementedError(errstr.format(repr(fun), argnum))
+        try:
+            argnums = argnum
+            vjp = make_combo_vjp([primitive_vjps[fun][argnum] for argnum in argnums])
+        except:
+            if primitive_vjps[fun]:
+                errstr = "Gradient of {0} w.r.t. arg number {1} not yet implemented."
+            else:
+                errstr = "Gradient of {0} not yet implemented."
+            raise NotImplementedError(errstr.format(repr(fun), argnum))
     return vjp(ans, args, kwargs)
 
 def defvjp(fun, vjpmaker, argnum=0):
@@ -119,6 +127,8 @@ def defvjps(fun, vjpmaker, argnums):
 def defvjp_argnum(fun, vjpmaker):
     primitive_vjps[fun] = first_arg_as_get(vjpmaker)
 
+# TODO(mattjj): do something smarter here given new argnums indexing of
+# primitive_vjps[fun]
 def defvjp_is_zero(fun, argnums=(0,)):
     for argnum in argnums:
         defvjp(fun, zero_vjp(argnum), argnum)
@@ -127,8 +137,13 @@ def defvjp_is_zero(fun, argnums=(0,)):
 class first_arg_as_get(object):
     def __init__(self, f):
         self.f = f
-    def __getitem__(self, argnum):
-        return lambda *args, **kwargs: self.f(argnum, *args, **kwargs)
+    def __getitem__(self, argnum_or_argnums):
+        if type(argnum_or_argnums) == tuple:
+            def vjp_maker(*args, **kwargs):
+                vjps = [self.f(argnum, *args, **kwargs) for argnum in argnum_or_argnums]
+                return lambda g: (vjp(g) for vjp in vjps)
+            return vjp_maker
+        return lambda *args, **kwargs: self.f(argnum_or_argnums, *args, **kwargs)
 
 identity_vjp = lambda *args: lambda g: g
 identity_jvp = lambda argnum, g, *args, **kwargs: g
