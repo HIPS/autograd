@@ -128,7 +128,7 @@ def defvjp_argnum(fun, vjpmaker):
     primitive_vjps[fun] = first_arg_as_get(vjpmaker)
 
 # TODO(mattjj): do something smarter here given new argnums indexing of
-# primitive_vjps[fun]
+# primitive_vjps[fun]. register all combinations?
 def defvjp_is_zero(fun, argnums=(0,)):
     for argnum in argnums:
         defvjp(fun, zero_vjp(argnum), argnum)
@@ -138,6 +138,8 @@ class first_arg_as_get(object):
     def __init__(self, f):
         self.f = f
     def __getitem__(self, argnum_or_argnums):
+        # TODO(mattjj): should probably just change the spec of defvjp_argnum to
+        # require the provided function to take a tuple of argnums
         if type(argnum_or_argnums) == tuple:
             def vjp_maker(*args, **kwargs):
                 vjps = [self.f(argnum, *args, **kwargs) for argnum in argnum_or_argnums]
