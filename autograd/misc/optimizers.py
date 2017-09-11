@@ -10,7 +10,7 @@ from __future__ import absolute_import
 
 import autograd.numpy as np
 from autograd.misc import flatten
-from autograd.util import wraps
+from autograd.wrap_util import wraps
 from builtins import range
 
 def unflatten_optimizer(optimize):
