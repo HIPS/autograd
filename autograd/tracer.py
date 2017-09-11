@@ -36,8 +36,8 @@ def primitive(f_raw):
         boxed_args, trace, node_constructor = find_top_boxed_args(args)
         if boxed_args:
             argvals = subvals(args, [(argnum, box._value) for argnum, box in boxed_args])
-            parents = [box._node for _     , box in boxed_args]
-            argnums = [argnum    for argnum, _   in boxed_args]
+            parents = tuple(box._node for _     , box in boxed_args)
+            argnums = tuple(argnum    for argnum, _   in boxed_args)
             ans = f_wrapped(*argvals, **kwargs)
             node = node_constructor(ans, f_wrapped, argvals, kwargs, argnums, parents)
             return new_box(ans, trace, node)
