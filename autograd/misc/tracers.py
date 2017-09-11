@@ -5,7 +5,7 @@ from autograd.tracer import trace, Node, toposort
 from functools import partial
 
 class ConstGraphNode(Node):
-    __slots__ = ['args', 'parents', 'partial_fun']
+    __slots__ = ['parents', 'partial_fun']
     def __init__(self, value, fun, args, kwargs, parent_argnums, parents):
         args = subvals(args, zip(parent_argnums, repeat(None)))
         def partial_fun(partial_args):
