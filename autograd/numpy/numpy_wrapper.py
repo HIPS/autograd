@@ -18,7 +18,7 @@ nograd_functions = [
     _np.isfinite, _np.isinf, _np.isnan, _np.isneginf, _np.isposinf, _np.allclose, _np.isclose,
     _np.array_equal, _np.array_equiv, _np.greater, _np.greater_equal, _np.less, _np.less_equal,
     _np.equal, _np.not_equal, _np.iscomplexobj, _np.iscomplex, _np.size, _np.isscalar,
-    _np.isreal, _np.zeros_like, _np.ones_like]
+    _np.isreal, _np.zeros_like, _np.ones_like, _np.result_type]
 
 def wrap_namespace(old, new):
     unchanged_types = {float, int, type(None), type}
@@ -139,4 +139,4 @@ def make_diagonal(D, offset=0, axis1=0, axis2=1):
 
 @notrace_primitive
 def metadata(A):
-    return _np.shape(A), _np.ndim(A), _np.iscomplexobj(A)
+    return _np.shape(A), _np.ndim(A), _np.result_type(A), _np.iscomplexobj(A)

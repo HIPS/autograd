@@ -220,13 +220,14 @@ defjvp(anp.atleast_3d, atleast_jvpmaker(anp.atleast_3d))
 
 def_multilinear(anp.einsum)
 
+# TODO(mattjj): can we call np.broadcast_to or a related function instead?
 def broadcast(x, target):
-    target_shape, target_ndim, target_iscomplex = anp.metadata(target)
+    target_shape, target_ndim, target_dtype, target_iscomplex = anp.metadata(target)
     while anp.ndim(x) < target_ndim:
         x = anp.expand_dims(x, 0)
     for axis, size in enumerate(anp.shape(x)):
         if size == 1:
             x = anp.repeat(x, target_shape[axis], axis=axis)
     if target_iscomplex and not anp.iscomplexobj(x):
-        x = x + 0j
+        x = x + 0j  # TODO(mattjj): this might promote the dtype
     return x
