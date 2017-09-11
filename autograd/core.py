@@ -94,7 +94,6 @@ def zero_vjp(argnum):
 
 primitive_vjps = defaultdict(dict)
 
-# TODO(mattjj): instead of this, make the defaultdict have a defaultdict
 def make_combo_vjp(vjps):
     def combo_vjp(ans, args, kwargs):
         vjps_ = [vjp(ans, args, kwargs) for vjp in vjps]
