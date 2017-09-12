@@ -539,7 +539,7 @@ def match_complex(target, x):
 def broadcast(x, target_meta, broadcast_idx=0):
     target_shape, _, _, target_iscomplex = target_meta
     x = onp.broadcast_to(x, target_shape)
-    if target_iscomplex and not anp.iscomplexobj(x):
+    if target_iscomplex and not onp.iscomplexobj(x):
         x = x + 0j  # TODO(mattjj): this might promote the dtype
     return x
 
@@ -551,13 +551,13 @@ defvjp(broadcast, grad_broadcast)
 @primitive
 def unbroadcast(x, target_meta, broadcast_idx=0):
     target_shape, target_ndim, dtype, target_iscomplex = target_meta
-    while anp.ndim(x) > target_ndim:
-        x = anp.sum(x, axis=broadcast_idx)
+    while onp.ndim(x) > target_ndim:
+        x = onp.sum(x, axis=broadcast_idx)
     for axis, size in enumerate(target_shape):
         if size == 1:
-            x = anp.sum(x, axis=axis, keepdims=True)
-    if anp.iscomplexobj(x) and not target_iscomplex:
-        x = anp.real(x)
+            x = onp.sum(x, axis=axis, keepdims=True)
+    if onp.iscomplexobj(x) and not target_iscomplex:
+        x = onp.real(x)
     return x
 
 def grad_unbroadcast(ans, x, target_meta, broadcast_idx=0):
