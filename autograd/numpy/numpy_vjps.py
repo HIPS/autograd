@@ -519,11 +519,11 @@ def grad_einsum(argnum, ans, operands_, kwargs):
 defvjp_argnum(anp.einsum, grad_einsum)
 
 defvjp(anp.diagonal,
-    lambda ans, A, offset=0, axis1=0, axis2=1 :
-    lambda g: anp.make_diagonal(g, offset, axis1, axis2))
+       lambda ans, A, offset=0, axis1=0, axis2=1 :
+       lambda g: anp.make_diagonal(g, offset, axis1, axis2))
 defvjp(anp.make_diagonal,
-    lambda ans, D, offset=0, axis1=0, axis2=1 :
-    lambda g: anp.diagonal(g, offset, axis1, axis2))
+       lambda ans, D, offset=0, axis1=0, axis2=1 :
+       lambda g: anp.diagonal(g, offset, axis1, axis2))
 
 def match_complex(target, x):
     target_iscomplex = anp.iscomplexobj(target)
@@ -535,6 +535,24 @@ def match_complex(target, x):
     else:
         return x
 
+@primitive
+def broadcast(x, target_meta, broadcast_idx=0):
+    target_shape, target_ndim, target_dtype, target_iscomplex = target_meta
+    while anp.ndim(x) < target_ndim:
+        x = anp.expand_dims(x, broadcast_idx)
+    for axis, size in enumerate(anp.shape(x)):
+        if size == 1:
+            x = anp.repeat(x, target_shape[axis], axis=axis)
+    if target_iscomplex and not anp.iscomplexobj(x):
+        x = x + 0j  # TODO(mattjj): this might promote the dtype
+    return x
+
+def grad_broadcast(ans, x, target_meta, broadcast_idx=0):
+  meta = anp.metadata(x)
+  return lambda g: unbroadcast(g, meta, broadcast_idx)
+defvjp(broadcast, grad_broadcast)
+
+@primitive
 def unbroadcast(x, target_meta, broadcast_idx=0):
     target_shape, target_ndim, dtype, target_iscomplex = target_meta
     while anp.ndim(x) > target_ndim:
@@ -545,6 +563,11 @@ def unbroadcast(x, target_meta, broadcast_idx=0):
     if anp.iscomplexobj(x) and not target_iscomplex:
         x = anp.real(x)
     return x
+
+def grad_unbroadcast(ans, x, target_meta, broadcast_idx=0):
+  meta = anp.metadata(x)
+  return lambda g: broadcast(g, meta, broadcast_idx)
+defvjp(unbroadcast, grad_unbroadcast)
 
 def unbroadcast_f(target, f):
     target_meta = anp.metadata(target)
