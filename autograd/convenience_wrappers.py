@@ -192,7 +192,7 @@ def checkpoint(fun):
     for the backward pass. Useful to save memory, effectively trading off time
     and memory. See e.g. arxiv.org/abs/1604.06174.
     """
-    def wrapped_grad(argnum, ans, vs, gvs, args, kwargs):
+    def wrapped_grad(argnum, ans, args, kwargs):
         return make_vjp(fun, argnum)(*args, **kwargs)[0]
     wrapped = primitive(fun)
     defvjp_argnum(wrapped, wrapped_grad)

@@ -51,9 +51,3 @@ def vspace(value):
 vspace_mappings = {}
 def register_vspace(vspace_maker, value_type):
     vspace_mappings[value_type] = vspace_maker
-
-def assert_vspace_match(x, expected_vspace):
-    assert expected_vspace == vspace(x), \
-        "\nGrad returned unexpected vector space" \
-        "\nVector space is {}" \
-        "\nExpected        {}".format(vspace(x), expected_vspace)

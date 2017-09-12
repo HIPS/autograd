@@ -4,16 +4,18 @@ from .numpy_wrapper import wrap_namespace
 from .numpy_vjps import match_complex
 from . import numpy_wrapper as anp
 from autograd.core import primitive, defvjp
+from autograd.vspace import vspace
 from builtins import zip
 
 wrap_namespace(ffto.__dict__, globals())
 
 # TODO: make fft gradient work for a repeated axis,
 # e.g. by replacing fftn with repeated calls to 1d fft along each axis
-def fft_grad(get_args, fft_fun, ans, vs, gvs, x, *args, **kwargs):
+def fft_grad(get_args, fft_fun, ans, x, *args, **kwargs):
     axes, s, norm = get_args(x, *args, **kwargs)
     check_no_repeated_axes(axes)
-    return lambda g: match_complex(vs, truncate_pad(fft_fun(g, *args, **kwargs), vs.shape))
+    vs = vspace(x)
+    return lambda g: match_complex(x, truncate_pad(fft_fun(g, *args, **kwargs), vs.shape))
 
 defvjp(fft, lambda *args, **kwargs:
         fft_grad(get_fft_args, fft, *args, **kwargs))
@@ -30,9 +32,10 @@ defvjp(fftn, lambda *args, **kwargs:
 defvjp(ifftn, lambda *args, **kwargs:
         fft_grad(get_fft_args, ifftn, *args, **kwargs))
 
-def rfft_grad(get_args, irfft_fun, ans, vs, gvs, x, *args, **kwargs):
+def rfft_grad(get_args, irfft_fun, ans, x, *args, **kwargs):
     axes, s, norm = get_args(x, *args, **kwargs)
-
+    vs = vspace(x)
+    gvs = vspace(ans)
     check_no_repeated_axes(axes)
     if s is None: s = [vs.shape[i] for i in axes]
     check_even_shape(s)
@@ -44,13 +47,14 @@ def rfft_grad(get_args, irfft_fun, ans, vs, gvs, x, *args, **kwargs):
     fac = make_rfft_factors(axes, gvs.shape, gs, s, norm)
     def vjp(g):
         g = anp.conj(g / fac)
-        r = match_complex(vs, truncate_pad((irfft_fun(g, *args, **kwargs)), vs.shape))
+        r = match_complex(x, truncate_pad((irfft_fun(g, *args, **kwargs)), vs.shape))
         return r
     return vjp
 
-def irfft_grad(get_args, rfft_fun, ans, vs, gvs, x, *args, **kwargs):
+def irfft_grad(get_args, rfft_fun, ans, x, *args, **kwargs):
     axes, gs, norm = get_args(x, *args, **kwargs)
-
+    vs = vspace(x)
+    gvs = vspace(ans)
     check_no_repeated_axes(axes)
     if gs is None: gs = [gvs.shape[i] for i in axes]
     check_even_shape(gs)
@@ -60,7 +64,7 @@ def irfft_grad(get_args, rfft_fun, ans, vs, gvs, x, *args, **kwargs):
     s = list(gs)
     s[-1] = s[-1] // 2 + 1
     def vjp(g):
-        r = match_complex(vs, truncate_pad((rfft_fun(g,  *args, **kwargs)), vs.shape))
+        r = match_complex(x, truncate_pad((rfft_fun(g,  *args, **kwargs)), vs.shape))
         fac = make_rfft_factors(axes, vs.shape, s, gs, norm)
         r = anp.conj(r) * fac
         return r
@@ -84,10 +88,10 @@ defvjp(rfftn, lambda *args, **kwargs:
 defvjp(irfftn, lambda *args, **kwargs:
         irfft_grad(get_fftn_args, rfftn, *args, **kwargs))
 
-defvjp(fftshift,  lambda ans, vs, gvs, x, axes=None : lambda g:
-                 match_complex(vs, anp.conj(ifftshift(anp.conj(g), axes))))
-defvjp(ifftshift, lambda ans, vs, gvs, x, axes=None : lambda g:
-                 match_complex(vs, anp.conj(fftshift(anp.conj(g), axes))))
+defvjp(fftshift,  lambda ans, x, axes=None : lambda g:
+                 match_complex(x, anp.conj(ifftshift(anp.conj(g), axes))))
+defvjp(ifftshift, lambda ans, x, axes=None : lambda g:
+                 match_complex(x, anp.conj(fftshift(anp.conj(g), axes))))
 
 @primitive
 def truncate_pad(x, shape):
@@ -96,8 +100,8 @@ def truncate_pad(x, shape):
     pads = list(zip(anp.zeros(len(shape), dtype=int),
                anp.maximum(0, anp.array(shape) - anp.array(x.shape))))
     return anp.pad(x, pads, 'constant')[slices]
-defvjp(truncate_pad, lambda ans, vs, gvs, x, shape: lambda g:
-       match_complex(vs, truncate_pad(g, vs.shape)))
+defvjp(truncate_pad, lambda ans, x, shape: lambda g:
+       match_complex(x, truncate_pad(g, vspace(x).shape)))
 
 ## TODO: could be made less stringent, to fail only when repeated axis has different values of s
 def check_no_repeated_axes(axes):

@@ -7,7 +7,7 @@ from autograd.core import defvjp, defvjps, defvjp_is_zero, defvjp_argnum
 
 wrap_namespace(scipy.linalg.__dict__, globals())  # populates module namespace
 
-defvjp(sqrtm,lambda ans, vs, gvs, A, **kwargs: lambda g: solve_lyapunov(ans, g))
+defvjp(sqrtm,lambda ans, A, **kwargs: lambda g: solve_lyapunov(ans, g))
 
 def _flip(a, trans):
     if anp.iscomplexobj(a):
@@ -15,7 +15,7 @@ def _flip(a, trans):
     else:
         return 'T' if trans in ('N', 0) else 'N'
 
-def grad_solve_triangular(ans, vs, gvs, a, b, trans=0, lower=False, **kwargs):
+def grad_solve_triangular(ans, a, b, trans=0, lower=False, **kwargs):
     tri = anp.tril if (lower ^ (_flip(a, trans) == 'N')) else anp.triu
     transpose = lambda x: x if _flip(a, trans) != 'N' else x.T
     al2d = lambda x: x if x.ndim > 1 else x[...,None]
@@ -25,5 +25,5 @@ def grad_solve_triangular(ans, vs, gvs, a, b, trans=0, lower=False, **kwargs):
     return vjp
 
 defvjp(solve_triangular,grad_solve_triangular)
-defvjp(solve_triangular,lambda ans, vs, gvs, a, b, trans=0, lower=False, **kwargs:
+defvjp(solve_triangular,lambda ans, a, b, trans=0, lower=False, **kwargs:
     lambda g: solve_triangular(a, g, trans=_flip(a, trans), lower=lower), argnum=1)

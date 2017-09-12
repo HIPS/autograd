@@ -19,15 +19,15 @@ def T(x): return anp.swapaxes(x, -1, -2)
 # add two dimensions to the end of x
 def add2d(x): return anp.reshape(x, anp.shape(x) + (1, 1))
 
-defvjp(det, lambda ans, vs, gvs, x: lambda g: add2d(g) * add2d(ans) * T(inv(x)))
-defvjp(slogdet, lambda ans, vs, gvs, x: lambda g: add2d(g[1]) * T(inv(x)))
+defvjp(det, lambda ans, x: lambda g: add2d(g) * add2d(ans) * T(inv(x)))
+defvjp(slogdet, lambda ans, x: lambda g: add2d(g[1]) * T(inv(x)))
 
-def grad_inv(ans, vs, gvs, x):
+def grad_inv(ans, x):
     dot = anp.dot if ans.ndim == 2 else partial(anp.einsum, '...ij,...jk->...ik')
     return lambda g: -dot(dot(T(ans), g), T(ans))
 defvjp(inv, grad_inv)
 
-def grad_solve(argnum, ans, vs, gvs, a, b):
+def grad_solve(argnum, ans, a, b):
     updim = lambda x: x if x.ndim == a.ndim else x[...,None]
     dot = anp.dot if a.ndim == 2 else partial(anp.einsum, '...ij,...jk->...ik')
     if argnum == 0:
@@ -36,7 +36,7 @@ def grad_solve(argnum, ans, vs, gvs, a, b):
         return lambda g: solve(T(a), g)
 defvjps(solve, grad_solve, [0, 1])
 
-def grad_norm(ans, vs, gvs, x, ord=None, axis=None):
+def grad_norm(ans, x, ord=None, axis=None):
     def check_implemented():
         matrix_norm = (x.ndim == 2 and axis is None) or isinstance(axis, tuple)
 
@@ -93,7 +93,7 @@ def grad_norm(ans, vs, gvs, x, ord=None, axis=None):
     return vjp
 defvjp(norm, grad_norm)
 
-def grad_eigh(ans, vs, gvs, x, UPLO='L'):
+def grad_eigh(ans, x, UPLO='L'):
     """Gradient for eigenvalues and vectors of a symmetric matrix."""
     N = x.shape[-1]
     w, v = ans              # Eigenvalues, eigenvectors.
@@ -107,7 +107,7 @@ def grad_eigh(ans, vs, gvs, x, UPLO='L'):
     return vjp
 defvjp(eigh, grad_eigh)
 
-def grad_cholesky(L, vs, gvs, A):
+def grad_cholesky(L, A):
     # Based on Iain Murray's note http://arxiv.org/abs/1602.07527
     # scipy's dtrtrs wrapper, solve_triangular, doesn't broadcast along leading
     # dimensions, so when A.ndim > 2 we just call a generic LU solve instead of
@@ -128,7 +128,7 @@ def grad_cholesky(L, vs, gvs, A):
     return vjp
 defvjp(cholesky, grad_cholesky)
 
-def grad_svd(usv_, vs, gvs, a, full_matrices=True, compute_uv=True):
+def grad_svd(usv_, a, full_matrices=True, compute_uv=True):
     def vjp(g):
         usv = usv_
         dot = anp.dot if a.ndim == 2 else partial(anp.einsum, '...ij,...jk->...ik')
