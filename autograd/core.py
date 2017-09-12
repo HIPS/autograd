@@ -94,26 +94,24 @@ def zero_vjp(argnum):
 
 primitive_vjps = defaultdict(dict)
 
-def make_combo_vjp(vjps):
-    def combo_vjp(ans, args, kwargs):
-        vjps_ = [vjp(ans, args, kwargs) for vjp in vjps]
-        return lambda g: (vjp(g) for vjp in vjps_)
-    return combo_vjp
-
-def primitive_vjp(fun, argnum, ans, args, kwargs):
+def primitive_vjp(fun, argnums, ans, args, kwargs):
     try:
-        vjp = primitive_vjps[fun][argnum]
+        vjp = primitive_vjps[fun][argnums]
     except KeyError:
         try:
-            argnums = argnum
-            vjp = make_combo_vjp([primitive_vjps[fun][argnum] for argnum in argnums])
+            vjps = [primitive_vjps[fun][argnum] for argnum in argnums]
         except:
             if primitive_vjps[fun]:
-                errstr = "Gradient of {0} w.r.t. arg number {1} not yet implemented."
+                errstr = ("Gradient of {0} w.r.t. arg number {1} not yet implemented."
+                          .format(repr(fun), argnum))
             else:
-                errstr = "Gradient of {0} not yet implemented."
-            raise NotImplementedError(errstr.format(repr(fun), argnum))
-    return vjp(ans, args, kwargs)
+                errstr = "Gradient of {0} not yet implemented.".format(repr(fun))
+            raise NotImplementedError(errstr)
+        else:
+            vjps = [vjp(ans, args, kwargs) for vjp in vjps]
+            return lambda g: (vjp(g) for vjp in vjps)
+    else:
+        return vjp(ans, args, kwargs)
 
 def defvjp(fun, vjpmaker, argnum=0):
     def vjp_fixed_args(ans, args, kwargs):
@@ -128,7 +126,7 @@ def defvjp_argnum(fun, vjpmaker):
     primitive_vjps[fun] = first_arg_as_get(vjpmaker)
 
 # TODO(mattjj): do something smarter here given new argnums indexing of
-# primitive_vjps[fun]. register all combinations?
+# primitive_vjps[fun]. register all subsets?
 def defvjp_is_zero(fun, argnums=(0,)):
     for argnum in argnums:
         defvjp(fun, zero_vjp(argnum), argnum)
