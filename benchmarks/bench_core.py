@@ -1,8 +1,11 @@
-from autograd.core import vspace, VJPNode, backward_pass
-from autograd.tracer import trace, new_box
-from autograd import grad
-import autograd.numpy as np
 import numpy as onp
+import autograd.numpy as np
+from autograd import grad
+try:
+    from autograd.core import vspace, VJPNode, backward_pass
+    from autograd.tracer import trace, new_box
+except:
+    pass
 
 ## SHORT FUNCTION
 def f_short(x):
