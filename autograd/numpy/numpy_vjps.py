@@ -537,12 +537,8 @@ def match_complex(target, x):
 
 @primitive
 def broadcast(x, target_meta, broadcast_idx=0):
-    target_shape, target_ndim, target_dtype, target_iscomplex = target_meta
-    while anp.ndim(x) < target_ndim:
-        x = anp.expand_dims(x, broadcast_idx)
-    for axis, size in enumerate(anp.shape(x)):
-        if size == 1:
-            x = anp.repeat(x, target_shape[axis], axis=axis)
+    target_shape, _, _, target_iscomplex = target_meta
+    x = onp.broadcast_to(x, target_shape)
     if target_iscomplex and not anp.iscomplexobj(x):
         x = x + 0j  # TODO(mattjj): this might promote the dtype
     return x
