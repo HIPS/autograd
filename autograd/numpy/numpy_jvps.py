@@ -1,7 +1,8 @@
 from . import numpy_wrapper as anp
 from .numpy_vjps import (untake, balanced_eq, match_complex, replace_zero,
                          dot_adjoint_0, dot_adjoint_1, tensordot_adjoint_0,
-                         tensordot_adjoint_1, broadcast, unbroadcast)
+                         tensordot_adjoint_1, broadcast, _broadcast,
+                         unbroadcast, _unbroadcast)
 from autograd.core import (defjvp, defjvps, def_linear_wrt_arg, defjvp_argnum,
                            def_multilinear, vspace)
 from ..util import func
@@ -220,5 +221,5 @@ defjvp(anp.atleast_3d, atleast_jvpmaker(anp.atleast_3d))
 
 def_multilinear(anp.einsum)
 
-def_linear_wrt_arg(broadcast)
-def_linear_wrt_arg(unbroadcast)
+def_linear_wrt_arg(_broadcast)
+def_linear_wrt_arg(_unbroadcast)
