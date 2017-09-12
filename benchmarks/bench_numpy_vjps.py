@@ -18,29 +18,29 @@ A = npr.randn(2, 3, 4, 5)
 B = npr.randn(2, 3, 5, 4)
 g = npr.randn(2, 3, 4, 2, 3, 4)
 
-def time_dot_0():
-    dot_0(A, B, g)
+# def time_dot_0():
+#     dot_0(A, B, g)
 
-def time_dot_1():
-    dot_1(A, B, g)
+# def time_dot_1():
+#     dot_1(A, B, g)
 
-def time_dot_0_0():
-    dot_0_0(A, B, g)
+# def time_dot_0_0():
+#     dot_0_0(A, B, g)
 
-def time_dot_0_1():
-    dot_0_1(A, B, g)
+# def time_dot_0_1():
+#     dot_0_1(A, B, g)
 
-def time_dot_0_2():
-    dot_0_2(A, B, g)
+# def time_dot_0_2():
+#     dot_0_2(A, B, g)
 
-def time_dot_1_0():
-    dot_1_0(A, B, g)
+# def time_dot_1_0():
+#     dot_1_0(A, B, g)
 
-def time_dot_1_1():
-    dot_1_1(A, B, g)
+# def time_dot_1_1():
+#     dot_1_1(A, B, g)
 
-def time_dot_1_2():
-    dot_1_2(A, B, g)
+# def time_dot_1_2():
+#     dot_1_2(A, B, g)
 
 tensordot_0 = lambda A, B, G: make_vjp(np.tensordot)(A, B, 2)[0](G)
 tensordot_1 = lambda A, B, G: make_vjp(np.tensordot, argnum=1)(A, B, 2)[0](G)
