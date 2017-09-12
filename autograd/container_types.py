@@ -2,7 +2,7 @@ from functools import partial
 from .util import subvals
 from .tracer import Box, register_box, primitive
 from .vspace import VSpace, vspace, register_vspace
-from .core import (defvjp, defvjp_is_zero, defvjp_argnum, SparseObject,
+from .core import (defvjp, defvjp_is_zero, defvjp_argnum, defvjp_argnums, SparseObject,
                    def_linear_wrt_arg, defjvp_argnum)
 
 @primitive
@@ -69,7 +69,7 @@ defvjp_argnum(sequence_extend_left, grad_sequence_extend_left)
 @primitive
 def make_sequence(seq_type, *args):
     return seq_type(args)
-defvjp_argnum(make_sequence, lambda argnum, *args: lambda g: g[argnum - 1])
+defvjp_argnums(make_sequence, lambda argnums, *args: lambda g: [g[argnum - 1] for argnum in argnums])
 
 def fwd_grad_make_sequence(argnum, g, ans, seq_type, *args, **kwargs):
     return container_untake(g, argnum-1, vspace(ans))
