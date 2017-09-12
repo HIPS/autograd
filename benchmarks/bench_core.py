@@ -1,4 +1,5 @@
-import autograd.core as core
+from autograd.core import vspace, VJPNode, backward_pass
+from autograd.tracer import trace, new_box
 from autograd import grad
 import autograd.numpy as np
 import numpy as onp
@@ -7,11 +8,12 @@ import numpy as onp
 def f_short(x):
     return x**2
 
-# def time_short_forward_pass():
-#     core.forward_pass(f_short, (2.,), {})
+def time_short_forward_pass():
+    start_node = VJPNode.new_root(x)
+    trace(start_node, f_short, x)
 
-# def time_short_backward_pass():
-#     core.backward_pass(1., short_end_node.node, short_start_node)
+def time_short_backward_pass():
+    backward_pass(1., short_end_node)
 
 def time_short_grad():
     grad(f_short)(2.)
@@ -22,11 +24,12 @@ def f_long(x):
         x = np.sin(x)
     return x
 
-# def time_long_forward_pass():
-#     core.forward_pass(f_long, (2.,), {})
+def time_long_forward_pass():
+    start_node = VJPNode.new_root(x)
+    trace(start_node, f_long, x)
 
-# def time_long_backward_pass():
-#     core.backward_pass(1., long_end_node.node, long_start_node)
+def time_long_backward_pass():
+    backward_pass(1., long_end_node)
 
 def time_long_grad():
     grad(f_long)(2.)
@@ -37,29 +40,30 @@ def fan_out_fan_in(x):
         x = (x + x)/2.0
     return np.sum(x)
 
-# def time_fan_out_fan_in_forward_pass():
-#     core.forward_pass(fan_out_fan_in, (2.,), {})
+def time_fan_out_fan_in_forward_pass():
+    start_node = VJPNode.new_root(x)
+    trace(start_node, fan_out_fan_in, x)
 
-# def time_fan_out_fan_in_backward_pass():
-#     core.backward_pass(1., fan_end_node.node, fan_start_node)
+def time_fan_out_fan_in_backward_pass():
+    backward_pass(1., fan_end_node)
 
 def time_fan_out_fan_in_grad():
     grad(fan_out_fan_in)(2.)
 
 ## UNIT BENCHMARKS
 def time_vspace_float():
-    core.vspace(1.)
+    vspace(1.)
 
 A = np.array([[1., 2., 3.]])
 
 def time_vspace_array():
-    core.vspace(A)
+    vspace(A)
 
-# def time_new_box_float():
-#     core.new_box(1., progenitors)
+def time_new_box_float():
+    new_box(1., 0, start_node)
 
-# def time_new_box_array():
-#     core.new_box(A, progenitors)
+def time_new_box_array():
+    new_box(A, 0, start_node)
 
 def time_exp_call():
     onp.exp(2.)
@@ -67,20 +71,20 @@ def time_exp_call():
 def time_exp_primitive_call_unboxed():
     np.exp(2.)
 
-# def time_exp_primitive_call_boxed():
-#     np.exp(progenitor)
-
+def time_exp_primitive_call_boxed():
+    np.exp(start_box)
 
 def time_no_autograd_control():
     # Test whether the benchmarking machine is running slowly independent of autograd
     A = np.random.randn(200, 200)
     np.dot(A, A)
 
-# try:
-#     short_start_node, short_end_node = core.forward_pass(f_short       , (2.,), {})
-#     long_start_node , long_end_node  = core.forward_pass(f_long        , (2.,), {})
-#     fan_start_node  , fan_end_node   = core.forward_pass(fan_out_fan_in, (2.,), {})
-#     progenitors = {'dummy'}
-#     progenitor = core.new_progenitor(2.)
-# except:
-#     pass
+try:
+    x = 2.
+    start_node = VJPNode.new_root(x)
+    start_box = new_box(x, 0, start_node)
+    _, short_end_node = trace(VJPNode.new_root(x), f_short, x)
+    _, long_end_node  = trace(VJPNode.new_root(x), f_long, x)
+    _, fan_end_node   = trace(VJPNode.new_root(x), fan_out_fan_in, x)
+except:
+    pass
