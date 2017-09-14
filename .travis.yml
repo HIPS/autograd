@@ -20,4 +20,6 @@ before_install:
 install:
   - conda install --yes python=$TRAVIS_PYTHON_VERSION pip numpy scipy nose future
   - pip install -v .
-script: nosetests tests
+script: 
+  - cd tests
+  - nosetests
