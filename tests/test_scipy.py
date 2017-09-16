@@ -1,7 +1,18 @@
 from __future__ import absolute_import
 import numpy as npo
+import autograd.numpy as anp
 from builtins import range
 import itertools
+from functools import wraps
+
+def symmetrize_matrix_arg(fun, argnum):
+    def T(X): return anp.swapaxes(X, -1, -2) if anp.ndim(X) > 1 else X
+    def symmetrize(X): return 0.5 * (X + T(X))
+    def symmetrized_fun(*args, **kwargs):
+        args = list(args)
+        args[argnum] = symmetrize(args[argnum])
+        return fun(*args, **kwargs)
+    return symmetrized_fun
 
 try:
     import scipy
@@ -48,8 +59,8 @@ else:
     def test_t_logcdf_broadcast(): combo_check(stats.t.logcdf, [0,2],     [R(4,3)], [R(1,3)**2 + 2.1], [R(4,3)], [R(4,1)**2 + 2.1])
 
     def make_psd(mat): return np.dot(mat.T, mat) + np.eye(mat.shape[0])
-    def test_mvn_pdf():    combo_check(mvn.pdf, [0, 1, 2], [R(4)], [R(4)], [make_psd(R(4, 4))], allow_singular=[False])
-    def test_mvn_logpdf(): combo_check(mvn.logpdf, [0, 1, 2], [R(4)], [R(4)], [make_psd(R(4, 4))], allow_singular=[False])
+    def test_mvn_pdf():    combo_check(symmetrize_matrix_arg(mvn.pdf, 2), [0, 1, 2], [R(4)], [R(4)], [make_psd(R(4, 4))], allow_singular=[False])
+    def test_mvn_logpdf(): combo_check(symmetrize_matrix_arg(mvn.logpdf, 2), [0, 1, 2], [R(4)], [R(4)], [make_psd(R(4, 4))], allow_singular=[False])
     def test_mvn_entropy():combo_check(mvn.entropy,[0, 1],            [R(4)], [make_psd(R(4, 4))])
 
     C = np.zeros((4, 4))
@@ -58,8 +69,8 @@ else:
     def test_mvn_pdf_sing_cov(): combo_check(mvn.pdf, [0, 1], [np.concatenate((R(2), np.zeros(2)))], [np.concatenate((R(2), np.zeros(2)))], [C], [True])
     def test_mvn_logpdf_sing_cov(): combo_check(mvn.logpdf, [0, 1], [np.concatenate((R(2), np.zeros(2)))], [np.concatenate((R(2), np.zeros(2)))], [C], [True])
 
-    def test_mvn_pdf_broadcast():    combo_check(mvn.pdf, [0, 1, 2], [R(5, 4)], [R(4)], [make_psd(R(4, 4))])
-    def test_mvn_logpdf_broadcast(): combo_check(mvn.logpdf, [0, 1, 2], [R(5, 4)], [R(4)], [make_psd(R(4, 4))])
+    def test_mvn_pdf_broadcast():    combo_check(symmetrize_matrix_arg(mvn.pdf, 2), [0, 1, 2], [R(5, 4)], [R(4)], [make_psd(R(4, 4))])
+    def test_mvn_logpdf_broadcast(): combo_check(symmetrize_matrix_arg(mvn.logpdf, 2), [0, 1, 2], [R(5, 4)], [R(4)], [make_psd(R(4, 4))])
 
     alpha = npr.random(4)**2 + 1.2
     x = stats.dirichlet.rvs(alpha, size=1)[0,:]
