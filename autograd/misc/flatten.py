@@ -17,12 +17,12 @@ def flatten(value):
 def _flatten(value):
     t = type(value)
     if t in (list, tuple):
-      return _concatenate(map(_flatten, value))
+        return _concatenate(map(_flatten, value))
     elif t is dict:
         return _concatenate(_flatten(value[k]) for k in sorted(value))
     else:
         return np.ravel(value)
 
 def _concatenate(lst):
-  lst = list(lst)
-  return np.concatenate(lst) if lst else np.array([])
+    lst = list(lst)
+    return np.concatenate(lst) if lst else np.array([])
