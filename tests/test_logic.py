@@ -28,10 +28,11 @@ def test_falseyness():
 
 def test_unimplemented_falseyness():
     def remove_grad_definitions(fun):
-        return primitive_vjps[fun]
+        return primitive_vjps.pop(fun, None)
 
     def restore_grad_definitions(fun, grads):
-        primitive_vjps[fun] = grads
+        if grads:
+            primitive_vjps[fun] = grads
 
     grad_defs = remove_grad_definitions(np.iscomplex)
 

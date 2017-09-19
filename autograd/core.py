@@ -17,11 +17,11 @@ def make_vjp(fun, x):
 def backward_pass(g, end_node):
     outgrads = {end_node : (g, False)}
     for node in toposort(end_node):
-        cur_outgrad = outgrads.pop(node)
-        for parent, vjp in node.parents_and_vjps:
-            outgrad = vjp(cur_outgrad[0])
-            outgrads[parent] = add_outgrads(outgrads.get(parent), outgrad)
-    return cur_outgrad[0]
+        outgrad = outgrads.pop(node)
+        ingrads = node.vjp(outgrad[0])
+        for parent, ingrad in zip(node.parents, ingrads):
+            outgrads[parent] = add_outgrads(outgrads.get(parent), ingrad)
+    return outgrad[0]
 
 def make_jvp(fun, x):
     def jvp(g):
@@ -34,19 +34,17 @@ def make_jvp(fun, x):
     return jvp
 
 class VJPNode(Node):
-    __slots__ = ['vspace', 'parents', 'parents_and_vjps']
+    __slots__ = ['parents', 'vjp']
     def __init__(self, value, fun, args, kwargs, parent_argnums, parents):
         self.parents = parents
-        self.parents_and_vjps = [
-            (parent, primitive_vjp(fun, argnum, value, args, kwargs))
-            for argnum, parent in zip(parent_argnums, parents)]
+        self.vjp = primitive_vjps[fun](parent_argnums, value, args, kwargs)
 
     def initialize_root(self, value):
         self.parents = []
-        self.parents_and_vjps = []
+        self.vjp = lambda g: ()
 
 class JVPNode(Node):
-    __slots__ = ['vspace', 'g']
+    __slots__ = ['g']
     def __init__(self, value, fun, args, kwargs, parent_argnums, parents):
         cur_g = None
         for argnum, parent in zip(parent_argnums, parents):
@@ -94,41 +92,34 @@ sparse_object_types = set((SparseObject, SparseBox))
 def zero_vjp(argnum):
     return lambda ans, *args, **kwargs: lambda g: vspace(args[argnum]).zeros()
 
-primitive_vjps = defaultdict(dict)
+primitive_vjps_onearg = defaultdict(dict)
+primitive_vjps = {}
 
-def primitive_vjp(fun, argnum, ans, args, kwargs):
-    try:
-        vjp = primitive_vjps[fun][argnum]
-    except KeyError:
-        if primitive_vjps[fun]:
-            errstr = "Gradient of {0} w.r.t. arg number {1} not yet implemented."
-        else:
-            errstr = "Gradient of {0} not yet implemented."
-        raise NotImplementedError(errstr.format(repr(fun), argnum))
-    return vjp(ans, args, kwargs)
+def defvjp_argnums(fun, vjpmaker):
+    primitive_vjps[fun] = vjpmaker
 
 def defvjp(fun, vjpmaker, argnum=0):
-    def vjp_fixed_args(ans, args, kwargs):
-        return vjpmaker(ans, *args, **kwargs)
-    primitive_vjps[fun][argnum] = vjp_fixed_args
+    primitive_vjps_onearg[fun][argnum] = vjpmaker
+    def vjp_argnums(argnums, ans, args, kwargs):
+        vjps_dict = primitive_vjps_onearg[fun]
+        vjps = [vjps_dict[argnum](ans, *args, **kwargs) for argnum in argnums]
+        return lambda g: (vjp(g) for vjp in vjps)
+    primitive_vjps[fun] = vjp_argnums
+
+def defvjp_argnum(fun, vjpmaker):
+    def vjp_argnums(argnums, *args):
+        vjps = [vjpmaker(argnum, *args) for argnum in argnums]
+        return lambda g: (vjp(g) for vjp in vjps)
+    primitive_vjps[fun] = vjp_argnums
 
 def defvjps(fun, vjpmaker, argnums):
     for argnum in argnums:
         defvjp(fun, partial(vjpmaker, argnum), argnum)
 
-def defvjp_argnum(fun, vjpmaker):
-    primitive_vjps[fun] = first_arg_as_get(vjpmaker)
-
 def defvjp_is_zero(fun, argnums=(0,)):
     for argnum in argnums:
         defvjp(fun, zero_vjp(argnum), argnum)
         defjvp(fun, zero_jvp, argnum)
-
-class first_arg_as_get(object):
-    def __init__(self, f):
-        self.f = f
-    def __getitem__(self, argnum):
-        return lambda *args, **kwargs: self.f(argnum, *args, **kwargs)
 
 identity_vjp = lambda *args: lambda g: g
 identity_jvp = lambda argnum, g, *args, **kwargs: g
@@ -149,6 +140,12 @@ defvjp(func(VSpace.scalar_mul), lambda ans, vs_, x, a: lambda g:
        vspace(x).covector(vspace(g).scalar_mul(vspace(g).covector(g), a)), argnum=1)
 defvjp(func(VSpace.scalar_mul), lambda ans, vs_, x, a: lambda g:
        vspace(g).inner_prod(g, vspace(g).covector(x)), argnum=2)
+
+class first_arg_as_get(object):
+    def __init__(self, f):
+        self.f = f
+    def __getitem__(self, argnum):
+        return lambda *args, **kwargs: self.f(argnum, *args, **kwargs)
 
 def primitive_jvp(fun, argnum, g, ans, args, kwargs):
     try:
