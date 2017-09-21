@@ -1,9 +1,8 @@
 from functools import partial
 from .util import subvals
-from .tracer import Box, primitive, notrace_primitive
-from .vspace import VSpace, vspace
-from .core import (defvjp, defvjp_is_zero, defvjp_argnum, defvjp_argnums, SparseObject,
-                   def_linear_wrt_arg, defjvp_argnum)
+from .extend import (Box, primitive, notrace_primitive, VSpace, vspace,
+                     SparseObject, defvjp, defvjp_argnum, defvjp_argnums,
+                     def_linear_wrt_arg, defjvp_argnum)
 
 isinstance_ = isinstance
 isinstance = notrace_primitive(isinstance)
@@ -56,7 +55,6 @@ def container_untake(x, idx, vs):
 defvjp(container_untake, lambda ans, x, idx, _:
        lambda g: container_take(g, idx))
 def_linear_wrt_arg(container_untake)
-defvjp_is_zero(container_untake, argnums=(1, 2))
 
 @primitive
 def sequence_extend_right(seq, *elts):

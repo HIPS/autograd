@@ -2,7 +2,7 @@
 from __future__ import absolute_import
 import scipy.stats
 import autograd.numpy as anp
-from autograd.core import primitive, defvjp, defvjps, defvjp_is_zero, defvjp_argnum
+from autograd.extend import primitive, defvjp, defvjps, defvjp_is_zero, defvjp_argnum
 from autograd.numpy.numpy_vjps import unbroadcast_f
 
 pdf = primitive(scipy.stats.norm.pdf)

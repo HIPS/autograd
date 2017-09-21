@@ -1,5 +1,5 @@
 import numpy as np
-from autograd.vspace import VSpace
+from autograd.extend import VSpace
 
 class ArrayVSpace(VSpace):
     def __init__(self, value):

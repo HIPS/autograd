@@ -3,7 +3,7 @@ from functools import partial
 import numpy.linalg as npla
 from .numpy_wrapper import wrap_namespace
 from . import numpy_wrapper as anp
-from autograd.core import defvjp, defvjps
+from autograd.extend import defvjp, defvjps
 
 wrap_namespace(npla.__dict__, globals())
 

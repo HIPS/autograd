@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 import scipy.misc
-
-from autograd.core import primitive, defvjp
+from autograd.extend import primitive, defvjp
 import autograd.numpy as anp
 from autograd.numpy.numpy_vjps import repeat_to_match_shape
 

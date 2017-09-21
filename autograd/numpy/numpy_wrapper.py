@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 import types
 import warnings
-from autograd.tracer import primitive, notrace_primitive, getval
+from autograd.extend import primitive, notrace_primitive, getval
 import numpy as _np
 import autograd.builtins as builtins
 

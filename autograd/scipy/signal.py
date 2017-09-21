@@ -1,8 +1,7 @@
 from __future__ import absolute_import
-from autograd.core import primitive
 import autograd.numpy as np
 import numpy as npo # original numpy
-from autograd.core import defvjps
+from autograd.extend import defvjps, primitive
 
 from numpy.lib.stride_tricks import as_strided
 from builtins import range, zip

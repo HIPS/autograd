@@ -3,7 +3,7 @@ import scipy.stats
 
 import autograd.numpy as np
 from autograd.scipy.special import digamma
-from autograd.core import primitive, defvjp, defvjps, defvjp_is_zero, defvjp_argnum
+from autograd.extend import primitive, defvjp, defvjps, defvjp_is_zero, defvjp_argnum
 
 rvs    = primitive(scipy.stats.dirichlet.rvs)
 pdf    = primitive(scipy.stats.dirichlet.pdf)

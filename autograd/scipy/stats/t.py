@@ -2,7 +2,7 @@
 from __future__ import absolute_import
 import scipy.stats
 import autograd.numpy as np
-from autograd.core import primitive, defvjp, defvjps, defvjp_is_zero, defvjp_argnum
+from autograd.extend import primitive, defvjp, defvjps, defvjp_is_zero, defvjp_argnum
 from autograd.numpy.numpy_vjps import unbroadcast_f
 from autograd.scipy.special import psi
 

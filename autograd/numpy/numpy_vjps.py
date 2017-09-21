@@ -3,11 +3,10 @@ from future.utils import string_types
 import numpy as onp
 from numpy.core.einsumfunc import _parse_einsum_input
 from ..util import func
-from autograd.tracer import primitive, getval
-from autograd.vspace import vspace
-from autograd.core import defvjp, defvjps, defvjp_is_zero, defvjp_argnum, SparseObject
 from . import numpy_wrapper as anp
 from .numpy_boxes import ArrayBox
+from autograd.extend import (primitive, getval, vspace, defvjp, defvjps,
+                             defvjp_is_zero, defvjp_argnum, SparseObject)
 
 # ----- Functions that are constant w.r.t. continuous inputs -----
 

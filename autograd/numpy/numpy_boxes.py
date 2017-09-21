@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 import numpy as np
-from autograd.tracer import Box, primitive
+from autograd.extend import Box, primitive
 from . import numpy_wrapper as anp
 
 Box.__array_priority__ = 90.0

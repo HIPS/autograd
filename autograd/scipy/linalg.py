@@ -3,7 +3,7 @@ import scipy.linalg
 
 import autograd.numpy as anp
 from autograd.numpy.numpy_wrapper import wrap_namespace
-from autograd.core import defvjp, defvjps, defvjp_is_zero, defvjp_argnum
+from autograd.extend import defvjp, defvjps, defvjp_is_zero, defvjp_argnum
 
 wrap_namespace(scipy.linalg.__dict__, globals())  # populates module namespace
 

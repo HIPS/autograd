@@ -1,8 +1,7 @@
 from __future__ import absolute_import
 import scipy.special
 import autograd.numpy as np
-from autograd.core import defvjp, defvjps, defvjp_is_zero, defvjp_argnum
-from autograd.core import primitive
+from autograd.extend import primitive, defvjp, defvjps, defvjp_is_zero, defvjp_argnum
 
 ### Gamma functions ###
 polygamma    = primitive(scipy.special.polygamma)

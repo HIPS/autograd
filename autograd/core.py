@@ -88,15 +88,11 @@ VSpace.register(SparseObject, lambda x : x.vs)
 SparseBox.register(SparseObject)
 sparse_object_types = set((SparseObject, SparseBox))
 
-def zero_vjp(argnum):
-    return lambda ans, *args, **kwargs: lambda g: vspace(args[argnum]).zeros()
-
-primitive_vjps_onearg = defaultdict(dict)
 primitive_vjps = {}
-
 def defvjp_argnums(fun, vjpmaker):
     primitive_vjps[fun] = vjpmaker
 
+primitive_vjps_onearg = defaultdict(dict)
 def defvjp(fun, vjpmaker, argnum=0):
     primitive_vjps_onearg[fun][argnum] = vjpmaker
     vjps_dict = primitive_vjps_onearg[fun]
@@ -118,34 +114,19 @@ def defvjp(fun, vjpmaker, argnum=0):
 
     primitive_vjps[fun] = vjp_argnums
 
-def defvjp_argnum(fun, vjpmaker):
-    def vjp_argnums(argnums, *args):
-        vjps = [vjpmaker(argnum, *args) for argnum in argnums]
-        return lambda g: (vjp(g) for vjp in vjps)
-    primitive_vjps[fun] = vjp_argnums
-
-def defvjps(fun, vjpmaker, argnums):
-    for argnum in argnums:
-        defvjp(fun, partial(vjpmaker, argnum), argnum)
-
-def defvjp_is_zero(fun, argnums=(0,)):
-    for argnum in argnums:
-        defvjp(fun, zero_vjp(argnum), argnum)
-        defjvp(fun, zero_jvp, argnum)
-
-identity_vjp = lambda *args: lambda g: g
+identity_vjp = lambda argnums, *args: lambda g: (g,) * len(argnums)
 identity_jvp = lambda argnum, g, *args, **kwargs: g
 
 @primitive
 def sparse_add(x_prev, x_new): return x_new.mut_add(x_prev)
-defvjps(sparse_add, identity_vjp, argnums=[0, 1])
+defvjp_argnums(sparse_add,           identity_vjp)
+defvjp_argnums(func(VSpace.add    ), identity_vjp)
+defvjp_argnums(func(VSpace.mut_add), identity_vjp)
 
-defvjps(func(VSpace.mut_add), identity_vjp, argnums=[1,2])
 defvjp(func(VSpace.inner_prod), lambda ans, vs_, x, y: lambda g:
        vspace(x).covector(vspace(x).scalar_mul(y, vspace(g).covector(g))), argnum=1)
 defvjp(func(VSpace.inner_prod), lambda ans, vs_, x, y: lambda g:
        vspace(x).covector(vspace(x).scalar_mul(x, vspace(g).covector(g))), argnum=2)
-defvjps(func(VSpace.add), identity_vjp, argnums=[1,2])
 defvjp(func(VSpace.covector), lambda ans, vs_, x: lambda g:
        vspace(g).covector(g), argnum=1)
 defvjp(func(VSpace.scalar_mul), lambda ans, vs_, x, a: lambda g:
@@ -168,8 +149,6 @@ def primitive_jvp(fun, argnum, g, ans, args, kwargs):
 
 primitive_jvps = defaultdict(dict)
 
-def zero_jvp(g, ans, *args, **kwargs): return vspace(ans).zeros()
-
 def defjvp(fun, jvpfun, argnum=0):
     def jvpfun_fixed_args(g, ans, args, kwargs):
         return jvpfun(g, ans, *args, **kwargs)
@@ -182,31 +161,12 @@ def defjvps(fun, jvpfun, argnums):
 def defjvp_argnum(fun, jvpmaker):
     primitive_jvps[fun] = first_arg_as_get(jvpmaker)
 
-def def_linear_wrt_arg(fun, argnum=0):
-    """
-    This signifies that a function is linear in the sense of linear
-    algebra/functional analysis:
-
-    fun(a*x + b*y) = a*fun(x) + b*fun(y)
-
-    In this case the jvp of fun is the same as fun itself.
-    """
-    defjvp(fun, lambda g, ans, *args, **kwargs:
-           fun(*subval(args, argnum, g), **kwargs), argnum=argnum)
-
-def def_linear_wrt_args(fun, argnums):
-    for argnum in argnums:
-        def_linear_wrt_arg(fun, argnum)
-
 def def_multilinear(fun):
-    """
-    This is to flag that a function is linear in all of its args.
-    """
+    """Flags that a function is linear in all of its args."""
     defjvp_argnum(fun, lambda argnum, g, ans, args, kwargs:
                   fun(*subval(args, argnum, g), **kwargs))
 
 defjvps(sparse_add, identity_jvp, argnums=[0, 1])
-
 defjvps(func(VSpace.mut_add), identity_jvp, argnums=[1,2])
 def_multilinear(func(VSpace.inner_prod))
 defjvps(func(VSpace.add), identity_jvp, argnums=[1,2])
