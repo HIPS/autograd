@@ -100,10 +100,23 @@ def defvjp_argnums(fun, vjpmaker):
 
 def defvjp(fun, vjpmaker, argnum=0):
     primitive_vjps_onearg[fun][argnum] = vjpmaker
+    vjps_dict = primitive_vjps_onearg[fun]
     def vjp_argnums(argnums, ans, args, kwargs):
-        vjps_dict = primitive_vjps_onearg[fun]
-        vjps = [vjps_dict[argnum](ans, *args, **kwargs) for argnum in argnums]
-        return lambda g: (vjp(g) for vjp in vjps)
+        L = len(argnums)
+        # These first two cases are purely for optimizations
+        if L == 1:
+            argnum = argnums[0]
+            vjp = vjps_dict[argnum](ans, *args, **kwargs)
+            return lambda g: (vjp(g),)
+        elif L == 2:
+            argnum_0, argnum_1 = argnums
+            vjp_0 = vjps_dict[argnum_0](ans, *args, **kwargs)
+            vjp_1 = vjps_dict[argnum_1](ans, *args, **kwargs)
+            return lambda g: (vjp_0(g), vjp_1(g))
+        else:
+            vjps = [vjps_dict[argnum](ans, *args, **kwargs) for argnum in argnums]
+            return lambda g: (vjp(g) for vjp in vjps)
+
     primitive_vjps[fun] = vjp_argnums
 
 def defvjp_argnum(fun, vjpmaker):
