@@ -4,7 +4,7 @@ import autograd.numpy as np
 import autograd.numpy.random as npr
 import autograd.scipy.linalg as spla
 from autograd.test_util import check_grads
-from autograd.container_types import make_tuple
+from autograd import tuple
 from autograd import grad
 from builtins import range
 from functools import partial
@@ -156,7 +156,7 @@ def test_norm_nuclear_axis():
 def test_eigvalh_lower():
     def fun(x):
         w, v = np.linalg.eigh(x)
-        return make_tuple(w, v)
+        return tuple((w, v))
     D = 6
     mat = npr.randn(D, D)
     hmat = np.dot(mat.T, mat)
@@ -165,7 +165,7 @@ def test_eigvalh_lower():
 def test_eigvalh_upper():
     def fun(x):
         w, v = np.linalg.eigh(x, 'U')
-        return make_tuple(w, v)
+        return tuple((w, v))
     D = 6
     mat = npr.randn(D, D)
     hmat = np.dot(mat.T, mat)
@@ -175,7 +175,7 @@ broadcast_dot_transpose = partial(np.einsum, '...ij,...kj->...ik')
 def test_eigvalh_lower_broadcasting():
     def fun(x):
         w, v = np.linalg.eigh(x)
-        return make_tuple(w, v)
+        return tuple((w, v))
     D = 6
     mat = npr.randn(2, 3, D, D) + 10 * np.eye(D)[None,None,...]
     hmat = broadcast_dot_transpose(mat, mat)
@@ -184,7 +184,7 @@ def test_eigvalh_lower_broadcasting():
 def test_eigvalh_upper_broadcasting():
     def fun(x):
         w, v = np.linalg.eigh(x, 'U')
-        return make_tuple(w, v)
+        return tuple((w, v))
     D = 6
     mat = npr.randn(2, 3, D, D) + 10 * np.eye(D)[None,None,...]
     hmat = broadcast_dot_transpose(mat, mat)
@@ -244,7 +244,7 @@ def test_solve_triangular_arg2_2d():
 def test_svd_wide_2d():
     def fun(x):
         u, s, v = np.linalg.svd(x, full_matrices=False)
-        return make_tuple(u, s, v)
+        return tuple((u, s, v))
         return grad(fun)(x)
     m = 3
     n = 5
@@ -254,7 +254,7 @@ def test_svd_wide_2d():
 def test_svd_wide_3d():
     def fun(x):
         u, s, v = np.linalg.svd(x, full_matrices=False)
-        return make_tuple(u, s, v)
+        return tuple((u, s, v))
         return grad(fun)(x)
 
     k = 4
@@ -267,7 +267,7 @@ def test_svd_wide_3d():
 def test_svd_square_2d():
     def fun(x):
         u, s, v = np.linalg.svd(x, full_matrices=False)
-        return make_tuple(u, s, v)
+        return tuple((u, s, v))
         return grad(fun)(x)
     m = 4
     n = 4
@@ -277,7 +277,7 @@ def test_svd_square_2d():
 def test_svd_square_3d():
     def fun(x):
         u, s, v = np.linalg.svd(x, full_matrices=False)
-        return make_tuple(u, s, v)
+        return tuple((u, s, v))
         return grad(fun)(x)
 
     k = 3
@@ -290,7 +290,7 @@ def test_svd_square_3d():
 def test_svd_tall_2d():
     def fun(x):
         u, s, v = np.linalg.svd(x, full_matrices=False)
-        return make_tuple(u, s, v)
+        return tuple((u, s, v))
         return grad(fun)(x)
     m = 5
     n = 3
@@ -300,7 +300,7 @@ def test_svd_tall_2d():
 def test_svd_tall_3d():
     def fun(x):
         u, s, v = np.linalg.svd(x, full_matrices=False)
-        return make_tuple(u, s, v)
+        return tuple((u, s, v))
         return grad(fun)(x)
 
     k = 4
