@@ -47,10 +47,7 @@ def vspace(value):
         return VSpace.mappings[type(value)](value)
     except KeyError:
         if isbox(value):
-            try:
-                return value._node.vspace
-            except AttributeError:
-                return vspace(getval(value))
+            return vspace(getval(value))
         else:
             raise TypeError("Can't find vector space for value {} of type {}. "
                             "Valid types are {}".format(
