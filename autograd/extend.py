@@ -1,7 +1,7 @@
 from functools import partial
 from collections import defaultdict
 from .util import subval
-from .core import defvjp_argnums, defjvp, primitive_jvps
+from .core import defvjp_argnums, defjvp, defjvp_argnums, sum_outgrads
 
 # Expose API for extending autograd
 from .tracer import Box, primitive, notrace_primitive, getval
@@ -51,18 +51,15 @@ def zero_vjp(argnum):
 
 # -------------------- forward mode defgrad wrappers  --------------------
 
-class first_arg_as_get(object):
-    def __init__(self, f):
-        self.f = f
-    def __getitem__(self, argnum):
-        return lambda *args, **kwargs: self.f(argnum, *args, **kwargs)
-
 def defjvps(fun, jvpfun, argnums):
     for argnum in argnums:
         defjvp(fun, partial(jvpfun, argnum), argnum)
 
 def defjvp_argnum(fun, jvpmaker):
-    primitive_jvps[fun] = first_arg_as_get(jvpmaker)
+    def jvp_argnums(argnums, gs, ans, args, kwargs):
+        return sum_outgrads(jvpmaker(argnum, g, ans, args, kwargs)
+                            for argnum, g in zip(argnums, gs))
+    defjvp_argnums(fun, jvp_argnums)
 
 def def_multilinear(fun):
     """Flags that a function is linear in all of its args."""

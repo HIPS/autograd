@@ -1,5 +1,5 @@
 from collections import defaultdict
-from functools import partial
+from functools import reduce
 from .tracer import trace, primitive, toposort, Node, Box, isbox, getval
 from .util import func, subval
 
@@ -52,28 +52,24 @@ def make_jvp(fun, x):
 class JVPNode(Node):
     __slots__ = ['g']
     def __init__(self, value, fun, args, kwargs, parent_argnums, parents):
-        cur_g = None
-        for argnum, parent in zip(parent_argnums, parents):
-            new_g = primitive_jvp(fun, argnum, parent.g, value, args, kwargs)
-            cur_g = add_outgrads(cur_g, new_g)
-
-        self.g = cur_g[0]
+        parent_gs = [parent.g for parent in parents]
+        self.g = primitive_jvps[fun](parent_argnums, parent_gs, value, args, kwargs)
 
     def initialize_root(self, x, g):
         self.g = g
 
-def primitive_jvp(fun, argnum, g, ans, args, kwargs):
-    try:
-        return primitive_jvps[fun][argnum](g, ans, args, kwargs)
-    except KeyError:
-        raise NotImplementedError("JVP of {} wrt arg number {} not yet implemented"
-                                  .format(fun.__name__, argnum))
+primitive_jvps = {}
+def defjvp_argnums(fun, jvpmaker):
+    primitive_jvps[fun] = jvpmaker
 
-primitive_jvps = defaultdict(dict)
+primitive_jvps_onearg = defaultdict(dict)
 def defjvp(fun, jvpfun, argnum=0):
-    def jvpfun_fixed_args(g, ans, args, kwargs):
-        return jvpfun(g, ans, *args, **kwargs)
-    primitive_jvps[fun][argnum] = jvpfun_fixed_args
+    primitive_jvps_onearg[fun][argnum] = jvpfun
+    vjps_dict = primitive_jvps_onearg[fun]
+    def jvp_argnums(argnums, gs, ans, args, kwargs):
+        return sum_outgrads(vjps_dict[argnum](g, ans, *args, **kwargs)
+                            for argnum, g in zip(argnums, gs))
+    defjvp_argnums(fun, jvp_argnums)
 
 # -------------------- vector behavior --------------------
 
@@ -98,6 +94,9 @@ def add_outgrads(prev_g_flagged, g):
             return sparse_add(vspace(g).zeros(), g), True
         else:
             return g, False
+
+def sum_outgrads(gs):
+    return reduce(add_outgrads, gs, None)[0]
 
 @primitive
 def sparse_add(x_prev, x_new):
