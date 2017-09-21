@@ -3,6 +3,7 @@ from .tracer import primitive, isbox, getval
 
 class VSpace(object):
     __slots__ = []
+    mappings = {}
     iscomplex = False
     def __init__(self, value): pass
 
@@ -34,9 +35,16 @@ class VSpace(object):
     def __repr__(self):
         return "{}_{}".format(type(self).__name__, self.__dict__)
 
+    @classmethod
+    def register(cls, value_type, vspace_maker=None):
+        if vspace_maker:
+            VSpace.mappings[value_type] = vspace_maker
+        else:
+            VSpace.mappings[value_type] = cls
+
 def vspace(value):
     try:
-        return vspace_mappings[type(value)](value)
+        return VSpace.mappings[type(value)](value)
     except KeyError:
         if isbox(value):
             try:
@@ -46,8 +54,4 @@ def vspace(value):
         else:
             raise TypeError("Can't find vector space for value {} of type {}. "
                             "Valid types are {}".format(
-                                value, type(value), vspace_mappings.keys()))
-
-vspace_mappings = {}
-def register_vspace(vspace_maker, value_type):
-    vspace_mappings[value_type] = vspace_maker
+                                value, type(value), VSpace.mappings.keys()))

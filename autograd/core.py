@@ -1,8 +1,7 @@
 from collections import defaultdict
 from functools import partial
-from .tracer import (trace, primitive, notrace_primitive, Node, Box,
-                     register_box, toposort)
-from .vspace import vspace, register_vspace, VSpace
+from .tracer import trace, primitive, notrace_primitive, Node, Box, toposort
+from .vspace import vspace, VSpace
 from .util import func, subval
 
 def make_vjp(fun, x):
@@ -85,8 +84,8 @@ class SparseObject(object):
     def __init__(self, vs, mut_add):
         self.vs = vs
         self.mut_add = mut_add
-register_vspace(lambda x : x.vs, SparseObject)
-register_box(SparseBox, SparseObject)
+VSpace.register(SparseObject, lambda x : x.vs)
+SparseBox.register(SparseObject)
 sparse_object_types = set((SparseObject, SparseBox))
 
 def zero_vjp(argnum):

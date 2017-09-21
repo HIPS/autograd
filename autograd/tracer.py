@@ -79,6 +79,9 @@ class TraceStack(object):
 trace_stack = TraceStack()
 
 class Box(object):
+    type_mappings = {}
+    types = set()
+
     __slots__ = ['_value', '_trace', '_node']
     def __init__(self, value, trace, node):
         self._value = value
@@ -93,6 +96,12 @@ class Box(object):
     def __str__(self):
         return "Autograd {0} with value {1}".format(
             type(self).__name__, str(self._value))
+
+    @classmethod
+    def register(cls, value_type):
+        Box.types.add(cls)
+        Box.type_mappings[value_type] = cls
+        Box.type_mappings[cls] = cls
 
 def toposort(end_node):
     child_counts = {}
@@ -115,18 +124,13 @@ def toposort(end_node):
             else:
                 child_counts[parent] -= 1
 
-box_type_mappings = {}
-box_types = set()
-def register_box(box_type, value_type):
-    box_types.add(box_type)
-    box_type_mappings[value_type] = box_type
-    box_type_mappings[box_type] = box_type
-
+box_type_mappings = Box.type_mappings
 def new_box(value, trace, node):
     try:
         return box_type_mappings[type(value)](value, trace, node)
     except KeyError:
         raise TypeError("Can't differentiate w.r.t. type {}".format(type(value)))
 
+box_types = Box.types
 isbox  = lambda x: type(x) in box_types  # almost 3X faster than isinstance(x, Box)
 getval = lambda x: getval(x._value) if isbox(x) else x

@@ -1,7 +1,7 @@
 from functools import partial
 from .util import subvals
-from .tracer import Box, register_box, primitive, notrace_primitive
-from .vspace import VSpace, vspace, register_vspace
+from .tracer import Box, primitive, notrace_primitive
+from .vspace import VSpace, vspace
 from .core import (defvjp, defvjp_is_zero, defvjp_argnum, defvjp_argnums, SparseObject,
                    def_linear_wrt_arg, defjvp_argnum)
 
@@ -27,8 +27,8 @@ class SequenceBox(Box):
     def __len__(self): return len(self._value)
     def __add__(self, other): return sequence_extend_right(self, *other)
     def __radd__(self, other): return sequence_extend_left(self, *other)
-register_box(SequenceBox, tuple_)
-register_box(SequenceBox, list_)
+SequenceBox.register(tuple_)
+SequenceBox.register(list_)
 
 class DictBox(Box):
     __slots__ = []
@@ -41,7 +41,7 @@ class DictBox(Box):
     def iteritems(self): return ((k, self[k]) for k in self)
     def iterkeys(self): return iter(self)
     def itervalues(self): return (self[k] for k in self)
-register_box(DictBox, dict_)
+DictBox.register(dict_)
 
 @primitive
 def container_untake(x, idx, vs):
@@ -142,6 +142,6 @@ class DictVSpace(ContainerVSpace):
         d[idx] = x
         return d
 
-register_vspace(ListVSpace,  list_)
-register_vspace(TupleVSpace, tuple_)
-register_vspace(DictVSpace,  dict_)
+ListVSpace.register(list_)
+TupleVSpace.register(tuple_)
+DictVSpace.register(dict_)
