@@ -2,12 +2,10 @@ from functools import partial
 from collections import defaultdict
 from .util import subval
 from .core import defvjp_argnums, defvjp, defjvps, defjvp, defjvp_argnum, def_multilinear
-from .vspace import vspace
 
 # Expose API for extending autograd
-from .vspace import VSpace, vspace
 from .tracer import Box, primitive, notrace_primitive, getval
-from .core import SparseObject
+from .core import SparseObject, VSpace, vspace
 
 # -------------------- reverse mode --------------------
 

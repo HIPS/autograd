@@ -1,8 +1,9 @@
 from collections import defaultdict
 from functools import partial
-from .tracer import trace, primitive, notrace_primitive, Node, Box, toposort
-from .vspace import vspace, VSpace
+from .tracer import trace, primitive, toposort, Node, Box, isbox, getval
 from .util import func, subval
+
+# -------------------- reverse mode --------------------
 
 def make_vjp(fun, x):
     start_node = VJPNode.new_root(x)
@@ -22,16 +23,6 @@ def backward_pass(g, end_node):
             outgrads[parent] = add_outgrads(outgrads.get(parent), ingrad)
     return outgrad[0]
 
-def make_jvp(fun, x):
-    def jvp(g):
-        start_node = JVPNode.new_root(x, g)
-        end_value, end_node = trace(start_node, fun, x)
-        if end_node is None:
-            return vspace(end_value).zeros()
-        else:
-            return end_node.g
-    return jvp
-
 class VJPNode(Node):
     __slots__ = ['parents', 'vjp']
     def __init__(self, value, fun, args, kwargs, parent_argnums, parents):
@@ -41,6 +32,22 @@ class VJPNode(Node):
     def initialize_root(self, value):
         self.parents = []
         self.vjp = lambda g: ()
+
+primitive_vjps = {}
+def defvjp_argnums(fun, vjpmaker):
+    primitive_vjps[fun] = vjpmaker
+
+# -------------------- forward mode --------------------
+
+def make_jvp(fun, x):
+    def jvp(g):
+        start_node = JVPNode.new_root(x, g)
+        end_value, end_node = trace(start_node, fun, x)
+        if end_node is None:
+            return vspace(end_value).zeros()
+        else:
+            return end_node.g
+    return jvp
 
 class JVPNode(Node):
     __slots__ = ['g']
@@ -54,6 +61,14 @@ class JVPNode(Node):
 
     def initialize_root(self, x, g):
         self.g = g
+
+primitive_jvps = defaultdict(dict)
+def defjvp(fun, jvpfun, argnum=0):
+    def jvpfun_fixed_args(g, ans, args, kwargs):
+        return jvpfun(g, ans, *args, **kwargs)
+    primitive_jvps[fun][argnum] = jvpfun_fixed_args
+
+# -------------------- vector behavior --------------------
 
 def add_outgrads(prev_g_flagged, g):
     sparse = type(g) in sparse_object_types
@@ -77,6 +92,58 @@ def add_outgrads(prev_g_flagged, g):
         else:
             return g, False
 
+class VSpace(object):
+    __slots__ = []
+    mappings = {}
+    iscomplex = False
+    def __init__(self, value): pass
+
+    def zeros(self):          assert False, repr(self)
+    def ones(self):           assert False, repr(self)
+    def standard_basis(self): assert False, repr(self)
+    def randn(self):          assert False, repr(self)
+
+    @primitive
+    def add(self, x_prev, x_new):     return self._add(x_prev, x_new)
+    @primitive
+    def mut_add(self, x_prev, x_new): return self._mut_add(x_prev, x_new)
+    @primitive
+    def scalar_mul(self, x, a):       return self._scalar_mul(x, a)
+    @primitive
+    def inner_prod(self, x, y):       return self._inner_prod(x, y)
+    @primitive
+    def covector(self, x):            return self._covector(x)
+
+    def _add(self, x, y):        return x + y
+    def _mut_add(self, x, y):    x += y; return x
+    def _scalar_mul(self, x, a): return x * a
+    def _inner_prod(self, x, y): assert False
+    def _covector(self, x):      return x
+
+    def __eq__(self, other):
+        return type(self) == type(other) and self.__dict__ == other.__dict__
+
+    def __repr__(self):
+        return "{}_{}".format(type(self).__name__, self.__dict__)
+
+    @classmethod
+    def register(cls, value_type, vspace_maker=None):
+        if vspace_maker:
+            VSpace.mappings[value_type] = vspace_maker
+        else:
+            VSpace.mappings[value_type] = cls
+
+def vspace(value):
+    try:
+        return VSpace.mappings[type(value)](value)
+    except KeyError:
+        if isbox(value):
+            return vspace(getval(value))
+        else:
+            raise TypeError("Can't find vector space for value {} of type {}. "
+                            "Valid types are {}".format(
+                                value, type(value), VSpace.mappings.keys()))
+
 class SparseBox(Box):
     __slots__ = []
 class SparseObject(object):
@@ -88,9 +155,7 @@ VSpace.register(SparseObject, lambda x : x.vs)
 SparseBox.register(SparseObject)
 sparse_object_types = set((SparseObject, SparseBox))
 
-primitive_vjps = {}
-def defvjp_argnums(fun, vjpmaker):
-    primitive_vjps[fun] = vjpmaker
+# -------------------- vspace grads --------------------
 
 primitive_vjps_onearg = defaultdict(dict)
 def defvjp(fun, vjpmaker, argnum=0):
@@ -146,13 +211,6 @@ def primitive_jvp(fun, argnum, g, ans, args, kwargs):
     except KeyError:
         raise NotImplementedError("JVP of {} wrt arg number {} not yet implemented"
                                   .format(fun.__name__, argnum))
-
-primitive_jvps = defaultdict(dict)
-
-def defjvp(fun, jvpfun, argnum=0):
-    def jvpfun_fixed_args(g, ans, args, kwargs):
-        return jvpfun(g, ans, *args, **kwargs)
-    primitive_jvps[fun][argnum] = jvpfun_fixed_args
 
 def defjvps(fun, jvpfun, argnums):
     for argnum in argnums:

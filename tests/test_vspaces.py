@@ -1,5 +1,5 @@
 from functools import reduce
-from autograd.vspace import vspace
+from autograd.core import vspace
 from autograd.numpy.numpy_vspaces import ArrayVSpace
 from autograd.test_util import check_grads, scalar_close
 import numpy as np
