@@ -62,6 +62,13 @@ class JVPNode(Node):
     def initialize_root(self, x, g):
         self.g = g
 
+def primitive_jvp(fun, argnum, g, ans, args, kwargs):
+    try:
+        return primitive_jvps[fun][argnum](g, ans, args, kwargs)
+    except KeyError:
+        raise NotImplementedError("JVP of {} wrt arg number {} not yet implemented"
+                                  .format(fun.__name__, argnum))
+
 primitive_jvps = defaultdict(dict)
 def defjvp(fun, jvpfun, argnum=0):
     def jvpfun_fixed_args(g, ans, args, kwargs):
@@ -91,6 +98,10 @@ def add_outgrads(prev_g_flagged, g):
             return sparse_add(vspace(g).zeros(), g), True
         else:
             return g, False
+
+@primitive
+def sparse_add(x_prev, x_new):
+    return x_new.mut_add(x_prev)
 
 class VSpace(object):
     __slots__ = []
@@ -155,79 +166,41 @@ VSpace.register(SparseObject, lambda x : x.vs)
 SparseBox.register(SparseObject)
 sparse_object_types = set((SparseObject, SparseBox))
 
-# -------------------- vspace grads --------------------
-
-primitive_vjps_onearg = defaultdict(dict)
-def defvjp(fun, vjpmaker, argnum=0):
-    primitive_vjps_onearg[fun][argnum] = vjpmaker
-    vjps_dict = primitive_vjps_onearg[fun]
-    def vjp_argnums(argnums, ans, args, kwargs):
-        L = len(argnums)
-        # These first two cases are purely for optimizations
-        if L == 1:
-            argnum = argnums[0]
-            vjp = vjps_dict[argnum](ans, *args, **kwargs)
-            return lambda g: (vjp(g),)
-        elif L == 2:
-            argnum_0, argnum_1 = argnums
-            vjp_0 = vjps_dict[argnum_0](ans, *args, **kwargs)
-            vjp_1 = vjps_dict[argnum_1](ans, *args, **kwargs)
-            return lambda g: (vjp_0(g), vjp_1(g))
-        else:
-            vjps = [vjps_dict[argnum](ans, *args, **kwargs) for argnum in argnums]
-            return lambda g: (vjp(g) for vjp in vjps)
-
-    primitive_vjps[fun] = vjp_argnums
+# -------------------- core reverse mode grads --------------------
 
 identity_vjp = lambda argnums, *args: lambda g: (g,) * len(argnums)
-identity_jvp = lambda argnum, g, *args, **kwargs: g
-
-@primitive
-def sparse_add(x_prev, x_new): return x_new.mut_add(x_prev)
 defvjp_argnums(sparse_add,           identity_vjp)
 defvjp_argnums(func(VSpace.add    ), identity_vjp)
 defvjp_argnums(func(VSpace.mut_add), identity_vjp)
 
-defvjp(func(VSpace.inner_prod), lambda ans, vs_, x, y: lambda g:
-       vspace(x).covector(vspace(x).scalar_mul(y, vspace(g).covector(g))), argnum=1)
-defvjp(func(VSpace.inner_prod), lambda ans, vs_, x, y: lambda g:
-       vspace(x).covector(vspace(x).scalar_mul(x, vspace(g).covector(g))), argnum=2)
-defvjp(func(VSpace.covector), lambda ans, vs_, x: lambda g:
-       vspace(g).covector(g), argnum=1)
-defvjp(func(VSpace.scalar_mul), lambda ans, vs_, x, a: lambda g:
-       vspace(x).covector(vspace(g).scalar_mul(vspace(g).covector(g), a)), argnum=1)
-defvjp(func(VSpace.scalar_mul), lambda ans, vs_, x, a: lambda g:
-       vspace(g).inner_prod(g, vspace(g).covector(x)), argnum=2)
+def defvjp_vs(fun, *vjpmakers):
+    def vjp_argnums(argnums, ans, args, kwargs):
+        vjps = [vjpmakers[argnum-1](ans, *args, **kwargs) for argnum in argnums]
+        return lambda g: (vjp(g) for vjp in vjps)
+    defvjp_argnums(fun, vjp_argnums)
 
-class first_arg_as_get(object):
-    def __init__(self, f):
-        self.f = f
-    def __getitem__(self, argnum):
-        return lambda *args, **kwargs: self.f(argnum, *args, **kwargs)
+defvjp_vs(func(VSpace.inner_prod),
+          lambda ans, vs, x, y: lambda g:  vs.covector(vs.scalar_mul(y, g)),
+          lambda ans, vs, x, y: lambda g:  vs.covector(vs.scalar_mul(x, g)))
+defvjp_vs(func(VSpace.covector),
+          lambda ans, vs, x: lambda g: vs.covector(g))
+defvjp_vs(func(VSpace.scalar_mul),
+          lambda ans, vs, x, a: lambda g: vs.covector(vs.scalar_mul(vs.covector(g), a)),
+          lambda ans, vs, x, a: lambda g: vs.inner_prod(g, vs.covector(x)))
 
-def primitive_jvp(fun, argnum, g, ans, args, kwargs):
-    try:
-        return primitive_jvps[fun][argnum](g, ans, args, kwargs)
-    except KeyError:
-        raise NotImplementedError("JVP of {} wrt arg number {} not yet implemented"
-                                  .format(fun.__name__, argnum))
+# -------------------- core forward mode grads --------------------
 
-def defjvps(fun, jvpfun, argnums):
-    for argnum in argnums:
-        defjvp(fun, partial(jvpfun, argnum), argnum)
+identity_jvp = lambda g, *args, **kwargs: g
+for argnum in [0, 1]:
+    defjvp(sparse_add, identity_jvp, argnum)
+    defjvp(func(VSpace.mut_add), identity_jvp, argnum+1)
+    defjvp(func(VSpace.add),     identity_jvp, argnum+1)
 
-def defjvp_argnum(fun, jvpmaker):
-    primitive_jvps[fun] = first_arg_as_get(jvpmaker)
+def def_vs_linear(fun):
+    defjvp(fun, lambda g, ans, vs, x, y: fun(vs, g, y), 1)
+    defjvp(fun, lambda g, ans, vs, x, y: fun(vs, x, g), 2)
 
-def def_multilinear(fun):
-    """Flags that a function is linear in all of its args."""
-    defjvp_argnum(fun, lambda argnum, g, ans, args, kwargs:
-                  fun(*subval(args, argnum, g), **kwargs))
+def_vs_linear(func(VSpace.scalar_mul))
+def_vs_linear(func(VSpace.inner_prod))
 
-defjvps(sparse_add, identity_jvp, argnums=[0, 1])
-defjvps(func(VSpace.mut_add), identity_jvp, argnums=[1,2])
-def_multilinear(func(VSpace.inner_prod))
-defjvps(func(VSpace.add), identity_jvp, argnums=[1,2])
-defjvp(func(VSpace.covector), lambda g, ans, gvs_, x:
-       vspace(x).covector(g), argnum=1)
-def_multilinear(func(VSpace.scalar_mul))
+defjvp(func(VSpace.covector), lambda g, ans, vs, x: vs.covector(g), argnum=1)

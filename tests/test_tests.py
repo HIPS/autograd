@@ -1,5 +1,5 @@
 from autograd.tracer import primitive, getval
-from autograd.core import defvjp
+from autograd.extend import defvjp
 from autograd.test_util import check_grads
 from nose.tools import assert_raises_regexp
 
