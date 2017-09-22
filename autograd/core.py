@@ -1,5 +1,4 @@
 from itertools import count
-from collections import defaultdict
 from functools import reduce
 from .tracer import trace, primitive, toposort, Node, Box, isbox, getval
 from .util import func, subval
@@ -38,6 +37,42 @@ primitive_vjps = {}
 def defvjp_argnums(fun, vjpmaker):
     primitive_vjps[fun] = vjpmaker
 
+def defvjp_argnum(fun, vjpmaker):
+    def vjp_argnums(argnums, *args):
+        vjps = [vjpmaker(argnum, *args) for argnum in argnums]
+        return lambda g: (vjp(g) for vjp in vjps)
+    defvjp_argnums(fun, vjp_argnums)
+
+def defvjp(fun, *vjpmakers, **kwargs):
+    argnums = kwargs.get('argnums', count())
+    vjps_dict = {argnum : translate_vjp(vjpmaker, fun, argnum)
+                 for argnum, vjpmaker in zip(argnums, vjpmakers)}
+    def vjp_argnums(argnums, ans, args, kwargs):
+        L = len(argnums)
+        # These first two cases are just optimizations
+        if L == 1:
+            argnum = argnums[0]
+            vjp = vjps_dict[argnum](ans, *args, **kwargs)
+            return lambda g: (vjp(g),)
+        elif L == 2:
+            argnum_0, argnum_1 = argnums
+            vjp_0 = vjps_dict[argnum_0](ans, *args, **kwargs)
+            vjp_1 = vjps_dict[argnum_1](ans, *args, **kwargs)
+            return lambda g: (vjp_0(g), vjp_1(g))
+        else:
+            vjps = [vjps_dict[argnum](ans, *args, **kwargs) for argnum in argnums]
+            return lambda g: (vjp(g) for vjp in vjps)
+
+    defvjp_argnums(fun, vjp_argnums)
+
+def translate_vjp(vjpfun, fun, argnum):
+    if vjpfun is None:
+        return lambda ans, *args, **kwargs: lambda g: vspace(args[argnum]).zeros()
+    elif callable(vjpfun):
+        return vjpfun
+    else:
+        raise Exception("Bad VJP '{}' for '{}'".format(vjpfun, fun.__name__))
+
 # -------------------- forward mode --------------------
 
 def make_jvp(fun, x):
@@ -67,6 +102,12 @@ primitive_jvps = {}
 def defjvp_argnums(fun, jvpmaker):
     primitive_jvps[fun] = jvpmaker
 
+def defjvp_argnum(fun, jvpmaker):
+    def jvp_argnums(argnums, gs, ans, args, kwargs):
+        return sum_outgrads(jvpmaker(argnum, g, ans, args, kwargs)
+                            for argnum, g in zip(argnums, gs))
+    defjvp_argnums(fun, jvp_argnums)
+
 def defjvp(fun, *jvpfuns, **kwargs):
     argnums = kwargs.get('argnums', count())
     jvps_dict = {argnum : translate_jvp(jvpfun, fun, argnum)
@@ -87,6 +128,11 @@ def translate_jvp(jvpfun, fun, argnum):
         return jvpfun
     else:
         raise Exception("Bad JVP '{}' for '{}'".format(jvpfun, fun.__name__))
+
+def def_linear(fun):
+    """Flags that a function is linear wrt all args"""
+    defjvp_argnum(fun, lambda argnum, g, ans, args, kwargs:
+                  fun(*subval(args, argnum, g), **kwargs))
 
 # -------------------- vector behavior --------------------
 
@@ -184,25 +230,18 @@ sparse_object_types = set((SparseObject, SparseBox))
 
 # -------------------- core reverse mode grads --------------------
 
-identity_vjp = lambda argnums, *args: lambda g: (g,) * len(argnums)
-defvjp_argnums(sparse_add,           identity_vjp)
-defvjp_argnums(func(VSpace.add    ), identity_vjp)
-defvjp_argnums(func(VSpace.mut_add), identity_vjp)
-
-def defvjp_vs(fun, *vjpmakers):
-    def vjp_argnums(argnums, ans, args, kwargs):
-        vjps = [vjpmakers[argnum-1](ans, *args, **kwargs) for argnum in argnums]
-        return lambda g: (vjp(g) for vjp in vjps)
-    defvjp_argnums(fun, vjp_argnums)
-
-defvjp_vs(func(VSpace.inner_prod),
-          lambda ans, vs, x, y: lambda g:  vs.covector(vs.scalar_mul(y, g)),
-          lambda ans, vs, x, y: lambda g:  vs.covector(vs.scalar_mul(x, g)))
-defvjp_vs(func(VSpace.covector),
+identity_vjp = lambda argnums, *args: lambda g: g
+defvjp(sparse_add,           identity_vjp, identity_vjp)
+defvjp(func(VSpace.add    ), identity_vjp, identity_vjp)
+defvjp(func(VSpace.mut_add), identity_vjp, identity_vjp)
+defvjp(func(VSpace.inner_prod), None,
+       lambda ans, vs, x, y: lambda g:  vs.covector(vs.scalar_mul(y, g)),
+       lambda ans, vs, x, y: lambda g:  vs.covector(vs.scalar_mul(x, g)))
+defvjp(func(VSpace.covector), None,
           lambda ans, vs, x: lambda g: vs.covector(g))
-defvjp_vs(func(VSpace.scalar_mul),
-          lambda ans, vs, x, a: lambda g: vs.covector(vs.scalar_mul(vs.covector(g), a)),
-          lambda ans, vs, x, a: lambda g: vs.inner_prod(g, vs.covector(x)))
+defvjp(func(VSpace.scalar_mul), None,
+       lambda ans, vs, x, a: lambda g: vs.covector(vs.scalar_mul(vs.covector(g), a)),
+       lambda ans, vs, x, a: lambda g: vs.inner_prod(g, vs.covector(x)))
 
 # -------------------- core forward mode grads --------------------
 
@@ -210,12 +249,6 @@ identity_jvp = lambda g, *args, **kwargs: g
 defjvp(sparse_add, identity_jvp,   identity_jvp, identity_jvp)
 defjvp(func(VSpace.mut_add), None, identity_jvp, identity_jvp)
 defjvp(func(VSpace.add),     None, identity_jvp, identity_jvp)
-
-def def_vs_linear(fun):
-    defjvp(fun, None, lambda g, ans, vs, x, y: fun(vs, g, y),
-                      lambda g, ans, vs, x, y: fun(vs, x, g))
-
-def_vs_linear(func(VSpace.scalar_mul))
-def_vs_linear(func(VSpace.inner_prod))
-
-defjvp(func(VSpace.covector), None, lambda g, ans, vs, x: vs.covector(g))
+defjvp(func(VSpace.scalar_mul), None, 'same', 'same')
+defjvp(func(VSpace.inner_prod), None, 'same', 'same')
+defjvp(func(VSpace.covector),   None, 'same')
