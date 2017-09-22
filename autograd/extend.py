@@ -1,3 +1,4 @@
+from itertools import count
 from functools import partial
 from collections import defaultdict
 from .util import subval
@@ -9,13 +10,13 @@ from .core import SparseObject, VSpace, vspace
 
 # -------------------- reverse mode defgrad wrappers --------------------
 
-primitive_vjps_onearg = defaultdict(dict)
-def defvjp(fun, vjpmaker, argnum=0):
-    primitive_vjps_onearg[fun][argnum] = vjpmaker
-    vjps_dict = primitive_vjps_onearg[fun]
+def defvjp(fun, *vjpmakers, **kwargs):
+    argnums = kwargs.get('argnums', count())
+    vjps_dict = {argnum : vjpmaker if vjpmaker is not None else zero_vjp(argnum)
+                 for argnum, vjpmaker in zip(argnums, vjpmakers)}
     def vjp_argnums(argnums, ans, args, kwargs):
         L = len(argnums)
-        # These first two cases are purely for optimizations
+        # These first two cases are just optimizations
         if L == 1:
             argnum = argnums[0]
             vjp = vjps_dict[argnum](ans, *args, **kwargs)
@@ -38,16 +39,14 @@ def defvjp_argnum(fun, vjpmaker):
     defvjp_argnums(fun, vjp_argnums)
 
 def defvjps(fun, vjpmaker, argnums):
-    for argnum in argnums:
-        defvjp(fun, partial(vjpmaker, argnum), argnum)
-
-def defvjp_is_zero(fun, argnums=(0,)):
-    for argnum in argnums:
-        defvjp(fun, zero_vjp(argnum), argnum)
-        defjvp(fun, zero_jvp, argnum)
+    defvjp(fun, *map(partial(partial, vjpmaker), argnums), argnums=argnums)
 
 def zero_vjp(argnum):
     return lambda ans, *args, **kwargs: lambda g: vspace(args[argnum]).zeros()
+
+def defvjp_is_zero(fun, argnums=(0,)):
+    for argnum in argnums:
+        defjvp(fun, zero_jvp, argnum)
 
 # -------------------- forward mode defgrad wrappers  --------------------
 

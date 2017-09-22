@@ -92,8 +92,9 @@ def dict(pairs):
 @primitive
 def _make_dict(keys, vals):
     return dict_(zip(keys, vals))
-defvjp(_make_dict, lambda ans, keys, vals: lambda g:
-       makelist_(*[g[key] for key in keys]), argnum=1)
+defvjp(_make_dict,
+       lambda ans, keys, vals: lambda g:
+       makelist_(*[g[key] for key in keys]), argnums=(1,))
 
 class ContainerVSpace(VSpace):
     def __init__(self, value):
