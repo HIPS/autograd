@@ -1,8 +1,6 @@
-from functools import partial
 from .util import subvals
 from .extend import (Box, primitive, notrace_primitive, VSpace, vspace,
-                     SparseObject, defvjp, defvjp_argnum, defvjp_argnums,
-                     def_linear_wrt_arg, defjvp_argnum)
+                     SparseObject, defvjp, defvjp_argnum, defjvp, defjvp_argnum)
 
 isinstance_ = isinstance
 isinstance = notrace_primitive(isinstance)
@@ -18,7 +16,7 @@ def container_take(A, idx):
 def grad_container_take(ans, A, idx):
     return lambda g: container_untake(g, idx, vspace(A))
 defvjp(container_take, grad_container_take)
-def_linear_wrt_arg(container_take)
+defjvp(container_take, 'same')
 
 class SequenceBox(Box):
     __slots__ = []
@@ -54,7 +52,7 @@ def container_untake(x, idx, vs):
     return SparseObject(vs, mut_add)
 defvjp(container_untake, lambda ans, x, idx, _:
        lambda g: container_take(g, idx))
-def_linear_wrt_arg(container_untake)
+defjvp(container_untake, 'same')
 
 @primitive
 def sequence_extend_right(seq, *elts):
@@ -75,7 +73,7 @@ defvjp_argnum(sequence_extend_left, grad_sequence_extend_left)
 @primitive
 def make_sequence(seq_type, *args):
     return seq_type(args)
-defvjp_argnums(make_sequence, lambda argnums, *args: lambda g: [g[argnum - 1] for argnum in argnums])
+defvjp_argnum(make_sequence, lambda argnum, *args: lambda g: g[argnum - 1])
 
 def fwd_grad_make_sequence(argnum, g, ans, seq_type, *args, **kwargs):
     return container_untake(g, argnum-1, vspace(ans))

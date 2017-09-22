@@ -1,6 +1,4 @@
 from itertools import count
-from functools import partial
-from collections import defaultdict
 from .util import subval
 from .core import defvjp_argnums, defjvp, defjvp_argnums, sum_outgrads
 
@@ -48,31 +46,13 @@ def defvjp_argnum(fun, vjpmaker):
 
 # -------------------- forward mode defgrad wrappers  --------------------
 
-def defjvps(fun, jvpfun, argnums):
-    for argnum in argnums:
-        defjvp(fun, partial(jvpfun, argnum), argnum)
-
 def defjvp_argnum(fun, jvpmaker):
     def jvp_argnums(argnums, gs, ans, args, kwargs):
         return sum_outgrads(jvpmaker(argnum, g, ans, args, kwargs)
                             for argnum, g in zip(argnums, gs))
     defjvp_argnums(fun, jvp_argnums)
 
-def def_multilinear(fun):
-    """Flags that a function is linear in all of its args."""
+def def_linear(fun):
+    """Flags that a function is linear wrt all args"""
     defjvp_argnum(fun, lambda argnum, g, ans, args, kwargs:
                   fun(*subval(args, argnum, g), **kwargs))
-
-def def_linear_wrt_arg(fun, argnum=0):
-    """
-    This signifies that a function is linear in the sense of linear
-    algebra/functional analysis: fun(a*x + b*y) = a*fun(x) + b*fun(y)
-    """
-    defjvp(fun, lambda g, ans, *args, **kwargs:
-           fun(*subval(args, argnum, g), **kwargs), argnum=argnum)
-
-def def_linear_wrt_args(fun, argnums):
-    for argnum in argnums:
-        def_linear_wrt_arg(fun, argnum)
-
-def zero_jvp(g, ans, *args, **kwargs): return vspace(ans).zeros()
