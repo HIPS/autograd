@@ -52,12 +52,23 @@ def defvjp(fun, *vjpmakers, **kwargs):
         # These first two cases are just optimizations
         if L == 1:
             argnum = argnums[0]
-            vjp = vjps_dict[argnum](ans, *args, **kwargs)
+            try:
+                vjpfun = vjps_dict[argnum]
+            except KeyError:
+                raise NotImplementedError(
+                    "VJP of {} wrt argnum 0 not defined".format(fun.__name__))
+            vjp = vjpfun(ans, *args, **kwargs)
             return lambda g: (vjp(g),)
         elif L == 2:
             argnum_0, argnum_1 = argnums
-            vjp_0 = vjps_dict[argnum_0](ans, *args, **kwargs)
-            vjp_1 = vjps_dict[argnum_1](ans, *args, **kwargs)
+            try:
+                vjp_0_fun = vjps_dict[argnum_0]
+                vjp_1_fun = vjps_dict[argnum_1]
+            except KeyError:
+                raise NotImplementedError(
+                    "VJP of {} wrt argnums 0, 1 not defined".format(fun.__name__))
+            vjp_0 = vjp_0_fun(ans, *args, **kwargs)
+            vjp_1 = vjp_1_fun(ans, *args, **kwargs)
             return lambda g: (vjp_0(g), vjp_1(g))
         else:
             vjps = [vjps_dict[argnum](ans, *args, **kwargs) for argnum in argnums]
@@ -231,9 +242,9 @@ sparse_object_types = set((SparseObject, SparseBox))
 # -------------------- core reverse mode grads --------------------
 
 identity_vjp = lambda argnums, *args: lambda g: g
-defvjp(sparse_add,           identity_vjp, identity_vjp)
-defvjp(func(VSpace.add    ), identity_vjp, identity_vjp)
-defvjp(func(VSpace.mut_add), identity_vjp, identity_vjp)
+defvjp(sparse_add, identity_vjp, identity_vjp)
+defvjp(func(VSpace.add    ), None, identity_vjp, identity_vjp)
+defvjp(func(VSpace.mut_add), None, identity_vjp, identity_vjp)
 defvjp(func(VSpace.inner_prod), None,
        lambda ans, vs, x, y: lambda g:  vs.covector(vs.scalar_mul(y, g)),
        lambda ans, vs, x, y: lambda g:  vs.covector(vs.scalar_mul(x, g)))
