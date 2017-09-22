@@ -2,11 +2,10 @@ from __future__ import absolute_import
 from future.utils import string_types
 from functools import partial
 import numpy as onp
-from numpy.core.einsumfunc import _parse_einsum_input
 from ..util import func
 from . import numpy_wrapper as anp
 from .numpy_boxes import ArrayBox
-from autograd.extend import primitive, getval, vspace, defvjp, defvjp_argnum, SparseObject
+from autograd.extend import primitive, vspace, defvjp, defvjp_argnum, SparseObject
 
 # ----- Functions that are constant w.r.t. continuous inputs -----
 
@@ -472,7 +471,7 @@ def grad_einsum(argnum, ans, operands_, kwargs):
     def vjp(g):
         operands = operands_
         if isinstance(operands[0], string_types):  # using "ijk" convention.
-            in_subs, out_subs, _ = _parse_einsum_input(tuple(map(getval, operands)))
+            in_subs, out_subs, _ = anp.parse_einsum_input(*operands)
             string, operands = operands[0], operands[1:]
 
             in_subs_list = in_subs.split(',')
