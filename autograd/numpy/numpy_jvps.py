@@ -7,47 +7,46 @@ from autograd.extend import (defjvp, defjvps, def_linear_wrt_arg, defjvp_argnum,
 from ..util import func
 from .numpy_boxes import ArrayBox
 
-defvjp_is_zero(anp.where, argnums=(0,))
-
 def_linear_wrt_arg(func(ArrayBox.__getitem__))
 def_linear_wrt_arg(untake)
 
 defjvp_argnum(anp.array_from_args, lambda argnum, g, ans, args, kwargs: untake(g, argnum-2, vspace(ans)))
-defjvp(anp._array_from_scalar_or_array, lambda g, ans, args, kwargs, _: anp._array_from_scalar_or_array(args, kwargs, g), argnum=2)
+defjvp(anp._array_from_scalar_or_array, None, None,
+       lambda g, ans, args, kwargs, _: anp._array_from_scalar_or_array(args, kwargs, g))
 
 # ----- Functions that are constant w.r.t. continuous inputs -----
 defjvp(anp.nan_to_num, lambda g, ans, x: anp.where(anp.isfinite(x), g, 0.))
 
 # ----- Binary ufuncs (linear) -----
 def_multilinear(anp.multiply)
-def_linear_wrt_arg(anp.divide)
-def_linear_wrt_arg(anp.true_divide)
 
 # ----- Binary ufuncs -----
-defjvp(anp.add,        lambda g, ans, x, y : broadcast(g, ans))
-defjvp(anp.add,        lambda g, ans, x, y : broadcast(g, ans), argnum=1)
-defjvp(anp.subtract,   lambda g, ans, x, y : broadcast(g, ans))
-defjvp(anp.subtract,   lambda g, ans, x, y : broadcast(-g, ans), argnum=1)
-defjvp(anp.divide,     lambda g, ans, x, y : - g * x / y**2, argnum=1)
-defjvp(anp.maximum,    lambda g, ans, x, y : g * balanced_eq(x, ans, y))
-defjvp(anp.maximum,    lambda g, ans, x, y : g * balanced_eq(y, ans, x), argnum=1)
-defjvp(anp.minimum,    lambda g, ans, x, y : g * balanced_eq(x, ans, y))
-defjvp(anp.minimum,    lambda g, ans, x, y : g * balanced_eq(y, ans, x), argnum=1)
-defjvp(anp.fmax,       lambda g, ans, x, y : g * balanced_eq(x, ans, y))
-defjvp(anp.fmax,       lambda g, ans, x, y : g * balanced_eq(y, ans, x), argnum=1)
-defjvp(anp.fmin,       lambda g, ans, x, y : g * balanced_eq(x, ans, y))
-defjvp(anp.fmin,       lambda g, ans, x, y : g * balanced_eq(y, ans, x), argnum=1)
-defjvp(anp.logaddexp,  lambda g, ans, x, y : g * anp.exp(x-ans))
-defjvp(anp.logaddexp,  lambda g, ans, x, y : g * anp.exp(y-ans), argnum=1)
-defjvp(anp.logaddexp2, lambda g, ans, x, y : g * 2**(x-ans))
-defjvp(anp.logaddexp2, lambda g, ans, x, y : g * 2**(y-ans), argnum=1)
-defjvp(anp.true_divide,lambda g, ans, x, y : - g * x / y**2, argnum=1)
-defjvp(anp.mod,        lambda g, ans, x, y : broadcast(g, ans))
-defjvp(anp.remainder,  lambda g, ans, x, y : broadcast(g, ans))
-defjvp(anp.mod,        lambda g, ans, x, y : -g * anp.floor(x/y), argnum=1)
-defjvp(anp.remainder,  lambda g, ans, x, y : -g * anp.floor(x/y), argnum=1)
-defjvp(anp.power,      lambda g, ans, x, y : g * y * x ** anp.where(y, y - 1, 1.))
-defjvp(anp.power,      lambda g, ans, x, y : g * anp.log(replace_zero(x, 1.)) * x ** y, argnum=1)
+defjvp(anp.add,        lambda g, ans, x, y : broadcast(g, ans),
+                       lambda g, ans, x, y : broadcast(g, ans))
+defjvp(anp.subtract,   lambda g, ans, x, y : broadcast(g, ans),
+                       lambda g, ans, x, y : broadcast(-g, ans))
+defjvp(anp.divide,     'same',
+                       lambda g, ans, x, y : - g * x / y**2)
+defjvp(anp.maximum,    lambda g, ans, x, y : g * balanced_eq(x, ans, y),
+                       lambda g, ans, x, y : g * balanced_eq(y, ans, x))
+defjvp(anp.minimum,    lambda g, ans, x, y : g * balanced_eq(x, ans, y),
+                       lambda g, ans, x, y : g * balanced_eq(y, ans, x))
+defjvp(anp.fmax,       lambda g, ans, x, y : g * balanced_eq(x, ans, y),
+                       lambda g, ans, x, y : g * balanced_eq(y, ans, x))
+defjvp(anp.fmin,       lambda g, ans, x, y : g * balanced_eq(x, ans, y),
+                       lambda g, ans, x, y : g * balanced_eq(y, ans, x))
+defjvp(anp.logaddexp,  lambda g, ans, x, y : g * anp.exp(x-ans),
+                       lambda g, ans, x, y : g * anp.exp(y-ans))
+defjvp(anp.logaddexp2, lambda g, ans, x, y : g * 2**(x-ans),
+                       lambda g, ans, x, y : g * 2**(y-ans))
+defjvp(anp.true_divide,'same',
+                       lambda g, ans, x, y : - g * x / y**2)
+defjvp(anp.mod,        lambda g, ans, x, y : broadcast(g, ans),
+                       lambda g, ans, x, y : -g * anp.floor(x/y))
+defjvp(anp.remainder,  lambda g, ans, x, y : broadcast(g, ans),
+                       lambda g, ans, x, y : -g * anp.floor(x/y))
+defjvp(anp.power,      lambda g, ans, x, y : g * y * x ** anp.where(y, y - 1, 1.),
+                       lambda g, ans, x, y : g * anp.log(replace_zero(x, 1.)) * x ** y)
 
 # ----- Simple grads (linear) -----
 def_linear_wrt_arg(anp.negative)
@@ -114,8 +113,9 @@ defjvp(anp.real,   lambda g, ans, x   : anp.real(g))
 defjvp(anp.imag,   lambda g, ans, x   : match_complex(ans, -1j * g))
 defjvp(anp.conj,   lambda g, ans, x   : anp.conj(g))
 defjvp(anp.angle,  lambda g, ans, x   : match_complex(ans, g * anp.conj(x * 1j) / anp.abs(x)**2))
-defjvp(anp.where,  lambda g, ans, c, x=None, y=None : anp.where(c, g, anp.zeros(anp.shape(g))), argnum=1)
-defjvp(anp.where,  lambda g, ans, c, x=None, y=None : anp.where(c, anp.zeros(g.shape), g), argnum=2)
+defjvp(anp.where,  None,
+       lambda g, ans, c, x=None, y=None : anp.where(c, g, anp.zeros(anp.shape(g))),
+       lambda g, ans, c, x=None, y=None : anp.where(c, anp.zeros(g.shape), g))
 
 # ----- Trickier grads -----
 def_linear_wrt_arg(anp.diff)
@@ -126,8 +126,8 @@ def_linear_wrt_arg(anp.transpose)
 def_linear_wrt_arg(anp.sum)
 def_linear_wrt_arg(anp.mean)
 defjvp(anp.prod, lambda g, ans, x, axis=None, keepdims=False: ans * anp.sum(g / x, axis=axis, keepdims=keepdims))
-defjvp(anp.linspace, lambda g, ans, start, stop, *args, **kwargs: anp.linspace(g, 0, *args, **kwargs), argnum=0)
-defjvp(anp.linspace, lambda g, ans, start, stop, *args, **kwargs: anp.linspace(0, g, *args, **kwargs), argnum=1)
+defjvp(anp.linspace, lambda g, ans, start, stop, *args, **kwargs: anp.linspace(g, 0, *args, **kwargs),
+                     lambda g, ans, start, stop, *args, **kwargs: anp.linspace(0, g, *args, **kwargs))
 
 def forward_grad_np_var(g, ans, x, axis=None, ddof=0, keepdims=False):
     if axis is None:

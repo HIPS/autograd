@@ -1,3 +1,4 @@
+from itertools import count
 from collections import defaultdict
 from functools import reduce
 from .tracer import trace, primitive, toposort, Node, Box, isbox, getval
@@ -53,7 +54,11 @@ class JVPNode(Node):
     __slots__ = ['g']
     def __init__(self, value, fun, args, kwargs, parent_argnums, parents):
         parent_gs = [parent.g for parent in parents]
-        self.g = primitive_jvps[fun](parent_argnums, parent_gs, value, args, kwargs)
+        try:
+            self.g = primitive_jvps[fun](parent_argnums, parent_gs, value, args, kwargs)
+        except KeyError:
+            raise Exception("JVP of {} wrt argnums {} not defined"
+                            .format(fun.__name__, parent_argnums))
 
     def initialize_root(self, x, g):
         self.g = g
@@ -62,14 +67,26 @@ primitive_jvps = {}
 def defjvp_argnums(fun, jvpmaker):
     primitive_jvps[fun] = jvpmaker
 
-primitive_jvps_onearg = defaultdict(dict)
-def defjvp(fun, jvpfun, argnum=0):
-    primitive_jvps_onearg[fun][argnum] = jvpfun
-    vjps_dict = primitive_jvps_onearg[fun]
+def defjvp(fun, *jvpfuns, **kwargs):
+    argnums = kwargs.get('argnums', count())
+    jvps_dict = {argnum : translate_jvp(jvpfun, fun, argnum)
+                 for argnum, jvpfun in zip(argnums, jvpfuns)}
     def jvp_argnums(argnums, gs, ans, args, kwargs):
-        return sum_outgrads(vjps_dict[argnum](g, ans, *args, **kwargs)
+        return sum_outgrads(jvps_dict[argnum](g, ans, *args, **kwargs)
                             for argnum, g in zip(argnums, gs))
+
     defjvp_argnums(fun, jvp_argnums)
+
+def translate_jvp(jvpfun, fun, argnum):
+    if jvpfun is None:
+        return lambda g, ans, *a, **k: vspace(ans).zeros()
+    elif jvpfun == 'same':
+        return (lambda g, ans, *args, **kwargs:
+                fun(*subval(args, argnum, g), **kwargs))
+    elif callable(jvpfun):
+        return jvpfun
+    else:
+        raise Exception("Bad JVP '{}' for '{}'".format(jvpfun, fun.__name__))
 
 # -------------------- vector behavior --------------------
 
@@ -190,16 +207,15 @@ defvjp_vs(func(VSpace.scalar_mul),
 # -------------------- core forward mode grads --------------------
 
 identity_jvp = lambda g, *args, **kwargs: g
-for argnum in [0, 1]:
-    defjvp(sparse_add, identity_jvp, argnum)
-    defjvp(func(VSpace.mut_add), identity_jvp, argnum+1)
-    defjvp(func(VSpace.add),     identity_jvp, argnum+1)
+defjvp(sparse_add, identity_jvp,   identity_jvp, identity_jvp)
+defjvp(func(VSpace.mut_add), None, identity_jvp, identity_jvp)
+defjvp(func(VSpace.add),     None, identity_jvp, identity_jvp)
 
 def def_vs_linear(fun):
-    defjvp(fun, lambda g, ans, vs, x, y: fun(vs, g, y), 1)
-    defjvp(fun, lambda g, ans, vs, x, y: fun(vs, x, g), 2)
+    defjvp(fun, None, lambda g, ans, vs, x, y: fun(vs, g, y),
+                      lambda g, ans, vs, x, y: fun(vs, x, g))
 
 def_vs_linear(func(VSpace.scalar_mul))
 def_vs_linear(func(VSpace.inner_prod))
 
-defjvp(func(VSpace.covector), lambda g, ans, vs, x: vs.covector(g), argnum=1)
+defjvp(func(VSpace.covector), None, lambda g, ans, vs, x: vs.covector(g))
