@@ -3,7 +3,7 @@ from .numpy_vjps import (untake, balanced_eq, match_complex, replace_zero,
                          dot_adjoint_0, dot_adjoint_1, tensordot_adjoint_0,
                          tensordot_adjoint_1)
 from autograd.extend import (defjvp, defjvps, def_linear_wrt_arg, defjvp_argnum,
-                             def_multilinear, vspace, defvjp_is_zero)
+                             def_multilinear, vspace)
 from ..util import func
 from .numpy_boxes import ArrayBox
 

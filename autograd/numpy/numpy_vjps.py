@@ -1,12 +1,12 @@
 from __future__ import absolute_import
 from future.utils import string_types
+from functools import partial
 import numpy as onp
 from numpy.core.einsumfunc import _parse_einsum_input
 from ..util import func
 from . import numpy_wrapper as anp
 from .numpy_boxes import ArrayBox
-from autograd.extend import (primitive, getval, vspace, defvjp, defvjps,
-                             defvjp_argnum, SparseObject, zero_vjp)
+from autograd.extend import primitive, getval, vspace, defvjp, defvjp_argnum, SparseObject
 
 # ----- Functions that are constant w.r.t. continuous inputs -----
 
@@ -187,7 +187,7 @@ def grad_kron(argnum, ans, orig_A, orig_B):
         else:
             return anp.reshape(anp.tensordot(A, reshaped_G, axes=anp.ndim(A)), orig_B_shape)
     return vjp
-defvjps(anp.kron, grad_kron, [0, 1])
+defvjp(anp.kron, partial(grad_kron, 0), partial(grad_kron, 1))
 
 def grad_transpose(ans, x, axes=None):
     if axes is not None:
@@ -291,7 +291,7 @@ def grad_inner(argnum, ans, A, B):
         return lambda G: tensordot_adjoint_0(B, G, axes, A_ndim, B_ndim)
     elif argnum == 1:
         return lambda G: tensordot_adjoint_1(A, G, axes, A_ndim, B_ndim)
-defvjps(anp.inner, grad_inner, [0, 1])
+defvjp(anp.inner, partial(grad_inner, 0), partial(grad_inner, 1))
 
 def grad_matmul(argnum, ans, A, B):
     A_ndim, B_ndim = anp.ndim(A), anp.ndim(B)
@@ -305,7 +305,7 @@ def grad_matmul(argnum, ans, A, B):
             return lambda G: tensordot_adjoint_1(A, G, axes, A_ndim, B_ndim)
     else:
         return grad_einsum(argnum + 1, ans, ("...ij,...jk->...ik", A, B), None)
-defvjps(anp.matmul, grad_matmul, [0, 1])
+defvjp(anp.matmul, partial(grad_matmul, 0), partial(grad_matmul, 1))
 
 @primitive
 def dot_adjoint_0(B, G, A_ndim, B_ndim):
