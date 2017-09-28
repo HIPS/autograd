@@ -1,7 +1,8 @@
 from . import numpy_wrapper as anp
 from .numpy_vjps import (untake, balanced_eq, match_complex, replace_zero,
                          dot_adjoint_0, dot_adjoint_1, tensordot_adjoint_0,
-                         tensordot_adjoint_1)
+                         tensordot_adjoint_1, broadcast, _broadcast,
+                         unbroadcast, _unbroadcast)
 from autograd.core import (defjvp, defjvps, def_linear_wrt_arg, defjvp_argnum,
                            def_multilinear, vspace)
 from ..util import func
@@ -22,10 +23,10 @@ def_linear_wrt_arg(anp.divide)
 def_linear_wrt_arg(anp.true_divide)
 
 # ----- Binary ufuncs -----
-defjvp(anp.add,        lambda g, ans, x, y : broadcast(g, ans))
-defjvp(anp.add,        lambda g, ans, x, y : broadcast(g, ans), argnum=1)
-defjvp(anp.subtract,   lambda g, ans, x, y : broadcast(g, ans))
-defjvp(anp.subtract,   lambda g, ans, x, y : broadcast(-g, ans), argnum=1)
+defjvp(anp.add,        lambda g, ans, x, y : broadcast(g, anp.metadata(ans)))
+defjvp(anp.add,        lambda g, ans, x, y : broadcast(g, anp.metadata(ans)), argnum=1)
+defjvp(anp.subtract,   lambda g, ans, x, y : broadcast(g, anp.metadata(ans)))
+defjvp(anp.subtract,   lambda g, ans, x, y : broadcast(-g, anp.metadata(ans)), argnum=1)
 defjvp(anp.divide,     lambda g, ans, x, y : - g * x / y**2, argnum=1)
 defjvp(anp.maximum,    lambda g, ans, x, y : g * balanced_eq(x, ans, y))
 defjvp(anp.maximum,    lambda g, ans, x, y : g * balanced_eq(y, ans, x), argnum=1)
@@ -40,8 +41,8 @@ defjvp(anp.logaddexp,  lambda g, ans, x, y : g * anp.exp(y-ans), argnum=1)
 defjvp(anp.logaddexp2, lambda g, ans, x, y : g * 2**(x-ans))
 defjvp(anp.logaddexp2, lambda g, ans, x, y : g * 2**(y-ans), argnum=1)
 defjvp(anp.true_divide,lambda g, ans, x, y : - g * x / y**2, argnum=1)
-defjvp(anp.mod,        lambda g, ans, x, y : broadcast(g, ans))
-defjvp(anp.remainder,  lambda g, ans, x, y : broadcast(g, ans))
+defjvp(anp.mod,        lambda g, ans, x, y : broadcast(g, anp.metadata(ans)))
+defjvp(anp.remainder,  lambda g, ans, x, y : broadcast(g, anp.metadata(ans)))
 defjvp(anp.mod,        lambda g, ans, x, y : -g * anp.floor(x/y), argnum=1)
 defjvp(anp.remainder,  lambda g, ans, x, y : -g * anp.floor(x/y), argnum=1)
 defjvp(anp.power,      lambda g, ans, x, y : g * y * x ** anp.where(y, y - 1, 1.))
@@ -220,14 +221,5 @@ defjvp(anp.atleast_3d, atleast_jvpmaker(anp.atleast_3d))
 
 def_multilinear(anp.einsum)
 
-# TODO(mattjj): can we call np.broadcast_to or a related function instead?
-def broadcast(x, target):
-    target_shape, target_ndim, target_dtype, target_iscomplex = anp.metadata(target)
-    while anp.ndim(x) < target_ndim:
-        x = anp.expand_dims(x, 0)
-    for axis, size in enumerate(anp.shape(x)):
-        if size == 1:
-            x = anp.repeat(x, target_shape[axis], axis=axis)
-    if target_iscomplex and not anp.iscomplexobj(x):
-        x = x + 0j  # TODO(mattjj): this might promote the dtype
-    return x
+def_linear_wrt_arg(_broadcast)
+def_linear_wrt_arg(_unbroadcast)

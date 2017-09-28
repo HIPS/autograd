@@ -3,7 +3,7 @@ from future.utils import string_types
 import numpy as onp
 from numpy.core.einsumfunc import _parse_einsum_input
 from ..util import func
-from autograd.tracer import primitive, getval
+from autograd.tracer import primitive, notrace_primitive, getval
 from autograd.vspace import vspace
 from autograd.core import defvjp, defvjps, defvjp_is_zero, defvjp_argnum, SparseObject
 from . import numpy_wrapper as anp
@@ -519,11 +519,11 @@ def grad_einsum(argnum, ans, operands_, kwargs):
 defvjp_argnum(anp.einsum, grad_einsum)
 
 defvjp(anp.diagonal,
-    lambda ans, A, offset=0, axis1=0, axis2=1 :
-    lambda g: anp.make_diagonal(g, offset, axis1, axis2))
+       lambda ans, A, offset=0, axis1=0, axis2=1 :
+       lambda g: anp.make_diagonal(g, offset, axis1, axis2))
 defvjp(anp.make_diagonal,
-    lambda ans, D, offset=0, axis1=0, axis2=1 :
-    lambda g: anp.diagonal(g, offset, axis1, axis2))
+       lambda ans, D, offset=0, axis1=0, axis2=1 :
+       lambda g: anp.diagonal(g, offset, axis1, axis2))
 
 def match_complex(target, x):
     target_iscomplex = anp.iscomplexobj(target)
@@ -535,16 +535,52 @@ def match_complex(target, x):
     else:
         return x
 
-def unbroadcast(x, target_meta, broadcast_idx=0):
-    target_shape, target_ndim, dtype, target_iscomplex = target_meta
-    while anp.ndim(x) > target_ndim:
-        x = anp.sum(x, axis=broadcast_idx)
-    for axis, size in enumerate(target_shape):
-        if size == 1:
-            x = anp.sum(x, axis=axis, keepdims=True)
-    if anp.iscomplexobj(x) and not target_iscomplex:
-        x = anp.real(x)
+@notrace_primitive
+def _needs_broadcast(x, target_meta):
+    target_shape, _, _, target_iscomplex = target_meta
+    return (onp.shape(x) != target_shape
+            or (target_iscomplex != onp.iscomplexobj(x)))
+
+def broadcast(x, target_meta, broadcast_idx=0):
+    if _needs_broadcast(x, target_meta):
+        return _broadcast(x, target_meta, broadcast_idx)
     return x
+
+@primitive
+def _broadcast(x, target_meta, broadcast_idx=0):
+    target_shape, _, _, target_iscomplex = target_meta
+    x = onp.broadcast_to(x, target_shape)
+    if target_iscomplex and not onp.iscomplexobj(x):
+        x = x + 0j  # TODO(mattjj): this might promote the dtype
+    return x
+
+def grad_broadcast(ans, x, target_meta, broadcast_idx=0):
+    meta = anp.metadata(x)
+    return lambda g: _unbroadcast(g, meta, broadcast_idx)
+defvjp(_broadcast, grad_broadcast)
+
+def unbroadcast(x, target_meta, broadcast_idx=0):
+    if _needs_broadcast(x, target_meta):
+        return _unbroadcast(x, target_meta, broadcast_idx)
+    return x
+
+@primitive
+def _unbroadcast(x, target_meta, broadcast_idx=0):
+    target_shape, target_ndim, _, target_iscomplex = target_meta
+    x_shape = onp.shape(x)
+    while onp.ndim(x) > target_ndim:
+        x = onp.sum(x, axis=broadcast_idx)
+    for axis, size in enumerate(target_shape):
+        if size == 1:  # TODO(mattjj): bug here w/ passing through scalars?
+            x = onp.sum(x, axis=axis, keepdims=True)
+    if onp.iscomplexobj(x) and not target_iscomplex:
+        x = onp.real(x)
+    return x
+
+def grad_unbroadcast(ans, x, target_meta, broadcast_idx=0):
+    meta = anp.metadata(x)
+    return lambda g: _broadcast(g, meta, broadcast_idx)
+defvjp(_unbroadcast, grad_unbroadcast)
 
 def unbroadcast_f(target, f):
     target_meta = anp.metadata(target)
