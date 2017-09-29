@@ -3,7 +3,7 @@ import scipy.linalg
 
 import autograd.numpy as anp
 from autograd.numpy.numpy_wrapper import wrap_namespace
-from autograd.core import defvjp, defvjps, defvjp_is_zero, defvjp_argnum
+from autograd.extend import defvjp
 
 wrap_namespace(scipy.linalg.__dict__, globals())  # populates module namespace
 
@@ -24,6 +24,7 @@ def grad_solve_triangular(ans, a, b, trans=0, lower=False, **kwargs):
         return -transpose(tri(anp.dot(v, al2d(ans).T)))
     return vjp
 
-defvjp(solve_triangular,grad_solve_triangular)
-defvjp(solve_triangular,lambda ans, a, b, trans=0, lower=False, **kwargs:
-    lambda g: solve_triangular(a, g, trans=_flip(a, trans), lower=lower), argnum=1)
+defvjp(solve_triangular,
+       grad_solve_triangular,
+       lambda ans, a, b, trans=0, lower=False, **kwargs:
+       lambda g: solve_triangular(a, g, trans=_flip(a, trans), lower=lower))

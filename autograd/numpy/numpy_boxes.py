@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 import numpy as np
-from autograd.tracer import Box, register_box, primitive
+from autograd.extend import Box, primitive
 from . import numpy_wrapper as anp
 
 Box.__array_priority__ = 90.0
@@ -46,10 +46,10 @@ class ArrayBox(Box):
     def __abs__(self): return anp.abs(self)
     def __hash__(self): return id(self)
 
-register_box(ArrayBox, np.ndarray)
+ArrayBox.register(np.ndarray)
 for type_ in [float, np.float64, np.float32, np.float16,
               complex, np.complex64, np.complex128]:
-    register_box(ArrayBox, type_)
+    ArrayBox.register(type_)
 
 # These numpy.ndarray methods are just refs to an equivalent numpy function
 nondiff_methods = ['all', 'any', 'argmax', 'argmin', 'argpartition',

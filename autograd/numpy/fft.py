@@ -3,8 +3,7 @@ import numpy.fft as ffto
 from .numpy_wrapper import wrap_namespace
 from .numpy_vjps import match_complex
 from . import numpy_wrapper as anp
-from autograd.core import primitive, defvjp
-from autograd.vspace import vspace
+from autograd.extend import primitive, defvjp, vspace
 from builtins import zip
 
 wrap_namespace(ffto.__dict__, globals())

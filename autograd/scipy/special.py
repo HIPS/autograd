@@ -1,8 +1,7 @@
 from __future__ import absolute_import
 import scipy.special
 import autograd.numpy as np
-from autograd.core import defvjp, defvjps, defvjp_is_zero, defvjp_argnum
-from autograd.core import primitive
+from autograd.extend import primitive, defvjp
 
 ### Gamma functions ###
 polygamma    = primitive(scipy.special.polygamma)
@@ -14,17 +13,16 @@ gammasgn     = primitive(scipy.special.gammasgn)
 rgamma       = primitive(scipy.special.rgamma)
 multigammaln = primitive(scipy.special.multigammaln)
 
-defvjp_is_zero(gammasgn)
-defvjp_is_zero(polygamma, argnums=(0,))
-defvjp(polygamma, lambda ans, n, x: lambda g: g * polygamma(n + 1, x), argnum=1)
+defvjp(gammasgn, None)
+defvjp(polygamma, None, lambda ans, n, x: lambda g: g * polygamma(n + 1, x))
 defvjp(psi,      lambda ans, x: lambda g: g * polygamma(1, x))
 defvjp(digamma,  lambda ans, x: lambda g: g * polygamma(1, x))
 defvjp(gamma,    lambda ans, x: lambda g: g * ans * psi(x))
 defvjp(gammaln,  lambda ans, x: lambda g: g * psi(x))
 defvjp(rgamma,   lambda ans, x: lambda g: g * psi(x) / -gamma(x))
 defvjp(multigammaln,lambda ans, a, d: lambda g:
-    g * np.sum(digamma(np.expand_dims(a, -1) - np.arange(d)/2.), -1))
-defvjp_is_zero(multigammaln,argnums=(1,))
+       g * np.sum(digamma(np.expand_dims(a, -1) - np.arange(d)/2.), -1),
+       None)
 
 ### Bessel functions ###
 j0 = primitive(scipy.special.j0)
@@ -38,10 +36,8 @@ defvjp(j0,lambda ans, x: lambda g: -g * j1(x))
 defvjp(y0,lambda ans, x: lambda g: -g * y1(x))
 defvjp(j1,lambda ans, x: lambda g: g * (j0(x) - jn(2, x)) / 2.0)
 defvjp(y1,lambda ans, x: lambda g: g * (y0(x) - yn(2, x)) / 2.0)
-defvjp_is_zero(jn,argnums=(0,))
-defvjp_is_zero(yn,argnums=(0,))
-defvjp(jn,lambda ans, n, x: lambda g: g * (jn(n - 1, x) - jn(n + 1, x)) / 2.0, argnum=1)
-defvjp(yn,lambda ans, n, x: lambda g: g * (yn(n - 1, x) - yn(n + 1, x)) / 2.0, argnum=1)
+defvjp(jn, None, lambda ans, n, x: lambda g: g * (jn(n - 1, x) - jn(n + 1, x)) / 2.0)
+defvjp(yn, None, lambda ans, n, x: lambda g: g * (yn(n - 1, x) - yn(n + 1, x)) / 2.0)
 
 ### Error Function ###
 inv_root_pi = 0.56418958354775627928

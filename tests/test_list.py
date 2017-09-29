@@ -2,7 +2,7 @@ import autograd.numpy as np
 import autograd.numpy.random as npr
 from autograd.test_util import check_grads, check_vjp, check_jvp
 from autograd import grad
-from autograd.container_types import make_list
+from autograd import list as ag_list
 npr.seed(1)
 
 def test_getter():
@@ -66,5 +66,5 @@ def test_nested_list():
 
 def test_make_list():
     def fun(x):
-        return make_list(x, x)
+        return ag_list((x, x))
     check_grads(fun)(1.0)

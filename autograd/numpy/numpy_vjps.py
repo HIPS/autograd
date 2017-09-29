@@ -1,53 +1,47 @@
 from __future__ import absolute_import
 from future.utils import string_types
+from functools import partial
 import numpy as onp
-from numpy.core.einsumfunc import _parse_einsum_input
 from ..util import func
-from autograd.tracer import primitive, getval
-from autograd.vspace import vspace
-from autograd.core import defvjp, defvjps, defvjp_is_zero, defvjp_argnum, SparseObject
 from . import numpy_wrapper as anp
 from .numpy_boxes import ArrayBox
+from autograd.extend import primitive, vspace, defvjp, defvjp_argnum, SparseObject
 
 # ----- Functions that are constant w.r.t. continuous inputs -----
 
-defvjp_is_zero(anp.where, argnums=(0,))
 defvjp(anp.nan_to_num, lambda ans, x: lambda g: anp.where(anp.isfinite(x), g, 0.))
 
 # ----- Binary ufuncs -----
 
-defvjp(anp.add,         lambda ans, x, y : unbroadcast_f(x, lambda g: g))
-defvjp(anp.add,         lambda ans, x, y : unbroadcast_f(y, lambda g: g), argnum=1)
-defvjp(anp.multiply,    lambda ans, x, y : unbroadcast_f(x, lambda g: y * g))
-defvjp(anp.multiply,    lambda ans, x, y : unbroadcast_f(y, lambda g: x * g), argnum=1)
-defvjp(anp.subtract,    lambda ans, x, y : unbroadcast_f(x, lambda g: g))
-defvjp(anp.subtract,    lambda ans, x, y : unbroadcast_f(y, lambda g: -g), argnum=1)
-defvjp(anp.divide,      lambda ans, x, y : unbroadcast_f(x, lambda g:   g / y))
-defvjp(anp.divide,      lambda ans, x, y : unbroadcast_f(y, lambda g: - g * x / y**2), argnum=1)
-defvjp(anp.maximum,     lambda ans, x, y : unbroadcast_f(x, lambda g: g * balanced_eq(x, ans, y)))
-defvjp(anp.maximum,     lambda ans, x, y : unbroadcast_f(y, lambda g: g * balanced_eq(y, ans, x)), argnum=1)
-defvjp(anp.minimum,     lambda ans, x, y : unbroadcast_f(x, lambda g: g * balanced_eq(x, ans, y)))
-defvjp(anp.minimum,     lambda ans, x, y : unbroadcast_f(y, lambda g: g * balanced_eq(y, ans, x)), argnum=1)
-defvjp(anp.fmax,        lambda ans, x, y : unbroadcast_f(x, lambda g: g * balanced_eq(x, ans, y)))
-defvjp(anp.fmax,        lambda ans, x, y : unbroadcast_f(y, lambda g: g * balanced_eq(y, ans, x)), argnum=1)
-defvjp(anp.fmin,        lambda ans, x, y : unbroadcast_f(x, lambda g: g * balanced_eq(x, ans, y)))
-defvjp(anp.fmin,        lambda ans, x, y : unbroadcast_f(y, lambda g: g * balanced_eq(y, ans, x)), argnum=1)
-defvjp(anp.logaddexp,   lambda ans, x, y : unbroadcast_f(x, lambda g: g * anp.exp(x-ans)))
-defvjp(anp.logaddexp,   lambda ans, x, y : unbroadcast_f(y, lambda g: g * anp.exp(y-ans)), argnum=1)
-defvjp(anp.logaddexp2,  lambda ans, x, y : unbroadcast_f(x, lambda g: g * 2**(x-ans)))
-defvjp(anp.logaddexp2,  lambda ans, x, y : unbroadcast_f(y, lambda g: g * 2**(y-ans)), argnum=1)
-defvjp(anp.true_divide, lambda ans, x, y : unbroadcast_f(x, lambda g: g / y))
-defvjp(anp.true_divide, lambda ans, x, y : unbroadcast_f(y, lambda g: - g * x / y**2), argnum=1)
-defvjp(anp.mod,         lambda ans, x, y : unbroadcast_f(x, lambda g: g))
-defvjp(anp.remainder,   lambda ans, x, y : unbroadcast_f(x, lambda g: g))
-defvjp(anp.mod,         lambda ans, x, y : unbroadcast_f(y, lambda g: -g * anp.floor(x/y)), argnum=1)
-defvjp(anp.remainder,   lambda ans, x, y : unbroadcast_f(y, lambda g: -g * anp.floor(x/y)), argnum=1)
+defvjp(anp.add,         lambda ans, x, y : unbroadcast_f(x, lambda g: g),
+                        lambda ans, x, y : unbroadcast_f(y, lambda g: g))
+defvjp(anp.multiply,    lambda ans, x, y : unbroadcast_f(x, lambda g: y * g),
+                        lambda ans, x, y : unbroadcast_f(y, lambda g: x * g))
+defvjp(anp.subtract,    lambda ans, x, y : unbroadcast_f(x, lambda g: g),
+                        lambda ans, x, y : unbroadcast_f(y, lambda g: -g))
+defvjp(anp.divide,      lambda ans, x, y : unbroadcast_f(x, lambda g:   g / y),
+                        lambda ans, x, y : unbroadcast_f(y, lambda g: - g * x / y**2))
+defvjp(anp.maximum,     lambda ans, x, y : unbroadcast_f(x, lambda g: g * balanced_eq(x, ans, y)),
+                        lambda ans, x, y : unbroadcast_f(y, lambda g: g * balanced_eq(y, ans, x)))
+defvjp(anp.minimum,     lambda ans, x, y : unbroadcast_f(x, lambda g: g * balanced_eq(x, ans, y)),
+                        lambda ans, x, y : unbroadcast_f(y, lambda g: g * balanced_eq(y, ans, x)))
+defvjp(anp.fmax,        lambda ans, x, y : unbroadcast_f(x, lambda g: g * balanced_eq(x, ans, y)),
+                        lambda ans, x, y : unbroadcast_f(y, lambda g: g * balanced_eq(y, ans, x)))
+defvjp(anp.fmin,        lambda ans, x, y : unbroadcast_f(x, lambda g: g * balanced_eq(x, ans, y)),
+                        lambda ans, x, y : unbroadcast_f(y, lambda g: g * balanced_eq(y, ans, x)))
+defvjp(anp.logaddexp,   lambda ans, x, y : unbroadcast_f(x, lambda g: g * anp.exp(x-ans)),
+                        lambda ans, x, y : unbroadcast_f(y, lambda g: g * anp.exp(y-ans)))
+defvjp(anp.logaddexp2,  lambda ans, x, y : unbroadcast_f(x, lambda g: g * 2**(x-ans)),
+                        lambda ans, x, y : unbroadcast_f(y, lambda g: g * 2**(y-ans)))
+defvjp(anp.true_divide, lambda ans, x, y : unbroadcast_f(x, lambda g: g / y),
+                        lambda ans, x, y : unbroadcast_f(y, lambda g: - g * x / y**2))
+defvjp(anp.mod,         lambda ans, x, y : unbroadcast_f(x, lambda g: g),
+                        lambda ans, x, y : unbroadcast_f(y, lambda g: -g * anp.floor(x/y)))
+defvjp(anp.remainder,   lambda ans, x, y : unbroadcast_f(x, lambda g: g),
+                        lambda ans, x, y : unbroadcast_f(y, lambda g: -g * anp.floor(x/y)))
 defvjp(anp.power,
-    lambda ans, x, y : unbroadcast_f(x, lambda g:
-    g * y * x ** anp.where(y, y - 1, 1.)))
-defvjp(anp.power,
-    lambda ans, x, y : unbroadcast_f(y, lambda g:
-    g * anp.log(replace_zero(x, 1.)) * x ** y), argnum=1)
+    lambda ans, x, y : unbroadcast_f(x, lambda g: g * y * x ** anp.where(y, y - 1, 1.)),
+    lambda ans, x, y : unbroadcast_f(y, lambda g: g * anp.log(replace_zero(x, 1.)) * x ** y))
 
 # ----- Simple grads -----
 
@@ -99,7 +93,7 @@ defvjp(anp.fliplr,  lambda ans, x,              : lambda g: anp.fliplr(g))
 defvjp(anp.rot90,   lambda ans, x, k=1          : lambda g: anp.rot90(g, -k))
 defvjp(anp.trace,   lambda ans, x, offset=0     : lambda g:
                     anp.einsum('ij,...->ij...', anp.eye(x.shape[0], x.shape[1], k=offset), g))
-defvjp(anp.full,    lambda ans, shape, fill_value, dtype=None : lambda g: anp.sum(g), argnum=1)
+defvjp(anp.full, lambda ans, shape, fill_value, dtype=None : lambda g: anp.sum(g), argnums=(1,))
 defvjp(anp.triu,    lambda ans, x, k=0          : lambda g: anp.triu(g, k=k))
 defvjp(anp.tril,    lambda ans, x, k=0          : lambda g: anp.tril(g, k=k))
 defvjp(anp.clip,    lambda ans, x, a_min, a_max : lambda g: g * anp.logical_and(ans != a_min, ans != a_max))
@@ -114,14 +108,15 @@ defvjp(anp.imag,   lambda ans, x   : lambda g: match_complex(x, -1j * g))
 defvjp(anp.conj,   lambda ans, x   : lambda g: anp.conj(g))
 defvjp(anp.conjugate, lambda ans, x: lambda g: anp.conj(g))
 defvjp(anp.angle,  lambda ans, x   : lambda g: match_complex(x, g * anp.conj(x * 1j) / anp.abs(x)**2))
-defvjp(anp.where,  lambda ans, c, x=None, y=None : lambda g: anp.where(c, g, anp.zeros(g.shape)), argnum=1)
-defvjp(anp.where,  lambda ans, c, x=None, y=None : lambda g: anp.where(c, anp.zeros(g.shape), g), argnum=2)
+defvjp(anp.where, None,
+       lambda ans, c, x=None, y=None : lambda g: anp.where(c, g, anp.zeros(g.shape)),
+       lambda ans, c, x=None, y=None : lambda g: anp.where(c, anp.zeros(g.shape), g))
 defvjp(anp.cross, lambda ans, a, b, axisa=-1, axisb=-1, axisc=-1, axis=None : lambda g:
-                  anp.cross(b, g, axisb, axisc, axisa, axis), argnum=0)
-defvjp(anp.cross, lambda ans, a, b, axisa=-1, axisb=-1, axisc=-1, axis=None : lambda g:
-                  anp.cross(g, a, axisc, axisa, axisb, axis), argnum=1)
-defvjp(anp.linspace, lambda ans, start, stop, num : lambda g: anp.dot(anp.linspace(1.0, 0.0, num), g))
-defvjp(anp.linspace, lambda ans, start, stop, num : lambda g: anp.dot(anp.linspace(0.0, 1.0, num), g), argnum=1)
+                  anp.cross(b, g, axisb, axisc, axisa, axis),
+                  lambda ans, a, b, axisa=-1, axisb=-1, axisc=-1, axis=None : lambda g:
+                  anp.cross(g, a, axisc, axisa, axisb, axis))
+defvjp(anp.linspace, lambda ans, start, stop, num : lambda g: anp.dot(anp.linspace(1.0, 0.0, num), g),
+                     lambda ans, start, stop, num : lambda g: anp.dot(anp.linspace(0.0, 1.0, num), g))
 
 # ----- Trickier grads -----
 
@@ -191,7 +186,7 @@ def grad_kron(argnum, ans, orig_A, orig_B):
         else:
             return anp.reshape(anp.tensordot(A, reshaped_G, axes=anp.ndim(A)), orig_B_shape)
     return vjp
-defvjps(anp.kron, grad_kron, [0, 1])
+defvjp(anp.kron, partial(grad_kron, 0), partial(grad_kron, 1))
 
 def grad_transpose(ans, x, axes=None):
     if axes is not None:
@@ -295,7 +290,7 @@ def grad_inner(argnum, ans, A, B):
         return lambda G: tensordot_adjoint_0(B, G, axes, A_ndim, B_ndim)
     elif argnum == 1:
         return lambda G: tensordot_adjoint_1(A, G, axes, A_ndim, B_ndim)
-defvjps(anp.inner, grad_inner, [0, 1])
+defvjp(anp.inner, partial(grad_inner, 0), partial(grad_inner, 1))
 
 def grad_matmul(argnum, ans, A, B):
     A_ndim, B_ndim = anp.ndim(A), anp.ndim(B)
@@ -309,7 +304,7 @@ def grad_matmul(argnum, ans, A, B):
             return lambda G: tensordot_adjoint_1(A, G, axes, A_ndim, B_ndim)
     else:
         return grad_einsum(argnum + 1, ans, ("...ij,...jk->...ik", A, B), None)
-defvjps(anp.matmul, grad_matmul, [0, 1])
+defvjp(anp.matmul, partial(grad_matmul, 0), partial(grad_matmul, 1))
 
 @primitive
 def dot_adjoint_0(B, G, A_ndim, B_ndim):
@@ -337,18 +332,17 @@ def dot_adjoint_1(A, G, A_ndim, B_ndim):
 def dot_vjp_0(ans, A, B):
     A_ndim, B_ndim = anp.ndim(A), anp.ndim(B)
     return lambda g: dot_adjoint_0(B, g, A_ndim, B_ndim)
-defvjp(anp.dot, dot_vjp_0)
 
 def dot_vjp_1(ans, A, B):
     A_ndim, B_ndim = anp.ndim(A), anp.ndim(B)
     return lambda g: dot_adjoint_1(A, g, A_ndim, B_ndim)
-defvjp(anp.dot, dot_vjp_1, 1)
+defvjp(anp.dot, dot_vjp_0, dot_vjp_1)
 
-defvjp(dot_adjoint_0, lambda ans, B, g, An, Bn: lambda A: dot_adjoint_1(A, g, An, Bn))
-defvjp(dot_adjoint_0, lambda ans, B, g, An, Bn: lambda A: anp.dot(A, B), 1)
+defvjp(dot_adjoint_0, lambda ans, B, g, An, Bn: lambda A: dot_adjoint_1(A, g, An, Bn),
+                      lambda ans, B, g, An, Bn: lambda A: anp.dot(A, B))
 
-defvjp(dot_adjoint_1, lambda ans, A, g, An, Bn: lambda B: dot_adjoint_0(B, g, An, Bn))
-defvjp(dot_adjoint_1, lambda ans, A, g, An, Bn: lambda B: anp.dot(A, B), 1)
+defvjp(dot_adjoint_1, lambda ans, A, g, An, Bn: lambda B: dot_adjoint_0(B, g, An, Bn),
+                      lambda ans, A, g, An, Bn: lambda B: anp.dot(A, B))
 
 @primitive
 def tensordot_adjoint_0(B, G, axes, A_ndim, B_ndim):
@@ -409,21 +403,18 @@ def tensordot_adjoint_1(A, G, axes, A_ndim, B_ndim):
 def tensordot_vjp_0(ans, A, B, axes=2):
     A_ndim, B_ndim = anp.ndim(A), anp.ndim(B)
     return lambda G: tensordot_adjoint_0(B, G, axes, A_ndim, B_ndim)
-defvjp(anp.tensordot, tensordot_vjp_0)
 
 def tensordot_vjp_1(ans, A, B, axes=2):
     A_ndim, B_ndim = anp.ndim(A), anp.ndim(B)
     return lambda G: tensordot_adjoint_1(A, G, axes, A_ndim, B_ndim)
-defvjp(anp.tensordot, tensordot_vjp_1, 1)
 
-defvjp(tensordot_adjoint_0, lambda ans, B, G, axes, An, Bn: lambda A: tensordot_adjoint_1(A, G, axes, An, Bn))
-defvjp(tensordot_adjoint_0, lambda ans, B, G, axes, An, Bn: lambda A: anp.tensordot(A, B, axes), 1)
-
-defvjp(tensordot_adjoint_1, lambda ans, A, G, axes, An, Bn: lambda B: tensordot_adjoint_0(B, G, axes, An, Bn))
-defvjp(tensordot_adjoint_1, lambda ans, A, G, axes, An, Bn: lambda B: anp.tensordot(A, B, axes), 1)
-
-defvjp(anp.outer, lambda ans, a, b : lambda g: anp.dot(g, b.T))
-defvjp(anp.outer, lambda ans, a, b : lambda g: anp.dot(a.T, g), argnum=1)
+defvjp(anp.tensordot, tensordot_vjp_0, tensordot_vjp_1)
+defvjp(tensordot_adjoint_0, lambda ans, B, G, axes, An, Bn: lambda A: tensordot_adjoint_1(A, G, axes, An, Bn),
+                            lambda ans, B, G, axes, An, Bn: lambda A: anp.tensordot(A, B, axes))
+defvjp(tensordot_adjoint_1, lambda ans, A, G, axes, An, Bn: lambda B: tensordot_adjoint_0(B, G, axes, An, Bn),
+                            lambda ans, A, G, axes, An, Bn: lambda B: anp.tensordot(A, B, axes))
+defvjp(anp.outer, lambda ans, a, b : lambda g: anp.dot(g, b.T),
+                  lambda ans, a, b : lambda g: anp.dot(a.T, g))
 
 def grad_concatenate_args(argnum, ans, axis_args, kwargs):
     axis, args = axis_args[0], axis_args[1:]
@@ -480,7 +471,7 @@ def grad_einsum(argnum, ans, operands_, kwargs):
     def vjp(g):
         operands = operands_
         if isinstance(operands[0], string_types):  # using "ijk" convention.
-            in_subs, out_subs, _ = _parse_einsum_input(tuple(map(getval, operands)))
+            in_subs, out_subs, _ = anp.parse_einsum_input(*operands)
             string, operands = operands[0], operands[1:]
 
             in_subs_list = in_subs.split(',')
@@ -579,7 +570,7 @@ def array_from_scalar_or_array_gradmaker(ans, array_args, array_kwargs, scarray)
         return lambda g: anp.squeeze(g, axis=tuple(range(ndmin - scarray_ndim)))
     else:
         return lambda g: g
-defvjp(anp._array_from_scalar_or_array, array_from_scalar_or_array_gradmaker, argnum=2)
+defvjp(anp._array_from_scalar_or_array, array_from_scalar_or_array_gradmaker, argnums=(2,3))
 
 @primitive
 def untake(x, idx, vs):
@@ -589,4 +580,3 @@ def untake(x, idx, vs):
     return SparseObject(vs, mut_add)
 defvjp(func(ArrayBox.__getitem__), lambda ans, A, idx: lambda g: untake(g, idx, vspace(A)))
 defvjp(untake, lambda ans, x, idx, _: lambda g: g[idx])
-defvjp_is_zero(untake, argnums=(1, 2))

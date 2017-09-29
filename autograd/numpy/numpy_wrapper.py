@@ -1,9 +1,10 @@
 from __future__ import absolute_import
 import types
 import warnings
-from autograd.tracer import primitive, notrace_primitive, getval
+from autograd.extend import primitive, notrace_primitive
 import numpy as _np
 import autograd.builtins as builtins
+from numpy.core.einsumfunc import _parse_einsum_input
 
 def wrap_intdtype(cls):
     class IntdtypeSubclass(cls):
@@ -140,3 +141,7 @@ def make_diagonal(D, offset=0, axis1=0, axis2=1):
 @notrace_primitive
 def metadata(A):
     return _np.shape(A), _np.ndim(A), _np.result_type(A), _np.iscomplexobj(A)
+
+@notrace_primitive
+def parse_einsum_input(*args):
+    return _parse_einsum_input(args)

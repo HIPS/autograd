@@ -3,7 +3,7 @@ from functools import partial
 import numpy.linalg as npla
 from .numpy_wrapper import wrap_namespace
 from . import numpy_wrapper as anp
-from autograd.core import defvjp, defvjps
+from autograd.extend import defvjp
 
 wrap_namespace(npla.__dict__, globals())
 
@@ -34,7 +34,7 @@ def grad_solve(argnum, ans, a, b):
         return lambda g: -dot(updim(solve(T(a), g)), T(updim(ans)))
     else:
         return lambda g: solve(T(a), g)
-defvjps(solve, grad_solve, [0, 1])
+defvjp(solve, partial(grad_solve, 0), partial(grad_solve, 1))
 
 def grad_norm(ans, x, ord=None, axis=None):
     def check_implemented():

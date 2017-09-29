@@ -1,5 +1,5 @@
 import numpy as np
-from autograd.vspace import VSpace, register_vspace
+from autograd.extend import VSpace
 
 class ArrayVSpace(VSpace):
     def __init__(self, value):
@@ -53,12 +53,13 @@ class ComplexArrayVSpace(ArrayVSpace):
     def _covector(self, x):
         return np.conj(x)
 
-register_vspace(lambda x: ComplexArrayVSpace(x)
+VSpace.register(np.ndarray,
+                lambda x: ComplexArrayVSpace(x)
                 if np.iscomplexobj(x)
-                else ArrayVSpace(x), np.ndarray)
+                else ArrayVSpace(x))
 
 for type_ in [float, np.float64, np.float32, np.float16]:
-    register_vspace(ArrayVSpace, type_)
+    ArrayVSpace.register(type_)
 
 for type_ in [complex, np.complex64, np.complex128]:
-    register_vspace(ComplexArrayVSpace, type_)
+    ComplexArrayVSpace.register(type_)
