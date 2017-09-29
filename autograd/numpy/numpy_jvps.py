@@ -174,7 +174,7 @@ defjvp(anp.min, fwd_grad_chooser)
 defjvp(anp.amax, fwd_grad_chooser)
 defjvp(anp.amin, fwd_grad_chooser)
 
-defjvp(anp.cumsum, lambda g, ans, x, axis=None: anp.cumsum(g, axis=axis))
+defjvp(anp.cumsum, 'same')
 
 def_linear(anp.inner)
 def_linear(anp.matmul)
