@@ -43,3 +43,19 @@ def const_graph(fun, *args, **kwargs):
     @wraps(fun)
     def _fun(*args): return maybe_cached_unary_fun(args)
     return _fun
+
+class FullGraphNode(Node):
+    __slots__ = ['value', 'recipe']
+    def __init__(self, value, fun, args, kwargs, parent_argnums, parents):
+        self.value = value
+        self.recipe = (fun, args, kwargs, zip(parent_argnums, parents))
+
+    def initialize_root(self):
+        self.value = None
+        self.recipe = (lambda x: x, (), {}, [])
+
+def full_graph(fun, *args, **kwargs):
+    unary_fun = lambda args: fun(*args, **kwargs)
+    start_node = FullGraphNode.new_root()
+    end_value, end_node = trace(start_node, unary_fun, args)
+    return end_node
