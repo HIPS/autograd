@@ -5,7 +5,23 @@ import numpy as onp
 from ..util import func
 from . import numpy_wrapper as anp
 from .numpy_boxes import ArrayBox
-from autograd.extend import primitive, vspace, defvjp, defvjp_argnum, SparseObject
+from autograd.extend import (primitive, vspace, defvjp, defvjp_argnum,
+                             SparseObject, VJPNode, register_notrace)
+
+# ----- Non-differentiable functions -----
+
+nograd_functions = [
+    anp.floor, anp.ceil, anp.round, anp.rint, anp.around, anp.fix, anp.trunc, anp.all,
+    anp.any, anp.argmax, anp.argmin, anp.argpartition, anp.argsort, anp.argwhere, anp.nonzero,
+    anp.flatnonzero, anp.count_nonzero, anp.searchsorted, anp.sign, anp.ndim, anp.shape,
+    anp.floor_divide, anp.logical_and, anp.logical_or, anp.logical_not, anp.logical_xor,
+    anp.isfinite, anp.isinf, anp.isnan, anp.isneginf, anp.isposinf, anp.allclose, anp.isclose,
+    anp.array_equal, anp.array_equiv, anp.greater, anp.greater_equal, anp.less, anp.less_equal,
+    anp.equal, anp.not_equal, anp.iscomplexobj, anp.iscomplex, anp.size, anp.isscalar,
+    anp.isreal, anp.zeros_like, anp.ones_like, anp.result_type]
+
+for fun in nograd_functions:
+  register_notrace(VJPNode, fun)
 
 # ----- Functions that are constant w.r.t. continuous inputs -----
 

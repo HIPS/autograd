@@ -1,5 +1,6 @@
 import warnings
 from contextlib import contextmanager
+from collections import defaultdict
 from .util import subvals
 from .wrap_util import wraps
 
@@ -36,6 +37,8 @@ def primitive(f_raw):
         boxed_args, trace, node_constructor = find_top_boxed_args(args)
         if boxed_args:
             argvals = subvals(args, [(argnum, box._value) for argnum, box in boxed_args])
+            if f_wrapped in notrace_primitives[node_constructor]:
+                return f_wrapped(*argvals, **kwargs)
             parents = tuple(box._node for _     , box in boxed_args)
             argnums = tuple(argnum    for argnum, _   in boxed_args)
             ans = f_wrapped(*argvals, **kwargs)
@@ -44,6 +47,10 @@ def primitive(f_raw):
         else:
             return f_raw(*args, **kwargs)
     return f_wrapped
+
+notrace_primitives = defaultdict(set)
+def register_notrace(trace_type, primitive_fun):
+    notrace_primitives[trace_type].add(primitive_fun)
 
 def notrace_primitive(f_raw):
     @wraps(f_raw)

@@ -24,6 +24,8 @@ class SequenceBox(Box):
     def __len__(self): return len(self._value)
     def __add__(self, other): return sequence_extend_right(self, *other)
     def __radd__(self, other): return sequence_extend_left(self, *other)
+    def __contains__(self, elt): return elt in self._value
+    def index(self, elt): return self._value.index(elt)
 SequenceBox.register(tuple_)
 SequenceBox.register(list_)
 
@@ -32,6 +34,7 @@ class DictBox(Box):
     __getitem__= container_take
     def __len__(self): return len(self._value)
     def __iter__(self): return self._value.__iter__()
+    def __contains__(self, elt): return elt in self._value
     def items(self): return list(self.iteritems())
     def keys(self): return list(self.iterkeys())
     def values(self): return list(self.itervalues())
