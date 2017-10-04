@@ -49,10 +49,13 @@ def jacobian(fun, x):
     (out1, out2, ...) then the Jacobian has shape (out1, out2, ..., in1, in2, ...).
     """
     vjp, ans = _make_vjp(fun, x)
-    ans_vspace = vspace(ans)
-    jacobian_shape = ans_vspace.shape + vspace(x).shape
-    grads = map(vjp, ans_vspace.standard_basis())
-    return np.reshape(np.stack(grads), jacobian_shape)
+    x_vs, ans_vs = vspace(x), vspace(ans)
+    try:
+        return vjp(ans_vs.kronecker_tensor())
+    except:
+        jacobian_shape = ans_vs.shape + x_vs.shape
+        grads = map(vjp, ans_vs.standard_basis())
+        return x_vs.reshape(x_vs.stack(grads), jacobian_shape)
 
 @unary_to_nary
 def holomorphic_grad(fun, x):
