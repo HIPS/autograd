@@ -98,8 +98,9 @@ class ContainerVSpace(VSpace):
     def __init__(self, value):
         self.shape = value
         self.shape = self._map(vspace)
-        self.size = sum(self._values(self._map(lambda vs: vs.size)))
 
+    @property
+    def size(self): return sum(self._values(self._map(lambda vs: vs.size)))
     def zeros(self): return self._map(lambda vs: vs.zeros())
     def ones(self):  return self._map(lambda vs: vs.ones())
     def randn(self): return self._map(lambda vs: vs.randn())
