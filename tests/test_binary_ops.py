@@ -80,6 +80,15 @@ def test_pow():
         check_grads(d_fun_0, arg1, arg2)
         check_grads(d_fun_1, arg1, arg2)
 
+def test_hypot():
+    fun = lambda x, y : to_scalar(np.hypot(x, y))
+    d_fun_0 = lambda x, y : to_scalar(grad(fun, 0)(x, y))
+    d_fun_1 = lambda x, y : to_scalar(grad(fun, 1)(x, y))
+    for arg1, arg2 in arg_pairs():
+        check_grads(fun, arg1, arg2)
+        check_grads(d_fun_0, arg1, arg2)
+        check_grads(d_fun_1, arg1, arg2)
+
 def test_comparison_grads():
     compare_funs = [lambda x, y : np.sum(x <  x) + 0.0,
                     lambda x, y : np.sum(x <= y) + 0.0,
