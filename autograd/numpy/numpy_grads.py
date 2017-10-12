@@ -47,10 +47,10 @@ anp.power.defvjp(
 anp.power.defvjp(
     lambda g, ans, vs, gvs, x, y :
     unbroadcast(vs, gvs, g * anp.log(replace_zero(x, 1.)) * x ** y), argnum=1)
-
+anp.hypot.defvjp(      lambda g, ans, vs, gvs, x, y : unbroadcast(vs, gvs, g * x / ans))
+anp.hypot.defvjp(      lambda g, ans, vs, gvs, x, y : unbroadcast(vs, gvs, g * y / ans), argnum=1)
 
 # ----- Simple grads -----
-
 anp.negative.defvjp(lambda g, ans, vs, gvs, x: -g)
 anp.abs.defvjp(
     lambda g, ans, vs, gvs, x : g * replace_zero(anp.conj(x), 0.) / replace_zero(ans, 1.))
