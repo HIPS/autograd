@@ -36,7 +36,7 @@ def elementwise_grad(fun, x):
 
 @unary_to_nary
 def deriv(fun, x):
-    return _make_jvp(fun, x)(vspace(x).ones())
+    return _make_jvp(fun, x)(vspace(x).ones())[1]
 
 @unary_to_nary
 def jacobian(fun, x):
