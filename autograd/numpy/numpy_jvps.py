@@ -1,10 +1,37 @@
+from itertools import repeat, count
+from functools import partial
 from . import numpy_wrapper as anp
 from .numpy_vjps import (untake, balanced_eq, match_complex, replace_zero,
                          dot_adjoint_0, dot_adjoint_1, tensordot_adjoint_0,
-                         tensordot_adjoint_1)
-from autograd.extend import defjvp, defjvp_argnum, def_linear, vspace
+                         tensordot_adjoint_1, unbroadcast_f)
+from autograd.extend import (defjvp, defjvp_argnum, def_linear, vspace,
+                             defvjp)
 from ..util import func
 from .numpy_boxes import ArrayBox
+
+
+def def_ufunc_derivs(ufunc, derivs, ops=list(repeat('mul', 2))):
+    derivs = list(derivs)
+    ops    = list(ops)
+
+    op_map = {
+        'mul': lambda g, d: g * d,
+        'div': lambda g, d: g / d,
+        'id' : lambda g, d: g,
+        'neg': lambda g, d: -g
+        }
+
+    def ufunc_jvp(deriv, op):
+        return lambda g, ans, *args: broadcast(op(g, deriv(ans, *args)), ans)
+
+    def ufunc_vjp(argnum, deriv, op):
+        return lambda ans, *args: unbroadcast_f(args[argnum], lambda g: op(g, deriv(ans, *args)))
+
+    defjvp(ufunc, *[ufunc_jvp(deriv, op_map[op]) for deriv, op in zip(derivs, ops)])
+    defvjp(ufunc, *[ufunc_vjp(argnum, deriv, op_map[op]) for argnum, (deriv, op) in enumerate(zip(derivs, ops))])
+
+
+def_ufunc_derivs(anp.exp, (lambda ans, x: ans,))
 
 defjvp(func(ArrayBox.__getitem__), 'same')
 defjvp(untake, 'same')
@@ -20,14 +47,13 @@ defjvp(anp.nan_to_num, lambda g, ans, x: anp.where(anp.isfinite(x), g, 0.))
 def_linear(anp.multiply)
 
 # ----- Binary ufuncs -----
-defjvp(anp.add,        lambda g, ans, x, y : broadcast(g, ans),
-                       lambda g, ans, x, y : broadcast(g, ans))
-defjvp(anp.subtract,   lambda g, ans, x, y : broadcast(g, ans),
-                       lambda g, ans, x, y : broadcast(-g, ans))
-defjvp(anp.divide,     'same',
-                       lambda g, ans, x, y : - g * x / y**2)
-defjvp(anp.maximum,    lambda g, ans, x, y : g * balanced_eq(x, ans, y),
-                       lambda g, ans, x, y : g * balanced_eq(y, ans, x))
+def_ufunc_derivs(anp.add,      repeat(lambda *args: None, 2), repeat('id', 2))
+def_ufunc_derivs(anp.subtract, repeat(lambda *args: None, 2), ('id', 'neg'))
+def_ufunc_derivs(anp.divide,   (lambda ans, x, y: y,
+                                lambda ans, x, y: -x/y**2), ('div', 'mul'))
+def_ufunc_derivs(anp.maximum,  (lambda ans, x, y: balanced_eq(x, ans, y),
+                                lambda ans, x, y: balanced_eq(y, ans, x)))
+
 defjvp(anp.minimum,    lambda g, ans, x, y : g * balanced_eq(x, ans, y),
                        lambda g, ans, x, y : g * balanced_eq(y, ans, x))
 defjvp(anp.fmax,       lambda g, ans, x, y : g * balanced_eq(x, ans, y),
@@ -84,7 +110,7 @@ defjvp(anp.abs,
 defjvp(anp.fabs,        lambda g, ans, x : anp.sign(x) * g)  # fabs doesn't take complex numbers.
 defjvp(anp.absolute,    lambda g, ans, x : anp.real(g * anp.conj(x)) / ans)
 defjvp(anp.reciprocal,  lambda g, ans, x : - g / x**2)
-defjvp(anp.exp,         lambda g, ans, x : ans * g)
+# defjvp(anp.exp,         lambda g, ans, x : ans * g)
 defjvp(anp.exp2,        lambda g, ans, x : ans * anp.log(2) * g)
 defjvp(anp.expm1,       lambda g, ans, x : (ans + 1) * g)
 defjvp(anp.log,         lambda g, ans, x : g / x)

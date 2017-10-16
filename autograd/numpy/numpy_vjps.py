@@ -7,22 +7,15 @@ from . import numpy_wrapper as anp
 from .numpy_boxes import ArrayBox
 from autograd.extend import primitive, vspace, defvjp, defvjp_argnum, SparseObject
 
+
 # ----- Functions that are constant w.r.t. continuous inputs -----
 
 defvjp(anp.nan_to_num, lambda ans, x: lambda g: anp.where(anp.isfinite(x), g, 0.))
 
 # ----- Binary ufuncs -----
 
-defvjp(anp.add,         lambda ans, x, y : unbroadcast_f(x, lambda g: g),
-                        lambda ans, x, y : unbroadcast_f(y, lambda g: g))
 defvjp(anp.multiply,    lambda ans, x, y : unbroadcast_f(x, lambda g: y * g),
                         lambda ans, x, y : unbroadcast_f(y, lambda g: x * g))
-defvjp(anp.subtract,    lambda ans, x, y : unbroadcast_f(x, lambda g: g),
-                        lambda ans, x, y : unbroadcast_f(y, lambda g: -g))
-defvjp(anp.divide,      lambda ans, x, y : unbroadcast_f(x, lambda g:   g / y),
-                        lambda ans, x, y : unbroadcast_f(y, lambda g: - g * x / y**2))
-defvjp(anp.maximum,     lambda ans, x, y : unbroadcast_f(x, lambda g: g * balanced_eq(x, ans, y)),
-                        lambda ans, x, y : unbroadcast_f(y, lambda g: g * balanced_eq(y, ans, x)))
 defvjp(anp.minimum,     lambda ans, x, y : unbroadcast_f(x, lambda g: g * balanced_eq(x, ans, y)),
                         lambda ans, x, y : unbroadcast_f(y, lambda g: g * balanced_eq(y, ans, x)))
 defvjp(anp.fmax,        lambda ans, x, y : unbroadcast_f(x, lambda g: g * balanced_eq(x, ans, y)),
@@ -51,7 +44,7 @@ defvjp(anp.abs,
 defvjp(anp.fabs,     lambda ans, x : lambda g: anp.sign(x) * g)  # fabs doesn't take complex numbers.
 defvjp(anp.absolute, lambda ans, x : lambda g: g * anp.conj(x) / ans)
 defvjp(anp.reciprocal, lambda ans, x : lambda g: - g / x**2)
-defvjp(anp.exp,    lambda ans, x : lambda g: ans * g)
+# defvjp(anp.exp,    lambda ans, x : lambda g: ans * g)
 defvjp(anp.exp2,   lambda ans, x : lambda g: ans * anp.log(2) * g)
 defvjp(anp.expm1,  lambda ans, x : lambda g: (ans + 1) * g)
 defvjp(anp.log,    lambda ans, x : lambda g: g / x)
