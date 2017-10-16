@@ -1,5 +1,4 @@
-from itertools import repeat, count
-from functools import partial
+from itertools import repeat
 from . import numpy_wrapper as anp
 from .numpy_vjps import (untake, balanced_eq, match_complex, replace_zero,
                          dot_adjoint_0, dot_adjoint_1, tensordot_adjoint_0,
@@ -57,30 +56,26 @@ defjvp(anp.nan_to_num, lambda g, ans, x: anp.where(anp.isfinite(x), g, 0.))
 def_linear(anp.multiply)
 
 # ----- Binary ufuncs -----
-def_ufunc_derivs(anp.add,      *repeat((None, 'id'), 2))
-def_ufunc_derivs(anp.subtract, (None, 'id'), (None, 'neg'))
-def_ufunc_derivs(anp.divide,   (None, 'same'), (lambda ans, x, y: -ans/y, 'mul'))
-def_ufunc_derivs(anp.maximum,  (lambda ans, x, y: balanced_eq(x, ans, y), 'mul'),
-                               (lambda ans, x, y: balanced_eq(y, ans, x), 'mul'))
-
-defjvp(anp.minimum,    lambda g, ans, x, y : g * balanced_eq(x, ans, y),
-                       lambda g, ans, x, y : g * balanced_eq(y, ans, x))
-defjvp(anp.fmax,       lambda g, ans, x, y : g * balanced_eq(x, ans, y),
-                       lambda g, ans, x, y : g * balanced_eq(y, ans, x))
-defjvp(anp.fmin,       lambda g, ans, x, y : g * balanced_eq(x, ans, y),
-                       lambda g, ans, x, y : g * balanced_eq(y, ans, x))
-defjvp(anp.logaddexp,  lambda g, ans, x, y : g * anp.exp(x-ans),
-                       lambda g, ans, x, y : g * anp.exp(y-ans))
-defjvp(anp.logaddexp2, lambda g, ans, x, y : g * 2**(x-ans),
-                       lambda g, ans, x, y : g * 2**(y-ans))
-defjvp(anp.true_divide,'same',
-                       lambda g, ans, x, y : - g * x / y**2)
-defjvp(anp.mod,        lambda g, ans, x, y : broadcast(g, ans),
-                       lambda g, ans, x, y : -g * anp.floor(x/y))
-defjvp(anp.remainder,  lambda g, ans, x, y : broadcast(g, ans),
-                       lambda g, ans, x, y : -g * anp.floor(x/y))
-defjvp(anp.power,      lambda g, ans, x, y : g * y * x ** anp.where(y, y - 1, 1.),
-                       lambda g, ans, x, y : g * anp.log(replace_zero(x, 1.)) * x ** y)
+def_ufunc_derivs(anp.add,         *repeat((None, 'id'), 2))
+def_ufunc_derivs(anp.subtract,    (None, 'id'), (None, 'neg'))
+def_ufunc_derivs(anp.divide,      (None, 'same'), (lambda ans, x, y: -ans/y, 'mul'))
+def_ufunc_derivs(anp.maximum,     (lambda ans, x, y: balanced_eq(x, ans, y), 'mul'),
+                                  (lambda ans, x, y: balanced_eq(y, ans, x), 'mul'))
+def_ufunc_derivs(anp.minimum,     (lambda ans, x, y: balanced_eq(x, ans, y), 'mul'),
+                                  (lambda ans, x, y: balanced_eq(y, ans, x), 'mul'))
+def_ufunc_derivs(anp.fmax,        (lambda ans, x, y: balanced_eq(x, ans, y), 'mul'),
+                                  (lambda ans, x, y: balanced_eq(y, ans, x), 'mul'))
+def_ufunc_derivs(anp.fmin,        (lambda ans, x, y: balanced_eq(x, ans, y), 'mul'),
+                                  (lambda ans, x, y: balanced_eq(y, ans, x), 'mul'))
+def_ufunc_derivs(anp.logaddexp,   (lambda ans, x, y: anp.exp(x-ans), 'mul'),
+                                  (lambda ans, x, y: anp.exp(y-ans), 'mul'))
+def_ufunc_derivs(anp.logaddexp2,  (lambda ans, x, y: 2**(x-ans), 'mul'),
+                                  (lambda ans, x, y: 2**(y-ans), 'mul'))
+def_ufunc_derivs(anp.true_divide, (None, 'same'), (lambda ans, x, y: -ans/y, 'mul'))
+def_ufunc_derivs(anp.mod,         (None, 'id'), (lambda ans, x, y: -anp.floor(x/y), 'mul'))
+def_ufunc_derivs(anp.remainder,   (None, 'id'), (lambda ans, x, y: -anp.floor(x/y), 'mul'))
+def_ufunc_derivs(anp.power,       (lambda ans, x, y: y * x ** anp.where(y, y - 1, 1.), 'mul'),
+                                  (lambda ans, x, y: anp.log(replace_zero(x, 1.)) * x ** y, 'mul'))
 
 # ----- Simple grads (linear) -----
 defjvp(anp.negative,      'same')

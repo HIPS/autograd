@@ -16,25 +16,6 @@ defvjp(anp.nan_to_num, lambda ans, x: lambda g: anp.where(anp.isfinite(x), g, 0.
 
 defvjp(anp.multiply,    lambda ans, x, y : unbroadcast_f(x, lambda g: y * g),
                         lambda ans, x, y : unbroadcast_f(y, lambda g: x * g))
-defvjp(anp.minimum,     lambda ans, x, y : unbroadcast_f(x, lambda g: g * balanced_eq(x, ans, y)),
-                        lambda ans, x, y : unbroadcast_f(y, lambda g: g * balanced_eq(y, ans, x)))
-defvjp(anp.fmax,        lambda ans, x, y : unbroadcast_f(x, lambda g: g * balanced_eq(x, ans, y)),
-                        lambda ans, x, y : unbroadcast_f(y, lambda g: g * balanced_eq(y, ans, x)))
-defvjp(anp.fmin,        lambda ans, x, y : unbroadcast_f(x, lambda g: g * balanced_eq(x, ans, y)),
-                        lambda ans, x, y : unbroadcast_f(y, lambda g: g * balanced_eq(y, ans, x)))
-defvjp(anp.logaddexp,   lambda ans, x, y : unbroadcast_f(x, lambda g: g * anp.exp(x-ans)),
-                        lambda ans, x, y : unbroadcast_f(y, lambda g: g * anp.exp(y-ans)))
-defvjp(anp.logaddexp2,  lambda ans, x, y : unbroadcast_f(x, lambda g: g * 2**(x-ans)),
-                        lambda ans, x, y : unbroadcast_f(y, lambda g: g * 2**(y-ans)))
-defvjp(anp.true_divide, lambda ans, x, y : unbroadcast_f(x, lambda g: g / y),
-                        lambda ans, x, y : unbroadcast_f(y, lambda g: - g * x / y**2))
-defvjp(anp.mod,         lambda ans, x, y : unbroadcast_f(x, lambda g: g),
-                        lambda ans, x, y : unbroadcast_f(y, lambda g: -g * anp.floor(x/y)))
-defvjp(anp.remainder,   lambda ans, x, y : unbroadcast_f(x, lambda g: g),
-                        lambda ans, x, y : unbroadcast_f(y, lambda g: -g * anp.floor(x/y)))
-defvjp(anp.power,
-    lambda ans, x, y : unbroadcast_f(x, lambda g: g * y * x ** anp.where(y, y - 1, 1.)),
-    lambda ans, x, y : unbroadcast_f(y, lambda g: g * anp.log(replace_zero(x, 1.)) * x ** y))
 
 # ----- Simple grads -----
 
