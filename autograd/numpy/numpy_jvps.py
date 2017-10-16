@@ -6,32 +6,42 @@ from .numpy_vjps import (untake, balanced_eq, match_complex, replace_zero,
                          tensordot_adjoint_1, unbroadcast_f)
 from autograd.extend import (defjvp, defjvp_argnum, def_linear, vspace,
                              defvjp)
-from ..util import func
+from ..util import func, subval
 from .numpy_boxes import ArrayBox
 
 
-def def_ufunc_derivs(ufunc, derivs, ops=list(repeat('mul', 2))):
-    derivs = list(derivs)
-    ops    = list(ops)
+def def_ufunc_derivs(ufunc, *derivs_ops):
+    derivs_ops = list(derivs_ops)
 
-    op_map = {
-        'mul': lambda g, d: g * d,
-        'div': lambda g, d: g / d,
-        'id' : lambda g, d: g,
-        'neg': lambda g, d: -g
-        }
-
-    def ufunc_jvp(deriv, op):
-        return lambda g, ans, *args: broadcast(op(g, deriv(ans, *args)), ans)
+    def ufunc_jvp(argnum, deriv, op):
+        if op == 'same':
+            return lambda g, ans, *args: ufunc(*subval(args, argnum, g))
+        elif op == 'id':
+            return lambda g, ans, *args: broadcast(g, ans)
+        elif op == 'neg':
+            return lambda g, ans, *args: broadcast(-g, ans)
+        elif op == 'mul':
+            return lambda g, ans, *args: broadcast(g * deriv(ans, *args), ans)
+        elif op == 'div':
+            return lambda g, ans, *args: broadcast(g / deriv(ans, *args), ans)
 
     def ufunc_vjp(argnum, deriv, op):
-        return lambda ans, *args: unbroadcast_f(args[argnum], lambda g: op(g, deriv(ans, *args)))
+        if op == 'same':
+            return lambda ans, *args: unbroadcast_f(args[argnum], lambda g: ufunc(*subval(args, argnum, g)))
+        elif op == 'id':
+            return lambda ans, *args: unbroadcast_f(args[argnum], lambda g: g)
+        elif op == 'neg':
+            return lambda ans, *args: unbroadcast_f(args[argnum], lambda g: -g)
+        elif op == 'mul':
+            return lambda ans, *args: unbroadcast_f(args[argnum], lambda g: g * deriv(ans, *args))
+        elif op == 'div':
+            return lambda ans, *args: unbroadcast_f(args[argnum], lambda g: g / deriv(ans, *args))
 
-    defjvp(ufunc, *[ufunc_jvp(deriv, op_map[op]) for deriv, op in zip(derivs, ops)])
-    defvjp(ufunc, *[ufunc_vjp(argnum, deriv, op_map[op]) for argnum, (deriv, op) in enumerate(zip(derivs, ops))])
+    defjvp(ufunc, *[ufunc_jvp(argnum, deriv, op) for argnum, (deriv, op) in enumerate(derivs_ops)])
+    defvjp(ufunc, *[ufunc_vjp(argnum, deriv, op) for argnum, (deriv, op) in enumerate(derivs_ops)])
 
 
-def_ufunc_derivs(anp.exp, (lambda ans, x: ans,))
+def_ufunc_derivs(anp.exp, (lambda ans, x: ans, 'mul'))
 
 defjvp(func(ArrayBox.__getitem__), 'same')
 defjvp(untake, 'same')
@@ -47,12 +57,11 @@ defjvp(anp.nan_to_num, lambda g, ans, x: anp.where(anp.isfinite(x), g, 0.))
 def_linear(anp.multiply)
 
 # ----- Binary ufuncs -----
-def_ufunc_derivs(anp.add,      repeat(lambda *args: None, 2), repeat('id', 2))
-def_ufunc_derivs(anp.subtract, repeat(lambda *args: None, 2), ('id', 'neg'))
-def_ufunc_derivs(anp.divide,   (lambda ans, x, y: y,
-                                lambda ans, x, y: -x/y**2), ('div', 'mul'))
-def_ufunc_derivs(anp.maximum,  (lambda ans, x, y: balanced_eq(x, ans, y),
-                                lambda ans, x, y: balanced_eq(y, ans, x)))
+def_ufunc_derivs(anp.add,      *repeat((None, 'id'), 2))
+def_ufunc_derivs(anp.subtract, (None, 'id'), (None, 'neg'))
+def_ufunc_derivs(anp.divide,   (None, 'same'), (lambda ans, x, y: -ans/y, 'mul'))
+def_ufunc_derivs(anp.maximum,  (lambda ans, x, y: balanced_eq(x, ans, y), 'mul'),
+                               (lambda ans, x, y: balanced_eq(y, ans, x), 'mul'))
 
 defjvp(anp.minimum,    lambda g, ans, x, y : g * balanced_eq(x, ans, y),
                        lambda g, ans, x, y : g * balanced_eq(y, ans, x))
