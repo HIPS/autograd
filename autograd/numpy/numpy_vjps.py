@@ -12,45 +12,9 @@ from autograd.extend import primitive, vspace, defvjp, defvjp_argnum, SparseObje
 
 defvjp(anp.nan_to_num, lambda ans, x: lambda g: anp.where(anp.isfinite(x), g, 0.))
 
-# ----- Binary ufuncs -----
-
-defvjp(anp.multiply,    lambda ans, x, y : unbroadcast_f(x, lambda g: y * g),
-                        lambda ans, x, y : unbroadcast_f(y, lambda g: x * g))
 
 # ----- Simple grads -----
 
-defvjp(anp.negative, lambda ans, x: lambda g: -g)
-defvjp(anp.abs,
-    lambda ans, x : lambda g: g * replace_zero(anp.conj(x), 0.) / replace_zero(ans, 1.))
-defvjp(anp.fabs,     lambda ans, x : lambda g: anp.sign(x) * g)  # fabs doesn't take complex numbers.
-defvjp(anp.absolute, lambda ans, x : lambda g: g * anp.conj(x) / ans)
-defvjp(anp.reciprocal, lambda ans, x : lambda g: - g / x**2)
-# defvjp(anp.exp,    lambda ans, x : lambda g: ans * g)
-defvjp(anp.exp2,   lambda ans, x : lambda g: ans * anp.log(2) * g)
-defvjp(anp.expm1,  lambda ans, x : lambda g: (ans + 1) * g)
-defvjp(anp.log,    lambda ans, x : lambda g: g / x)
-defvjp(anp.log2,   lambda ans, x : lambda g: g / x / anp.log(2))
-defvjp(anp.log10,  lambda ans, x : lambda g: g / x / anp.log(10))
-defvjp(anp.log1p,  lambda ans, x : lambda g: g / (x + 1))
-defvjp(anp.sin,    lambda ans, x : lambda g: g * anp.cos(x))
-defvjp(anp.cos,    lambda ans, x : lambda g: - g * anp.sin(x))
-defvjp(anp.tan,    lambda ans, x : lambda g: g / anp.cos(x) **2)
-defvjp(anp.arcsin, lambda ans, x : lambda g: g / anp.sqrt(1 - x**2))
-defvjp(anp.arccos, lambda ans, x : lambda g:-g / anp.sqrt(1 - x**2))
-defvjp(anp.arctan, lambda ans, x : lambda g: g / (1 + x**2))
-defvjp(anp.sinh,   lambda ans, x : lambda g: g * anp.cosh(x))
-defvjp(anp.cosh,   lambda ans, x : lambda g: g * anp.sinh(x))
-defvjp(anp.tanh,   lambda ans, x : lambda g: g / anp.cosh(x) **2)
-defvjp(anp.arcsinh, lambda ans, x : lambda g: g / anp.sqrt(x**2 + 1))
-defvjp(anp.arccosh, lambda ans, x : lambda g: g / anp.sqrt(x**2 - 1))
-defvjp(anp.arctanh, lambda ans, x : lambda g: g / (1 - x**2))
-defvjp(anp.rad2deg, lambda ans, x : lambda g: g / anp.pi * 180.0)
-defvjp(anp.degrees, lambda ans, x : lambda g: g / anp.pi * 180.0)
-defvjp(anp.deg2rad, lambda ans, x : lambda g: g * anp.pi / 180.0)
-defvjp(anp.radians, lambda ans, x : lambda g: g * anp.pi / 180.0)
-defvjp(anp.square,  lambda ans, x : lambda g: g * 2 * x)
-defvjp(anp.sqrt,    lambda ans, x : lambda g: g * 0.5 * x**-0.5)
-defvjp(anp.sinc,    lambda ans, x : lambda g: g * (anp.cos(anp.pi*x)*anp.pi*x - anp.sin(anp.pi*x))/(anp.pi*x**2))
 defvjp(anp.reshape, lambda ans, x, shape, order=None : lambda g: anp.reshape(g, anp.shape(x), order=order))
 defvjp(anp.roll,    lambda ans, x, shift, axis=None  : lambda g: anp.roll(g, -shift, axis=axis))
 defvjp(anp.array_split, lambda ans, ary, idxs, axis=0 : lambda g: anp.concatenate(g, axis=axis))
@@ -76,12 +40,6 @@ defvjp(anp.moveaxis, lambda ans, a, source, destination: lambda g:
                     anp.moveaxis(g, destination, source))
 defvjp(anp.rollaxis, lambda ans, a, axis, start=0: lambda g: anp.rollaxis(g, start - 1, axis) if start > axis
                                                  else anp.rollaxis(g, start, axis + 1))
-defvjp(anp.real_if_close, lambda ans, x : lambda g: match_complex(x, g))
-defvjp(anp.real,   lambda ans, x   : lambda g: match_complex(x, g))
-defvjp(anp.imag,   lambda ans, x   : lambda g: match_complex(x, -1j * g))
-defvjp(anp.conj,   lambda ans, x   : lambda g: anp.conj(g))
-defvjp(anp.conjugate, lambda ans, x: lambda g: anp.conj(g))
-defvjp(anp.angle,  lambda ans, x   : lambda g: match_complex(x, g * anp.conj(x * 1j) / anp.abs(x)**2))
 defvjp(anp.where, None,
        lambda ans, c, x=None, y=None : lambda g: anp.where(c, g, anp.zeros(g.shape)),
        lambda ans, c, x=None, y=None : lambda g: anp.where(c, anp.zeros(g.shape), g))
