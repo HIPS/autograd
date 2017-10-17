@@ -1,3 +1,4 @@
+import itertools
 from .util import subvals
 from .extend import (Box, primitive, notrace_primitive, VSpace, vspace,
                      SparseObject, defvjp, defvjp_argnum, defjvp, defjvp_argnum)
@@ -83,19 +84,24 @@ def fwd_grad_make_sequence(argnum, g, ans, seq_type, *args, **kwargs):
 
 defjvp_argnum(make_sequence, fwd_grad_make_sequence)
 
-tuple = lambda xs: make_sequence(tuple_, *xs)
-list  = lambda xs: make_sequence(list_,  *xs)
+class tuple(tuple_):
+    def __new__(cls, xs):
+        return make_sequence(tuple_, *xs)
+class list(list_):
+    def __new__(cls, xs):
+        return make_sequence(list_,  *xs)
 
-# TODO: make this handle dict(x=1, y=2) version of constructor
-def dict(pairs):
-    keys, vals = zip(*pairs)
-    return _make_dict(keys, list(vals))
+class dict(dict_):
+    def __new__(cls, args, **kwargs):
+        keys, vals = zip(*itertools.chain(args, kwargs.iteritems()))
+        return _make_dict(keys, list(vals))
+
 @primitive
 def _make_dict(keys, vals):
     return dict_(zip(keys, vals))
 defvjp(_make_dict,
        lambda ans, keys, vals: lambda g:
-       makelist_(*[g[key] for key in keys]), argnums=(1,))
+       list(g[key] for key in keys), argnums=(1,))
 
 class ContainerVSpace(VSpace):
     def __init__(self, value):

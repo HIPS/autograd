@@ -3,7 +3,7 @@ from __future__ import print_function
 import autograd.numpy as np
 import autograd.numpy.random as npr
 from autograd.test_util import check_grads
-from autograd import tuple as ag_tuple
+from autograd import tuple as ag_tuple, isinstance as ag_isinstance
 from autograd import grad
 npr.seed(1)
 
@@ -54,3 +54,10 @@ def test_nested_higher_order():
     check_grads(outer_fun)(5.)
     check_grads(grad(outer_fun))(10.)
     check_grads(grad(grad(outer_fun)))(10.)
+
+def test_isinstance():
+    def fun(x):
+        assert ag_isinstance(x, tuple)
+        return x[0]
+    fun((1., 2., 3.))
+    grad(fun)((1., 2., 3.))

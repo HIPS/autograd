@@ -1,6 +1,7 @@
 import autograd.numpy as np
 import autograd.numpy.random as npr
 from autograd.test_util import check_grads
+from autograd import dict as ag_dict, isinstance as ag_isinstance
 from autograd import grad
 import operator as op
 
@@ -92,3 +93,15 @@ def test_items_values_keys():
 
     check_grads(fun)(input_dict)
     check_grads(d_fun)(input_dict)
+
+def test_make_dict():
+    def fun(x):
+        return ag_dict([('a', x)], b=x)
+    check_grads(fun, modes=['rev'])(1.0)
+
+def test_isinstance():
+    def fun(x):
+        assert ag_isinstance(x, dict)
+        return x['x']
+    fun({'x': 1.})
+    grad(fun)({'x': 1.})

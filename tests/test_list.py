@@ -2,7 +2,7 @@ import autograd.numpy as np
 import autograd.numpy.random as npr
 from autograd.test_util import check_grads, check_vjp, check_jvp
 from autograd import grad
-from autograd import list as ag_list
+from autograd import list as ag_list, isinstance as ag_isinstance
 npr.seed(1)
 
 def test_getter():
@@ -68,3 +68,10 @@ def test_make_list():
     def fun(x):
         return ag_list((x, x))
     check_grads(fun)(1.0)
+
+def test_isinstance():
+    def fun(x):
+        assert ag_isinstance(x, list)
+        return x[0]
+    fun([1., 2., 3.])
+    grad(fun)([1., 2., 3.])
