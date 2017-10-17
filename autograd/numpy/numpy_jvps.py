@@ -8,7 +8,7 @@ from ..util import func
 from .numpy_boxes import ArrayBox
 
 for fun in nograd_functions:
-  register_notrace(JVPNode, fun)
+    register_notrace(JVPNode, fun)
 
 defjvp(func(ArrayBox.__getitem__), 'same')
 defjvp(untake, 'same')

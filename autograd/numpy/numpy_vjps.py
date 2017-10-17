@@ -21,7 +21,7 @@ nograd_functions = [
     anp.isreal, anp.zeros_like, anp.ones_like, anp.result_type]
 
 for fun in nograd_functions:
-  register_notrace(VJPNode, fun)
+    register_notrace(VJPNode, fun)
 
 # ----- Functions that are constant w.r.t. continuous inputs -----
 
