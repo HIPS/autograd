@@ -47,13 +47,15 @@ def check_equivalent(A, B, rtol=RTOL, atol=ATOL):
         "Diffs are:\n{}.\nanalytic is:\n{}.\nnumeric is:\n{}.".format(
             A_flat - B_flat, A_flat, B_flat)
 
-def check_grads(fun, *args, rtol=RTOL, atol=ATOL):
+def check_grads(fun, *args, **kwargs):
     if not args:
         raise Exception("No args given")
+
     exact = tuple([grad(fun, i)(*args) for i in range(len(args))])
     args = [float(x) if isinstance(x, int) else x for x in args]
     numeric = nd(fun, *args)
-    check_equivalent(exact, numeric, rtol, atol)
+    check_equivalent(exact, numeric,
+                     kwargs.get("rtol", RTOL), kwargs.get("atol", ATOL))
 
 def to_scalar(x):
     if isinstance(getval(x), list)  or isinstance(getval(x), tuple):
