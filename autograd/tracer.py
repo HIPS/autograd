@@ -46,6 +46,7 @@ def primitive(f_raw):
             return new_box(ans, trace, node)
         else:
             return f_raw(*args, **kwargs)
+    f_wrapped.fun = f_raw
     return f_wrapped
 
 notrace_primitives = defaultdict(set)
