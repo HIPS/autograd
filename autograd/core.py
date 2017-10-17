@@ -237,7 +237,7 @@ class SparseObject(object):
         self.mut_add = mut_add
 VSpace.register(SparseObject, lambda x : x.vs)
 SparseBox.register(SparseObject)
-sparse_object_types = set((SparseObject, SparseBox))
+sparse_object_types = {SparseObject, SparseBox}
 
 # -------------------- core reverse mode grads --------------------
 
