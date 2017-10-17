@@ -26,12 +26,18 @@ print grad(grad(sqrt))(2.)
 print
 
 N = 2
-A = npr.randn(N, N)
-Q = np.dot(A, A.T) + np.eye(N)
+square = lambda X: np.dot(X, X.T)
+A = square(npr.randn(N, N)) + np.eye(N)
 b = npr.randn(N)
 
+def make_quadratic(A, b):
+    def quadratic(x):
+        return 0.5 * np.dot(x, np.dot(A, x)) - np.dot(b, x)
+    return quadratic
+
 def grad_descent_quadratic(b):
-    return lambda x: x - 0.05 * (np.dot(A, x) - b)
+    quadratic = make_quadratic(A, b)
+    return lambda x: x - 0.05 * grad(quadratic)(x)
 
 def minimize(b, guess=np.zeros(N)):
     return fixed_point(grad_descent_quadratic, b, guess, euclid, 1e-5)
