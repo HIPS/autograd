@@ -4,7 +4,6 @@ import autograd.numpy as np
 import scipy.stats
 
 from autograd.core import primitive
-from autograd.scipy.special import digamma, gamma
 
 cdf = primitive(scipy.stats.poisson.cdf)
 logpmf = primitive(scipy.stats.poisson.logpmf)
