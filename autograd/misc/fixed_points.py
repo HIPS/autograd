@@ -20,4 +20,4 @@ def fixed_point_vjp(ans, f, a, x0, distance, tol):
     return lambda g: vjp_a(fixed_point(rev_iter, tuple((a, ans, g)),
                            vspace(x0).zeros(), distance, tol))
 
-defvjp(fixed_point, fixed_point_vjp, argnums=[1])
+defvjp(fixed_point, None, fixed_point_vjp, None)
