@@ -6,6 +6,9 @@ from .numpy_vjps import (untake, balanced_eq, match_complex, replace_zero,
 from autograd.extend import (defjvp, defjvp_argnum, def_linear, vspace, JVPNode,
                              register_notrace, defvjp)
 
+from ..util import func		
+from .numpy_boxes import ArrayBox
+
 for fun in nograd_functions:
     register_notrace(JVPNode, fun)
 
