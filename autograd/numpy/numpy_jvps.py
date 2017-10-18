@@ -2,7 +2,7 @@ from itertools import repeat
 from . import numpy_wrapper as anp
 from .numpy_vjps import (untake, balanced_eq, match_complex, replace_zero,
                          dot_adjoint_0, dot_adjoint_1, tensordot_adjoint_0,
-                         tensordot_adjoint_1, unbroadcast_f)
+                         tensordot_adjoint_1, unbroadcast_f, _broadcast_to_adjoint)
 from autograd.extend import (defjvp, defjvp_argnum, def_linear, vspace,
                              defvjp)
 from ..util import func, subval
@@ -34,12 +34,12 @@ def def_ufunc_jps(ufunc, *derivs_ops):
         'same': (lambda argnum, deriv: lambda g, ans, *args: ufunc(*subval(args, argnum, g)),
                  lambda argnum, deriv: lambda ans, *args:
                      unbroadcast_f(args[argnum], lambda g: ufunc(*subval(args, argnum, g)))),
-        'id':   (lambda argnum, deriv: lambda g, ans, *args: broadcast(g, ans),
+        'id':   (lambda argnum, deriv: lambda g, ans, *args: match_complex(ans, anp.broadcast_to(g, ans.shape)),
                  lambda argnum, deriv: lambda ans, *args:
-                     unbroadcast_f(args[argnum], lambda g: g)),
-        'neg':  (lambda argnum, deriv: lambda g, ans, *args: broadcast(-g, ans),
+                     unbroadcast_f(args[argnum], lambda g: match_complex(args[argnum], g))),
+        'neg':  (lambda argnum, deriv: lambda g, ans, *args: match_complex(ans, anp.broadcast_to(-g, ans.shape)),
                  lambda argnum, deriv: lambda ans, *args:
-                     unbroadcast_f(args[argnum], lambda g: -g)),
+                     unbroadcast_f(args[argnum], lambda g: match_complex(args[argnum], -g))),
         'mul':  (lambda argnum, deriv: lambda g, ans, *args: g * deriv(ans, *args),
                  lambda argnum, deriv: lambda ans, *args:
                      unbroadcast_f(args[argnum], lambda g: g * deriv(ans, *args))),
@@ -51,6 +51,9 @@ def def_ufunc_jps(ufunc, *derivs_ops):
         defjvp(ufunc, *[binary_ufunc_jps[op][0](argnum, deriv) for argnum, (deriv, op) in enumerate(derivs_ops)])
         defvjp(ufunc, *[binary_ufunc_jps[op][1](argnum, deriv) for argnum, (deriv, op) in enumerate(derivs_ops)])
 
+
+defjvp(anp.broadcast_to, 'same')
+defjvp(_broadcast_to_adjoint, 'same')
 
 defjvp(func(ArrayBox.__getitem__), 'same')
 defjvp(untake, 'same')
@@ -75,7 +78,7 @@ def_ufunc_jps(anp.absolute,    (lambda ans, x: anp.conj(x) / ans,         'cmul'
 def_ufunc_jps(anp.reciprocal,  (lambda ans, x: -ans**2,                   'mul' ))
 def_ufunc_jps(anp.exp,         (lambda ans, x: ans,                       'mul' ))
 def_ufunc_jps(anp.exp2,        (lambda ans, x: ans * anp.log(2),          'mul' ))
-def_ufunc_jps(anp.expm1,       (lambda ans, x: (ans + 1),                 'mul' ))
+def_ufunc_jps(anp.expm1,       (lambda ans, x: ans + 1,                   'mul' ))
 def_ufunc_jps(anp.log,         (lambda ans, x: x,                         'div' ))
 def_ufunc_jps(anp.log2,        (lambda ans, x: x * anp.log(2),            'div' ))
 def_ufunc_jps(anp.log10,       (lambda ans, x: x * anp.log(10),           'div' ))
@@ -261,15 +264,3 @@ defjvp(anp.atleast_2d, atleast_jvpmaker(anp.atleast_2d))
 defjvp(anp.atleast_3d, atleast_jvpmaker(anp.atleast_3d))
 
 def_linear(anp.einsum)
-
-# TODO(mattjj): can we call np.broadcast_to or a related function instead?
-def broadcast(x, target):
-    target_shape, target_ndim, target_dtype, target_iscomplex = anp.metadata(target)
-    while anp.ndim(x) < target_ndim:
-        x = anp.expand_dims(x, 0)
-    for axis, size in enumerate(anp.shape(x)):
-        if size == 1:
-            x = anp.repeat(x, target_shape[axis], axis=axis)
-    if target_iscomplex and not anp.iscomplexobj(x):
-        x = x + 0j  # TODO(mattjj): this might promote the dtype
-    return x

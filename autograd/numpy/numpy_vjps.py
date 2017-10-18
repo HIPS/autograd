@@ -460,11 +460,7 @@ def match_complex(target, x):
 
 def unbroadcast(x, target_meta, broadcast_idx=0):
     target_shape, target_ndim, dtype, target_iscomplex = target_meta
-    while anp.ndim(x) > target_ndim:
-        x = anp.sum(x, axis=broadcast_idx)
-    for axis, size in enumerate(target_shape):
-        if size == 1:
-            x = anp.sum(x, axis=axis, keepdims=True)
+    x = _broadcast_to_adjoint(x, target_shape)
     if anp.iscomplexobj(x) and not target_iscomplex:
         x = anp.real(x)
     return x
@@ -482,6 +478,28 @@ def unbroadcast_einsum(x, target_meta, subscript):
         return unbroadcast(x, target_meta, -1)
     else:
         return unbroadcast(x, target_meta, subscript.index(Ellipsis))
+
+@primitive
+def _broadcast_to_adjoint(x, shape):
+    while anp.ndim(x) > len(shape):
+        x = onp.sum(x, axis=0)
+    for axis, size in enumerate(shape):
+        if size == 1:
+            x = onp.sum(x, axis=axis, keepdims=True)
+    return x
+
+def _broadcast_to_vjpmaker(x_shape):
+    # Ensure that x can be garbage collected by only passing
+    # its shape to this closure.
+    return lambda g: _broadcast_to_adjoint(g, x_shape)
+
+def _broadcast_to_adjoint_vjpmaker(g_shape):
+    # Ensure that g can be garbage collected by only passing
+    # its shape to this closure.
+    return lambda x: anp.broadcast_to(x, g_shape)
+
+defvjp(anp.broadcast_to, lambda ans, x, ans_shp: _broadcast_to_vjpmaker(x.shape))
+defvjp(_broadcast_to_adjoint, lambda ans, g, ans_shp: _broadcast_to_adjoint_vjpmaker(g.shape))
 
 def balanced_eq(x, z, y):
     return (x == z) / (1.0 + (x == y))
