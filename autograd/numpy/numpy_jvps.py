@@ -16,11 +16,11 @@ def def_ufunc_jps(ufunc, *derivs_ops):
         'same': (lambda deriv: lambda g, ans, x:        ufunc(g),
                  lambda deriv: lambda ans, x: ufunc),
         'mul' : (lambda deriv: lambda g, ans, x:        g * deriv(ans, x),
-                 lambda deriv: lambda ans, x: lambda g: g * deriv(ans, x)),
+                 lambda deriv: lambda ans, x: lambda g, d=deriv(ans, x): g * d),
         'div' : (lambda deriv: lambda g, ans, x:        g / deriv(ans, x),
-                 lambda deriv: lambda ans, x: lambda g: g / deriv(ans, x)),
+                 lambda deriv: lambda ans, x: lambda g, d=deriv(ans, x): g / d),
         'cmul': (lambda deriv: lambda g, ans, x:        match_complex(ans, g * deriv(ans, x)),
-                 lambda deriv: lambda ans, x: lambda g: match_complex(x  , g * deriv(ans, x))),
+                 lambda deriv: lambda ans, x: lambda g, d=deriv(ans, x): match_complex(x, g * d)),
         'cid':  (lambda deriv: lambda g, ans, x:        match_complex(ans, g),
                  lambda deriv: lambda ans, x: lambda g: match_complex(x  , g))
         }
@@ -42,10 +42,10 @@ def def_ufunc_jps(ufunc, *derivs_ops):
                      unbroadcast_f(args[argnum], lambda g: -g)),
         'mul':  (lambda argnum, deriv: lambda g, ans, *args: g * deriv(ans, *args),
                  lambda argnum, deriv: lambda ans, *args:
-                     unbroadcast_f(args[argnum], lambda g: g * deriv(ans, *args))),
+                     unbroadcast_f(args[argnum], lambda g, d=deriv(ans, *args): g * d)),
         'div':  (lambda argnum, deriv: lambda g, ans, *args: g / deriv(ans, *args),
                  lambda argnum, deriv: lambda ans, *args:
-                     unbroadcast_f(args[argnum], lambda g: g / deriv(ans, *args)))
+                     unbroadcast_f(args[argnum], lambda g, d=deriv(ans, *args): g / d))
         }
     if len(derivs_ops) == 2:
         defjvp(ufunc, *[binary_ufunc_jps[op][0](argnum, deriv) for argnum, (deriv, op) in enumerate(derivs_ops)])
