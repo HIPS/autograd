@@ -40,7 +40,7 @@ def check_jvp(f, x):
     jvp = make_jvp(f, x)
     jvp_numeric = make_numerical_jvp(f, x)
     x_v = vspace(x).randn()
-    check_equivalent(jvp(x_v), jvp_numeric(x_v))
+    check_equivalent(jvp(x_v)[1], jvp_numeric(x_v))
 
 def check_equivalent(x, y):
     x_vs, y_vs = vspace(x), vspace(y)
@@ -55,7 +55,7 @@ def check_grads(f, x, modes=['fwd', 'rev'], order=2):
     if 'fwd' in modes:
         check_jvp(f, x)
         if order > 1:
-            grad_f = lambda x, v: make_jvp(f, x)(v)
+            grad_f = lambda x, v: make_jvp(f, x)(v)[1]
             grad_f.__name__ = 'jvp_{}'.format(get_name(f))
             v = vspace(x).randn()
             check_grads(grad_f, (0, 1), modes, order=order-1)(x, v)

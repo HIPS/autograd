@@ -246,7 +246,7 @@ def test_make_jvp():
     jvp_explicit = lambda x: lambda v: np.dot(jacobian(fun)(x), v)
     jvp = make_jvp(fun)
 
-    check_equivalent(jvp_explicit(x)(v), jvp(x)(v))
+    check_equivalent(jvp_explicit(x)(v), jvp(x)(v)[1])
 
 def _make_explicit_ggnvp(f, g=lambda x: 1./2*np.dot(x, x)):
     def ggnvp_maker(x):

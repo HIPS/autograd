@@ -91,9 +91,9 @@ def make_jvp(fun, x):
         start_node = JVPNode.new_root(x, g)
         end_value, end_node = trace(start_node, fun, x)
         if end_node is None:
-            return vspace(end_value).zeros()
+            return end_value, vspace(end_value).zeros()
         else:
-            return end_node.g
+            return end_value, end_node.g
     return jvp
 
 class JVPNode(Node):
