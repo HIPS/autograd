@@ -2,12 +2,12 @@ from itertools import repeat
 from . import numpy_wrapper as anp
 from .numpy_vjps import (untake, balanced_eq, match_complex, replace_zero,
                          dot_adjoint_0, dot_adjoint_1, tensordot_adjoint_0,
-                         tensordot_adjoint_1, unbroadcast_f)
-from autograd.extend import (defjvp, defjvp_argnum, def_linear, vspace,
-                             defvjp)
-from ..util import func, subval
-from .numpy_boxes import ArrayBox
+                         tensordot_adjoint_1, nograd_functions, unbroadcast_f)
+from autograd.extend import (defjvp, defjvp_argnum, def_linear, vspace, JVPNode,
+                             register_notrace, defvjp)
 
+for fun in nograd_functions:
+    register_notrace(JVPNode, fun)
 
 def def_ufunc_jps(ufunc, *derivs_ops):
     derivs_ops = list(derivs_ops)
@@ -50,7 +50,6 @@ def def_ufunc_jps(ufunc, *derivs_ops):
     if len(derivs_ops) == 2:
         defjvp(ufunc, *[binary_ufunc_jps[op][0](argnum, deriv) for argnum, (deriv, op) in enumerate(derivs_ops)])
         defvjp(ufunc, *[binary_ufunc_jps[op][1](argnum, deriv) for argnum, (deriv, op) in enumerate(derivs_ops)])
-
 
 defjvp(func(ArrayBox.__getitem__), 'same')
 defjvp(untake, 'same')
