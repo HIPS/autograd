@@ -154,18 +154,18 @@ def add_outgrads(prev_g_flagged, g):
         prev_g, mutable = prev_g_flagged
         if mutable:
             if sparse:
-                return sparse_add(prev_g, g), True
+                return sparse_add(vs, prev_g, g), True
             else:
                 return vs.mut_add(prev_g, g), True
         else:
             if sparse:
-                prev_g_mutable = vs.mut_add(vs.zeros(), prev_g)
-                return sparse_add(prev_g_mutable, g), True
+                prev_g_mutable = vs.mut_add(None, prev_g)
+                return sparse_add(vs, prev_g_mutable, g), True
             else:
                 return vs.add(prev_g, g), True
     else:
         if sparse:
-            return sparse_add(vspace(g).zeros(), g), True
+            return sparse_add(vspace(g), None, g), True
         else:
             return g, False
 
@@ -173,7 +173,8 @@ def sum_outgrads(gs):
     return reduce(add_outgrads, gs, None)[0]
 
 @primitive
-def sparse_add(x_prev, x_new):
+def sparse_add(vs, x_prev, x_new):
+    x_prev = x_prev if x_prev is not None else vs.zeros()
     return x_new.mut_add(x_prev)
 
 class VSpace(object):
@@ -188,9 +189,11 @@ class VSpace(object):
     def randn(self):          assert False, repr(self)
 
     @primitive
-    def add(self, x_prev, x_new):     return self._add(x_prev, x_new)
+    def mut_add(self, x_prev, x_new):
+      x_prev = x_prev if x_prev is not None else self.zeros()
+      return self._mut_add(x_prev, x_new)
     @primitive
-    def mut_add(self, x_prev, x_new): return self._mut_add(x_prev, x_new)
+    def add(self, x_prev, x_new):     return self._add(x_prev, x_new)
     @primitive
     def scalar_mul(self, x, a):       return self._scalar_mul(x, a)
     @primitive
@@ -242,7 +245,7 @@ sparse_object_types = {SparseObject, SparseBox}
 # -------------------- core reverse mode grads --------------------
 
 identity_vjp = lambda argnums, *args: lambda g: g
-defvjp(sparse_add, identity_vjp, identity_vjp)
+defvjp(sparse_add, None, identity_vjp, identity_vjp)
 defvjp(func(VSpace.add    ), None, identity_vjp, identity_vjp)
 defvjp(func(VSpace.mut_add), None, identity_vjp, identity_vjp)
 defvjp(func(VSpace.inner_prod), None,
@@ -257,7 +260,7 @@ defvjp(func(VSpace.scalar_mul), None,
 # -------------------- core forward mode grads --------------------
 
 identity_jvp = lambda g, *args, **kwargs: g
-defjvp(sparse_add, identity_jvp, identity_jvp)
+defjvp(sparse_add, None, identity_jvp, identity_jvp)
 defjvp(func(VSpace.mut_add), None, identity_jvp, identity_jvp)
 defjvp(func(VSpace.add),     None, identity_jvp, identity_jvp)
 defjvp(func(VSpace.scalar_mul), None, 'same', 'same')
