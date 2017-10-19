@@ -257,7 +257,7 @@ defvjp(func(VSpace.scalar_mul), None,
 # -------------------- core forward mode grads --------------------
 
 identity_jvp = lambda g, *args, **kwargs: g
-defjvp(sparse_add, identity_jvp,   identity_jvp, identity_jvp)
+defjvp(sparse_add, identity_jvp, identity_jvp)
 defjvp(func(VSpace.mut_add), None, identity_jvp, identity_jvp)
 defjvp(func(VSpace.add),     None, identity_jvp, identity_jvp)
 defjvp(func(VSpace.scalar_mul), None, 'same', 'same')
