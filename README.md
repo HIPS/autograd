@@ -19,14 +19,14 @@ Example use:
 >>> from autograd import grad    # The only autograd function you may ever need
 >>>
 >>> def tanh(x):                 # Define a function
-...     y = np.exp(-x)
+...     y = np.exp(-2.0 * x)
 ...     return (1.0 - y) / (1.0 + y)
 ...
 >>> grad_tanh = grad(tanh)       # Obtain its gradient function
 >>> grad_tanh(1.0)               # Evaluate the gradient at x = 1.0
-0.39322386648296376
+0.41997434161402603
 >>> (tanh(1.0001) - tanh(0.9999)) / 0.0002  # Compare to finite differences
-0.39322386636453377
+0.41997434264973155
 ```
 
 We can continue to differentiate as many times as we like, and use numpy's
