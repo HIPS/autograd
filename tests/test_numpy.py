@@ -81,6 +81,16 @@ def test_max():
     check_grads(fun, mat)
     check_grads(d_fun, mat)
 
+def test_max_dtype():
+    """Tests that a dtype other than float64 does not throw an error
+    with the gradient of max.
+    """
+    def fun(x): return to_scalar(np.max(x, 1))
+    d_fun = lambda x : to_scalar(grad(fun)(x))
+    mat = npr.randn(10, 11).astype(np.float32)
+    check_grads(fun, mat)
+    check_grads(d_fun, mat)
+
 def test_max_axis():
     def fun(x): return to_scalar(np.max(x, axis=1))
     d_fun = lambda x : to_scalar(grad(fun)(x))

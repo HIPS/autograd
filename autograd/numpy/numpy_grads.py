@@ -237,8 +237,12 @@ def grad_chooser(g, ans, vs, gvs, x, axis=None, keepdims=None):
     """Builds gradient of functions that choose a single item, such as min or max."""
     g_repeated, _ = repeat_to_match_shape(g, vs, axis, keepdims)
     argmax_locations = x == repeat_to_match_shape(ans, vs, axis, keepdims)[0]
+    if onp.isscalar(x.value):
+        dt = onp.array(x.value).dtype
+    else:
+        dt = x.dtype
     return g_repeated * argmax_locations \
-        / onp.sum(argmax_locations, axis=axis, keepdims=True)
+                      / onp.sum(argmax_locations, axis=axis, keepdims=True).astype(dt)
 
 anp.max.defvjp(grad_chooser)
 anp.min.defvjp(grad_chooser)
