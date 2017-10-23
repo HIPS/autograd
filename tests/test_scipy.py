@@ -177,7 +177,7 @@ else:
     def test_erfinv(): unary_ufunc_check(special.erfinv, lims=[-0.95, 0.95], test_complex=False)
     def test_erfcinv(): unary_ufunc_check(special.erfcinv, lims=[0.05, 1.95], test_complex=False)
 
-    def test_logit(): unary_ufunc_check(special.logit, lims=[0.05, 0.95],  test_complex=False)
+    def test_logit(): unary_ufunc_check(special.logit, lims=[ 0.10, 0.90], test_complex=False)
     def test_expit(): unary_ufunc_check(special.expit, lims=[-4.05, 4.95], test_complex=False)
 
     ### Linalg ###
