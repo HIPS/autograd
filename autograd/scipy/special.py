@@ -3,6 +3,7 @@ import scipy.special
 import autograd.numpy as np
 
 from autograd.core import primitive
+from autograd.numpy.numpy_grads import unbroadcast
 
 ### Gamma functions ###
 polygamma    = primitive(scipy.special.polygamma)
@@ -10,9 +11,14 @@ psi          = primitive(scipy.special.psi)        # psi(x) is just polygamma(0,
 digamma      = primitive(scipy.special.digamma)    # digamma is another name for psi.
 gamma        = primitive(scipy.special.gamma)
 gammaln      = primitive(scipy.special.gammaln)
+gammainc     = primitive(scipy.special.gammainc)
+gammaincc    = primitive(scipy.special.gammaincc)
 gammasgn     = primitive(scipy.special.gammasgn)
 rgamma       = primitive(scipy.special.rgamma)
 multigammaln = primitive(scipy.special.multigammaln)
+
+def grad_gammainc(a, x):
+    return np.exp(-x) * np.power(x, a - 1) / gamma(a)
 
 gammasgn.defvjp_is_zero()
 polygamma.defvjp_is_zero(argnums=(0,))
@@ -21,6 +27,8 @@ psi.defvjp(      lambda g, ans, vs, gvs, x: g * polygamma(1, x))
 digamma.defvjp(  lambda g, ans, vs, gvs, x: g * polygamma(1, x))
 gamma.defvjp(    lambda g, ans, vs, gvs, x: g * ans * psi(x))
 gammaln.defvjp(  lambda g, ans, vs, gvs, x: g * psi(x))
+gammainc.defvjp( lambda g, ans, vs, gvs, a, x: unbroadcast(vs, gvs, g * grad_gammainc(a, x)), argnum=1)
+gammaincc.defvjp(lambda g, ans, vs, gvs, a, x: unbroadcast(vs, gvs, g * -grad_gammainc(a, x)), argnum=1)
 rgamma.defvjp(   lambda g, ans, vs, gvs, x: g * psi(x) / -gamma(x))
 multigammaln.defvjp(lambda g, ans, vs, gvs, a, d:
     g * np.sum(digamma(np.expand_dims(a, -1) - np.arange(d)/2.), -1))
