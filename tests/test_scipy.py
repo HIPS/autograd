@@ -151,6 +151,8 @@ else:
                     axes=[([1],[1])], dot_axes=[([0],[2]), ([0],[0])], mode=['full', 'valid'])
 
     ### Special ###
+    def test_gammainc():  combo_check(special.gammainc,  [1], [1], R(4)**2 + 1.3)
+    def test_gammaincc(): combo_check(special.gammaincc, [1], [1], R(4)**2 + 1.3)
     def test_polygamma(): combo_check(special.polygamma, [1], [0], R(4)**2 + 1.3)
     def test_jn():        combo_check(special.jn,        [1], [2], R(4)**2 + 1.3)
     def test_yn():        combo_check(special.yn,        [1], [2], R(4)**2 + 1.3)
@@ -175,7 +177,7 @@ else:
     def test_erfinv(): unary_ufunc_check(special.erfinv, lims=[-0.95, 0.95], test_complex=False)
     def test_erfcinv(): unary_ufunc_check(special.erfcinv, lims=[0.05, 1.95], test_complex=False)
 
-    def test_logit(): unary_ufunc_check(special.logit, lims=[0.05, 0.95],  test_complex=False)
+    def test_logit(): unary_ufunc_check(special.logit, lims=[ 0.10, 0.90], test_complex=False)
     def test_expit(): unary_ufunc_check(special.expit, lims=[-4.05, 4.95], test_complex=False)
 
     ### Linalg ###
