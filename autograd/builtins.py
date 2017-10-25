@@ -1,4 +1,5 @@
 import itertools
+from future.utils import with_metaclass
 from .util import subvals
 from .extend import (Box, primitive, notrace_primitive, VSpace, vspace,
                      SparseObject, defvjp, defvjp_argnum, defjvp, defjvp_argnum)
@@ -88,23 +89,21 @@ defjvp_argnum(make_sequence, fwd_grad_make_sequence)
 class TupleMeta(type_):
     def __instancecheck__(self, instance):
         return isinstance(instance, tuple_)
-class tuple(tuple_):
-    __metaclass__ = TupleMeta
+class tuple(with_metaclass(TupleMeta, tuple_)):
     def __new__(cls, xs):
         return make_sequence(tuple_, *xs)
 
 class ListMeta(type_):
     def __instancecheck__(self, instance):
         return isinstance(instance, list_)
-class list(list_):
-    __metaclass__ = ListMeta
+class list(with_metaclass(ListMeta, list_)):
     def __new__(cls, xs):
         return make_sequence(list_,  *xs)
 
 class DictMeta(type_):
     def __instancecheck__(self, instance):
         return isinstance(instance, dict_)
-class dict(dict_):
+class dict(with_metaclass(DictMeta, dict_)):
     __metaclass__ = DictMeta
     def __new__(cls, args, **kwargs):
         keys, vals = zip(*itertools.chain(args, kwargs.items()))
