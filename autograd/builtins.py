@@ -104,7 +104,6 @@ class DictMeta(type_):
     def __instancecheck__(self, instance):
         return isinstance(instance, dict_)
 class dict(with_metaclass(DictMeta, dict_)):
-    __metaclass__ = DictMeta
     def __new__(cls, args, **kwargs):
         keys, vals = zip(*itertools.chain(args, kwargs.items()))
         return _make_dict(keys, list(vals))
