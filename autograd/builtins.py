@@ -93,7 +93,7 @@ class list(list_):
 
 class dict(dict_):
     def __new__(cls, args, **kwargs):
-        keys, vals = zip(*itertools.chain(args, kwargs.iteritems()))
+        keys, vals = zip(*itertools.chain(args, kwargs.items()))
         return _make_dict(keys, list(vals))
 
 @primitive
