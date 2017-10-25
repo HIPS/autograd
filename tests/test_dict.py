@@ -102,6 +102,7 @@ def test_make_dict():
 def test_isinstance():
     def fun(x):
         assert ag_isinstance(x, dict)
+        assert ag_isinstance(x, ag_dict)
         return x['x']
     fun({'x': 1.})
     grad(fun)({'x': 1.})
