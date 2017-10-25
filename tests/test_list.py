@@ -72,6 +72,7 @@ def test_make_list():
 def test_isinstance():
     def fun(x):
         assert ag_isinstance(x, list)
+        assert ag_isinstance(x, ag_list)
         return x[0]
     fun([1., 2., 3.])
     grad(fun)([1., 2., 3.])

@@ -84,14 +84,28 @@ def fwd_grad_make_sequence(argnum, g, ans, seq_type, *args, **kwargs):
 
 defjvp_argnum(make_sequence, fwd_grad_make_sequence)
 
+
+class TupleMeta(type_):
+    def __instancecheck__(self, instance):
+        return isinstance(instance, tuple_)
 class tuple(tuple_):
+    __metaclass__ = TupleMeta
     def __new__(cls, xs):
         return make_sequence(tuple_, *xs)
+
+class ListMeta(type_):
+    def __instancecheck__(self, instance):
+        return isinstance(instance, list_)
 class list(list_):
+    __metaclass__ = ListMeta
     def __new__(cls, xs):
         return make_sequence(list_,  *xs)
 
+class DictMeta(type_):
+    def __instancecheck__(self, instance):
+        return isinstance(instance, dict_)
 class dict(dict_):
+    __metaclass__ = DictMeta
     def __new__(cls, args, **kwargs):
         keys, vals = zip(*itertools.chain(args, kwargs.items()))
         return _make_dict(keys, list(vals))
