@@ -6,12 +6,14 @@ from autograd.numpy.numpy_vjps import unbroadcast_f
 
 ### Beta function ###
 beta       = primitive(scipy.special.beta)
+betainc    = primitive(scipy.special.betainc)
 betaln     = primitive(scipy.special.betaln)
 
-beta.defvjp(  lambda g, ans, vs, gvs, a, b: unbroadcast(vs, gvs, g * ans * (psi(a) - psi(a + b))), argnum=0)
-beta.defvjp(  lambda g, ans, vs, gvs, a, b: unbroadcast(vs, gvs, g * ans * (psi(b) - psi(a + b))), argnum=1)
-betaln.defvjp(lambda g, ans, vs, gvs, a, b: unbroadcast(vs, gvs, g * (psi(a) - psi(a + b))), argnum=0)
-betaln.defvjp(lambda g, ans, vs, gvs, a, b: unbroadcast(vs, gvs, g * (psi(b) - psi(a + b))), argnum=1)
+beta.defvjp(   lambda g, ans, vs, gvs, a, b: unbroadcast(vs, gvs, g * ans * (psi(a) - psi(a + b))), argnum=0)
+beta.defvjp(   lambda g, ans, vs, gvs, a, b: unbroadcast(vs, gvs, g * ans * (psi(b) - psi(a + b))), argnum=1)
+betainc.defvjp(lambda g, ans, vs, gvs, a, b, x: unbroadcast(vs, gvs, g * np.power(x, a - 1) * np.power(1 - x, b - 1) / beta(a, b)), argnum=2)
+betaln.defvjp( lambda g, ans, vs, gvs, a, b: unbroadcast(vs, gvs, g * (psi(a) - psi(a + b))), argnum=0)
+betaln.defvjp( lambda g, ans, vs, gvs, a, b: unbroadcast(vs, gvs, g * (psi(b) - psi(a + b))), argnum=1)
 
 ### Gamma functions ###
 polygamma    = primitive(scipy.special.polygamma)
