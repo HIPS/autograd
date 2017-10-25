@@ -5,6 +5,15 @@ import autograd.numpy as np
 from autograd.core import primitive
 from autograd.numpy.numpy_grads import unbroadcast
 
+### Beta function ###
+beta       = primitive(scipy.special.beta)
+betaln     = primitive(scipy.special.betaln)
+
+beta.defvjp(  lambda g, ans, vs, gvs, a, b: unbroadcast(vs, gvs, g * ans * (psi(a) - psi(a + b))), argnum=0)
+beta.defvjp(  lambda g, ans, vs, gvs, a, b: unbroadcast(vs, gvs, g * ans * (psi(b) - psi(a + b))), argnum=1)
+betaln.defvjp(lambda g, ans, vs, gvs, a, b: unbroadcast(vs, gvs, g * (psi(a) - psi(a + b))), argnum=0)
+betaln.defvjp(lambda g, ans, vs, gvs, a, b: unbroadcast(vs, gvs, g * (psi(b) - psi(a + b))), argnum=1)
+
 ### Gamma functions ###
 polygamma    = primitive(scipy.special.polygamma)
 psi          = primitive(scipy.special.psi)        # psi(x) is just polygamma(0, x)
