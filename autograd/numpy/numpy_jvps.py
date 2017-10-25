@@ -77,7 +77,7 @@ def_ufunc_jps(anp.absolute,    (lambda ans, x: anp.conj(x) / ans,         'cmul'
 def_ufunc_jps(anp.reciprocal,  (lambda ans, x: -ans**2,                   'mul' ))
 def_ufunc_jps(anp.exp,         (lambda ans, x: ans,                       'mul' ))
 def_ufunc_jps(anp.exp2,        (lambda ans, x: ans * anp.log(2),          'mul' ))
-def_ufunc_jps(anp.expm1,       (lambda ans, x: (ans + 1),                 'mul' ))
+def_ufunc_jps(anp.expm1,       (lambda ans, x: ans + 1,                   'mul' ))
 def_ufunc_jps(anp.log,         (lambda ans, x: x,                         'div' ))
 def_ufunc_jps(anp.log2,        (lambda ans, x: x * anp.log(2),            'div' ))
 def_ufunc_jps(anp.log10,       (lambda ans, x: x * anp.log(10),           'div' ))
