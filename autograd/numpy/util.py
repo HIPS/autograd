@@ -61,7 +61,7 @@ def def_ufunc_jps(ufunc, *derivs_ops):
                  lambda argnum, deriv: lambda ans, *args:
                      unbroadcast_f(args[argnum], lambda g, d=deriv(ans, *args): g / d))
         }
-    if len(derivs_ops) == 2:
+    if len(derivs_ops) >= 2:
         defjvp(ufunc, *[nary_ufunc_jps[op][0](argnum, deriv) for argnum, (deriv, op) in enumerate(derivs_ops)])
         defvjp(ufunc, *[nary_ufunc_jps[op][1](argnum, deriv) for argnum, (deriv, op) in enumerate(derivs_ops)])
 

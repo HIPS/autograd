@@ -3,41 +3,29 @@ from __future__ import absolute_import
 import scipy.stats
 import autograd.numpy as anp
 from autograd.extend import primitive, defvjp
-from autograd.numpy.util import unbroadcast_f
+from autograd.numpy.util import def_ufunc_jps
 
 pdf = primitive(scipy.stats.norm.pdf)
 cdf = primitive(scipy.stats.norm.cdf)
 logpdf = primitive(scipy.stats.norm.logpdf)
 logcdf = primitive(scipy.stats.norm.logcdf)
 
-defvjp(pdf,
-       lambda ans, x, loc=0.0, scale=1.0:
-       unbroadcast_f(x, lambda g: -g * ans * (x - loc) / scale**2),
-       lambda ans, x, loc=0.0, scale=1.0:
-       unbroadcast_f(loc, lambda g: g * ans * (x - loc) / scale**2),
-       lambda ans, x, loc=0.0, scale=1.0:
-       unbroadcast_f(scale, lambda g: g * ans * (((x - loc)/scale)**2 - 1.0)/scale))
+def_ufunc_jps(pdf,
+    (lambda ans, x, loc=0.0, scale=1.0: -ans * (x - loc) / scale**2,              'mul'),
+    (lambda ans, x, loc=0.0, scale=1.0: ans * (x - loc) / scale**2,               'mul'),
+    (lambda ans, x, loc=0.0, scale=1.0: ans * (((x - loc)/scale)**2 - 1.0)/scale, 'mul'))
 
-defvjp(cdf,
-       lambda ans, x, loc=-1.0, scale=1.0:
-       unbroadcast_f(x, lambda g: g * pdf(x, loc, scale)) ,
-       lambda ans, x, loc=0.0, scale=1.0:
-       unbroadcast_f(loc, lambda g: -g * pdf(x, loc, scale)),
-       lambda ans, x, loc=-1.0, scale=1.0:
-       unbroadcast_f(scale, lambda g: -g * pdf(x, loc, scale)*(x-loc)/scale))
+def_ufunc_jps(logpdf,
+    (lambda ans, x, loc=0.0, scale=1.0: -(x - loc) / scale**2,              'mul'),
+    (lambda ans, x, loc=0.0, scale=1.0: (x - loc) / scale**2,               'mul'),
+    (lambda ans, x, loc=0.0, scale=1.0: -1.0/scale + (x - loc)**2/scale**3, 'mul'))
 
-defvjp(logpdf,
-       lambda ans, x, loc=0.0, scale=1.0:
-       unbroadcast_f(x, lambda g: -g * (x - loc) / scale**2),
-       lambda ans, x, loc=0.0, scale=1.0:
-       unbroadcast_f(loc, lambda g: g * (x - loc) / scale**2),
-       lambda ans, x, loc=-1.0, scale=1.0:
-       unbroadcast_f(scale, lambda g: g * (-1.0/scale + (x - loc)**2/scale**3)))
+def_ufunc_jps(cdf,
+    (lambda ans, x, loc=0.0, scale=1.0: pdf(x, loc, scale),                'mul'),
+    (lambda ans, x, loc=0.0, scale=1.0: -pdf(x, loc, scale),               'mul'),
+    (lambda ans, x, loc=0.0, scale=1.0: -pdf(x, loc, scale)*(x-loc)/scale, 'mul'))
 
-defvjp(logcdf,
-       lambda ans, x, loc=0.0, scale=1.0:
-       unbroadcast_f(x, lambda g: g * anp.exp(logpdf(x, loc, scale) - logcdf(x, loc, scale))),
-       lambda ans, x, loc=0.0, scale=1.0:
-       unbroadcast_f(loc, lambda g:-g * anp.exp(logpdf(x, loc, scale) - logcdf(x, loc, scale))),
-       lambda ans, x, loc=0.0, scale=1.0:
-       unbroadcast_f(scale, lambda g:-g * anp.exp(logpdf(x, loc, scale) - logcdf(x, loc, scale))*(x-loc)/scale))
+def_ufunc_jps(logcdf,
+    (lambda ans, x, loc=0.0, scale=1.0: anp.exp(logpdf(x, loc, scale) - logcdf(x, loc, scale)), 'mul'),
+    (lambda ans, x, loc=0.0, scale=1.0:-anp.exp(logpdf(x, loc, scale) - logcdf(x, loc, scale)), 'mul'),
+    (lambda ans, x, loc=0.0, scale=1.0:-anp.exp(logpdf(x, loc, scale) - logcdf(x, loc, scale))*(x-loc)/scale, 'mul'))
