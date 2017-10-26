@@ -40,9 +40,13 @@ def def_ufunc_jps(ufunc, *derivs_ops):
         }
 
     if len(derivs_ops) == 1:
-        deriv, op = derivs_ops[0]
-        defjvp(ufunc, unary_ufunc_jps[op][0](deriv))
-        defvjp(ufunc, unary_ufunc_jps[op][1](deriv))
+        if derivs_ops[0] is None:
+            defjvp(ufunc, None)
+            defvjp(ufunc, None)
+        else:
+            deriv, op = derivs_ops[0]
+            defjvp(ufunc, unary_ufunc_jps[op][0](deriv))
+            defvjp(ufunc, unary_ufunc_jps[op][1](deriv))
 
     nary_ufunc_jps = {
         'same': (lambda argnum, deriv: lambda g, ans, *args: ufunc(*subval(args, argnum, g)),

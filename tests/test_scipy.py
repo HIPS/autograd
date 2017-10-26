@@ -130,28 +130,28 @@ def test_convolve_ignore_dot():
 
 ### Special ###
 def test_polygamma(): combo_check(special.polygamma, [1], modes=['fwd', 'rev'])([0], R(4)**2 + 1.3)
-def test_jn():        combo_check(special.jn,        [1])([2], R(4)**2 + 1.3)
-def test_yn():        combo_check(special.yn,        [1])([2], R(4)**2 + 1.3)
+def test_jn():        combo_check(special.jn,        [1], modes=['fwd', 'rev'])([2], R(4)**2 + 1.3)
+def test_yn():        combo_check(special.yn,        [1], modes=['fwd', 'rev'])([2], R(4)**2 + 1.3)
 
 def test_psi():       unary_ufunc_check(special.psi,     lims=[0.3, 2.0], test_complex=False, modes=['fwd', 'rev'])
-def test_digamma():   unary_ufunc_check(special.digamma, lims=[0.3, 2.0], test_complex=False)
-def test_gamma():     unary_ufunc_check(special.gamma,   lims=[0.3, 2.0], test_complex=False)
-def test_gammaln():   unary_ufunc_check(special.gammaln, lims=[0.3, 2.0], test_complex=False)
-def test_gammasgn():  unary_ufunc_check(special.gammasgn,lims=[0.3, 2.0], test_complex=False)
-def test_rgamma()  :  unary_ufunc_check(special.rgamma,  lims=[0.3, 2.0], test_complex=False)
-def test_multigammaln(): combo_check(special.multigammaln, [0])([U(4., 5.), U(4., 5., (2,3))],
+def test_digamma():   unary_ufunc_check(special.digamma, lims=[0.3, 2.0], test_complex=False, modes=['fwd', 'rev'])
+def test_gamma():     unary_ufunc_check(special.gamma,   lims=[0.3, 2.0], test_complex=False, modes=['fwd', 'rev'])
+def test_gammaln():   unary_ufunc_check(special.gammaln, lims=[0.3, 2.0], test_complex=False, modes=['fwd', 'rev'])
+def test_gammasgn():  unary_ufunc_check(special.gammasgn,lims=[0.3, 2.0], test_complex=False, modes=['fwd', 'rev'])
+def test_rgamma()  :  unary_ufunc_check(special.rgamma,  lims=[0.3, 2.0], test_complex=False, modes=['fwd', 'rev'])
+def test_multigammaln(): combo_check(special.multigammaln, [0], modes=['fwd', 'rev'])([U(4., 5.), U(4., 5., (2,3))],
                                      [1, 2, 3])
 
-def test_j0(): unary_ufunc_check(special.j0, lims=[0.2, 20.0], test_complex=False)
-def test_j1(): unary_ufunc_check(special.j1, lims=[0.2, 20.0], test_complex=False)
-def test_y0(): unary_ufunc_check(special.y0, lims=[0.2, 20.0], test_complex=False)
-def test_y1(): unary_ufunc_check(special.y1, lims=[0.2, 20.0], test_complex=False)
+def test_j0(): unary_ufunc_check(special.j0, lims=[0.2, 20.0], test_complex=False, modes=['fwd', 'rev'])
+def test_j1(): unary_ufunc_check(special.j1, lims=[0.2, 20.0], test_complex=False, modes=['fwd', 'rev'])
+def test_y0(): unary_ufunc_check(special.y0, lims=[0.2, 20.0], test_complex=False, modes=['fwd', 'rev'])
+def test_y1(): unary_ufunc_check(special.y1, lims=[0.2, 20.0], test_complex=False, modes=['fwd', 'rev'])
 
-def test_erf(): unary_ufunc_check(special.erf, lims=[-3., 3.], test_complex=True)
-def test_erfc(): unary_ufunc_check(special.erfc, lims=[-3., 3.], test_complex=True)
+def test_erf():  unary_ufunc_check(special.erf,  lims=[-3., 3.], test_complex=True, modes=['fwd', 'rev'])
+def test_erfc(): unary_ufunc_check(special.erfc, lims=[-3., 3.], test_complex=True, modes=['fwd', 'rev'])
 
-def test_erfinv(): unary_ufunc_check(special.erfinv, lims=[-0.95, 0.95], test_complex=False)
-def test_erfcinv(): unary_ufunc_check(special.erfcinv, lims=[0.05, 1.95], test_complex=False)
+def test_erfinv():  unary_ufunc_check(special.erfinv, lims=[-0.95, 0.95], test_complex=False, modes=['fwd', 'rev'])
+def test_erfcinv(): unary_ufunc_check(special.erfcinv, lims=[0.05, 1.95], test_complex=False, modes=['fwd', 'rev'])
 
-def test_logit(): unary_ufunc_check(special.logit, lims=[0.05, 0.95],  test_complex=False)
-def test_expit(): unary_ufunc_check(special.expit, lims=[-4.05, 4.95], test_complex=False)
+def test_logit(): unary_ufunc_check(special.logit, lims=[0.05, 0.95],  test_complex=False, modes=['fwd', 'rev']) 
+def test_expit(): unary_ufunc_check(special.expit, lims=[-4.05, 4.95], test_complex=False, modes=['fwd', 'rev'])
