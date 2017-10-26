@@ -42,6 +42,6 @@ def_ufunc_jps(cdf,
     (lambda ans, x, df, loc=0.0, scale=1.0: -pdf(x, df, loc, scale), 'mul'))
 
 def_ufunc_jps(logcdf,
-    (lambda ans, x, df, loc=0.0, scale=1.0:  np.exp(logpdf(x, df, loc, scale) - logcdf(x, df, loc, scale)), 'mul'),
+    (lambda ans, x, df, loc=0.0, scale=1.0:  np.exp(logpdf(x, df, loc, scale) - ans), 'mul'),
     None,
-    (lambda ans, x, df, loc=0.0, scale=1.0: -np.exp(logpdf(x, df, loc, scale) - logcdf(x, df, loc, scale)), 'mul'))
+    (lambda ans, x, df, loc=0.0, scale=1.0: -np.exp(logpdf(x, df, loc, scale) - ans), 'mul'))
