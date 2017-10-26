@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 import scipy.special
 import autograd.numpy as np
+from autograd.numpy.util import def_ufunc_jps
 from autograd.extend import primitive, defvjp
 
 ### Gamma functions ###
@@ -14,8 +15,8 @@ rgamma       = primitive(scipy.special.rgamma)
 multigammaln = primitive(scipy.special.multigammaln)
 
 defvjp(gammasgn, None)
-defvjp(polygamma, None, lambda ans, n, x: lambda g: g * polygamma(n + 1, x))
-defvjp(psi,      lambda ans, x: lambda g: g * polygamma(1, x))
+def_ufunc_jps(polygamma, None, (lambda ans, n, x: polygamma(n + 1, x), 'mul'))
+def_ufunc_jps(psi,      (lambda ans, x: polygamma(1, x), 'mul'))
 defvjp(digamma,  lambda ans, x: lambda g: g * polygamma(1, x))
 defvjp(gamma,    lambda ans, x: lambda g: g * ans * psi(x))
 defvjp(gammaln,  lambda ans, x: lambda g: g * psi(x))
