@@ -4,9 +4,10 @@ from functools import partial
 import numpy as onp
 from ..util import func
 from . import numpy_wrapper as anp
+from autograd.numpy.util import unbroadcast
 from .numpy_boxes import ArrayBox
-from autograd.extend import (primitive, vspace, defvjp, defvjp_argnum,
-                             SparseObject, VJPNode, register_notrace)
+from autograd.extend import (primitive, vspace, defvjp, defvjp_argnum, SparseObject, VJPNode,
+                             register_notrace)
 
 # ----- Non-differentiable functions -----
 
@@ -464,27 +465,6 @@ defvjp(anp.make_diagonal,
     lambda ans, D, offset=0, axis1=0, axis2=1 :
     lambda g: anp.diagonal(g, offset, axis1, axis2))
 
-def match_complex(target, x):
-    target_iscomplex = anp.iscomplexobj(target)
-    x_iscomplex      = anp.iscomplexobj(x)
-    if x_iscomplex and not target_iscomplex:
-        return anp.real(x)
-    elif not x_iscomplex and target_iscomplex:
-        return x + 0j
-    else:
-        return x
-
-def unbroadcast(x, target_meta, broadcast_idx=0):
-    target_shape, target_ndim, dtype, target_iscomplex = target_meta
-    x = _broadcast_to_adjoint(x, target_shape)
-    if anp.iscomplexobj(x) and not target_iscomplex:
-        x = anp.real(x)
-    return x
-
-def unbroadcast_f(target, f):
-    target_meta = anp.metadata(target)
-    return lambda g: unbroadcast(f(g), target_meta)
-
 def unbroadcast_einsum(x, target_meta, subscript):
     if Ellipsis not in subscript:
         return x
@@ -495,19 +475,10 @@ def unbroadcast_einsum(x, target_meta, subscript):
     else:
         return unbroadcast(x, target_meta, subscript.index(Ellipsis))
 
-@primitive
-def _broadcast_to_adjoint(x, shape):
-    while anp.ndim(x) > len(shape):
-        x = onp.sum(x, axis=0)
-    for axis, size in enumerate(shape):
-        if size == 1:
-            x = onp.sum(x, axis=axis, keepdims=True)
-    return x
-
 def _broadcast_to_vjpmaker(x_shape):
     # Ensure that x can be garbage collected by only passing
     # its shape to this closure.
-    return lambda g: _broadcast_to_adjoint(g, x_shape)
+    return lambda g: anp._broadcast_to_adjoint(g, x_shape)
 
 def _broadcast_to_adjoint_vjpmaker(g_shape):
     # Ensure that g can be garbage collected by only passing
@@ -515,7 +486,7 @@ def _broadcast_to_adjoint_vjpmaker(g_shape):
     return lambda x: anp.broadcast_to(x, g_shape)
 
 defvjp(anp.broadcast_to, lambda ans, x, ans_shp: _broadcast_to_vjpmaker(x.shape))
-defvjp(_broadcast_to_adjoint, lambda ans, g, ans_shp: _broadcast_to_adjoint_vjpmaker(g.shape))
+defvjp(anp._broadcast_to_adjoint, lambda ans, g, ans_shp: _broadcast_to_adjoint_vjpmaker(g.shape))
 
 def balanced_eq(x, z, y):
     return (x == z) / (1.0 + (x == y))
