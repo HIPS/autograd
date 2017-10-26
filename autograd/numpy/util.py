@@ -44,7 +44,7 @@ def def_ufunc_jps(ufunc, *derivs_ops):
         defjvp(ufunc, unary_ufunc_jps[op][0](deriv))
         defvjp(ufunc, unary_ufunc_jps[op][1](deriv))
 
-    binary_ufunc_jps = {
+    nary_ufunc_jps = {
         'same': (lambda argnum, deriv: lambda g, ans, *args: ufunc(*subval(args, argnum, g)),
                  lambda argnum, deriv: lambda ans, *args:
                      unbroadcast_f(args[argnum], lambda g: ufunc(*subval(args, argnum, g)))),
@@ -62,6 +62,6 @@ def def_ufunc_jps(ufunc, *derivs_ops):
                      unbroadcast_f(args[argnum], lambda g, d=deriv(ans, *args): g / d))
         }
     if len(derivs_ops) == 2:
-        defjvp(ufunc, *[binary_ufunc_jps[op][0](argnum, deriv) for argnum, (deriv, op) in enumerate(derivs_ops)])
-        defvjp(ufunc, *[binary_ufunc_jps[op][1](argnum, deriv) for argnum, (deriv, op) in enumerate(derivs_ops)])
+        defjvp(ufunc, *[nary_ufunc_jps[op][0](argnum, deriv) for argnum, (deriv, op) in enumerate(derivs_ops)])
+        defvjp(ufunc, *[nary_ufunc_jps[op][1](argnum, deriv) for argnum, (deriv, op) in enumerate(derivs_ops)])
 
