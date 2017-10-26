@@ -43,6 +43,7 @@ class DictBox(Box):
     def iteritems(self): return ((k, self[k]) for k in self)
     def iterkeys(self): return iter(self)
     def itervalues(self): return (self[k] for k in self)
+    def get(self, k, d=None): return self[k] if k in self else d
 DictBox.register(dict_)
 
 @primitive

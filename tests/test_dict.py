@@ -94,6 +94,13 @@ def test_items_values_keys():
     check_grads(fun)(input_dict)
     check_grads(d_fun)(input_dict)
 
+def test_get():
+  def fun(d, x):
+    return d.get('item_1', x)**2
+  check_grads(fun, argnum=(0, 1))({'item_1': 3.}, 2.)
+  check_grads(fun, argnum=(0, 1))({'item_2': 4.}, 2.)
+  check_grads(fun, argnum=(0, 1))({}, 2.)
+
 def test_make_dict():
     def fun(x):
         return ag_dict([('a', x)], b=x)
