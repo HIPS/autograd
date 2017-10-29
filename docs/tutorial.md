@@ -89,7 +89,7 @@ For more complex examples, see our [examples directory](../examples/), which inc
 * [a convolutional neural net](../examples/convnet.py)
 * [a recurrent neural net](../examples/rnn.py)
 * [a long short-term memory (LSTM)](../examples/lstm.py)
-* [backpropagating through a fluid simulation](../examples/fluidsim/fluidsim.py) 
+* [backpropagating through a fluid simulation](../examples/fluidsim/fluidsim.py)
 
 
 ## What's going on under the hood?
@@ -295,6 +295,7 @@ Chapter 4 of [Dougal's PhD thesis](https://dougalmaclaurin.com/phd-thesis.pdf)
 goes into a bit more detail about how we define the primitive vector-Jacobian products.
 
 ## Support
+
 Autograd was written by
 [Dougal Maclaurin](https://dougalmaclaurin.com),
 [David Duvenaud](http://mlg.eng.cam.ac.uk/duvenaud/), and
