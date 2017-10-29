@@ -6,14 +6,15 @@ from __future__ import print_function
 import autograd.numpy as np
 import autograd.numpy.random as npr
 
-from autograd import grad, primitive
-from autograd.util import quick_grad_check
+from autograd import grad
+from autograd.extend import primitive, defvjp
+from autograd.test_util import check_grads
 
 
-# @primitive tells autograd not to look inside this function, but instead
+# @primitive tells Autograd not to look inside this function, but instead
 # to treat it as a black box, whose gradient might be specified later.
 # Functions with this decorator can contain anything that Python knows
-# how to execute.
+# how to execute, and you can do things like in-place operations on arrays.
 @primitive
 def logsumexp(x):
     """Numerically stable log(sum(exp(x))), also defined in scipy.misc"""
@@ -25,18 +26,19 @@ def logsumexp(x):
 # on both the input to the original function (x), and the output of the
 # original function (ans).
 
-def logsumexp_vjp(g, ans, vs, gvs, x):
+def logsumexp_vjp(ans, x):
     # If you want to be able to take higher-order derivatives, then all the
-    # code inside this function must be itself differentiable by autograd.
+    # code inside this function must be itself differentiable by Autograd.
     # This closure multiplies g with the Jacobian of logsumexp (d_ans/d_x).
-    # Because autograd uses reverse-mode differentiation, g contains
+    # Because Autograd uses reverse-mode differentiation, g contains
     # the gradient of the objective w.r.t. ans, the output of logsumexp.
-    # The arguments `vs` and `gvs` contain information about the shapes of
-    # `x` and `g` but using them is optional.
-    return np.full(x.shape, g) * np.exp(x - np.full(x.shape, ans))
+    # This returned VJP function doesn't close over `x`, so Python can
+    # garbage-collect `x` if there are no references to it elsewhere.
+    x_shape = x.shape
+    return lambda g: np.full(x_shape, g) * np.exp(x - np.full(x_shape, ans))
 
-# Now we tell autograd that logsumexmp has a gradient-making function.
-logsumexp.defvjp(logsumexp_vjp)
+# Now we tell Autograd that logsumexmp has a gradient-making function.
+defvjp(logsumexp, logsumexp_vjp)
 
 if __name__ == '__main__':
     # Now we can use logsumexp() inside a larger function that we want
@@ -50,4 +52,4 @@ if __name__ == '__main__':
     print("Gradient: \n", grad_of_example(npr.randn(10)))
 
     # Check the gradients numerically, just to be safe.
-    quick_grad_check(example_func, npr.randn(10))
+    check_grads(example_func, modes=['rev'])(npr.randn(10))
