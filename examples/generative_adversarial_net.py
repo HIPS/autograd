@@ -7,7 +7,7 @@ from __future__ import absolute_import, division
 from __future__ import print_function
 import autograd.numpy as np
 import autograd.numpy.random as npr
-from autograd import multigrad
+from autograd import grad
 from autograd.misc import flatten
 
 from data import load_mnist, save_images
@@ -123,7 +123,7 @@ if __name__ == '__main__':
                              batch_size, noise_dim, seed)
 
     # Get gradients of objective using autograd.
-    both_objective_grad = multigrad(objective, argnums=[0,1])
+    both_objective_grad = grad(objective, argnum=(0, 1))
 
     print("     Epoch     |    Objective  |       Fake probability | Real Probability  ")
     def print_perf(gen_params, dsc_params, iter, gen_gradient, dsc_gradient):
