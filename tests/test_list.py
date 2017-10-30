@@ -1,7 +1,8 @@
 import autograd.numpy as np
 import autograd.numpy.random as npr
-from autograd.util import check_grads
+from autograd.test_util import check_grads, check_vjp, check_jvp
 from autograd import grad
+from autograd import list as ag_list, isinstance as ag_isinstance
 npr.seed(1)
 
 def test_getter():
@@ -38,8 +39,8 @@ def test_grads():
                   npr.randn(4, 3),
                   npr.randn(2, 4)]
 
-    check_grads(fun, input_list)
-    check_grads(d_fun, input_list)
+    check_grads(fun)(input_list)
+    check_grads(d_fun)(input_list)
 
 def test_slices():
     def f(x):
@@ -61,4 +62,17 @@ def test_nested_list():
     def fun(x):
         return x[1:][0]
 
-    check_grads(fun, A)
+    check_grads(fun)(A)
+
+def test_make_list():
+    def fun(x):
+        return ag_list((x, x))
+    check_grads(fun)(1.0)
+
+def test_isinstance():
+    def fun(x):
+        assert ag_isinstance(x, list)
+        assert ag_isinstance(x, ag_list)
+        return x[0]
+    fun([1., 2., 3.])
+    grad(fun)([1., 2., 3.])

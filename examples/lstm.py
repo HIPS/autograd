@@ -11,7 +11,7 @@ import autograd.numpy.random as npr
 from autograd import grad
 from autograd.scipy.misc import logsumexp
 
-from autograd.optimizers import adam
+from autograd.misc.optimizers import adam
 from rnn import string_to_one_hot, one_hot_to_string,\
                 build_dataset, sigmoid, concat_and_multiply
 

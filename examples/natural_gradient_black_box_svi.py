@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import autograd.numpy as np
 import autograd.scipy.stats.norm as norm
 
-from autograd.optimizers import adam, sgd
+from autograd.misc.optimizers import adam, sgd
 
 # same BBSVI function!
 from black_box_svi import black_box_variational_inference

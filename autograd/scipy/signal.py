@@ -1,9 +1,11 @@
 from __future__ import absolute_import
-from autograd.core import primitive
+from builtins import range, zip
+from functools import partial
 import autograd.numpy as np
 import numpy as npo # original numpy
+from autograd.extend import primitive, defvjp
+
 from numpy.lib.stride_tricks import as_strided
-from builtins import range, zip
 from future.utils import iteritems
 
 @primitive
@@ -101,7 +103,7 @@ def flipped_idxs(ndim, axes):
         new_idxs[ax] = slice(None, None, -1)
     return new_idxs
 
-def grad_convolve(argnum, g, ans, vs, gvs, A, B, axes=None, dot_axes=[(),()], mode='full'):
+def grad_convolve(argnum, ans, A, B, axes=None, dot_axes=[(),()], mode='full'):
     assert mode in ['valid', 'full'], "Grad for mode {0} not yet implemented".format(mode)
     axes, shapes = parse_axes(A.shape, B.shape, axes, dot_axes, mode)
     if argnum == 0:
@@ -123,11 +125,13 @@ def grad_convolve(argnum, g, ans, vs, gvs, A, B, axes=None, dot_axes=[(),()], mo
         else:
             new_mode = 'valid'
 
-    result = convolve(g, Y[flipped_idxs(Y.ndim, axes[_Y_]['conv'])],
-                      axes     = [axes['out']['conv'],   axes[_Y_]['conv']],
-                      dot_axes = [axes['out'][ignore_Y], axes[_Y_]['ignore']],
-                      mode     = new_mode)
-    new_order = npo.argsort(axes[_X_]['ignore'] + axes[_X_]['dot'] + axes[_X_]['conv'])
-    return np.transpose(result, new_order)
+    def vjp(g):
+        result = convolve(g, Y[flipped_idxs(Y.ndim, axes[_Y_]['conv'])],
+                          axes     = [axes['out']['conv'],   axes[_Y_]['conv']],
+                          dot_axes = [axes['out'][ignore_Y], axes[_Y_]['ignore']],
+                          mode     = new_mode)
+        new_order = npo.argsort(axes[_X_]['ignore'] + axes[_X_]['dot'] + axes[_X_]['conv'])
+        return np.transpose(result, new_order)
+    return vjp
 
-convolve.defvjps(grad_convolve, [0, 1])
+defvjp(convolve, partial(grad_convolve, 0), partial(grad_convolve, 1))

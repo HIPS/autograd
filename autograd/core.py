@@ -1,214 +1,211 @@
-from __future__ import absolute_import
-import sys
-import types
-import numpy as np
-import numpy.random as npr
-from functools import partial
-import warnings
-from .errors import defgrad_deprecated
+from itertools import count
+from functools import reduce
+from .tracer import trace, primitive, toposort, Node, Box, isbox, getval
+from .util import func, subval
 
-def make_vjp(fun, argnum=0):
-    def vjp_maker(*args, **kwargs):
-        start_node, end_node = forward_pass(fun, args, kwargs, argnum)
-        if not isnode(end_node) or start_node not in end_node.progenitors:
-            warnings.warn("Output seems independent of input.")
-            def vjp(g): return start_node.vspace.zeros()
-        else:
-            def vjp(g): return backward_pass(g, end_node, start_node)
-        return vjp, end_node
-    return vjp_maker
+# -------------------- reverse mode --------------------
 
-def forward_pass(fun, args, kwargs, argnum=0):
-    args = list(args)
-    start_node = new_progenitor(args[argnum])
-    args[argnum] = start_node
-    active_progenitors.add(start_node)
-    end_node = fun(*args, **kwargs)
-    active_progenitors.remove(start_node)
-    return start_node, end_node
-
-def backward_pass(g, end_node, start_node):
-    outgrads = {end_node : (g, False)}
-    assert_vspace_match(outgrads[end_node][0], end_node.vspace, None)
-    for node in toposort(end_node, start_node):
-        cur_outgrad = outgrads.pop(node)
-        function, args, kwargs, parents = node.recipe
-        for argnum, parent in parents:
-            outgrad = function.vjp(argnum, cur_outgrad[0], node,
-                                   parent.vspace, node.vspace, args, kwargs)
-            assert_vspace_match(outgrad, parent.vspace, function)
-            outgrads[parent] = add_outgrads(parent.vspace, outgrads.get(parent), outgrad)
-    return cur_outgrad[0]
-
-def add_outgrads(vspace, prev_g_flagged, g):
-    if prev_g_flagged is None:
-        if type(getval(g)) == SparseObject:
-            return primitive_mut_add(vspace, None, g), True
-        else:
-            return g, False
+def make_vjp(fun, x):
+    start_node = VJPNode.new_root(x)
+    end_value, end_node =  trace(start_node, fun, x)
+    if end_node is None:
+        def vjp(g): return vspace(x).zeros()
     else:
+        def vjp(g): return backward_pass(g, end_node)
+    return vjp, end_value
+
+def backward_pass(g, end_node):
+    outgrads = {end_node : (g, False)}
+    for node in toposort(end_node):
+        outgrad = outgrads.pop(node)
+        ingrads = node.vjp(outgrad[0])
+        for parent, ingrad in zip(node.parents, ingrads):
+            outgrads[parent] = add_outgrads(outgrads.get(parent), ingrad)
+    return outgrad[0]
+
+class VJPNode(Node):
+    __slots__ = ['parents', 'vjp']
+    def __init__(self, value, fun, args, kwargs, parent_argnums, parents):
+        self.parents = parents
+        self.vjp = primitive_vjps[fun](parent_argnums, value, args, kwargs)
+
+    def initialize_root(self, value):
+        self.parents = []
+        self.vjp = lambda g: ()
+
+primitive_vjps = {}
+def defvjp_argnums(fun, vjpmaker):
+    primitive_vjps[fun] = vjpmaker
+
+def defvjp_argnum(fun, vjpmaker):
+    def vjp_argnums(argnums, *args):
+        vjps = [vjpmaker(argnum, *args) for argnum in argnums]
+        return lambda g: (vjp(g) for vjp in vjps)
+    defvjp_argnums(fun, vjp_argnums)
+
+def defvjp(fun, *vjpmakers, **kwargs):
+    argnums = kwargs.get('argnums', count())
+    vjps_dict = {argnum : translate_vjp(vjpmaker, fun, argnum)
+                 for argnum, vjpmaker in zip(argnums, vjpmakers)}
+    def vjp_argnums(argnums, ans, args, kwargs):
+        L = len(argnums)
+        # These first two cases are just optimizations
+        if L == 1:
+            argnum = argnums[0]
+            try:
+                vjpfun = vjps_dict[argnum]
+            except KeyError:
+                raise NotImplementedError(
+                    "VJP of {} wrt argnum 0 not defined".format(fun.__name__))
+            vjp = vjpfun(ans, *args, **kwargs)
+            return lambda g: (vjp(g),)
+        elif L == 2:
+            argnum_0, argnum_1 = argnums
+            try:
+                vjp_0_fun = vjps_dict[argnum_0]
+                vjp_1_fun = vjps_dict[argnum_1]
+            except KeyError:
+                raise NotImplementedError(
+                    "VJP of {} wrt argnums 0, 1 not defined".format(fun.__name__))
+            vjp_0 = vjp_0_fun(ans, *args, **kwargs)
+            vjp_1 = vjp_1_fun(ans, *args, **kwargs)
+            return lambda g: (vjp_0(g), vjp_1(g))
+        else:
+            vjps = [vjps_dict[argnum](ans, *args, **kwargs) for argnum in argnums]
+            return lambda g: (vjp(g) for vjp in vjps)
+
+    defvjp_argnums(fun, vjp_argnums)
+
+def translate_vjp(vjpfun, fun, argnum):
+    if vjpfun is None:
+        return lambda ans, *args, **kwargs: lambda g: vspace(args[argnum]).zeros()
+    elif callable(vjpfun):
+        return vjpfun
+    else:
+        raise Exception("Bad VJP '{}' for '{}'".format(vjpfun, fun.__name__))
+
+# -------------------- forward mode --------------------
+
+def make_jvp(fun, x):
+    def jvp(g):
+        start_node = JVPNode.new_root(x, g)
+        end_value, end_node = trace(start_node, fun, x)
+        if end_node is None:
+            return end_value, vspace(end_value).zeros()
+        else:
+            return end_value, end_node.g
+    return jvp
+
+class JVPNode(Node):
+    __slots__ = ['g']
+    def __init__(self, value, fun, args, kwargs, parent_argnums, parents):
+        parent_gs = [parent.g for parent in parents]
+        try:
+            self.g = primitive_jvps[fun](parent_argnums, parent_gs, value, args, kwargs)
+        except KeyError:
+            raise Exception("JVP of {} wrt argnums {} not defined"
+                            .format(fun.__name__, parent_argnums))
+
+    def initialize_root(self, x, g):
+        self.g = g
+
+primitive_jvps = {}
+def defjvp_argnums(fun, jvpmaker):
+    primitive_jvps[fun] = jvpmaker
+
+def defjvp_argnum(fun, jvpmaker):
+    def jvp_argnums(argnums, gs, ans, args, kwargs):
+        return sum_outgrads(jvpmaker(argnum, g, ans, args, kwargs)
+                            for argnum, g in zip(argnums, gs))
+    defjvp_argnums(fun, jvp_argnums)
+
+def defjvp(fun, *jvpfuns, **kwargs):
+    argnums = kwargs.get('argnums', count())
+    jvps_dict = {argnum : translate_jvp(jvpfun, fun, argnum)
+                 for argnum, jvpfun in zip(argnums, jvpfuns)}
+    def jvp_argnums(argnums, gs, ans, args, kwargs):
+        return sum_outgrads(jvps_dict[argnum](g, ans, *args, **kwargs)
+                            for argnum, g in zip(argnums, gs))
+
+    defjvp_argnums(fun, jvp_argnums)
+
+def translate_jvp(jvpfun, fun, argnum):
+    if jvpfun is None:
+        return lambda g, ans, *a, **k: vspace(ans).zeros()
+    elif jvpfun == 'same':
+        return (lambda g, ans, *args, **kwargs:
+                fun(*subval(args, argnum, g), **kwargs))
+    elif callable(jvpfun):
+        return jvpfun
+    else:
+        raise Exception("Bad JVP '{}' for '{}'".format(jvpfun, fun.__name__))
+
+def def_linear(fun):
+    """Flags that a function is linear wrt all args"""
+    defjvp_argnum(fun, lambda argnum, g, ans, args, kwargs:
+                  fun(*subval(args, argnum, g), **kwargs))
+
+# -------------------- vector behavior --------------------
+
+def add_outgrads(prev_g_flagged, g):
+    sparse = type(g) in sparse_object_types
+    if prev_g_flagged:
+        vs = vspace(g)
         prev_g, mutable = prev_g_flagged
         if mutable:
-            return primitive_mut_add(vspace, prev_g, g), True
-        else:
-            prev_g_mutable = primitive_mut_add(vspace, None, prev_g)
-            return primitive_mut_add(vspace, prev_g_mutable, g), True
-
-active_progenitors = set()
-
-class primitive(object):
-    """
-    Wraps a function so that its gradient can be specified and its invocation
-    can be recorded. For examples, see the docs."""
-    def __init__(self, fun):
-        self.fun = fun
-        self.vjps = {}
-        self.zero_vjps = set()
-        self.__name__ = fun.__name__
-        self.__doc__ = fun.__doc__
-
-    def __call__(self, *args, **kwargs):
-        argvals = list(args)
-        progenitors = set()
-        parents = []
-        for argnum, arg in enumerate(args):
-            if isnode(arg):
-                argvals[argnum] = arg.value
-                if argnum in self.zero_vjps: continue
-                parents.append((argnum, arg))
-                progenitors.update(arg.progenitors & active_progenitors)
-
-        result_value = self.fun(*argvals, **kwargs)
-        if progenitors:
-            return new_node(result_value, (self, args, kwargs, parents), progenitors)
-        else:
-            return result_value
-
-    def vjp(self, argnum, outgrad, ans, vs, gvs, args, kwargs):
-        try:
-            return self.vjps[argnum](outgrad, ans, vs, gvs, *args, **kwargs)
-        except KeyError:
-            if self.vjps == {}:
-                errstr = "Gradient of {0} not yet implemented."
+            if sparse:
+                return sparse_add(vs, prev_g, g), True
             else:
-                errstr = "Gradient of {0} w.r.t. arg number {1} not yet implemented."
-            raise NotImplementedError(errstr.format(self.fun.__name__, argnum))
-
-    def defvjp(self, vjpmaker, argnum=0):
-        vjpmaker.__name__ = "VJP_{}_of_{}".format(argnum, self.__name__)
-        self.vjps[argnum] = vjpmaker
-
-    def defvjps(self, vjpmaker, argnums):
-        for argnum in argnums:
-            self.defvjp(partial(vjpmaker, argnum), argnum)
-
-    def defvjp_is_zero(self, argnums=(0,)):
-        for argnum in argnums:
-            self.zero_vjps.add(argnum)
-
-    def __repr__(self):
-        return self.__name__
-
-    if sys.version_info >= (3,):
-        def __get__(self, obj, objtype):
-            return types.MethodType(self, obj)
+                return vs.mut_add(prev_g, g), True
+        else:
+            if sparse:
+                prev_g_mutable = vs.mut_add(None, prev_g)
+                return sparse_add(vs, prev_g_mutable, g), True
+            else:
+                return vs.add(prev_g, g), True
     else:
-        def __get__(self, obj, objtype):
-            return types.MethodType(self, obj, objtype)
+        if sparse:
+            return sparse_add(vspace(g), None, g), True
+        else:
+            return g, False
 
-    def defgrad(self, gradfun, argnum=0):
-        warnings.warn(defgrad_deprecated)
-        def vjp(g, ans, vs, gvs, *args, **kwargs):
-            return gradfun(ans, *args, **kwargs)(g)
-        self.defvjp(vjp, argnum)
-
-class nograd_primitive(primitive):
-    def __call__(self, *args, **kwargs):
-        argvals = map(getval, args)
-        return self.fun(*argvals, **kwargs)
+def sum_outgrads(gs):
+    return reduce(add_outgrads, gs, None)[0]
 
 @primitive
-def primitive_mut_add(vspace, x_prev, x_new):
-    if x_prev is None:
-        x_prev = vspace.zeros()
-    if type(x_new) == SparseObject:
-        return x_new.mut_add(x_prev)
-    else:
-        return vspace.mut_add(x_prev, x_new)
-primitive_mut_add.vjp = lambda argnum, g, *args : g
-
-def new_progenitor(x):
-    if isnode(x):
-        node = new_node(x.value, (identity, (x,), {}, [(0, x)]), x.progenitors)
-    else:
-        node = new_node(x,       (identity, (x,), {}, []      ), set())
-    node.progenitors = node.progenitors | {node}
-    return node
-
-@primitive
-def identity(x) : return x
-identity.defvjp(lambda g, ans, vs, gvs, x : g)
-
-class Node(object):
-    __slots__ = ['value', 'recipe', 'progenitors', 'vspace']
-
-    def __init__(self, value, recipe, progenitors):
-        self.value = value
-        self.recipe = recipe
-        self.progenitors = progenitors
-        self.vspace = vspace(value)
-
-    def __bool__(self):
-        return bool(self.value)
-
-    __nonzero__ = __bool__
-
-    def __str__(self):
-        return "Autograd {0} with value {1} and {2} progenitors(s)".format(
-            type(self).__name__, str(self.value), len(self.progenitors))
-
-def toposort(end_node, start_node):
-    def relevant_parents(node):
-        return [parent for _, parent in node.recipe[3] if start_node in parent.progenitors]
-
-    child_counts = {}
-    stack = [end_node]
-    while stack:
-        node = stack.pop()
-        if node in child_counts:
-            child_counts[node] += 1
-        else:
-            child_counts[node] = 1
-            stack.extend(relevant_parents(node))
-
-    childless_nodes = [end_node]
-    while childless_nodes:
-        node = childless_nodes.pop()
-        yield node
-        for parent in relevant_parents(node):
-            if child_counts[parent] == 1:
-                childless_nodes.append(parent)
-            else:
-                child_counts[parent] -= 1
+def sparse_add(vs, x_prev, x_new):
+    x_prev = x_prev if x_prev is not None else vs.zeros()
+    return x_new.mut_add(x_prev)
 
 class VSpace(object):
     __slots__ = []
+    mappings = {}
     iscomplex = False
-    def __init__(self, value):
-        pass
+    def __init__(self, value): pass
 
-    def zeros(self):
-        assert False
+    def zeros(self):          assert False, repr(self)
+    def ones(self):           assert False, repr(self)
+    def standard_basis(self): assert False, repr(self)
+    def randn(self):          assert False, repr(self)
 
-    def ones(self):
-        assert False
+    @primitive
+    def mut_add(self, x_prev, x_new):
+      x_prev = x_prev if x_prev is not None else self.zeros()
+      return self._mut_add(x_prev, x_new)
+    @primitive
+    def add(self, x_prev, x_new):     return self._add(x_prev, x_new)
+    @primitive
+    def scalar_mul(self, x, a):       return self._scalar_mul(x, a)
+    @primitive
+    def inner_prod(self, x, y):       return self._inner_prod(x, y)
+    @primitive
+    def covector(self, x):            return self._covector(x)
 
-    def standard_basis(self):
-        assert False
-
-    def mut_add(self, x, y):
-        x += y
-        return x
+    def _add(self, x, y):        return x + y
+    def _mut_add(self, x, y):    x += y; return x
+    def _scalar_mul(self, x, a): return x * a
+    def _inner_prod(self, x, y): assert False
+    def _covector(self, x):      return x
 
     def __eq__(self, other):
         return type(self) == type(other) and self.__dict__ == other.__dict__
@@ -216,63 +213,56 @@ class VSpace(object):
     def __repr__(self):
         return "{}_{}".format(type(self).__name__, self.__dict__)
 
-    def examples(self):
-        # Used for testing only
-        N = self.size
-        unit_vect = np.zeros(N)
-        unit_vect[npr.randint(N)] = 1.0
-        unit_vect = self.unflatten(unit_vect)
-        rand_vect = npr.randn(N)
-        return [self.zeros(), self.unflatten(npr.randn(N))]
-
-def vspace_flatten(value, covector=False):
-    return vspace(value).flatten(value, covector)
-
-node_type_mappings = {}
-vspace_mappings = {}
-node_types = set()
-def register_node(node_type, value_type):
-    node_types.add(node_type)
-    node_type_mappings[value_type] = node_type
-    node_type_mappings[node_type] = node_type
-
-def register_vspace(vspace_maker, value_type):
-    vspace_mappings[value_type] = vspace_maker
-
-def new_node(value, recipe, progenitors):
-    try:
-        return node_type_mappings[type(value)](value, recipe, progenitors)
-    except KeyError:
-        raise TypeError("Can't differentiate w.r.t. type {}".format(type(value)))
+    @classmethod
+    def register(cls, value_type, vspace_maker=None):
+        if vspace_maker:
+            VSpace.mappings[value_type] = vspace_maker
+        else:
+            VSpace.mappings[value_type] = cls
 
 def vspace(value):
     try:
-        return vspace_mappings[type(value)](value)
+        return VSpace.mappings[type(value)](value)
     except KeyError:
-        if isnode(value):
-            return value.vspace
+        if isbox(value):
+            return vspace(getval(value))
         else:
-            raise TypeError("Can't find vspace for type {}".format(type(value)))
+            raise TypeError("Can't find vector space for value {} of type {}. "
+                            "Valid types are {}".format(
+                                value, type(value), VSpace.mappings.keys()))
 
+class SparseBox(Box):
+    __slots__ = []
 class SparseObject(object):
     __slots__ = ['vs', 'mut_add']
     def __init__(self, vs, mut_add):
         self.vs = vs
         self.mut_add = mut_add
+VSpace.register(SparseObject, lambda x : x.vs)
+SparseBox.register(SparseObject)
+sparse_object_types = {SparseObject, SparseBox}
 
-register_vspace(lambda x : x.vs, SparseObject)
-register_node(Node, SparseObject)
+# -------------------- core reverse mode grads --------------------
 
-def assert_vspace_match(x, expected_vspace, fun):
-    assert expected_vspace == vspace(x), \
-        "\nGrad of {} returned unexpected vector space" \
-        "\nVector space is {}" \
-        "\nExpected        {}".format(fun, vspace(x), expected_vspace)
+identity_vjp = lambda argnums, *args: lambda g: g
+defvjp(sparse_add, None, identity_vjp, identity_vjp)
+defvjp(func(VSpace.add    ), None, identity_vjp, identity_vjp)
+defvjp(func(VSpace.mut_add), None, identity_vjp, identity_vjp)
+defvjp(func(VSpace.inner_prod), None,
+       lambda ans, vs, x, y: lambda g:  vs.covector(vs.scalar_mul(y, g)),
+       lambda ans, vs, x, y: lambda g:  vs.covector(vs.scalar_mul(x, g)))
+defvjp(func(VSpace.covector), None,
+          lambda ans, vs, x: lambda g: vs.covector(g))
+defvjp(func(VSpace.scalar_mul), None,
+       lambda ans, vs, x, a: lambda g: vs.covector(vs.scalar_mul(vs.covector(g), a)),
+       lambda ans, vs, x, a: lambda g: vs.inner_prod(g, vs.covector(x)))
 
-isnode = lambda x: type(x) in node_types
-getval = lambda x: x.value if isnode(x) else x
+# -------------------- core forward mode grads --------------------
 
-def unbox_if_possible(node):
-    if isnode(node) and not active_progenitors.intersection(node.progenitors):
-        return node.value
-    return node
+identity_jvp = lambda g, *args, **kwargs: g
+defjvp(sparse_add, None, identity_jvp, identity_jvp)
+defjvp(func(VSpace.mut_add), None, identity_jvp, identity_jvp)
+defjvp(func(VSpace.add),     None, identity_jvp, identity_jvp)
+defjvp(func(VSpace.scalar_mul), None, 'same', 'same')
+defjvp(func(VSpace.inner_prod), None, 'same', 'same')
+defjvp(func(VSpace.covector),   None, 'same')
