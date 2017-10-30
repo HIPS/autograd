@@ -1,6 +1,7 @@
 #!/bin/bash
 
 PYTHONPATH=".:$PYTHONPATH"
+trap 'kill -INT -$pid && exit 1' INT
 
 working=()
 failing=()
@@ -9,7 +10,8 @@ examples=$(find examples -name '*.py' -not -name '__init__.py')
 
 echo 'Running all the examples...'
 for f in $examples; do
-    timeout 15s python2 $f > /dev/null 2>&1
+    timeout 15s python2 $f > /dev/null 2>&1 & pid=$!
+    wait $pid
     status=$?
     if [ $status -eq 0 -o $status -eq 124 ]; then
         echo $f "seems to work"
