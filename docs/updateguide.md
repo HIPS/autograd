@@ -54,6 +54,7 @@ from autograd.extend import primitive, defvjp  # defvjp is now a function
 # primitives look the same as before
 @primitive
 def func(x, y, z):
+    assert z != 0
     return x * y**2
 
 # but we call defvjp differently
