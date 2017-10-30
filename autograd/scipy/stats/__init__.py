@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 from . import norm
+from . import poisson
 from . import t
 
 # Try block needed in case the user has an

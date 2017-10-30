@@ -56,6 +56,10 @@ def test_pow():
         arg1 = make_positive(arg1)
         check_grads(fun)(arg1, arg2)
 
+def test_hypot():
+    for arg1, arg2 in arg_pairs():
+        check_grads(np.hypot, modes=['rev'])(arg1, arg2)
+
 def test_comparison_grads():
     compare_funs = [lambda x, y : np.sum(x <  x) + 0.0,
                     lambda x, y : np.sum(x <= y) + 0.0,
