@@ -1,40 +1,28 @@
 from __future__ import absolute_import
-from __future__ import print_function
 import types
-from future.utils import iteritems
 import warnings
-from autograd.core import primitive, nograd_primitive, getval
+from autograd.extend import primitive, notrace_primitive
 import numpy as _np
+import autograd.builtins as builtins
+from numpy.core.einsumfunc import _parse_einsum_input
 
-def unbox_args(f):
-    def wrapped(*args, **kwargs):
-        unboxed_args = map(getval, args)
-        unboxed_kwargs = {key: getval(kwargs[key]) for key in kwargs}
-        return f(*unboxed_args, **unboxed_kwargs)
-    return wrapped
+notrace_functions = [
+    _np.ndim, _np.shape, _np.iscomplexobj, _np.result_type, _np.zeros_like,
+    _np.ones_like,
+]
 
 def wrap_intdtype(cls):
     class IntdtypeSubclass(cls):
-        __new__ = unbox_args(cls.__new__)
+        __new__ = notrace_primitive(cls.__new__)
     return IntdtypeSubclass
-
-nograd_functions = [
-    _np.floor, _np.ceil, _np.round, _np.rint, _np.around, _np.fix, _np.trunc, _np.all,
-    _np.any, _np.argmax, _np.argmin, _np.argpartition, _np.argsort, _np.argwhere, _np.nonzero,
-    _np.flatnonzero, _np.count_nonzero, _np.searchsorted, _np.sign, _np.ndim, _np.shape,
-    _np.floor_divide, _np.logical_and, _np.logical_or, _np.logical_not, _np.logical_xor,
-    _np.isfinite, _np.isinf, _np.isnan, _np.isneginf, _np.isposinf, _np.allclose, _np.isclose,
-    _np.array_equal, _np.array_equiv, _np.greater, _np.greater_equal, _np.less, _np.less_equal,
-    _np.equal, _np.not_equal, _np.iscomplexobj, _np.iscomplex, _np.size, _np.isscalar,
-    _np.isreal, _np.zeros_like, _np.ones_like]
 
 def wrap_namespace(old, new):
     unchanged_types = {float, int, type(None), type}
     int_types = {_np.int, _np.int8, _np.int16, _np.int32, _np.int64, _np.integer}
     function_types = {_np.ufunc, types.FunctionType, types.BuiltinFunctionType}
-    for name, obj in iteritems(old):
-        if obj in nograd_functions:
-            new[name] = nograd_primitive(obj)
+    for name, obj in old.items():
+        if obj in notrace_functions:
+            new[name] = notrace_primitive(obj)
         elif type(obj) in function_types:
             new[name] = primitive(obj)
         elif type(obj) is type and obj in int_types:
@@ -67,28 +55,28 @@ def column_stack(tup):
     return concatenate(arrays, 1)
 
 def array(A, *args, **kwargs):
-    if isinstance(A, _np.ndarray):
-        return _np.array(A, *args, **kwargs)
+    t = builtins.type(A)
+    if t in (list, tuple):
+        return array_from_args(args, kwargs, *map(array, A))
     else:
-        raw_array = _np.array(A, *args, **kwargs)
-        return wrap_if_nodes_inside(raw_array)
+        return _array_from_scalar_or_array(args, kwargs, A)
 
-def wrap_if_nodes_inside(raw_array, slow_op_name=None):
+def wrap_if_boxes_inside(raw_array, slow_op_name=None):
     if raw_array.dtype is _np.dtype('O'):
         if slow_op_name:
             warnings.warn("{0} is slow for array inputs. "
                           "np.concatenate() is faster.".format(slow_op_name))
-        return array_from_args(*raw_array.ravel()).reshape(raw_array.shape)
+        return array_from_args((), {}, *raw_array.ravel()).reshape(raw_array.shape)
     else:
         return raw_array
 
 @primitive
-def array_from_args(*args):
-    return _np.array(args)
+def _array_from_scalar_or_array(array_args, array_kwargs, scalar):
+    return _np.array(scalar, *array_args, **array_kwargs)
 
-def array_from_args_gradmaker(argnum, g, ans, vs, gvs, args, kwargs):
-    return g[argnum]
-array_from_args.vjp = array_from_args_gradmaker
+@primitive
+def array_from_args(array_args, array_kwargs, *args):
+    return _np.array(args, *array_args, **array_kwargs)
 
 def select(condlist, choicelist, default=0):
     raw_array = _np.select(list(condlist), list(choicelist), default=default)
@@ -119,11 +107,36 @@ def stack(arrays, axis=0):
 class r_class():
     def __getitem__(self, args):
         raw_array = _np.r_[args]
-        return wrap_if_nodes_inside(raw_array, slow_op_name = "r_")
+        return wrap_if_boxes_inside(raw_array, slow_op_name = "r_")
 r_ = r_class()
 
 class c_class():
     def __getitem__(self, args):
         raw_array = _np.c_[args]
-        return wrap_if_nodes_inside(raw_array, slow_op_name = "c_")
+        return wrap_if_boxes_inside(raw_array, slow_op_name = "c_")
 c_ = c_class()
+
+# ----- misc -----
+@primitive
+def make_diagonal(D, offset=0, axis1=0, axis2=1):
+    # Numpy doesn't offer a complement to np.diagonal: a function to create new
+    # diagonal arrays with extra dimensions. We need such a function for the
+    # gradient of np.diagonal and it's also quite handy to have. So here it is.
+    if not (offset==0 and axis1==-1 and axis2==-2):
+        raise NotImplementedError("Currently make_diagonal only supports offset=0, axis1=-1, axis2=-2")
+
+    # We use a trick: calling np.diagonal returns a view on the original array,
+    # so we can modify it in-place. (only valid for numpy version >= 1.10.)
+    new_array = _np.zeros(D.shape + (D.shape[-1],))
+    new_array_diag = _np.diagonal(new_array, offset=0, axis1=-1, axis2=-2)
+    new_array_diag.flags.writeable = True
+    new_array_diag[:] = D
+    return new_array
+
+@notrace_primitive
+def metadata(A):
+    return _np.shape(A), _np.ndim(A), _np.result_type(A), _np.iscomplexobj(A)
+
+@notrace_primitive
+def parse_einsum_input(*args):
+    return _parse_einsum_input(args)
