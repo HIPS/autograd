@@ -79,11 +79,12 @@ def plot_matrix(ax, mat, t, render=False):
 if __name__ == '__main__':
 
     simulation_timesteps = 100
+    basepath = os.path.dirname(__file__)
 
     print("Loading initial and target states...")
-    init_smoke = imread('init_smoke.png')[:,:,0]
+    init_smoke = imread(os.path.join(basepath, 'init_smoke.png'))[:,:,0]
     #target = imread('peace.png')[::2,::2,3]
-    target = imread('skull.png')[::2,::2]
+    target = imread(os.path.join(basepath, 'skull.png'))[::2,::2]
     rows, cols = target.shape
 
     init_dx_and_dy = np.zeros((2, rows, cols)).ravel()
