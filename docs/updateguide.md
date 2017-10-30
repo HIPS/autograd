@@ -21,6 +21,8 @@ Here are some of the most important reasons for this update:
 1. Forward-mode now comes built-in with `make_jvp`.
 1. There's now a clear extension API in `autograd.extend`, so you can write
    custom VJPs or wrap your own numerical libraries.
+1. Autograd is now backend-independent, making it easy to wrap other numerical
+   libraries.
 1. Autograd's tracing functionality is now parameterized and easily reusable,
    and we added some new tracers for
    [computation graph visualization](https://github.com/hips/autograd/blob/master/examples/dot_graph.py)
