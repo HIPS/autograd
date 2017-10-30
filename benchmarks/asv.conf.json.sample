@@ -1,0 +1,14 @@
+{
+    "version": 1,
+    "project": "autograd",
+    "project_url": "http://github.com/hips/autograd",
+    "branches": ["master"],
+    "dvcs": "git",
+    "environment_type": "virtualenv",
+    "install_timeout": 600,
+    "repo"          : "..",
+    "benchmark_dir" : ".",
+    "env_dir"       : "../.asv/env",
+    "results_dir"   : "../.asv/results",
+    "html_dir"      : "../.asv/html",
+}

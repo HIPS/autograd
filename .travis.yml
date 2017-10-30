@@ -23,4 +23,6 @@ before_install:
 install:
   - conda install --yes python=$TRAVIS_PYTHON_VERSION $DEPS
   - pip install -v .
-script: nosetests tests
+script: 
+  - cd tests      # Run from inside tests directory to make sure Autograd has
+  - nosetests     # fully installed.

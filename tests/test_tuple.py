@@ -2,8 +2,8 @@ from __future__ import absolute_import
 from __future__ import print_function
 import autograd.numpy as np
 import autograd.numpy.random as npr
-from autograd.util import *
-from autograd.container_types import make_tuple
+from autograd.test_util import check_grads
+from autograd import tuple as ag_tuple, isinstance as ag_isinstance
 from autograd import grad
 npr.seed(1)
 
@@ -42,15 +42,23 @@ def test_grads():
                    npr.randn(4, 3),
                    npr.randn(2, 4))
 
-    check_grads(fun, input_tuple)
-    check_grads(d_fun, input_tuple)
+    check_grads(fun)(input_tuple)
+    check_grads(d_fun)(input_tuple)
 
 def test_nested_higher_order():
     def outer_fun(x):
         def inner_fun(y):
             return y[0] * y[1]
-        return np.sum(np.sin(np.array(grad(inner_fun)(make_tuple(x,x)))))
+        return np.sum(np.sin(np.array(grad(inner_fun)(ag_tuple((x,x))))))
 
-    check_grads(outer_fun, 5.)
-    check_grads(grad(outer_fun), 10.)
-    check_grads(grad(grad(outer_fun)), 10.)
+    check_grads(outer_fun)(5.)
+    check_grads(grad(outer_fun))(10.)
+    check_grads(grad(grad(outer_fun)))(10.)
+
+def test_isinstance():
+    def fun(x):
+        assert ag_isinstance(x, tuple)
+        assert ag_isinstance(x, ag_tuple)
+        return x[0]
+    fun((1., 2., 3.))
+    grad(fun)((1., 2., 3.))

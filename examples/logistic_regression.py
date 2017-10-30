@@ -1,9 +1,9 @@
 from __future__ import absolute_import
 from __future__ import print_function
+from builtins import range
 import autograd.numpy as np
 from autograd import grad
-from autograd.util import quick_grad_check
-from builtins import range
+from autograd.test_util import check_grads
 
 def sigmoid(x):
     return 0.5*(np.tanh(x) + 1)
@@ -30,7 +30,7 @@ training_gradient_fun = grad(training_loss)
 
 # Check the gradients numerically, just to be safe.
 weights = np.array([0.0, 0.0, 0.0])
-quick_grad_check(training_loss, weights)
+check_grads(training_loss, modes=['rev'])(weights)
 
 # Optimize weights using gradient descent.
 print("Initial loss:", training_loss(weights))

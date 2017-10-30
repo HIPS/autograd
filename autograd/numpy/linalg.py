@@ -3,6 +3,7 @@ from functools import partial
 import numpy.linalg as npla
 from .numpy_wrapper import wrap_namespace
 from . import numpy_wrapper as anp
+from autograd.extend import defvjp
 
 wrap_namespace(npla.__dict__, globals())
 
@@ -18,24 +19,24 @@ def T(x): return anp.swapaxes(x, -1, -2)
 # add two dimensions to the end of x
 def add2d(x): return anp.reshape(x, anp.shape(x) + (1, 1))
 
-det.defvjp(lambda g, ans, vs, gvs, x: add2d(g) * add2d(ans) * T(inv(x)))
-slogdet.defvjp(lambda g, ans, vs, gvs, x: add2d(g[1]) * T(inv(x)))
+defvjp(det, lambda ans, x: lambda g: add2d(g) * add2d(ans) * T(inv(x)))
+defvjp(slogdet, lambda ans, x: lambda g: add2d(g[1]) * T(inv(x)))
 
-def grad_inv(g, ans, vs, gvs, x):
+def grad_inv(ans, x):
     dot = anp.dot if ans.ndim == 2 else partial(anp.einsum, '...ij,...jk->...ik')
-    return -dot(dot(T(ans), g), T(ans))
-inv.defvjp(grad_inv)
+    return lambda g: -dot(dot(T(ans), g), T(ans))
+defvjp(inv, grad_inv)
 
-def grad_solve(argnum, g, ans, vs, gvs, a, b):
+def grad_solve(argnum, ans, a, b):
     updim = lambda x: x if x.ndim == a.ndim else x[...,None]
     dot = anp.dot if a.ndim == 2 else partial(anp.einsum, '...ij,...jk->...ik')
     if argnum == 0:
-        return -dot(updim(solve(T(a), g)), T(updim(ans)))
+        return lambda g: -dot(updim(solve(T(a), g)), T(updim(ans)))
     else:
-        return solve(T(a), g)
-solve.defvjps(grad_solve, [0, 1])
+        return lambda g: solve(T(a), g)
+defvjp(solve, partial(grad_solve, 0), partial(grad_solve, 1))
 
-def grad_norm(g, ans, vs, gvs, x, ord=None, axis=None):
+def grad_norm(ans, x, ord=None, axis=None):
     def check_implemented():
         matrix_norm = (x.ndim == 2 and axis is None) or isinstance(axis, tuple)
 
@@ -74,35 +75,39 @@ def grad_norm(g, ans, vs, gvs, x, ord=None, axis=None):
                                             a.ndim-1, col_axis)
 
     check_implemented()
-    if ord is None or ord == 2 or ord is 'fro':
-        return expand(g / ans) * x
-    elif ord == 'nuc':
-        dot = anp.dot if x.ndim == 2 else partial(anp.einsum, '...ij,...jk->...ik')
-        x_rolled = roll(x)
-        u, s, vt = svd(x_rolled, full_matrices=False)
-        uvt_rolled = dot(u, vt)
-        # Roll the matrix axes back to their correct positions
-        uvt = unroll(uvt_rolled)
-        g = expand(g)
-        return g * uvt
-    else:
-        # see https://en.wikipedia.org/wiki/Norm_(mathematics)#p-norm
-        return expand(g / ans**(ord-1)) * x * anp.abs(x)**(ord-2)
-norm.defvjp(grad_norm)
+    def vjp(g):
+        if ord is None or ord == 2 or ord is 'fro':
+            return expand(g / ans) * x
+        elif ord == 'nuc':
+            dot = anp.dot if x.ndim == 2 else partial(anp.einsum, '...ij,...jk->...ik')
+            x_rolled = roll(x)
+            u, s, vt = svd(x_rolled, full_matrices=False)
+            uvt_rolled = dot(u, vt)
+            # Roll the matrix axes back to their correct positions
+            uvt = unroll(uvt_rolled)
+            g = expand(g)
+            return g * uvt
+        else:
+            # see https://en.wikipedia.org/wiki/Norm_(mathematics)#p-norm
+            return expand(g / ans**(ord-1)) * x * anp.abs(x)**(ord-2)
+    return vjp
+defvjp(norm, grad_norm)
 
-def grad_eigh(g, ans, vs, gvs, x, UPLO='L'):
+def grad_eigh(ans, x, UPLO='L'):
     """Gradient for eigenvalues and vectors of a symmetric matrix."""
     N = x.shape[-1]
     w, v = ans              # Eigenvalues, eigenvectors.
     dot = anp.dot if x.ndim == 2 else partial(anp.einsum, '...ij,...jk->...ik')
-    wg, vg = g          # Gradient w.r.t. eigenvalues, eigenvectors.
-    w_repeated = anp.repeat(w[..., anp.newaxis], N, axis=-1)
-    off_diag = anp.ones((N, N)) - anp.eye(N)
-    F = off_diag / (T(w_repeated) - w_repeated + anp.eye(N))
-    return dot(v * wg[..., anp.newaxis, :] + dot(v, F * dot(T(v), vg)), T(v))
-eigh.defvjp(grad_eigh)
+    def vjp(g):
+        wg, vg = g          # Gradient w.r.t. eigenvalues, eigenvectors.
+        w_repeated = anp.repeat(w[..., anp.newaxis], N, axis=-1)
+        off_diag = anp.ones((N, N)) - anp.eye(N)
+        F = off_diag / (T(w_repeated) - w_repeated + anp.eye(N))
+        return dot(v * wg[..., anp.newaxis, :] + dot(v, F * dot(T(v), vg)), T(v))
+    return vjp
+defvjp(eigh, grad_eigh)
 
-def grad_cholesky(g, L, vs, gvs, A):
+def grad_cholesky(L, A):
     # Based on Iain Murray's note http://arxiv.org/abs/1602.07527
     # scipy's dtrtrs wrapper, solve_triangular, doesn't broadcast along leading
     # dimensions, so we just call a generic LU solve instead of directly using
@@ -113,95 +118,100 @@ def grad_cholesky(g, L, vs, gvs, A):
         # X -> L^{-T} X L^{-1}
         return solve_trans(L, T(solve_trans(L, T(X))))
 
-    S = conjugate_solve(L, phi(anp.einsum('...ki,...kj->...ij', L, g)))
-    return (S + T(S)) / 2.
-cholesky.defvjp(grad_cholesky)
+    def vjp(g):
+        S = conjugate_solve(L, phi(anp.einsum('...ki,...kj->...ij', L, g)))
+        return (S + T(S)) / 2.
+    return vjp
+defvjp(cholesky, grad_cholesky)
 
-def grad_svd(g, usv, vs, gvs, a, full_matrices=True, compute_uv=True):
-    dot = anp.dot if a.ndim == 2 else partial(anp.einsum, '...ij,...jk->...ik')
+def grad_svd(usv_, a, full_matrices=True, compute_uv=True):
+    def vjp(g):
+        usv = usv_
+        dot = anp.dot if a.ndim == 2 else partial(anp.einsum, '...ij,...jk->...ik')
 
-    if not compute_uv:
-        s = usv
+        if not compute_uv:
+            s = usv
 
-        # Need U and V so do the whole svd anyway...
-        usv = svd(a, full_matrices=False)
-        u = usv[0]
-        v = T(usv[2])
+            # Need U and V so do the whole svd anyway...
+            usv = svd(a, full_matrices=False)
+            u = usv[0]
+            v = T(usv[2])
 
-        return dot(u * g[..., anp.newaxis, :], T(v))
+            return dot(u * g[..., anp.newaxis, :], T(v))
 
-    elif full_matrices:
-        raise NotImplementedError(
-            "Gradient of svd not implemented for full_matrices=True")
+        elif full_matrices:
+            raise NotImplementedError(
+                "Gradient of svd not implemented for full_matrices=True")
 
-    else:
-        u = usv[0]
-        s = usv[1]
-        v = T(usv[2])
+        else:
+            u = usv[0]
+            s = usv[1]
+            v = T(usv[2])
 
-        m, n = a.shape[-2:]
+            m, n = a.shape[-2:]
 
-        k = anp.min((m, n))
-        # broadcastable identity array with shape (1, 1, ..., 1, k, k)
-        i = anp.reshape(anp.eye(k), anp.concatenate((anp.ones(a.ndim - 2, dtype=int), (k, k))))
+            k = anp.min((m, n))
+            # broadcastable identity array with shape (1, 1, ..., 1, k, k)
+            i = anp.reshape(anp.eye(k), anp.concatenate((anp.ones(a.ndim - 2, dtype=int), (k, k))))
 
-        f = 1 / (s[..., anp.newaxis, :]**2 - s[..., :, anp.newaxis]**2 + i)
+            f = 1 / (s[..., anp.newaxis, :]**2 - s[..., :, anp.newaxis]**2 + i)
 
-        if m < n:
-            gu = g[0]
-            gs = g[1]
-            gv = T(g[2])
+            if m < n:
+                gu = g[0]
+                gs = g[1]
+                gv = T(g[2])
 
-            utgu = dot(T(u), gu)
-            vtgv = dot(T(v), gv)
+                utgu = dot(T(u), gu)
+                vtgv = dot(T(v), gv)
 
-            i_minus_vvt = (anp.reshape(anp.eye(n), anp.concatenate((anp.ones(a.ndim - 2, dtype=int), (n, n)))) -
-                            dot(v, T(v)))
+                i_minus_vvt = (anp.reshape(anp.eye(n), anp.concatenate((anp.ones(a.ndim - 2, dtype=int), (n, n)))) -
+                                dot(v, T(v)))
 
-            t1 = (f * (utgu - T(utgu))) * s[..., anp.newaxis, :]
-            t1 = t1 + i * gs[..., :, anp.newaxis]
-            t1 = t1 + s[..., :, anp.newaxis] * (f * (vtgv - T(vtgv)))
+                t1 = (f * (utgu - T(utgu))) * s[..., anp.newaxis, :]
+                t1 = t1 + i * gs[..., :, anp.newaxis]
+                t1 = t1 + s[..., :, anp.newaxis] * (f * (vtgv - T(vtgv)))
 
-            t1 = dot(dot(u, t1), T(v))
+                t1 = dot(dot(u, t1), T(v))
 
-            t1 = t1 + dot(dot(u / s[..., anp.newaxis, :], T(gv)), i_minus_vvt)
+                t1 = t1 + dot(dot(u / s[..., anp.newaxis, :], T(gv)), i_minus_vvt)
 
-            return t1
+                return t1
 
-        elif m == n:
-            gu = g[0]
-            gs = g[1]
-            gv = T(g[2])
+            elif m == n:
+                gu = g[0]
+                gs = g[1]
+                gv = T(g[2])
 
-            utgu = dot(T(u), gu)
-            vtgv = dot(T(v), gv)
+                utgu = dot(T(u), gu)
+                vtgv = dot(T(v), gv)
 
-            t1 = (f * (utgu - T(utgu))) * s[..., anp.newaxis, :]
-            t1 = t1 + i * gs[..., :, anp.newaxis]
-            t1 = t1 + s[..., :, anp.newaxis] * (f * (vtgv - T(vtgv)))
+                t1 = (f * (utgu - T(utgu))) * s[..., anp.newaxis, :]
+                t1 = t1 + i * gs[..., :, anp.newaxis]
+                t1 = t1 + s[..., :, anp.newaxis] * (f * (vtgv - T(vtgv)))
 
-            t1 = dot(dot(u, t1), T(v))
+                t1 = dot(dot(u, t1), T(v))
 
-            return t1
+                return t1
 
-        elif m > n:
-            gu = g[0]
-            gs = g[1]
-            gv = T(g[2])
+            elif m > n:
+                gu = g[0]
+                gs = g[1]
+                gv = T(g[2])
 
-            utgu = dot(T(u), gu)
-            vtgv = dot(T(v), gv)
+                utgu = dot(T(u), gu)
+                vtgv = dot(T(v), gv)
 
-            i_minus_uut = (anp.reshape(anp.eye(m), anp.concatenate((anp.ones(a.ndim - 2, dtype=int), (m, m)))) -
-                            dot(u, T(u)))
+                i_minus_uut = (anp.reshape(anp.eye(m), anp.concatenate((anp.ones(a.ndim - 2, dtype=int), (m, m)))) -
+                                dot(u, T(u)))
 
-            t1 = (f * (utgu - T(utgu))) * s[..., anp.newaxis, :]
-            t1 = t1 + i * gs[..., :, anp.newaxis]
-            t1 = t1 + s[..., :, anp.newaxis] * (f * (vtgv - T(vtgv)))
+                t1 = (f * (utgu - T(utgu))) * s[..., anp.newaxis, :]
+                t1 = t1 + i * gs[..., :, anp.newaxis]
+                t1 = t1 + s[..., :, anp.newaxis] * (f * (vtgv - T(vtgv)))
 
-            t1 = dot(dot(u, t1), T(v))
+                t1 = dot(dot(u, t1), T(v))
 
-            t1 = t1 + dot(i_minus_uut, dot(gu, T(v) / s[..., :, anp.newaxis]))
+                t1 = t1 + dot(i_minus_uut, dot(gu, T(v) / s[..., :, anp.newaxis]))
 
-            return t1
-svd.defvjp(grad_svd)
+                return t1
+    return vjp
+defvjp(svd, grad_svd)
