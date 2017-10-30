@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from builtins import range
 import warnings
 from functools import partial
 import autograd.numpy as np
@@ -8,7 +9,6 @@ from autograd.tracer import primitive, isbox
 from autograd import (grad, elementwise_grad, jacobian, value_and_grad,
                       hessian_tensor_product, hessian, make_hvp,
                       tensor_jacobian_product, checkpoint, make_jvp, make_ggnvp)
-from builtins import range
 
 npr.seed(1)
 

@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
+from builtins import range
 import autograd.numpy as np
 from autograd import value_and_grad
 
@@ -9,7 +10,6 @@ from scipy.misc import imread
 import matplotlib
 import matplotlib.pyplot as plt
 import os
-from builtins import range
 
 # Fluid simulation code based on
 # "Real-Time Fluid Dynamics for Games" by Jos Stam

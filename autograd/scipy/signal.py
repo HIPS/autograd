@@ -1,11 +1,11 @@
 from __future__ import absolute_import
+from builtins import range, zip
 from functools import partial
 import autograd.numpy as np
 import numpy as npo # original numpy
 from autograd.extend import primitive, defvjp
 
 from numpy.lib.stride_tricks import as_strided
-from builtins import range, zip
 from future.utils import iteritems
 
 @primitive

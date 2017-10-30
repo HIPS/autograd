@@ -1,8 +1,8 @@
 from __future__ import absolute_import
+from builtins import range
 from functools import partial
 import numpy as npo
 from scipy.signal import convolve as sp_convolve
-from builtins import range
 
 import autograd.numpy as np
 import autograd.numpy.random as npr

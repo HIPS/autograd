@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from builtins import range
 import itertools
 import autograd.numpy as np
 import autograd.numpy.random as npr
@@ -6,7 +7,6 @@ import autograd.scipy.linalg as spla
 from autograd.test_util import check_grads
 from autograd import tuple
 from autograd import grad
-from builtins import range
 from functools import partial
 
 npr.seed(1)
