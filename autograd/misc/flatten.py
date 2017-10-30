@@ -26,3 +26,8 @@ def _flatten(value):
 def _concatenate(lst):
     lst = list(lst)
     return np.concatenate(lst) if lst else np.array([])
+
+def flatten_func(func, example):
+    _ex, unflatten = flatten(example)
+    _func = lambda _x, *args: flatten(func(unflatten(_x), *args))[0]
+    return _func, unflatten, _ex
