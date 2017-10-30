@@ -12,7 +12,7 @@ like [Theano](http://deeplearning.net/software/theano/) or
 [TensorFlow](https://github.com/tensorflow/tensorflow).
 
 We want to provide a third way: just write down the loss function using a
-standard numerical library like numpy, and Autograd will give you its gradient.
+standard numerical library like Numpy, and Autograd will give you its gradient.
 
 ## How to use Autograd
 
@@ -112,14 +112,14 @@ For example, given L(x) = F(G(H(x))), the chain rule says that its gradient is d
 If we evaluate this product from left-to-right: (dF/dG * dG/dH) * dH/dx)), the reverse order as the computations themselves were performed, this is called reverse-mode differentiation.
 
 Compared to finite differences or forward-mode, reverse-mode differentiation is by far the more practical method for differentiating functions that take in a large vector and output a single number.
-In the machine learning community, reverse-mode differentiation is known as 'backpropagation', since the gradients propogate backwards through the function.
+In the machine learning community, reverse-mode differentiation is known as 'backpropagation', since the gradients propagate backwards through the function.
 It's particularly nice since you don't need to instantiate the intermediate Jacobian matrices explicitly, and instead only rely on applying a sequence of matrix-free vector-Jacobian product functions (VJPs).
 Because Autograd supports higher derivatives as well, Hessian-vector products (a form of second-derivative) are also available and efficient to compute.
 
 ### How can you support ifs, while loops and recursion?
 
-Some autodiff packages (such as [Theano](http://deeplearning.net/software/theano/) or [Kayak](http://github.com/HIPS/Kayak/)) work by having you specify a graph of the computation that your function performs, including all the control flow (such as if and for loops), and then turn that graph into another one that computes gradients.
-This has some benefits (such as allowing compile-time optimizations), but it requires you to express control flow in a limited mini-language that those packages know how to handle.  (For example, the `scan()` operation in Theano.)
+Some autodiff packages (such as [TensorFlow](https://github.com/tensorflow/tensorflow)) work by having you specify a graph of the computation that your function performs, including all the control flow (such as if and for loops), and then turn that graph into another one that computes gradients.
+This has some benefits (such as allowing compile-time optimizations), but it requires you to express control flow in a limited mini-language that those packages know how to handle.  (For example, the `tf.while` and `tf.cond` operations in TensorFlow.)
 
 In contrast, Autograd doesn't have to know about any ifs, branches, loops or recursion that were used to decide which operations were called.  To compute the gradient of a particular input, one only needs to know which continuous transforms were applied to that particular input, not which other transforms might have been applied.
 Since Autograd keeps track of the relevant operations on each function call separately, it's not a problem that all the Python control flow operations are invisible to Autograd.  In fact, it greatly simplifies the implementation.
@@ -204,7 +204,7 @@ def logsumexp(x):
     return max_x + np.log(np.sum(np.exp(x - max_x)))
 ```
 
-`@primitive` tells autograd not to look inside the function, but instead to treat it as a black box whose gradient can be specified later.
+`@primitive` tells Autograd not to look inside the function, but instead to treat it as a black box whose gradient can be specified later.
 Functions with this decorator can contain anything that Python knows how to execute, including calls to other languages.
 
 Next, we write a function that specifies the gradient of the primitive `logsumexp`:
@@ -218,9 +218,9 @@ def logsumexp_vjp(ans, x):
 `logsumexp_vjp` returns a vector-Jacobian product (VJP) operator, which is a function that right-multiplies its argument `g` by the Jacobian matrix of `logsumexp` (without explicitly forming the matrix's coefficients).
 `g` will be the gradient of the final objective with respect to `ans` (the output of `logsumexp`).
 The calculation can depend on both the input (`x`) and the output (`ans`) of the original function.
-If you want to be able to take higher-order derivatives, then the code inside the VJP function must be itself differentiable by Autograd, which usually just means you write it in terms of other primitives which themselves have VJPs (like numpy functions).
+If you want to be able to take higher-order derivatives, then the code inside the VJP function must be itself differentiable by Autograd, which usually just means you write it in terms of other primitives which themselves have VJPs (like Numpy functions).
 
-The final step is to tell autograd about `logsumexp`'s vector-Jacobian product function:
+The final step is to tell Autograd about `logsumexp`'s vector-Jacobian product function:
 ```python
 defvjp(logsumexp, logsumexp_vjp)
 ```
@@ -302,4 +302,4 @@ Autograd was written by
 [Matthew Johnson](http://www.mit.edu/~mattjj/)
 and we're actively developing it. Please
 feel free to submit any bugs or feature requests. We'd also love to hear about
-your experiences with autograd in general. Drop us an email!
+your experiences with Autograd in general. Drop us an email!
