@@ -106,6 +106,15 @@ def test_make_dict():
         return ag_dict([('a', x)], b=x)
     check_grads(fun, modes=['rev'])(1.0)
 
+    def fun(x):
+        return ag_dict({'a': x})
+    check_grads(fun, modes=['rev'])(1.0)
+
+    # check some other forms of the constructor
+    ag_dict()
+    ag_dict(())
+    ag_dict({})
+
 def test_isinstance():
     def fun(x):
         assert ag_isinstance(x, dict)
