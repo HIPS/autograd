@@ -108,8 +108,7 @@ class dict(with_metaclass(DictMeta, dict_)):
     def __new__(cls, *args, **kwargs):
         result = dict_(*args, **kwargs)
         if result:
-            keys, vals = zip(*result.items())
-            return _make_dict(keys, list(vals))
+            return _make_dict(result.keys(), list(result.values()))
         return result
 
 @primitive
