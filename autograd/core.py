@@ -266,3 +266,49 @@ defjvp(func(VSpace.add),     None, identity_jvp, identity_jvp)
 defjvp(func(VSpace.scalar_mul), None, 'same', 'same')
 defjvp(func(VSpace.inner_prod), None, 'same', 'same')
 defjvp(func(VSpace.covector),   None, 'same')
+
+
+# -------------------- deprecation warnings -----------------------
+
+import warnings
+deprecated_defvjp_message = '''
+The {} method is deprecated. See the update guide:
+https://github.com/HIPS/autograd/blob/master/docs/updateguide.md'''
+
+def deprecated_defvjp(primitive_fun):
+    deprecation_msg = deprecated_defvjp_message.format('defvjp')
+    def defvjp_unstaged(vjpmaker, argnum=0):
+        warnings.warn(deprecation_msg)
+        def staged_vjpmaker(ans, *args, **kwargs):
+            def vjp(g):
+                vs, gvs = vspace(args[argnum]), vspace(g)
+                return vjpmaker(g, ans, vs, gvs, *args, **kwargs)
+            return vjp
+        defvjp(primitive_fun, staged_vjpmaker, argnums=[argnum])
+    return defvjp_unstaged
+
+def deprecated_defvjp_is_zero(primitive_fun):
+    deprecation_msg = deprecated_defvjp_message.format('defvjp_is_zero')
+    def defvjp_is_zero(argnums=(0,)):
+        warnings.warn(deprecation_msg)
+        nones = [None] * len(argnums)
+        defvjp(primitive_fun, *nones, argnums=argnums)
+    return defvjp_is_zero
+
+def deprecated_defgrad(primitive_fun):
+    deprecation_msg = deprecated_defvjp_message.format('defgrad')
+    def defgrad(gradfun, argnum=0):
+        warnings.warn(deprecation_msg)
+        defvjp(primitive_fun, gradfun, argnums=[argnum])
+    return defgrad
+
+primitive_ = primitive
+
+def primitive_with_deprecation_warnings(f_raw):
+    f_wrapped = primitive_(f_raw)
+    f_wrapped.defvjp = deprecated_defvjp(f_wrapped)
+    f_wrapped.defvjp_is_zero = deprecated_defvjp_is_zero(f_wrapped)
+    f_wrapped.defgrad = deprecated_defgrad(f_wrapped)
+    return f_wrapped
+
+primitive = primitive_with_deprecation_warnings

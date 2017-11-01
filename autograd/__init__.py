@@ -5,3 +5,4 @@ from .differential_operators import (
     jacobian, tensor_jacobian_product, vector_jacobian_product, grad_named,
     checkpoint, make_hvp, make_jvp, make_ggnvp, deriv, holomorphic_grad)
 from .builtins import isinstance, type, tuple, list, dict
+from autograd.core import primitive_with_deprecation_warnings as primitive
