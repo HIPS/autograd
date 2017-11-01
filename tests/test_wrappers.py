@@ -213,6 +213,11 @@ def test_deprecated_defvjp_is_zero_wrapper():
     with warnings.catch_warnings(record=True) as w:
         check_grads(fun, modes=['rev'])(mat1, mat2)
 
+def test_deprecated_quick_grad_check_wrapper():
+    from autograd.util import quick_grad_check
+    with warnings.catch_warnings(record=True) as w:
+        quick_grad_check(lambda x, y: x**2 + y, 1., (2.,))
+
 def test_partial():
     def f(x, y):
         return x
