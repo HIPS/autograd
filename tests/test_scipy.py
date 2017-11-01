@@ -153,6 +153,10 @@ else:
                     axes=[([1],[1])], dot_axes=[([0],[2]), ([0],[0])], mode=['full', 'valid'])
 
     ### Special ###
+    def test_beta():    combo_check(special.beta,    [0,1])([R(4)**2 + 1.1], [R(4)**2 + 1.1])
+    def test_betainc(): combo_check(special.betainc, [2])  ([R(4)**2 + 1.1], [R(4)**2 + 1.1], [U(0., 1., 4)])
+    def test_betaln():  combo_check(special.betaln,  [0,1])([R(4)**2 + 1.1], [R(4)**2 + 1.1])
+
     def test_gammainc():  combo_check(special.gammainc,  [1])([1], R(4)**2 + 1.3)
     def test_gammaincc(): combo_check(special.gammaincc, [1])([1], R(4)**2 + 1.3)
     def test_polygamma(): combo_check(special.polygamma, [1])([0], R(4)**2 + 1.3)
