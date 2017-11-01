@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
+import warnings
 import autograd.numpy as np
 import autograd.numpy.random as npr
 import itertools as it
@@ -68,11 +69,12 @@ def test_comparison_grads():
                     lambda x, y : np.sum(x == y) + 0.0,
                     lambda x, y : np.sum(x != y) + 0.0]
 
-    for arg1, arg2 in arg_pairs():
-        zeros = (arg1 + arg2) * 0 # get correct shape
-        for fun in compare_funs:
-            assert np.all(grad(fun)(arg1, arg2) == zeros)
-            assert np.all(grad(fun, argnum=1)(arg1, arg2) == zeros)
+    with warnings.catch_warnings(record=True) as w:
+        for arg1, arg2 in arg_pairs():
+            zeros = (arg1 + arg2) * 0 # get correct shape
+            for fun in compare_funs:
+                assert np.all(grad(fun)(arg1, arg2) == zeros)
+                assert np.all(grad(fun, argnum=1)(arg1, arg2) == zeros)
 
 def test_comparison_values():
     compare_funs = [lambda x, y : np.sum(x <  x) + 0.0,

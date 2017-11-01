@@ -165,20 +165,53 @@ def test_tensor_jacobian_product():
     J = jacobian(fun)(a)
     check_equivalent(np.tensordot(V, J, axes=np.ndim(V)), tensor_jacobian_product(fun)(a, V))
 
-# def test_deprecated_defgrad_wrapper():
-#     @primitive
-#     def new_mul(x, y):
-#         return x * y
-#     with warnings.catch_warnings(record=True) as w:
-#         new_mul.defgrad(lambda ans, x, y : lambda g : y * g)
-#         new_mul.defgrad(lambda ans, x, y : lambda g : x * g, argnum=1)
+def test_deprecated_defgrad_wrapper():
+    from autograd.core import primitive
+    @primitive
+    def new_mul(x, y):
+        return x * y
+    with warnings.catch_warnings(record=True) as w:
+        new_mul.defgrad(lambda ans, x, y : lambda g : y * g)
+        new_mul.defgrad(lambda ans, x, y : lambda g : x * g, argnum=1)
 
-#     def fun(x, y):
-#         return new_mul(x, y)
+    def fun(x, y):
+        return new_mul(x, y)
 
-#     mat1 = npr.randn(2, 2)
-#     mat2 = npr.randn(2, 2)
-#     check_grads(fun)(mat1, mat2)
+    mat1 = npr.randn(2, 2)
+    mat2 = npr.randn(2, 2)
+    check_grads(fun, modes=['rev'])(mat1, mat2)
+
+def test_deprecated_defvjp_wrapper():
+    from autograd.core import primitive
+    @primitive
+    def new_mul(x, y):
+        return x * y
+    with warnings.catch_warnings(record=True) as w:
+        new_mul.defvjp(lambda g, ans, vs, gvs, x, y : y * g)
+        new_mul.defvjp(lambda g, ans, vs, gvs, x, y : x * g, argnum=1)
+
+    def fun(x, y):
+        return new_mul(x, y)
+
+    mat1 = npr.randn(2, 2)
+    mat2 = npr.randn(2, 2)
+    check_grads(fun, modes=['rev'])(mat1, mat2)
+
+def test_deprecated_defvjp_is_zero_wrapper():
+    from autograd.core import primitive
+    @primitive
+    def new_mul(x, y):
+        return 0 * x * y
+    with warnings.catch_warnings(record=True) as w:
+        new_mul.defvjp_is_zero([0, 1])
+
+    def fun(x, y):
+        return new_mul(x, y)
+
+    mat1 = npr.randn(2, 2)
+    mat2 = npr.randn(2, 2)
+    with warnings.catch_warnings(record=True) as w:
+        check_grads(fun, modes=['rev'])(mat1, mat2)
 
 def test_partial():
     def f(x, y):
