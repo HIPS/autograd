@@ -42,6 +42,7 @@ else:
         return symmetrized_fun
 
     ### Stats ###
+    def test_gamma_cdf():    combo_check(stats.gamma.cdf,    [0])  ([R(4)**2 + 1.1], [R(4)**2 + 1.1])
     def test_gamma_pdf():    combo_check(stats.gamma.pdf,    [0,1])([R(4)**2 + 1.1], [R(4)**2 + 1.1])
     def test_gamma_logpdf(): combo_check(stats.gamma.logpdf, [0,1])([R(4)**2 + 1.1], [R(4)**2 + 1.1])
 
