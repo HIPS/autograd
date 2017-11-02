@@ -46,6 +46,10 @@ else:
     def test_chi2_cdf():    combo_check(stats.chi2.cdf,    [0])([R(4)**2 + 1.1], [1, 2, 3])
     def test_chi2_logpdf(): combo_check(stats.chi2.logpdf, [0])([R(4)**2 + 1.1], [1, 2, 3])
 
+    def test_beta_cdf():    combo_check(stats.beta.cdf,    [0])    ([U(0., 1., 4)], [R(4)**2 + 1.1], [R(4)**2 + 1.1])
+    def test_beta_pdf():    combo_check(stats.beta.pdf,    [0,1,2])([U(0., 1., 4)], [R(4)**2 + 1.1], [R(4)**2 + 1.1])
+    def test_beta_logpdf(): combo_check(stats.beta.logpdf, [0,1,2])([U(0., 1., 4)], [R(4)**2 + 1.1], [R(4)**2 + 1.1])
+
     def test_norm_pdf():    combo_check(stats.norm.pdf,    [0,1,2])([R(4)], [R(4)], [R(4)**2 + 1.1])
     def test_norm_cdf():    combo_check(stats.norm.cdf,    [0,1,2])([R(4)], [R(4)], [R(4)**2 + 1.1])
     def test_norm_logpdf(): combo_check(stats.norm.logpdf, [0,1,2])([R(4)], [R(4)], [R(4)**2 + 1.1])
@@ -157,6 +161,10 @@ else:
                     axes=[([1],[1])], dot_axes=[([0],[2]), ([0],[0])], mode=['full', 'valid'])
 
     ### Special ###
+    def test_beta():    combo_check(special.beta,    [0,1])([R(4)**2 + 1.1], [R(4)**2 + 1.1])
+    def test_betainc(): combo_check(special.betainc, [2])  ([R(4)**2 + 1.1], [R(4)**2 + 1.1], [U(0., 1., 4)])
+    def test_betaln():  combo_check(special.betaln,  [0,1])([R(4)**2 + 1.1], [R(4)**2 + 1.1])
+
     def test_gammainc():  combo_check(special.gammainc,  [1])([1], R(4)**2 + 1.3)
     def test_gammaincc(): combo_check(special.gammaincc, [1])([1], R(4)**2 + 1.3)
     def test_polygamma(): combo_check(special.polygamma, [1])([0], R(4)**2 + 1.3)
