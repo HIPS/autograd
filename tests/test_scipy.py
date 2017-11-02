@@ -16,7 +16,9 @@ else:
     import autograd.scipy.stats as stats
     import autograd.scipy.stats.multivariate_normal as mvn
     import autograd.scipy.special as special
+    import autograd.scipy.linalg as spla
     from autograd import grad
+    from scipy.signal import convolve as sp_convolve
 
     from autograd.test_util import combo_check, check_grads
     from numpy_utils import  unary_ufunc_check
@@ -30,6 +32,15 @@ else:
     unary_ufunc_check = partial(unary_ufunc_check, modes=['rev'])
     check_grads = partial(check_grads, modes=['rev'])
 
+    def symmetrize_matrix_arg(fun, argnum):
+        def T(X): return np.swapaxes(X, -1, -2) if np.ndim(X) > 1 else X
+        def symmetrize(X): return 0.5 * (X + T(X))
+        def symmetrized_fun(*args, **kwargs):
+            args = list(args)
+            args[argnum] = symmetrize(args[argnum])
+            return fun(*args, **kwargs)
+        return symmetrized_fun
+
     ### Stats ###
     def test_norm_pdf():    combo_check(stats.norm.pdf,    [0,1,2], modes=['fwd', 'rev'])([R(4)], [R(4)], [R(4)**2 + 1.1])
     def test_norm_cdf():    combo_check(stats.norm.cdf,    [0,1,2], modes=['fwd', 'rev'])([R(4)], [R(4)], [R(4)**2 + 1.1])
@@ -40,6 +51,14 @@ else:
     def test_norm_cdf_broadcast():    combo_check(stats.norm.cdf,    [0,1,2], modes=['fwd', 'rev'])([R(4,3)], [R(1,3)], [R(4,1)**2 + 1.1])
     def test_norm_logpdf_broadcast(): combo_check(stats.norm.logpdf, [0,1,2], modes=['fwd', 'rev'])([R(4,3)], [R(1,3)], [R(4,1)**2 + 1.1])
     def test_norm_logcdf_broadcast(): combo_check(stats.norm.logcdf, [0,1,2], modes=['fwd', 'rev'])([R(4,3)], [R(1,3)], [R(4,1)**2 + 1.1])
+
+    def test_poisson_cdf():    combo_check(stats.poisson.cdf,    [1])([np.round(R(4)**2)], [R(4)**2 + 1.1])
+    def test_poisson_logpmf(): combo_check(stats.poisson.logpmf, [1])([np.round(R(4)**2)], [R(4)**2 + 1.1])
+    def test_poisson_pmf():    combo_check(stats.poisson.pmf,    [1])([np.round(R(4)**2)], [R(4)**2 + 1.1])
+
+    def test_poisson_cdf_broadcast():    combo_check(stats.poisson.cdf,    [1])([np.round(R(4, 3)**2)], [R(4, 1)**2 + 1.1])
+    def test_poisson_logpmf_broadcast(): combo_check(stats.poisson.logpmf, [1])([np.round(R(4, 3)**2)], [R(4, 1)**2 + 1.1])
+    def test_poisson_pmf_broadcast():    combo_check(stats.poisson.pmf,    [1])([np.round(R(4, 3)**2)], [R(4, 1)**2 + 1.1])
 
     def test_t_pdf():    combo_check(stats.t.pdf,    [0,1,2,3], modes=['fwd', 'rev'])([R(4)], [R(4)**2 + 2.1], [R(4)], [R(4)**2 + 2.1])
     def test_t_cdf():    combo_check(stats.t.cdf,    [0,2], modes=['fwd', 'rev'])(    [R(4)], [R(4)**2 + 2.1], [R(4)], [R(4)**2 + 2.1])
@@ -52,9 +71,9 @@ else:
     def test_t_logcdf_broadcast(): combo_check(stats.t.logcdf, [0,2], modes=['fwd', 'rev'])(    [R(4,3)], [R(1,3)**2 + 2.1], [R(4,3)], [R(4,1)**2 + 2.1])
 
     def make_psd(mat): return np.dot(mat.T, mat) + np.eye(mat.shape[0])
-    def test_mvn_pdf():    combo_check(mvn.pdf, [0, 1, 2])([R(4)], [R(4)], [make_psd(R(4, 4))], allow_singular=[False])
-    def test_mvn_logpdf(): combo_check(mvn.logpdf, [0, 1, 2])([R(4)], [R(4)], [make_psd(R(4, 4))], allow_singular=[False])
-    def test_mvn_entropy():combo_check(mvn.entropy,[0, 1])(           [R(4)], [make_psd(R(4, 4))])
+    def test_mvn_pdf():    combo_check(symmetrize_matrix_arg(mvn.pdf, 2), [0, 1, 2], [R(4)], [R(4)], [make_psd(R(4, 4))], allow_singular=[False])
+    def test_mvn_logpdf(): combo_check(symmetrize_matrix_arg(mvn.logpdf, 2), [0, 1, 2], [R(4)], [R(4)], [make_psd(R(4, 4))], allow_singular=[False])
+    def test_mvn_entropy():combo_check(mvn.entropy,[0, 1],            [R(4)], [make_psd(R(4, 4))])
 
     C = np.zeros((4, 4))
     C[0, 0] = C[1, 1] = 1
@@ -62,8 +81,8 @@ else:
     def test_mvn_pdf_sing_cov(): combo_check(mvn.pdf, [0, 1])([np.concatenate((R(2), np.zeros(2)))], [np.concatenate((R(2), np.zeros(2)))], [C], [True])
     def test_mvn_logpdf_sing_cov(): combo_check(mvn.logpdf, [0, 1])([np.concatenate((R(2), np.zeros(2)))], [np.concatenate((R(2), np.zeros(2)))], [C], [True])
 
-    def test_mvn_pdf_broadcast():    combo_check(mvn.pdf, [0, 1, 2])([R(5, 4)], [R(4)], [make_psd(R(4, 4))])
-    def test_mvn_logpdf_broadcast(): combo_check(mvn.logpdf, [0, 1, 2])([R(5, 4)], [R(4)], [make_psd(R(4, 4))])
+    def test_mvn_pdf_broadcast():    combo_check(symmetrize_matrix_arg(mvn.pdf, 2), [0, 1, 2], [R(5, 4)], [R(4)], [make_psd(R(4, 4))])
+    def test_mvn_logpdf_broadcast(): combo_check(symmetrize_matrix_arg(mvn.logpdf, 2), [0, 1, 2], [R(5, 4)], [R(4)], [make_psd(R(4, 4))])
 
     alpha = npr.random(4)**2 + 1.2
     x = stats.dirichlet.rvs(alpha, size=1)[0,:]
@@ -111,7 +130,7 @@ else:
             assert npo.allclose(ag_convolve(A_2543, A_24232, axes=([1, 2],[2, 4]),
                                             dot_axes=([0, 3], [0, 3]), mode=mode)[2],
                                 sum([sum([sp_convolve(A_2543[i, :, :, j],
-                                                     A_24232[i, 2, :, j, :], mode)
+                                                      A_24232[i, 2, :, j, :], mode)
                                           for i in range(2)]) for j in range(3)]))
 
     def test_convolve():
@@ -134,6 +153,8 @@ else:
                     axes=[([1],[1])], dot_axes=[([0],[2]), ([0],[0])], mode=['full', 'valid'])
 
     ### Special ###
+    def test_gammainc():  combo_check(special.gammainc,  [1])([1], R(4)**2 + 1.3)
+    def test_gammaincc(): combo_check(special.gammaincc, [1])([1], R(4)**2 + 1.3)
     def test_polygamma(): combo_check(special.polygamma, [1], modes=['fwd', 'rev'])([0], R(4)**2 + 1.3)
     def test_jn():        combo_check(special.jn,        [1], modes=['fwd', 'rev'])([2], R(4)**2 + 1.3)
     def test_yn():        combo_check(special.yn,        [1], modes=['fwd', 'rev'])([2], R(4)**2 + 1.3)
@@ -158,5 +179,5 @@ else:
     def test_erfinv():  unary_ufunc_check(special.erfinv, lims=[-0.95, 0.95], test_complex=False, modes=['fwd', 'rev'])
     def test_erfcinv(): unary_ufunc_check(special.erfcinv, lims=[0.05, 1.95], test_complex=False, modes=['fwd', 'rev'])
 
-    def test_logit(): unary_ufunc_check(special.logit, lims=[0.05, 0.95],  test_complex=False, modes=['fwd', 'rev']) 
+    def test_logit(): unary_ufunc_check(special.logit, lims=[0.05, 0.95],  test_complex=False, modes=['fwd', 'rev'])
     def test_expit(): unary_ufunc_check(special.expit, lims=[-4.05, 4.95], test_complex=False, modes=['fwd', 'rev'])
