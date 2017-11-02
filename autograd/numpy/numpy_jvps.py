@@ -4,7 +4,7 @@ from .numpy_vjps import (untake, balanced_eq, replace_zero, dot_adjoint_0, dot_a
                          tensordot_adjoint_0, tensordot_adjoint_1, nograd_functions)
 from autograd.extend import (defjvp, defjvp_argnum, def_linear, vspace, JVPNode,
                              register_notrace, defvjp)
-from .util import def_ufunc_jps
+from .util import def_ufunc_jps, def_ufunc_jps_inv_pair
 
 from ..util import func
 from .numpy_boxes import ArrayBox
@@ -36,27 +36,13 @@ def_ufunc_jps(anp.abs,
 def_ufunc_jps(anp.fabs,          (lambda ans, x: anp.sign(x), 'mul'))  # fabs doesn't take complex numbers.
 def_ufunc_jps(anp.absolute,      (lambda ans, x: anp.conj(x) / ans,         'cmul'))
 def_ufunc_jps(anp.reciprocal,    (lambda ans, x: -ans**2,                   'mul' ))
-def_ufunc_jps(anp.exp,           (lambda ans, x: ans,                       'mul' ))
-def_ufunc_jps(anp.exp2,          (lambda ans, x: ans * anp.log(2),          'mul' ))
-def_ufunc_jps(anp.expm1,         (lambda ans, x: ans + 1,                   'mul' ))
-def_ufunc_jps(anp.log,           (lambda ans, x: x,                         'div' ))
-def_ufunc_jps(anp.log2,          (lambda ans, x: x * anp.log(2),            'div' ))
 def_ufunc_jps(anp.log10,         (lambda ans, x: x * anp.log(10),           'div' ))
-def_ufunc_jps(anp.log1p,         (lambda ans, x: x + 1,                     'div' ))
 def_ufunc_jps(anp.sin,           (lambda ans, x: anp.cos(x),                'mul' ))
 def_ufunc_jps(anp.cos,           (lambda ans, x: -anp.sin(x),               'mul' ))
-def_ufunc_jps(anp.tan,           (lambda ans, x: 1 + ans**2,                'mul' ))
 def_ufunc_jps(anp.arcsin,        (lambda ans, x: anp.sqrt(1 - x**2),        'div' ))
 def_ufunc_jps(anp.arccos,        (lambda ans, x:-anp.sqrt(1 - x**2),        'div' ))
-def_ufunc_jps(anp.arctan,        (lambda ans, x: 1 + x**2,                  'div' ))
-def_ufunc_jps(anp.sinh,          (lambda ans, x: anp.cosh(x),               'mul' ))
 def_ufunc_jps(anp.cosh,          (lambda ans, x: anp.sinh(x),               'mul' ))
-def_ufunc_jps(anp.tanh,          (lambda ans, x: 1 - ans**2,                'mul' ))
-def_ufunc_jps(anp.arcsinh,       (lambda ans, x: anp.sqrt(x**2 + 1),        'div' ))
 def_ufunc_jps(anp.arccosh,       (lambda ans, x: anp.sqrt(x**2 - 1),        'div' ))
-def_ufunc_jps(anp.arctanh,       (lambda ans, x: 1 - x**2,                  'div' ))
-def_ufunc_jps(anp.square,        (lambda ans, x: 2 * x,                     'mul' ))
-def_ufunc_jps(anp.sqrt,          (lambda ans, x: 2 * ans,                   'div' ))
 def_ufunc_jps(anp.sinc,          (lambda ans, x: (anp.cos(anp.pi*x)-ans)/x, 'mul' ))
 def_ufunc_jps(anp.real_if_close, 'cid')
 def_ufunc_jps(anp.real,          'cid')
@@ -64,6 +50,14 @@ def_ufunc_jps(anp.imag,          (lambda ans, x: -1j, 'cmul'))
 def_ufunc_jps(anp.conj,          'same')
 def_ufunc_jps(anp.conjugate,     'same')
 def_ufunc_jps(anp.angle,         (lambda ans, x: anp.conj(x * 1j)/anp.abs(x)**2, 'cmul'))
+
+def_ufunc_jps_inv_pair(anp.exp,    anp.log,     lambda ans, x: ans)
+def_ufunc_jps_inv_pair(anp.exp2,   anp.log2,    lambda ans, x: ans * anp.log(2))
+def_ufunc_jps_inv_pair(anp.expm1,  anp.log1p,   lambda ans, x: ans + 1)
+def_ufunc_jps_inv_pair(anp.tan,    anp.arctan,  lambda ans, x: 1 + ans**2)
+def_ufunc_jps_inv_pair(anp.tanh,   anp.arctanh, lambda ans, x: 1 - ans**2)
+def_ufunc_jps_inv_pair(anp.sinh,   anp.arcsinh, lambda ans, x: anp.sqrt(ans**2 + 1))
+def_ufunc_jps_inv_pair(anp.square, anp.sqrt,    lambda ans, x: 2 * x)
 
 # ----- Binary ufuncs -----
 def_ufunc_jps(anp.add,         'id', 'id')

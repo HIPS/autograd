@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 import scipy.special
 import autograd.numpy as np
-from autograd.numpy.util import def_ufunc_jps
+from autograd.numpy.util import def_ufunc_jps, def_ufunc_jps_inv_pair
 from autograd.extend import primitive, defvjp
 from autograd.numpy.util import unbroadcast_f
 
@@ -70,20 +70,16 @@ inv_root_pi = 0.56418958354775627928
 erf = primitive(scipy.special.erf)
 erfc = primitive(scipy.special.erfc)
 
-def_ufunc_jps(erf,  (lambda ans, x:  2.*inv_root_pi*np.exp(-x**2), 'mul'))
-def_ufunc_jps(erfc, (lambda ans, x: -2.*inv_root_pi*np.exp(-x**2), 'mul'))
-
 ### Inverse error function ###
 root_pi = 1.7724538509055159
 erfinv = primitive(scipy.special.erfinv)
 erfcinv = primitive(scipy.special.erfcinv)
 
-def_ufunc_jps(erfinv,  (lambda ans, x:  root_pi / 2 * np.exp(erfinv(x)**2 ), 'mul'))
-def_ufunc_jps(erfcinv, (lambda ans, x: -root_pi / 2 * np.exp(erfcinv(x)**2), 'mul'))
+def_ufunc_jps_inv_pair(erf,  erfinv,  lambda ans, x: 2.*inv_root_pi*np.exp(-x**2))
+def_ufunc_jps_inv_pair(erfc, erfcinv, lambda ans, x: -2.*inv_root_pi*np.exp(-x**2))
 
 ### Logit and Expit ###
 logit = primitive(scipy.special.logit)
 expit = primitive(scipy.special.expit)
 
-def_ufunc_jps(logit, (lambda ans, x:  x   * (1 - x  ), 'div'))
-def_ufunc_jps(expit, (lambda ans, x:  ans * (1 - ans), 'mul'))
+def_ufunc_jps_inv_pair(expit, logit, lambda ans, x:  ans * (1 - ans))

@@ -165,3 +165,11 @@ def def_ufunc_jps(ufunc, *derivs_ops):
         def_unary_ufunc_jps(ufunc, derivs_ops[0])
     elif len(derivs_ops) > 1:
         def_nary_ufunc_jps(ufunc, derivs_ops)
+
+def def_ufunc_jps_inv_pair(ufunc, ufunc_inv, deriv):
+    """
+    Define the derivatives for an inverse pair of unary ufuncs. deriv must be
+    the derivative of the first ufunc.
+    """
+    def_ufunc_jps(ufunc, (deriv, 'mul'))
+    def_ufunc_jps(ufunc_inv, (lambda ans, x: deriv(x, ans), 'div'))
