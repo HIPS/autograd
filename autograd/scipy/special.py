@@ -30,11 +30,10 @@ def_ufunc_jps(multigammaln, (lambda ans, a, d:
 
 def make_gammainc_vjp_arg1(sign):
     def gammainc_vjp_arg1(ans, a, x):
-        coeffs = sign * np.exp(-x) * np.power(x, a - 1) / gamma(a)
-        return unbroadcast_f(x, lambda g: g * coeffs)
+        return sign * np.exp(-x) * np.power(x, a - 1) / gamma(a)
     return gammainc_vjp_arg1
-defvjp(gammainc, make_gammainc_vjp_arg1(1), argnums=[1])
-defvjp(gammaincc, make_gammainc_vjp_arg1(-1), argnums=[1])
+def_ufunc_jps(gammainc,  None, (make_gammainc_vjp_arg1(1),  'mul'))
+def_ufunc_jps(gammaincc, None, (make_gammainc_vjp_arg1(-1), 'mul'))
 
 ### Bessel functions ###
 j0 = primitive(scipy.special.j0)
