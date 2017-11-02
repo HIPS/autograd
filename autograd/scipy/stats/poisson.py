@@ -3,7 +3,7 @@ from __future__ import absolute_import
 import autograd.numpy as np
 import scipy.stats
 from autograd.extend import primitive, defvjp
-from autograd.numpy.numpy_vjps import unbroadcast_f
+from autograd.numpy.util import unbroadcast_f
 
 cdf = primitive(scipy.stats.poisson.cdf)
 logpmf = primitive(scipy.stats.poisson.logpmf)

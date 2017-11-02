@@ -3,7 +3,7 @@ import scipy.special
 import autograd.numpy as np
 from autograd.numpy.util import def_ufunc_jps
 from autograd.extend import primitive, defvjp
-from autograd.numpy.numpy_vjps import unbroadcast_f
+from autograd.numpy.util import unbroadcast_f
 
 ### Gamma functions ###
 polygamma    = primitive(scipy.special.polygamma)
