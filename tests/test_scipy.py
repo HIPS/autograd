@@ -42,6 +42,10 @@ else:
         return symmetrized_fun
 
     ### Stats ###
+    def test_chi2_pdf():    combo_check(stats.chi2.pdf,    [0])([R(4)**2 + 1.1], [1, 2, 3])
+    def test_chi2_cdf():    combo_check(stats.chi2.cdf,    [0])([R(4)**2 + 1.1], [1, 2, 3])
+    def test_chi2_logpdf(): combo_check(stats.chi2.logpdf, [0])([R(4)**2 + 1.1], [1, 2, 3])
+
     def test_norm_pdf():    combo_check(stats.norm.pdf,    [0,1,2])([R(4)], [R(4)], [R(4)**2 + 1.1])
     def test_norm_cdf():    combo_check(stats.norm.cdf,    [0,1,2])([R(4)], [R(4)], [R(4)**2 + 1.1])
     def test_norm_logpdf(): combo_check(stats.norm.logpdf, [0,1,2])([R(4)], [R(4)], [R(4)**2 + 1.1])
