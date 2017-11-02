@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from . import gamma
 from . import norm
 from . import poisson
 from . import t
