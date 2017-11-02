@@ -3,6 +3,7 @@ import scipy.special
 import autograd.numpy as np
 from autograd.numpy.util import def_ufunc_jps
 from autograd.extend import primitive, defvjp
+from autograd.numpy.numpy_vjps import unbroadcast_f
 
 ### Gamma functions ###
 polygamma    = primitive(scipy.special.polygamma)
@@ -10,6 +11,8 @@ psi          = primitive(scipy.special.psi)        # psi(x) is just polygamma(0,
 digamma      = primitive(scipy.special.digamma)    # digamma is another name for psi.
 gamma        = primitive(scipy.special.gamma)
 gammaln      = primitive(scipy.special.gammaln)
+gammainc     = primitive(scipy.special.gammainc)
+gammaincc    = primitive(scipy.special.gammaincc)
 gammasgn     = primitive(scipy.special.gammasgn)
 rgamma       = primitive(scipy.special.rgamma)
 multigammaln = primitive(scipy.special.multigammaln)
@@ -24,6 +27,14 @@ def_ufunc_jps(rgamma,    (lambda ans, x: psi(x) / -gamma(x), 'mul'))
 def_ufunc_jps(multigammaln, (lambda ans, a, d:
        np.sum(digamma(np.expand_dims(a, -1) - np.arange(d)/2.), -1), 'mul'),
        None)
+
+def make_gammainc_vjp_arg1(sign):
+    def gammainc_vjp_arg1(ans, a, x):
+        coeffs = sign * np.exp(-x) * np.power(x, a - 1) / gamma(a)
+        return unbroadcast_f(x, lambda g: g * coeffs)
+    return gammainc_vjp_arg1
+defvjp(gammainc, make_gammainc_vjp_arg1(1), argnums=[1])
+defvjp(gammaincc, make_gammainc_vjp_arg1(-1), argnums=[1])
 
 ### Bessel functions ###
 j0 = primitive(scipy.special.j0)

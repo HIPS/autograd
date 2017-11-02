@@ -17,31 +17,18 @@ entropy = primitive(scipy.stats.multivariate_normal.entropy)
 # by Mike Giles
 # https://people.maths.ox.ac.uk/gilesm/files/NA-08-01.pdf
 
-def lower_half(mat):
-    # Takes the lower half of the matrix, and half the diagonal.
-    # Necessary since numpy only uses lower half of covariance matrix.
-    if len(mat.shape) == 2:
-        return 0.5 * (np.tril(mat) + np.triu(mat, 1).T)
-    elif len(mat.shape) == 3:
-        return 0.5 * (np.tril(mat) + np.swapaxes(np.triu(mat, 1), 1,2))
-    else:
-        raise ArithmeticError
-
-def generalized_outer_product(mat):
-    if len(mat.shape) == 1:
-        return np.outer(mat, mat)
-    elif len(mat.shape) == 2:
-        return np.einsum('ij,ik->ijk', mat, mat)
-    else:
-        raise ArithmeticError
+def generalized_outer_product(x):
+    if np.ndim(x) == 1:
+        return np.outer(x, x)
+    return np.matmul(x, np.swapaxes(x, -1, -2))
 
 def covgrad(x, mean, cov, allow_singular=False):
     if allow_singular:
         raise NotImplementedError("The multivariate normal pdf is not "
                 "differentiable w.r.t. a singular covariance matix")
-    # I think once we have Cholesky we can make this nicer.
-    solved = np.linalg.solve(cov, (x - mean).T).T
-    return lower_half(np.linalg.inv(cov) - generalized_outer_product(solved))
+    J = np.linalg.inv(cov)
+    solved = np.matmul(J, np.expand_dims(x - mean, -1))
+    return 1./2 * (generalized_outer_product(solved) - J)
 
 def solve(allow_singular):
     if allow_singular:

@@ -6,6 +6,11 @@ import numpy as _np
 import autograd.builtins as builtins
 from numpy.core.einsumfunc import _parse_einsum_input
 
+notrace_functions = [
+    _np.ndim, _np.shape, _np.iscomplexobj, _np.result_type, _np.zeros_like,
+    _np.ones_like,
+]
+
 def wrap_intdtype(cls):
     class IntdtypeSubclass(cls):
         __new__ = notrace_primitive(cls.__new__)
@@ -16,7 +21,9 @@ def wrap_namespace(old, new):
     int_types = {_np.int, _np.int8, _np.int16, _np.int32, _np.int64, _np.integer}
     function_types = {_np.ufunc, types.FunctionType, types.BuiltinFunctionType}
     for name, obj in old.items():
-        if type(obj) in function_types:
+        if obj in notrace_functions:
+            new[name] = notrace_primitive(obj)
+        elif type(obj) in function_types:
             new[name] = primitive(obj)
         elif type(obj) is type and obj in int_types:
             new[name] = wrap_intdtype(obj)

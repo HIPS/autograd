@@ -12,8 +12,8 @@ from autograd import grad, hessian_vector_product
 from scipy.optimize import minimize
 from autograd.scipy.misc import logsumexp
 import autograd.scipy.stats.multivariate_normal as mvn
+from autograd.misc.flatten import flatten_func
 from data import make_pinwheel
-from autograd.misc import flatten_func
 
 
 def init_gmm_params(num_components, D, scale, rs=npr.RandomState(0)):

@@ -94,14 +94,31 @@ def test_items_values_keys():
     check_grads(fun)(input_dict)
     check_grads(d_fun)(input_dict)
 
+def test_get():
+  def fun(d, x):
+    return d.get('item_1', x)**2
+  check_grads(fun, argnum=(0, 1))({'item_1': 3.}, 2.)
+  check_grads(fun, argnum=(0, 1))({'item_2': 4.}, 2.)
+  check_grads(fun, argnum=(0, 1))({}, 2.)
+
 def test_make_dict():
     def fun(x):
         return ag_dict([('a', x)], b=x)
     check_grads(fun, modes=['rev'])(1.0)
 
+    def fun(x):
+        return ag_dict({'a': x})
+    check_grads(fun, modes=['rev'])(1.0)
+
+    # check some other forms of the constructor
+    ag_dict()
+    ag_dict(())
+    ag_dict({})
+
 def test_isinstance():
     def fun(x):
         assert ag_isinstance(x, dict)
+        assert ag_isinstance(x, ag_dict)
         return x['x']
     fun({'x': 1.})
     grad(fun)({'x': 1.})

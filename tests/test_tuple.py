@@ -58,6 +58,7 @@ def test_nested_higher_order():
 def test_isinstance():
     def fun(x):
         assert ag_isinstance(x, tuple)
+        assert ag_isinstance(x, ag_tuple)
         return x[0]
     fun((1., 2., 3.))
     grad(fun)((1., 2., 3.))

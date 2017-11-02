@@ -1,10 +1,10 @@
 from __future__ import absolute_import
 from __future__ import print_function
+from builtins import range
 import itertools as it
 import autograd.numpy.random as npr
 from autograd import grad
 from autograd.test_util import combo_check
-from builtins import range
 import warnings
 
 def stat_check(fun, test_complex=True, **kwargs):

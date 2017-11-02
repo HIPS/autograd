@@ -1,4 +1,5 @@
 import itertools
+from future.utils import with_metaclass
 from .util import subvals
 from .extend import (Box, primitive, notrace_primitive, VSpace, vspace,
                      SparseObject, defvjp, defvjp_argnum, defjvp, defjvp_argnum)
@@ -42,6 +43,7 @@ class DictBox(Box):
     def iteritems(self): return ((k, self[k]) for k in self)
     def iterkeys(self): return iter(self)
     def itervalues(self): return (self[k] for k in self)
+    def get(self, k, d=None): return self[k] if k in self else d
 DictBox.register(dict_)
 
 @primitive
@@ -84,17 +86,30 @@ def fwd_grad_make_sequence(argnum, g, ans, seq_type, *args, **kwargs):
 
 defjvp_argnum(make_sequence, fwd_grad_make_sequence)
 
-class tuple(tuple_):
+
+class TupleMeta(type_):
+    def __instancecheck__(self, instance):
+        return isinstance(instance, tuple_)
+class tuple(with_metaclass(TupleMeta, tuple_)):
     def __new__(cls, xs):
         return make_sequence(tuple_, *xs)
-class list(list_):
+
+class ListMeta(type_):
+    def __instancecheck__(self, instance):
+        return isinstance(instance, list_)
+class list(with_metaclass(ListMeta, list_)):
     def __new__(cls, xs):
         return make_sequence(list_,  *xs)
 
-class dict(dict_):
-    def __new__(cls, args, **kwargs):
-        keys, vals = zip(*itertools.chain(args, kwargs.items()))
-        return _make_dict(keys, list(vals))
+class DictMeta(type_):
+    def __instancecheck__(self, instance):
+        return isinstance(instance, dict_)
+class dict(with_metaclass(DictMeta, dict_)):
+    def __new__(cls, *args, **kwargs):
+        result = dict_(*args, **kwargs)
+        if result:
+            return _make_dict(result.keys(), list(result.values()))
+        return result
 
 @primitive
 def _make_dict(keys, vals):
