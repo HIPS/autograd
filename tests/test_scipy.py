@@ -42,17 +42,17 @@ else:
         return symmetrized_fun
 
     ### Stats ###
-    def test_chi2_pdf():    combo_check(stats.chi2.pdf,    [0])([R(4)**2 + 1.1], [1, 2, 3])
-    def test_chi2_cdf():    combo_check(stats.chi2.cdf,    [0])([R(4)**2 + 1.1], [1, 2, 3])
-    def test_chi2_logpdf(): combo_check(stats.chi2.logpdf, [0])([R(4)**2 + 1.1], [1, 2, 3])
+    def test_chi2_pdf():    combo_check(stats.chi2.pdf,    [0], modes=['fwd', 'rev'])([R(4)**2 + 1.1], [1, 2, 3])
+    def test_chi2_cdf():    combo_check(stats.chi2.cdf,    [0], modes=['fwd', 'rev'])([R(4)**2 + 1.1], [1, 2, 3])
+    def test_chi2_logpdf(): combo_check(stats.chi2.logpdf, [0], modes=['fwd', 'rev'])([R(4)**2 + 1.1], [1, 2, 3])
 
-    def test_beta_cdf():    combo_check(stats.beta.cdf,    [0])    ([U(0., 1., 4)], [R(4)**2 + 1.1], [R(4)**2 + 1.1])
-    def test_beta_pdf():    combo_check(stats.beta.pdf,    [0,1,2])([U(0., 1., 4)], [R(4)**2 + 1.1], [R(4)**2 + 1.1])
-    def test_beta_logpdf(): combo_check(stats.beta.logpdf, [0,1,2])([U(0., 1., 4)], [R(4)**2 + 1.1], [R(4)**2 + 1.1])
+    def test_beta_cdf():    combo_check(stats.beta.cdf,    [0],     modes=['fwd', 'rev'])([U(0., 1., 4)], [R(4)**2 + 1.1], [R(4)**2 + 1.1])
+    def test_beta_pdf():    combo_check(stats.beta.pdf,    [0,1,2], modes=['fwd', 'rev'])([U(0., 1., 4)], [R(4)**2 + 1.1], [R(4)**2 + 1.1])
+    def test_beta_logpdf(): combo_check(stats.beta.logpdf, [0,1,2], modes=['fwd', 'rev'])([U(0., 1., 4)], [R(4)**2 + 1.1], [R(4)**2 + 1.1])
 
-    def test_gamma_cdf():    combo_check(stats.gamma.cdf,    [0])  ([R(4)**2 + 1.1], [R(4)**2 + 1.1])
-    def test_gamma_pdf():    combo_check(stats.gamma.pdf,    [0,1])([R(4)**2 + 1.1], [R(4)**2 + 1.1])
-    def test_gamma_logpdf(): combo_check(stats.gamma.logpdf, [0,1])([R(4)**2 + 1.1], [R(4)**2 + 1.1])
+    def test_gamma_cdf():    combo_check(stats.gamma.cdf,    [0],   modes=['fwd', 'rev'])([R(4)**2 + 1.1], [R(4)**2 + 1.1])
+    def test_gamma_pdf():    combo_check(stats.gamma.pdf,    [0,1], modes=['fwd', 'rev'])([R(4)**2 + 1.1], [R(4)**2 + 1.1])
+    def test_gamma_logpdf(): combo_check(stats.gamma.logpdf, [0,1], modes=['fwd', 'rev'])([R(4)**2 + 1.1], [R(4)**2 + 1.1])
 
     def test_norm_pdf():    combo_check(stats.norm.pdf,    [0,1,2], modes=['fwd', 'rev'])([R(4)], [R(4)], [R(4)**2 + 1.1])
     def test_norm_cdf():    combo_check(stats.norm.cdf,    [0,1,2], modes=['fwd', 'rev'])([R(4)], [R(4)], [R(4)**2 + 1.1])
