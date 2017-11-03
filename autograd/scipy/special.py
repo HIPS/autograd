@@ -10,15 +10,16 @@ beta    = primitive(scipy.special.beta)
 betainc = primitive(scipy.special.betainc)
 betaln  = primitive(scipy.special.betaln)
 
-defvjp(beta,
-       lambda ans, a, b: unbroadcast_f(a, lambda g: g * ans * (psi(a) - psi(a + b))),
-       lambda ans, a, b: unbroadcast_f(b, lambda g: g * ans * (psi(b) - psi(a + b))))
-defvjp(betainc,
-       lambda ans, a, b, x: unbroadcast_f(x, lambda g: g * np.power(x, a - 1) * np.power(1 - x, b - 1) / beta(a, b)),
-       argnums=[2])
-defvjp(betaln,
-       lambda ans, a, b: unbroadcast_f(a, lambda g: g * (psi(a) - psi(a + b))),
-       lambda ans, a, b: unbroadcast_f(b, lambda g: g * (psi(b) - psi(a + b))))
+def_ufunc_jps(beta,
+              (lambda ans, a, b: ans * (psi(a) - psi(a + b)), 'mul'),
+              (lambda ans, a, b: ans * (psi(b) - psi(a + b)), 'mul'))
+def_ufunc_jps(betainc,
+              None,
+              None,
+              (lambda ans, a, b, x: np.power(x, a - 1) * np.power(1 - x, b - 1) / beta(a, b), 'mul'))
+def_ufunc_jps(betaln,
+              (lambda ans, a, b: psi(a) - psi(a + b), 'mul'),
+              (lambda ans, a, b: psi(b) - psi(a + b), 'mul'))
 
 ### Gamma functions ###
 polygamma    = primitive(scipy.special.polygamma)
