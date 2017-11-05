@@ -47,6 +47,7 @@ def primitive(f_raw):
         else:
             return f_raw(*args, **kwargs)
     f_wrapped.fun = f_raw
+    f_wrapped._is_autograd_primitive = True
     return f_wrapped
 
 notrace_primitives = defaultdict(set)
