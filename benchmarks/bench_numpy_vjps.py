@@ -81,3 +81,13 @@ def time_tensordot_1_1():
 def time_tensordot_1_2():
     tensordot_1_2(A, B, G)
 
+A = np.random.randn(200, 200, 5, 4)
+C = np.random.randn(1, 1, 5, 4)
+add_0 = lambda A, B, G: make_vjp(np.add, argnum=0)(A, B)[0](G)
+tanh_0 = lambda A, G: make_vjp(np.tanh, argnum=0)(A)[0](G)
+
+def time_add_0():
+    add_0(A, C, A)
+
+def time_tanh_0():
+    tanh_0(A, A)
