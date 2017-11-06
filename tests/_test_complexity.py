@@ -2,7 +2,7 @@ import time
 import warnings
 from autograd import grad, deriv
 import autograd.numpy as np
-from autograd.container_types import make_list
+from autograd.builtins import list as make_list
 
 def timefunction(f):
     t = time.time()
