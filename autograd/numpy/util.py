@@ -57,11 +57,9 @@ def def_nary_ufunc_jps(ufunc, derivs_ops):
                  lambda argnum: lambda ans, *args:
                      unbroadcast_f(args[argnum], lambda g: ufunc(*subval(args, argnum, g)))),
         'id':   (lambda argnum: lambda g, ans, *args: match_complex(ans, anp.broadcast_to(g, ans.shape)),
-                 lambda argnum: lambda ans, *args:
-                     unbroadcast_f(args[argnum], lambda g: match_complex(args[argnum], g))),
+                 lambda argnum: lambda ans, *args: unbroadcast_f(args[argnum], lambda g: g)),
         'neg':  (lambda argnum: lambda g, ans, *args: match_complex(ans, anp.broadcast_to(-g, ans.shape)),
-                 lambda argnum: lambda ans, *args:
-                     unbroadcast_f(args[argnum], lambda g: match_complex(args[argnum], -g)))
+                 lambda argnum: lambda ans, *args: unbroadcast_f(args[argnum], lambda g: -g))
         }
 
     linops = {
@@ -70,7 +68,7 @@ def def_nary_ufunc_jps(ufunc, derivs_ops):
                      unbroadcast_f(args[argnum], lambda g, d=deriv(ans, *args): g * d)),
         'div':  (lambda argnum, deriv: lambda g, ans, *args: g / deriv(ans, *args),
                  lambda argnum, deriv: lambda ans, *args:
-                 unbroadcast_f(args[argnum], lambda g, d=deriv(ans, *args): g / d))
+                     unbroadcast_f(args[argnum], lambda g, d=deriv(ans, *args): g / d))
         }
 
     def deriv_op_to_jp(idx, argnum, deriv_op):
