@@ -140,3 +140,7 @@ def metadata(A):
 @notrace_primitive
 def parse_einsum_input(*args):
     return _parse_einsum_input(args)
+
+@primitive
+def _astype(A, dtype, order='K', casting='unsafe', subok=True, copy=True):
+  return A.astype(dtype, order, casting, subok, copy)

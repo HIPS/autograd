@@ -137,6 +137,10 @@ defvjp(anp.cross, lambda ans, a, b, axisa=-1, axisb=-1, axisc=-1, axis=None : la
 defvjp(anp.linspace, lambda ans, start, stop, num : lambda g: anp.dot(anp.linspace(1.0, 0.0, num), g),
                      lambda ans, start, stop, num : lambda g: anp.dot(anp.linspace(0.0, 1.0, num), g))
 
+defvjp(anp._astype,
+       lambda ans, A, dtype, order='K', casting='unsafe', subok=True, copy=True:
+       lambda g: anp._astype(g, A.dtype))
+
 # ----- Trickier grads -----
 
 def grad_diff(ans, a, n=1, axis=-1):
