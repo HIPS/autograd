@@ -19,6 +19,7 @@ class ArrayBox(Box):
     dtype = property(lambda self: self._value.dtype)
     T = property(lambda self: anp.transpose(self))
     def __len__(self): return len(self._value)
+    def astype(self, *args, **kwargs): return anp._astype(self, *args, **kwargs)
 
     def __neg__(self): return anp.negative(self)
     def __add__(self, other): return anp.add(     self, other)

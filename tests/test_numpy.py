@@ -676,3 +676,8 @@ def test_linspace():
         check_grads(fun)(1.2, 3.4)
         check_grads(fun)(1.2, -3.4)
         check_grads(fun)(1.2, 1.2)
+
+def test_astype():
+    x = np.arange(3, dtype='float32')
+    def f(x): return np.sum(np.sin(x.astype('float64')))
+    assert grad(f)(x).dtype == np.dtype('float32')

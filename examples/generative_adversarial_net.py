@@ -33,7 +33,9 @@ def batch_normalize(activations):
 def neural_net_predict(params, inputs):
     """Params is a list of (weights, bias) tuples.
        inputs is an (N x D) matrix."""
-    for W, b in params[:-1]:
+    inpW, inpb = params[0]
+    inputs = relu(np.dot(inputs, inpW) + inpb)
+    for W, b in params[1:-1]:
         outputs = batch_normalize(np.dot(inputs, W) + b)
         inputs = relu(outputs)
     outW, outb = params[-1]

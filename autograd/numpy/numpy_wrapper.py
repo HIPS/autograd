@@ -149,3 +149,7 @@ def _broadcast_to_adjoint(x, shape):
         if size == 1:
             x = _np.sum(x, axis=axis, keepdims=True)
     return x
+
+@primitive
+def _astype(A, dtype, order='K', casting='unsafe', subok=True, copy=True):
+  return A.astype(dtype, order, casting, subok, copy)
