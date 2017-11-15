@@ -9,7 +9,7 @@ autograd's elementwise_grad function also handles numpy's familiar vectorization
 of scalar functions, which is used in this example.
 
 To be precise, elementwise_grad(fun)(x) always returns the value of a
-vector-Jacobian product, where the Jacobian of fun is evaluated at x and the the
+vector-Jacobian product, where the Jacobian of fun is evaluated at x and the
 vector is an all-ones vector with the same size as the output of fun. When
 vectorizing a scalar-valued function over many arguments, the Jacobian of the
 overall vector-to-vector mapping is diagonal, and so this vector-Jacobian
