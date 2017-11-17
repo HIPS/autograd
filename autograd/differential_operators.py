@@ -6,6 +6,7 @@ from inspect import getargspec
 import warnings
 
 from .wrap_util import unary_to_nary
+from .builtins import tuple as atuple
 from .core import make_vjp as _make_vjp, make_jvp as _make_jvp
 from .extend import primitive, defvjp_argnum, vspace
 
@@ -132,14 +133,10 @@ def value_and_grad(fun, x):
 def grad_and_aux(fun, argnum=0):
     """Builds a function that returns the gradient of the first output and the
     (unmodified) second output of a function that returns two outputs."""
+    diffable_fun = lambda *args, **kwargs: atuple(fun(*args, **kwargs))
     def grad_and_aux_fun(*args, **kwargs):
-        saved = lambda: None
-        def return_val_save_aux(*args, **kwargs):
-            val, saved.aux = fun(*args, **kwargs)
-            return val
-        gradval = grad(return_val_save_aux, argnum)(*args, **kwargs)
-        return gradval, saved.aux
-
+        vjp, (_, aux) = make_vjp(diffable_fun, argnum)(*args, **kwargs)
+        return vjp((1., vspace(aux).zeros())), aux
     return grad_and_aux_fun
 
 def multigrad_dict(fun):
