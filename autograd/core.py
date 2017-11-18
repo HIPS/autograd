@@ -27,7 +27,13 @@ class VJPNode(Node):
     __slots__ = ['parents', 'vjp']
     def __init__(self, value, fun, args, kwargs, parent_argnums, parents):
         self.parents = parents
-        self.vjp = primitive_vjps[fun](parent_argnums, value, args, kwargs)
+        try:
+            vjpmaker = primitive_vjps[fun]
+        except KeyError:
+            fun_name = getattr(fun, '__name__', fun)
+            raise UndefinedError("VJP of {} wrt argnums {} not defined"
+                                 .format(fun_name, parent_argnums))
+        self.vjp = vjpmaker(parent_argnums, value, args, kwargs)
 
     def initialize_root(self, value):
         self.parents = []
@@ -84,6 +90,8 @@ def translate_vjp(vjpfun, fun, argnum):
     else:
         raise Exception("Bad VJP '{}' for '{}'".format(vjpfun, fun.__name__))
 
+class UndefinedError(Exception): pass
+
 # -------------------- forward mode --------------------
 
 def make_jvp(fun, x):
@@ -101,10 +109,12 @@ class JVPNode(Node):
     def __init__(self, value, fun, args, kwargs, parent_argnums, parents):
         parent_gs = [parent.g for parent in parents]
         try:
-            self.g = primitive_jvps[fun](parent_argnums, parent_gs, value, args, kwargs)
+            jvpmaker = primitive_jvps[fun]
         except KeyError:
-            raise Exception("JVP of {} wrt argnums {} not defined"
-                            .format(fun.__name__, parent_argnums))
+            name = getattr(fun, '__name__', fun)
+            raise UndefinedError("JVP of {} wrt argnums {} not defined"
+                                 .format(name, parent_argnums))
+        self.g = jvpmaker(parent_argnums, parent_gs, value, args, kwargs)
 
     def initialize_root(self, x, g):
         self.g = g
