@@ -50,6 +50,8 @@ defjvp(anp.remainder,  lambda g, ans, x, y : broadcast(g, ans),
                        lambda g, ans, x, y : -g * anp.floor(x/y))
 defjvp(anp.power,      lambda g, ans, x, y : g * y * x ** anp.where(y, y - 1, 1.),
                        lambda g, ans, x, y : g * anp.log(replace_zero(x, 1.)) * x ** y)
+defjvp(anp.arctan2,    lambda g, ans, x, y : g * y / (x**2 + y**2),
+                       lambda g, ans, x, y : g * -x / (x**2 + y**2))
 
 # ----- Simple grads (linear) -----
 defjvp(anp.negative,      'same')
