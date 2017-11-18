@@ -84,6 +84,8 @@ def select(condlist, choicelist, default=0):
 
 def stack(arrays, axis=0):
     # this code is basically copied from numpy/core/shape_base.py's stack
+    # we need it here because we want to re-implement stack in terms of the
+    # primitives defined in this file
 
     arrays = [array(arr) for arr in arrays]
     if not arrays:
@@ -101,6 +103,16 @@ def stack(arrays, axis=0):
 
     sl = (slice(None),) * axis + (None,)
     return concatenate([arr[sl] for arr in arrays], axis=axis)
+
+def append(arr, values, axis=None):
+    # this code is basically copied from numpy/lib/function_base.py's append
+    arr = array(arr)
+    if axis is None:
+        if ndim(arr) != 1:
+            arr = ravel(arr)
+        values = ravel(array(values))
+        axis = ndim(arr) - 1
+    return concatenate((arr, values), axis=axis)
 
 # ----- Enable functions called using [] ----
 

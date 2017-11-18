@@ -443,7 +443,7 @@ defvjp(anp.outer, lambda ans, a, b : lambda g: anp.dot(g, b.T),
 
 def grad_concatenate_args(argnum, ans, axis_args, kwargs):
     axis, args = axis_args[0], axis_args[1:]
-    sizes = [a.shape[axis] for a in args[:argnum]]
+    sizes = [anp.shape(a)[axis] for a in args[:argnum]]
     start = sum(sizes[:-1])
     idxs = [slice(None)] * ans.ndim
     idxs[axis] = slice(start, start + sizes[-1])
