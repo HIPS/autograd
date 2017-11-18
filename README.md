@@ -36,16 +36,16 @@ We can continue to differentiate as many times as we like, and use numpy's
 vectorization of scalar-valued functions across many different input values:
 
 ```python
->>> from autograd import elementwise_grad  # for functions that vectorize over inputs
+>>> from autograd import elementwise_grad as egrad  # for functions that vectorize over inputs
 >>> import matplotlib.pyplot as plt
 >>> x = np.linspace(-7, 7, 200)
 >>> plt.plot(x, tanh(x),
-...          x, grad(tanh)(x),                                # first  derivative
-...          x, grad(grad(tanh))(x),                          # second derivative
-...          x, grad(grad(grad(tanh)))(x),                    # third  derivative
-...          x, grad(grad(grad(grad(tanh))))(x),              # fourth derivative
-...          x, grad(grad(grad(grad(grad(tanh)))))(x),        # fifth  derivative
-...          x, grad(grad(grad(grad(grad(grad(tanh))))))(x))  # sixth  derivative
+...          x, egrad(tanh)(x),                                     # first  derivative
+...          x, egrad(egrad(tanh))(x),                              # second derivative
+...          x, egrad(egrad(egrad(tanh)))(x),                       # third  derivative
+...          x, egrad(egrad(egrad(egrad(tanh))))(x),                # fourth derivative
+...          x, egrad(egrad(egrad(egrad(egrad(tanh)))))(x),         # fifth  derivative
+...          x, egrad(egrad(egrad(egrad(egrad(egrad(tanh))))))(x))  # sixth  derivative
 >>> plt.show()
 ```
 
