@@ -31,8 +31,8 @@ class VJPNode(Node):
             vjpmaker = primitive_vjps[fun]
         except KeyError:
             fun_name = getattr(fun, '__name__', fun)
-            raise UndefinedError("VJP of {} wrt argnums {} not defined"
-                                 .format(fun_name, parent_argnums))
+            raise NotImplementedError("VJP of {} wrt argnums {} not defined"
+                                      .format(fun_name, parent_argnums))
         self.vjp = vjpmaker(parent_argnums, value, args, kwargs)
 
     def initialize_root(self, value):
@@ -90,8 +90,6 @@ def translate_vjp(vjpfun, fun, argnum):
     else:
         raise Exception("Bad VJP '{}' for '{}'".format(vjpfun, fun.__name__))
 
-class UndefinedError(Exception): pass
-
 # -------------------- forward mode --------------------
 
 def make_jvp(fun, x):
@@ -112,8 +110,8 @@ class JVPNode(Node):
             jvpmaker = primitive_jvps[fun]
         except KeyError:
             name = getattr(fun, '__name__', fun)
-            raise UndefinedError("JVP of {} wrt argnums {} not defined"
-                                 .format(name, parent_argnums))
+            raise NotImplementedError("JVP of {} wrt argnums {} not defined"
+                                      .format(name, parent_argnums))
         self.g = jvpmaker(parent_argnums, parent_gs, value, args, kwargs)
 
     def initialize_root(self, x, g):

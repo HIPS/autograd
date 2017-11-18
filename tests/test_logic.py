@@ -6,7 +6,7 @@ import autograd.numpy as np
 from autograd import grad, deriv
 from autograd.extend import primitive
 from autograd.test_util import check_grads
-from autograd.core import primitive_vjps, UndefinedError
+from autograd.core import primitive_vjps
 
 def test_assert():
     # from https://github.com/HIPS/autograd/issues/43
@@ -22,12 +22,12 @@ def test_nograd():
     with warnings.catch_warnings(record=True) as w:
         grad(fun)(np.array([1., 2., 3.]))
 
-@raises(UndefinedError)
+@raises(NotImplementedError)
 def test_no_vjp_def():
     fun = primitive(lambda x: 2. * x)
     grad(fun)(1.)
 
-@raises(UndefinedError)
+@raises(NotImplementedError)
 def test_no_jvp_def():
     fun = primitive(lambda x: 2. * x)
     deriv(fun)(1.)
