@@ -1,9 +1,8 @@
-from itertools import repeat
 from . import numpy_wrapper as anp
 from .numpy_vjps import (untake, balanced_eq, replace_zero, dot_adjoint_0, dot_adjoint_1,
                          tensordot_adjoint_0, tensordot_adjoint_1, nograd_functions)
 from autograd.extend import (defjvp, defjvp_argnum, def_linear, vspace, JVPNode,
-                             register_notrace, defvjp)
+                             register_notrace)
 from .util import def_ufunc_jps, def_ufunc_jps_inv_pair
 
 from ..util import func
@@ -23,9 +22,11 @@ defjvp(anp._array_from_scalar_or_array, None, None,
        lambda g, ans, args, kwargs, _: anp._array_from_scalar_or_array(args, kwargs, g))
 
 # ----- Functions that are constant w.r.t. continuous inputs -----
+
 defjvp(anp.nan_to_num, lambda g, ans, x: anp.where(anp.isfinite(x), g, 0.))
 
 # ----- Unary ufuncs ------
+
 def_ufunc_jps(anp.negative,      'same')
 def_ufunc_jps(anp.rad2deg,       'same')
 def_ufunc_jps(anp.degrees,       'same')
@@ -60,6 +61,7 @@ def_ufunc_jps_inv_pair(anp.sinh,   anp.arcsinh, lambda ans, x: anp.sqrt(ans**2 +
 def_ufunc_jps_inv_pair(anp.square, anp.sqrt,    lambda ans, x: 2 * x)
 
 # ----- Binary ufuncs -----
+
 def_ufunc_jps(anp.add,         'id', 'id')
 def_ufunc_jps(anp.subtract,    'id', 'neg')
 def_ufunc_jps(anp.multiply,    'same', 'same')
@@ -87,6 +89,7 @@ def_ufunc_jps(anp.arctan2,     (lambda ans, x, y: y / (x**2 + y**2), 'mul'),
                                (lambda ans, x, y:-x / (x**2 + y**2), 'mul'))
 
 # ----- Simple grads (linear) -----
+
 defjvp(anp.reshape,       'same')
 defjvp(anp.roll,          'same')
 defjvp(anp.array_split,   'same')
@@ -113,12 +116,14 @@ defjvp(anp.moveaxis,      'same')
 def_linear(anp.cross)
 
 # ----- Simple grads -----
+
 defjvp(anp.clip,        lambda g, ans, x, a_min, a_max : g * anp.logical_and(ans != a_min, ans != a_max))
 defjvp(anp.where,  None,
        lambda g, ans, c, x=None, y=None : anp.where(c, g, anp.zeros(anp.shape(g))),
        lambda g, ans, c, x=None, y=None : anp.where(c, anp.zeros(g.shape), g))
 
 # ----- Trickier grads -----
+
 defjvp(anp.kron,      'same', 'same')
 defjvp(anp.diff,      'same')
 defjvp(anp.repeat,    'same')

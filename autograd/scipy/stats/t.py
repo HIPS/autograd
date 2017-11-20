@@ -2,8 +2,8 @@
 from __future__ import absolute_import
 import scipy.stats
 import autograd.numpy as np
-from autograd.extend import primitive, defvjp
-from autograd.numpy.util import unbroadcast_f, def_ufunc_jps
+from autograd.extend import primitive
+from autograd.numpy.util import def_ufunc_jps
 from autograd.scipy.special import psi
 
 pdf = primitive(scipy.stats.t.pdf)

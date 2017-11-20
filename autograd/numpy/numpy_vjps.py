@@ -24,11 +24,9 @@ nograd_functions = [
 for fun in nograd_functions:
     register_notrace(VJPNode, fun)
 
-
 # ----- Functions that are constant w.r.t. continuous inputs -----
 
 defvjp(anp.nan_to_num, lambda ans, x: lambda g: anp.where(anp.isfinite(x), g, 0.))
-
 
 # ----- Simple grads -----
 

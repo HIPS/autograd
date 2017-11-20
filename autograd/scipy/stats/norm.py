@@ -2,7 +2,7 @@
 from __future__ import absolute_import
 import scipy.stats
 import autograd.numpy as anp
-from autograd.extend import primitive, defvjp
+from autograd.extend import primitive
 from autograd.numpy.util import def_ufunc_jps
 
 pdf = primitive(scipy.stats.norm.pdf)

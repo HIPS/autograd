@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 import autograd.numpy as np
 import scipy.stats
-from autograd.extend import primitive, defvjp
+from autograd.extend import primitive
 from autograd.numpy.util import def_ufunc_jps
 
 cdf = primitive(scipy.stats.poisson.cdf)

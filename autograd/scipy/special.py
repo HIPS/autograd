@@ -2,8 +2,7 @@ from __future__ import absolute_import
 import scipy.special
 import autograd.numpy as np
 from autograd.numpy.util import def_ufunc_jps, def_ufunc_jps_inv_pair
-from autograd.extend import primitive, defvjp
-from autograd.numpy.util import unbroadcast_f
+from autograd.extend import primitive
 
 ### Beta function ###
 beta    = primitive(scipy.special.beta)
