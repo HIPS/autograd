@@ -247,15 +247,19 @@ Autograd supports complex arrays and scalars using a convention described as fol
 Consider a complex-to-complex function, `f`,
 expressed in terms of real-to-real components, `u` and `v`:
 
-    def f(z):
-        x, y = real(z), imag(z)
-        return u(x, y) + v(x, y) * 1j
+```python
+def f(z):
+    x, y = real(z), imag(z)
+    return u(x, y) + v(x, y) * 1j
+```
 
 We define `grad` of `f` as
 
-    def grad_f(z):
-        x, y = real(z), imag(z)
-        return grad(u, 0)(x, y) - i * grad(u, 1)(x, y)
+```python
+def grad_f(z):
+    x, y = real(z), imag(z)
+    return grad(u, 0)(x, y) - i * grad(u, 1)(x, y)
+```
 
 (The second argument of `grad` specifies which argument we're differentiating with respect to.)
 So we throw out v, the imaginary part of f, entirely.
@@ -278,13 +282,15 @@ and there would be no way to express it as a single complex number.
 
 We define primitive vector-Jacobian products of complex functions like this
 
-    def f_vjp(g, z):
-        z_x, z_y = real(z), imag(z)
-        g_x, g_y = real(g), imag(g)
-        return (       g_x * grad(u, 0)(x, y)
-                 - i * g_x * grad(u, 1)(x, y)
-                 -     g_y * grad(v, 0)(x, y)
-                 + i * g_y * grad(v, 1)(x, y))
+```python
+def f_vjp(g, z):
+    z_x, z_y = real(z), imag(z)
+    g_x, g_y = real(g), imag(g)
+    return (       g_x * grad(u, 0)(x, y)
+             - i * g_x * grad(u, 1)(x, y)
+             -     g_y * grad(v, 0)(x, y)
+             + i * g_y * grad(v, 1)(x, y))
+```
 
 For holomorphic primitives, this is just the regular complex derivative multiplied by `g`,
 so most simple math primitives don't need to be changed from their real implementations.

@@ -241,6 +241,21 @@ def test_flatten_method():
     def fun(x): return x.flatten()
     check_grads(fun)(A)
 
+def test_simple_append_list():
+    A = [1., 2., 3.]
+    b = 4.
+    check_grads(np.append, argnum=(0, 1))(A, b)
+
+def test_simple_append_arr():
+    A = np.array([1., 2., 3.])
+    b = 4.
+    check_grads(np.append, argnum=(0, 1))(A, b)
+
+def test_simple_append_list_2D():
+    A = [[1., 2., 3.], [4., 5., 6.]]
+    B = [[7., 8., 9.]]
+    check_grads(np.append, argnum=(0, 1))(A, B, axis=0)
+
 def test_simple_concatenate():
     A = npr.randn(5, 6, 4)
     B = npr.randn(4, 6, 4)
