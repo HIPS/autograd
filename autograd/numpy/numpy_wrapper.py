@@ -164,4 +164,4 @@ def _broadcast_to_adjoint(x, shape):
 
 @primitive
 def _astype(A, dtype, order='K', casting='unsafe', subok=True, copy=True):
-  return A.astype(dtype, order, casting, subok, copy)
+    return A.astype(dtype, order, casting, subok, copy)
