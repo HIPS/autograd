@@ -83,7 +83,7 @@ def_ufunc_jps(anp.power,       (lambda ans, x, y: y * x ** anp.where(y, y - 1, 1
                                (lambda ans, x, y: anp.log(replace_zero(x, 1.)) * x ** y, 'mul'))
 def_ufunc_jps(anp.hypot,       (lambda ans, x, y: x / ans, 'mul'),
                                (lambda ans, x, y: y / ans, 'mul'))
-defjvp(anp.arctan2,            (lambda ans, x, y: y / (x**2 + y**2), 'mul'),
+def_ufunc_jps(anp.arctan2,     (lambda ans, x, y: y / (x**2 + y**2), 'mul'),
                                (lambda ans, x, y:-x / (x**2 + y**2), 'mul'))
 
 # ----- Simple grads (linear) -----
