@@ -94,7 +94,7 @@ def translate_vjp(vjpfun, fun, argnum):
 
 def make_jvp(fun, x):
     def jvp(g):
-        start_node = JVPNode.new_root(x, g)
+        start_node = JVPNode.new_root(g)
         end_value, end_node = trace(start_node, fun, x)
         if end_node is None:
             return end_value, vspace(end_value).zeros()
@@ -114,7 +114,7 @@ class JVPNode(Node):
                                       .format(name, parent_argnums))
         self.g = jvpmaker(parent_argnums, parent_gs, value, args, kwargs)
 
-    def initialize_root(self, x, g):
+    def initialize_root(self, g):
         self.g = g
 
 primitive_jvps = {}
