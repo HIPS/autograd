@@ -6,7 +6,7 @@ from .util import func, subval
 # -------------------- reverse mode --------------------
 
 def make_vjp(fun, x):
-    start_node = VJPNode.new_root(x)
+    start_node = VJPNode.new_root()
     end_value, end_node =  trace(start_node, fun, x)
     if end_node is None:
         def vjp(g): return vspace(x).zeros()
@@ -35,7 +35,7 @@ class VJPNode(Node):
                                       .format(fun_name, parent_argnums))
         self.vjp = vjpmaker(parent_argnums, value, args, kwargs)
 
-    def initialize_root(self, value):
+    def initialize_root(self):
         self.parents = []
         self.vjp = lambda g: ()
 
