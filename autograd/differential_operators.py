@@ -130,14 +130,12 @@ def value_and_grad(fun, x):
     vjp, ans = _make_vjp(fun, x)
     return ans, vjp(vspace(ans).ones())
 
-def grad_and_aux(fun, argnum=0):
+@unary_to_nary
+def grad_and_aux(fun, x):
     """Builds a function that returns the gradient of the first output and the
     (unmodified) second output of a function that returns two outputs."""
-    diffable_fun = lambda *args, **kwargs: atuple(fun(*args, **kwargs))
-    def grad_and_aux_fun(*args, **kwargs):
-        vjp, (_, aux) = make_vjp(diffable_fun, argnum)(*args, **kwargs)
-        return vjp((1., vspace(aux).zeros())), aux
-    return grad_and_aux_fun
+    vjp, (ans, aux) = _make_vjp(lambda x: atuple(fun(x)), x)
+    return vjp((vspace(ans).ones(), vspace(aux).zeros())), aux
 
 def multigrad_dict(fun):
     "Takes gradients wrt all arguments simultaneously,"
