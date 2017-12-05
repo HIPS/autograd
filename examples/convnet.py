@@ -2,12 +2,12 @@
 http://yann.lecun.com/exdb/publis/pdf/lecun-98.pdf"""
 from __future__ import absolute_import
 from __future__ import print_function
+from builtins import range
 
 import autograd.numpy as np
 import autograd.numpy.random as npr
 import autograd.scipy.signal
 from autograd import grad
-from builtins import range
 import data_mnist
 
 convolve = autograd.scipy.signal.convolve

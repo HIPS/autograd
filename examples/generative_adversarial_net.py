@@ -7,8 +7,8 @@ from __future__ import absolute_import, division
 from __future__ import print_function
 import autograd.numpy as np
 import autograd.numpy.random as npr
-from autograd import multigrad
-from autograd.util import flatten
+from autograd import grad
+from autograd.misc import flatten
 
 from data import load_mnist, save_images
 
@@ -33,7 +33,9 @@ def batch_normalize(activations):
 def neural_net_predict(params, inputs):
     """Params is a list of (weights, bias) tuples.
        inputs is an (N x D) matrix."""
-    for W, b in params[:-1]:
+    inpW, inpb = params[0]
+    inputs = relu(np.dot(inputs, inpW) + inpb)
+    for W, b in params[1:-1]:
         outputs = batch_normalize(np.dot(inputs, W) + b)
         inputs = relu(outputs)
     outW, outb = params[-1]
@@ -123,7 +125,7 @@ if __name__ == '__main__':
                              batch_size, noise_dim, seed)
 
     # Get gradients of objective using autograd.
-    both_objective_grad = multigrad(objective, argnums=[0,1])
+    both_objective_grad = grad(objective, argnum=(0, 1))
 
     print("     Epoch     |    Objective  |       Fake probability | Real Probability  ")
     def print_perf(gen_params, dsc_params, iter, gen_gradient, dsc_gradient):

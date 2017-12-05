@@ -11,3 +11,5 @@ MANIFEST
 *.c
 .asv/
 autograd.egg-info/
+asv.conf.json
+benchmarks/asv.conf.js
