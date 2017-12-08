@@ -83,3 +83,8 @@ logit = primitive(scipy.special.logit)
 expit = primitive(scipy.special.expit)
 
 def_ufunc_jps_inv_pair(expit, logit, lambda ans, x:  ans * (1 - ans))
+
+### Relative entropy ###
+rel_entr = primitive(scipy.special.rel_entr)
+
+def_ufunc_jps(rel_entr, (lambda ans, x, y: np.log(x / y) + 1, 'mul'), (lambda ans, x, y: - x / y, 'mul'))

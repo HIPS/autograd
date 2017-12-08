@@ -21,7 +21,7 @@ else:
     from scipy.signal import convolve as sp_convolve
 
     from autograd.test_util import combo_check, check_grads
-    from numpy_utils import  unary_ufunc_check
+    from numpy_utils import  unary_ufunc_check, binary_ufunc_check
 
     npr.seed(1)
     R = npr.randn
@@ -197,3 +197,5 @@ else:
 
     def test_logit(): unary_ufunc_check(special.logit, lims=[0.05, 0.95],  test_complex=False, modes=['fwd', 'rev'])
     def test_expit(): unary_ufunc_check(special.expit, lims=[-4.05, 4.95], test_complex=False, modes=['fwd', 'rev'])
+
+    def test_rel_entr(): binary_ufunc_check(special.rel_entr, lims_A=[0.05, 1], lims_B=[0.05, 1], test_complex=False, modes=['fwd', 'rev'])
