@@ -1,7 +1,7 @@
 import warnings
 from contextlib import contextmanager
 from collections import defaultdict
-from .util import subvals
+from .util import subvals, toposort
 from .wrap_util import wraps
 
 def trace(start_node, fun, x):
@@ -111,27 +111,6 @@ class Box(object):
         Box.types.add(cls)
         Box.type_mappings[value_type] = cls
         Box.type_mappings[cls] = cls
-
-def toposort(end_node):
-    child_counts = {}
-    stack = [end_node]
-    while stack:
-        node = stack.pop()
-        if node in child_counts:
-            child_counts[node] += 1
-        else:
-            child_counts[node] = 1
-            stack.extend(node.parents)
-
-    childless_nodes = [end_node]
-    while childless_nodes:
-        node = childless_nodes.pop()
-        yield node
-        for parent in node.parents:
-            if child_counts[parent] == 1:
-                childless_nodes.append(parent)
-            else:
-                child_counts[parent] -= 1
 
 box_type_mappings = Box.type_mappings
 def new_box(value, trace, node):
