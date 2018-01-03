@@ -83,10 +83,8 @@ def hessian_tensor_product(fun, argnum=0):
     The returned function has arguments (*args, tensor, **kwargs), and for
     vectors takes roughly 4x as long to evaluate as the original function."""
     fun_grad = grad(fun, argnum)
-    def vector_dot_grad(*args, **kwargs):
-        args, vector = args[:-1], args[-1]
-        return np.tensordot(fun_grad(*args, **kwargs), vector, np.ndim(vector))
-    return grad(vector_dot_grad, argnum)
+    return (lambda *args, **kwargs:
+        make_vjp(fun_grad, argnum)(*args[:-1], **kwargs)[0](args[-1]))
 hessian_vector_product = hessian_tensor_product
 
 def tensor_jacobian_product(fun, argnum=0):
