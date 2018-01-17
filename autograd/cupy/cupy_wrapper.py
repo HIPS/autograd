@@ -2,13 +2,13 @@ from __future__ import absolute_import
 import types
 import warnings
 from autograd.extend import primitive, notrace_primitive
-import numpy as _np
+import cupy as _cp
 import autograd.builtins as builtins
-from numpy.core.einsumfunc import _parse_einsum_input
+from cupy.core.einsumfunc import _parse_einsum_input
 
 notrace_functions = [
-    _np.ndim, _np.shape, _np.iscomplexobj, _np.result_type, _np.zeros_like,
-    _np.ones_like,
+    _cp.ndim, _cp.shape, _cp.iscomplexobj, _cp.result_type, _cp.zeros_like,
+    _cp.ones_like,
 ]
 
 def wrap_intdtype(cls):
@@ -18,8 +18,8 @@ def wrap_intdtype(cls):
 
 def wrap_namespace(old, new):
     unchanged_types = {float, int, type(None), type}
-    int_types = {_np.int, _np.int8, _np.int16, _np.int32, _np.int64, _np.integer}
-    function_types = {_np.ufunc, types.FunctionType, types.BuiltinFunctionType}
+    int_types = {_cp.int, _cp.int8, _cp.int16, _cp.int32, _cp.int64, _cp.integer}
+    function_types = {_cp.ufunc, types.FunctionType, types.BuiltinFunctionType}
     for name, obj in old.items():
         if obj in notrace_functions:
             new[name] = notrace_primitive(obj)
@@ -30,13 +30,13 @@ def wrap_namespace(old, new):
         elif type(obj) in unchanged_types:
             new[name] = obj
 
-wrap_namespace(_np.__dict__, globals())
+wrap_namespace(_cp.__dict__, globals())
 
 # ----- Special treatment of list-input functions -----
 
 @primitive
 def concatenate_args(axis, *args):
-    return _np.concatenate(args, axis).view(ndarray)
+    return _cp.concatenate(args, axis).view(ndarray)
 concatenate = lambda arr_list, axis=0 : concatenate_args(axis, *arr_list)
 vstack = row_stack = lambda tup: concatenate([atleast_2d(_m) for _m in tup], axis=0)
 def hstack(tup):
@@ -62,7 +62,7 @@ def array(A, *args, **kwargs):
         return _array_from_scalar_or_array(args, kwargs, A)
 
 def wrap_if_boxes_inside(raw_array, slow_op_name=None):
-    if raw_array.dtype is _np.dtype('O'):
+    if raw_array.dtype is _cp.dtype('O'):
         if slow_op_name:
             warnings.warn("{0} is slow for array inputs. "
                           "np.concatenate() is faster.".format(slow_op_name))
@@ -72,14 +72,14 @@ def wrap_if_boxes_inside(raw_array, slow_op_name=None):
 
 @primitive
 def _array_from_scalar_or_array(array_args, array_kwargs, scalar):
-    return _np.array(scalar, *array_args, **array_kwargs)
+    return _cp.array(scalar, *array_args, **array_kwargs)
 
 @primitive
 def array_from_args(array_args, array_kwargs, *args):
-    return _np.array(args, *array_args, **array_kwargs)
+    return _cp.array(args, *array_args, **array_kwargs)
 
 def select(condlist, choicelist, default=0):
-    raw_array = _np.select(list(condlist), list(choicelist), default=default)
+    raw_array = _cp.select(list(condlist), list(choicelist), default=default)
     return array(list(raw_array.ravel())).reshape(raw_array.shape)
 
 def stack(arrays, axis=0):
@@ -118,13 +118,13 @@ def append(arr, values, axis=None):
 
 class r_class():
     def __getitem__(self, args):
-        raw_array = _np.r_[args]
+        raw_array = _cp.r_[args]
         return wrap_if_boxes_inside(raw_array, slow_op_name = "r_")
 r_ = r_class()
 
 class c_class():
     def __getitem__(self, args):
-        raw_array = _np.c_[args]
+        raw_array = _cp.c_[args]
         return wrap_if_boxes_inside(raw_array, slow_op_name = "c_")
 c_ = c_class()
 
@@ -139,15 +139,15 @@ def make_diagonal(D, offset=0, axis1=0, axis2=1):
 
     # We use a trick: calling np.diagonal returns a view on the original array,
     # so we can modify it in-place. (only valid for numpy version >= 1.10.)
-    new_array = _np.zeros(D.shape + (D.shape[-1],))
-    new_array_diag = _np.diagonal(new_array, offset=0, axis1=-1, axis2=-2)
+    new_array = _cp.zeros(D.shape + (D.shape[-1],))
+    new_array_diag = _cp.diagonal(new_array, offset=0, axis1=-1, axis2=-2)
     new_array_diag.flags.writeable = True
     new_array_diag[:] = D
     return new_array
 
 @notrace_primitive
 def metadata(A):
-    return _np.shape(A), _np.ndim(A), _np.result_type(A), _np.iscomplexobj(A)
+    return _cp.shape(A), _cp.ndim(A), _cp.result_type(A), _cp.iscomplexobj(A)
 
 @notrace_primitive
 def parse_einsum_input(*args):
