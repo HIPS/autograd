@@ -4,10 +4,14 @@ import warnings
 from autograd.extend import primitive, notrace_primitive
 import cupy as _cp
 import autograd.builtins as builtins
-from cupy.core.einsumfunc import _parse_einsum_input
+# from cupy.core.einsumfunc import _parse_einsum_input
 
 notrace_functions = [
-    _cp.ndim, _cp.shape, _cp.iscomplexobj, _cp.result_type, _cp.zeros_like,
+    # _cp.ndim,
+    # _cp.shape,
+    # _cp.iscomplexobj,
+    _cp.result_type,
+    _cp.zeros_like,
     _cp.ones_like,
 ]
 
@@ -18,7 +22,13 @@ def wrap_intdtype(cls):
 
 def wrap_namespace(old, new):
     unchanged_types = {float, int, type(None), type}
-    int_types = {_cp.int, _cp.int8, _cp.int16, _cp.int32, _cp.int64, _cp.integer}
+    int_types = {#_cp.int,
+                 _cp.int8,
+                 _cp.int16,
+                 _cp.int32,
+                 _cp.int64,
+                 _cp.integer
+                }
     function_types = {_cp.ufunc, types.FunctionType, types.BuiltinFunctionType}
     for name, obj in old.items():
         if obj in notrace_functions:
