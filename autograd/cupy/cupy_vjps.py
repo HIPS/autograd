@@ -11,21 +11,63 @@ from autograd.extend import (primitive, vspace, defvjp, defvjp_argnum,
 # ----- Non-differentiable functions -----
 
 nograd_functions = [
-    acp.floor, acp.ceil, acp.round, acp.rint, acp.around, acp.fix, acp.trunc, acp.all,
-    acp.any, acp.argmax, acp.argmin, acp.argpartition, acp.argsort, acp.argwhere, acp.nonzero,
-    acp.flatnonzero, acp.count_nonzero, acp.searchsorted, acp.sign, acp.ndim, acp.shape,
-    acp.floor_divide, acp.logical_and, acp.logical_or, acp.logical_not, acp.logical_xor,
-    acp.isfinite, acp.isinf, acp.isnan, acp.isneginf, acp.isposinf, acp.allclose, acp.isclose,
-    acp.array_equal, acp.array_equiv, acp.greater, acp.greater_equal, acp.less, acp.less_equal,
-    acp.equal, acp.not_equal, acp.iscomplexobj, acp.iscomplex, acp.size, acp.isscalar,
-    acp.isreal, acp.zeros_like, acp.ones_like, acp.result_type]
+    acp.floor,
+    acp.ceil,
+    # acp.round,
+    acp.rint,
+    # acp.around,
+    acp.fix,
+    acp.trunc,
+    # acp.all,
+    # acp.any,
+    acp.argmax,
+    acp.argmin,
+    acp.argpartition,
+    acp.argsort,
+    # acp.argwhere,
+    acp.nonzero,
+    acp.flatnonzero,
+    acp.count_nonzero,
+    # acp.searchsorted,
+    acp.sign,
+    # acp.ndim,
+    # acp.shape,
+    acp.floor_divide,
+    acp.logical_and,
+    acp.logical_or,
+    acp.logical_not,
+    acp.logical_xor,
+    acp.isfinite,
+    acp.isinf,
+    acp.isnan,
+    # acp.isneginf,
+    # acp.isposinf,
+    # acp.allclose,
+    # acp.isclose,
+    # acp.array_equal,
+    # acp.array_equiv,
+    acp.greater,
+    acp.greater_equal,
+    acp.less,
+    acp.less_equal,
+    acp.equal,
+    acp.not_equal,
+    # acp.iscomplexobj,
+    # acp.iscomplex,
+    # acp.size,
+    acp.isscalar,
+    # acp.isreal,
+    acp.zeros_like,
+    acp.ones_like,
+    acp.result_type
+]
 
 for fun in nograd_functions:
     register_notrace(VJPNode, fun)
 
 # ----- Functions that are constant w.r.t. continuous inputs -----
 
-defvjp(acp.nan_to_num, lambda ans, x: lambda g: acp.where(acp.isfinite(x), g, 0.))
+# defvjp(acp.nan_to_num, lambda ans, x: lambda g: acp.where(acp.isfinite(x), g, 0.))
 
 # ----- Binary ufuncs -----
 
@@ -69,7 +111,7 @@ defvjp(acp.hypot,
 defvjp(acp.negative, lambda ans, x: lambda g: -g)
 defvjp(acp.abs,
     lambda ans, x : lambda g: g * replace_zero(acp.conj(x), 0.) / replace_zero(ans, 1.))
-defvjp(acp.fabs,     lambda ans, x : lambda g: acp.sign(x) * g)  # fabs doesn't take complex numbers.
+# defvjp(acp.fabs,     lambda ans, x : lambda g: acp.sign(x) * g)  # fabs doesn't take complex numbers.
 defvjp(acp.absolute, lambda ans, x : lambda g: g * acp.conj(x) / ans)
 defvjp(acp.reciprocal, lambda ans, x : lambda g: - g / x**2)
 defvjp(acp.exp,    lambda ans, x : lambda g: ans * g)
@@ -97,7 +139,7 @@ defvjp(acp.deg2rad, lambda ans, x : lambda g: g * acp.pi / 180.0)
 defvjp(acp.radians, lambda ans, x : lambda g: g * acp.pi / 180.0)
 defvjp(acp.square,  lambda ans, x : lambda g: g * 2 * x)
 defvjp(acp.sqrt,    lambda ans, x : lambda g: g * 0.5 * x**-0.5)
-defvjp(acp.sinc,    lambda ans, x : lambda g: g * (acp.cos(acp.pi*x)*acp.pi*x - acp.sin(acp.pi*x))/(acp.pi*x**2))
+# defvjp(acp.sinc,    lambda ans, x : lambda g: g * (acp.cos(acp.pi*x)*acp.pi*x - acp.sin(acp.pi*x))/(acp.pi*x**2))
 defvjp(acp.reshape, lambda ans, x, shape, order=None : lambda g: acp.reshape(g, acp.shape(x), order=order))
 defvjp(acp.roll,    lambda ans, x, shift, axis=None  : lambda g: acp.roll(g, -shift, axis=axis))
 defvjp(acp.array_split, lambda ans, ary, idxs, axis=0 : lambda g: acp.concatenate(g, axis=axis))
@@ -115,27 +157,27 @@ defvjp(acp.rot90,   lambda ans, x, k=1          : lambda g: acp.rot90(g, -k))
 defvjp(acp.trace,   lambda ans, x, offset=0     : lambda g:
                     acp.einsum('ij,...->ij...', acp.eye(x.shape[0], x.shape[1], k=offset), g))
 defvjp(acp.full, lambda ans, shape, fill_value, dtype=None : lambda g: acp.sum(g), argnums=(1,))
-defvjp(acp.triu,    lambda ans, x, k=0          : lambda g: acp.triu(g, k=k))
-defvjp(acp.tril,    lambda ans, x, k=0          : lambda g: acp.tril(g, k=k))
+# defvjp(acp.triu,    lambda ans, x, k=0          : lambda g: acp.triu(g, k=k))
+# defvjp(acp.tril,    lambda ans, x, k=0          : lambda g: acp.tril(g, k=k))
 defvjp(acp.clip,    lambda ans, x, a_min, a_max : lambda g: g * acp.logical_and(ans != a_min, ans != a_max))
 defvjp(acp.swapaxes, lambda ans, x, axis1, axis2: lambda g: acp.swapaxes(g, axis2, axis1))
-defvjp(acp.moveaxis, lambda ans, a, source, destination: lambda g:
-                    acp.moveaxis(g, destination, source))
+# defvjp(acp.moveaxis, lambda ans, a, source, destination: lambda g:
+#                     acp.moveaxis(g, destination, source))
 defvjp(acp.rollaxis, lambda ans, a, axis, start=0: lambda g: acp.rollaxis(g, start - 1, axis) if start > axis
                                                  else acp.rollaxis(g, start, axis + 1))
-defvjp(acp.real_if_close, lambda ans, x : lambda g: match_complex(x, g))
+# defvjp(acp.real_if_close, lambda ans, x : lambda g: match_complex(x, g))
 defvjp(acp.real,   lambda ans, x   : lambda g: match_complex(x, g))
 defvjp(acp.imag,   lambda ans, x   : lambda g: match_complex(x, -1j * g))
 defvjp(acp.conj,   lambda ans, x   : lambda g: acp.conj(g))
-defvjp(acp.conjugate, lambda ans, x: lambda g: acp.conj(g))
+# defvjp(acp.conjugate, lambda ans, x: lambda g: acp.conj(g))
 defvjp(acp.angle,  lambda ans, x   : lambda g: match_complex(x, g * acp.conj(x * 1j) / acp.abs(x)**2))
 defvjp(acp.where, None,
        lambda ans, c, x=None, y=None : lambda g: acp.where(c, g, acp.zeros(g.shape)),
        lambda ans, c, x=None, y=None : lambda g: acp.where(c, acp.zeros(g.shape), g))
-defvjp(acp.cross, lambda ans, a, b, axisa=-1, axisb=-1, axisc=-1, axis=None : lambda g:
-                  acp.cross(b, g, axisb, axisc, axisa, axis),
-                  lambda ans, a, b, axisa=-1, axisb=-1, axisc=-1, axis=None : lambda g:
-                  acp.cross(g, a, axisc, axisa, axisb, axis))
+# defvjp(acp.cross, lambda ans, a, b, axisa=-1, axisb=-1, axisc=-1, axis=None : lambda g:
+#                   acp.cross(b, g, axisb, axisc, axisa, axis),
+#                   lambda ans, a, b, axisa=-1, axisb=-1, axisc=-1, axis=None : lambda g:
+#                   acp.cross(g, a, axisc, axisa, axisb, axis))
 defvjp(acp.linspace, lambda ans, start, stop, num : lambda g: acp.dot(acp.linspace(1.0, 0.0, num), g),
                      lambda ans, start, stop, num : lambda g: acp.dot(acp.linspace(0.0, 1.0, num), g))
 
@@ -167,7 +209,7 @@ def grad_diff(ans, a, n=1, axis=-1):
         return helper(undiff(g), n-1)
     return lambda g: helper(g, n)
 
-defvjp(acp.diff, grad_diff)
+# defvjp(acp.diff, grad_diff)
 
 def grad_repeat(ans, x, repeats, axis=None):
     shape = acp.shape(x)
@@ -233,7 +275,7 @@ def repeat_to_match_shape(g, shape, dtype, axis, keepdims):
 def grad_np_sum(ans, x, axis=None, keepdims=False, dtype=None):
     shape, dtype = acp.shape(x), acp.result_type(x)
     return lambda g: repeat_to_match_shape(g, shape, dtype, axis, keepdims)[0]
-defvjp(acp.sum, grad_np_sum)
+# defvjp(acp.sum, grad_np_sum)
 
 def grad_np_mean(ans, x, axis=None, keepdims=False):
     shape, dtype = acp.shape(x), acp.result_type(x)
@@ -249,7 +291,7 @@ def grad_np_prod(ans, x, axis=None, keepdims=False): # TODO: Support tuples of a
         g_repeated, _ = repeat_to_match_shape(g * ans, shape, dtype, axis, keepdims)
         return g_repeated / x
     return vjp
-defvjp(acp.prod, grad_np_prod)
+# defvjp(acp.prod, grad_np_prod)
 
 def grad_np_var(ans, x, axis=None, ddof=0, keepdims=False):
     shape, _, dtype, iscomplex = acp.metadata(x)
@@ -286,10 +328,10 @@ def grad_chooser(ans, x, axis=None, keepdims=None):
         return g_repeated * argmax_locations \
             / ocp.sum(argmax_locations, axis=axis, keepdims=True)
     return vjp
-defvjp(acp.max, grad_chooser)
-defvjp(acp.min, grad_chooser)
-defvjp(acp.amax, grad_chooser)
-defvjp(acp.amin, grad_chooser)
+# defvjp(acp.max, grad_chooser)
+# defvjp(acp.min, grad_chooser)
+# defvjp(acp.amax, grad_chooser)
+# defvjp(acp.amin, grad_chooser)
 
 def reverse_axis(x, axis):
     x = x.swapaxes(axis, 0)

@@ -90,6 +90,9 @@ def _array_from_scalar_or_array(array_args, array_kwargs, scalar):
 
 @primitive
 def array_from_args(array_args, array_kwargs, *args):
+    print(array_args)
+    print(array_kwargs)
+    print(*args)
     return _cp.array(args, *array_args, **array_kwargs)
 
 def select(condlist, choicelist, default=0):

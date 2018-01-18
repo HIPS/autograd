@@ -18,7 +18,7 @@ defjvp(acp._array_from_scalar_or_array, None, None,
        lambda g, ans, args, kwargs, _: acp._array_from_scalar_or_array(args, kwargs, g))
 
 # ----- Functions that are constant w.r.t. continuous inputs -----
-defjvp(acp.nan_to_num, lambda g, ans, x: acp.where(acp.isfinite(x), g, 0.))
+# defjvp(acp.nan_to_num, lambda g, ans, x: acp.where(acp.isfinite(x), g, 0.))
 
 # ----- Binary ufuncs (linear) -----
 def_linear(acp.multiply)
@@ -77,17 +77,17 @@ defjvp(acp.fliplr,        'same')
 defjvp(acp.rot90,         'same')
 defjvp(acp.trace,         'same')
 defjvp(acp.full,          'same', argnums=(1,))
-defjvp(acp.triu,          'same')
-defjvp(acp.tril,          'same')
+# defjvp(acp.triu,          'same')
+# defjvp(acp.tril,          'same')
 defjvp(acp.swapaxes,      'same')
 defjvp(acp.rollaxis,      'same')
-defjvp(acp.moveaxis,      'same')
-def_linear(acp.cross)
+# defjvp(acp.moveaxis,      'same')
+# def_linear(acp.cross)
 
 # ----- Simple grads -----
 defjvp(acp.abs,
     lambda g, ans, x : acp.real(g * replace_zero(acp.conj(x), 0.)) / replace_zero(ans, 1.))
-defjvp(acp.fabs,        lambda g, ans, x : acp.sign(x) * g)  # fabs doesn't take complex numbers.
+# defjvp(acp.fabs,        lambda g, ans, x : acp.sign(x) * g)  # fabs doesn't take complex numbers.
 defjvp(acp.absolute,    lambda g, ans, x : acp.real(g * acp.conj(x)) / ans)
 defjvp(acp.reciprocal,  lambda g, ans, x : - g / x**2)
 defjvp(acp.exp,         lambda g, ans, x : ans * g)
@@ -111,9 +111,9 @@ defjvp(acp.arccosh,     lambda g, ans, x : g / acp.sqrt(x**2 - 1))
 defjvp(acp.arctanh,     lambda g, ans, x : g / (1 - x**2))
 defjvp(acp.square,      lambda g, ans, x : g * 2 * x)
 defjvp(acp.sqrt,        lambda g, ans, x : g * 0.5 * x**-0.5)
-defjvp(acp.sinc,        lambda g, ans, x : g * (acp.cos(acp.pi*x)*acp.pi*x - acp.sin(acp.pi*x))/(acp.pi*x**2))
+# defjvp(acp.sinc,        lambda g, ans, x : g * (acp.cos(acp.pi*x)*acp.pi*x - acp.sin(acp.pi*x))/(acp.pi*x**2))
 defjvp(acp.clip,        lambda g, ans, x, a_min, a_max : g * acp.logical_and(ans != a_min, ans != a_max))
-defjvp(acp.real_if_close, lambda g, ans, x : match_complex(ans, g))
+# defjvp(acp.real_if_close, lambda g, ans, x : match_complex(ans, g))
 defjvp(acp.real,   lambda g, ans, x   : acp.real(g))
 defjvp(acp.imag,   lambda g, ans, x   : match_complex(ans, -1j * g))
 defjvp(acp.conj,   lambda g, ans, x   : acp.conj(g))
@@ -124,13 +124,13 @@ defjvp(acp.where,  None,
 
 # ----- Trickier grads -----
 defjvp(acp.kron,      'same', 'same')
-defjvp(acp.diff,      'same')
+# defjvp(acp.diff,      'same')
 defjvp(acp.repeat,    'same')
 defjvp(acp.tile,      'same')
 defjvp(acp.transpose, 'same')
-defjvp(acp.sum,       'same')
+# defjvp(acp.sum,       'same')
 defjvp(acp.mean,      'same')
-defjvp(acp.prod, lambda g, ans, x, axis=None, keepdims=False: ans * acp.sum(g / x, axis=axis, keepdims=keepdims))
+# defjvp(acp.prod, lambda g, ans, x, axis=None, keepdims=False: ans * acp.sum(g / x, axis=axis, keepdims=keepdims))
 defjvp(acp.linspace, lambda g, ans, start, stop, *args, **kwargs: acp.linspace(g, 0, *args, **kwargs),
                      lambda g, ans, start, stop, *args, **kwargs: acp.linspace(0, g, *args, **kwargs))
 
@@ -175,10 +175,10 @@ def fwd_grad_chooser(g, ans, x, axis=None, keepdims=False):
     return (acp.sum((g * chosen_locations), axis=axis, keepdims=keepdims) /
             acp.sum(chosen_locations, axis=axis, keepdims=keepdims))
 
-defjvp(acp.max, fwd_grad_chooser)
-defjvp(acp.min, fwd_grad_chooser)
-defjvp(acp.amax, fwd_grad_chooser)
-defjvp(acp.amin, fwd_grad_chooser)
+# defjvp(acp.max, fwd_grad_chooser)
+# defjvp(acp.min, fwd_grad_chooser)
+# defjvp(acp.amax, fwd_grad_chooser)
+# defjvp(acp.amin, fwd_grad_chooser)
 
 defjvp(acp.cumsum, 'same')
 
