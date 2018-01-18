@@ -31,14 +31,18 @@ def wrap_namespace(old, new):
                 }
     function_types = {_cp.ufunc, types.FunctionType, types.BuiltinFunctionType}
     for name, obj in old.items():
+        # print(name, obj, type(obj))
         if obj in notrace_functions:
             new[name] = notrace_primitive(obj)
-        elif type(obj) in function_types:
+        # Note: type(obj) == _cp.ufunc doesn't work! Should use isinstance(obj, _cp.ufunc)
+        elif (type(obj) in function_types) or (isinstance(obj, _cp.ufunc)):
             new[name] = primitive(obj)
         elif type(obj) is type and obj in int_types:
             new[name] = wrap_intdtype(obj)
         elif type(obj) in unchanged_types:
             new[name] = obj
+        # else:
+        #     print(name, obj, isinstance(obj, _cp.ufunc))
 
 wrap_namespace(_cp.__dict__, globals())
 

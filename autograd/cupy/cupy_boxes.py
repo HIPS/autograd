@@ -49,16 +49,47 @@ class ArrayBox(Box):
 
 ArrayBox.register(cp.ndarray)
 for type_ in [float, cp.float64, cp.float32, cp.float16,
-              complex, cp.complex64, cp.complex128]:
+              complex,
+              # cp.complex64,
+              # cp.complex128
+              ]:
     ArrayBox.register(type_)
 
 # These numpy.ndarray methods are just refs to an equivalent numpy function
-nondiff_methods = ['all', 'any', 'argmax', 'argmin', 'argpartition',
-                   'argsort', 'nonzero', 'searchsorted', 'round']
-diff_methods = ['clip', 'compress', 'cumprod', 'cumsum', 'diagonal',
-                'max', 'mean', 'min', 'prod', 'ptp', 'ravel', 'repeat',
-                'reshape', 'squeeze', 'std', 'sum', 'swapaxes', 'take',
-                'trace', 'transpose', 'var']
+nondiff_methods = [
+    # 'all',
+    # 'any',
+    'argmax',
+    'argmin',
+    'argpartition',
+    'argsort',
+    'nonzero',
+    # 'searchsorted',
+    # 'round'
+]
+diff_methods = [
+    'clip',
+    # 'compress',
+    'cumprod',
+    'cumsum',
+    'diagonal',
+    # 'max', 
+    'mean', 
+    # 'min', 
+    # 'prod', 
+    # 'ptp', 
+    'ravel', 
+    'repeat',
+    'reshape', 
+    'squeeze', 
+    'std', 
+    # 'sum', 
+    'swapaxes', 
+    'take',
+    'trace',
+    'transpose', 
+    'var'
+]
 for method_name in nondiff_methods + diff_methods:
     setattr(ArrayBox, method_name, acp.__dict__[method_name])
 
