@@ -34,7 +34,7 @@ def check_vjp(f, x):
     assert scalar_close(vjv_numeric, vjv_exact), \
         ("Derivative (VJP) check of {} failed with arg {}:\n"
          "analytic: {}\nnumeric:  {}".format(
-            get_name(f), x, vjv_numeric, vjv_exact))
+            get_name(f), x, vjv_exact, vjv_numeric))
 
 def check_jvp(f, x):
     jvp = make_jvp(f, x)
