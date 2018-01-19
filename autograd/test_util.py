@@ -29,8 +29,8 @@ def check_vjp(f, x):
 
     vjp_y = x_vs.covector(vjp(y_vs.covector(y_v)))
     assert vspace(vjp_y) == x_vs
-    vjv_numeric = x_vs.inner_prod(x_v, vjp_y)
-    vjv_exact   = y_vs.inner_prod(y_v, jvp(x_v))
+    vjv_exact   = x_vs.inner_prod(x_v, vjp_y)
+    vjv_numeric = y_vs.inner_prod(y_v, jvp(x_v))
     assert scalar_close(vjv_numeric, vjv_exact), \
         ("Derivative (VJP) check of {} failed with arg {}:\n"
          "analytic: {}\nnumeric:  {}".format(
