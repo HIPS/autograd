@@ -7,12 +7,13 @@ import autograd.builtins as builtins
 # from cupy.core.einsumfunc import _parse_einsum_input
 
 notrace_functions = [
-    # _cp.ndim,
-    # _cp.shape,
-    # _cp.iscomplexobj,
-    _cp.result_type,
-    _cp.zeros_like,
-    _cp.ones_like,
+    _cp.floor, _cp.ceil, _cp.rint, _cp.trunc, _cp.all, _cp.any,
+    _cp.argmax, _cp.argmin, _cp.nonzero, _cp.flatnonzero,
+    _cp.count_nonzero, _cp.sign, _cp.floor_divide, _cp.logical_and,
+    _cp.logical_or, _cp.logical_not, _cp.logical_xor, _cp.isfinite,
+    _cp.isinf, _cp.isnan, _cp.greater, _cp.greater_equal, _cp.less,
+    _cp.less_equal, _cp.equal, _cp.not_equal, _cp.isscalar,
+    _cp.zeros_like, _cp.ones_like
 ]
 
 def wrap_intdtype(cls):
@@ -52,7 +53,9 @@ wrap_namespace(_cp.__dict__, globals())
 def concatenate_args(axis, *args):
     return _cp.concatenate(args, axis).view(ndarray)
 concatenate = lambda arr_list, axis=0 : concatenate_args(axis, *arr_list)
+
 vstack = row_stack = lambda tup: concatenate([atleast_2d(_m) for _m in tup], axis=0)
+
 def hstack(tup):
     arrs = [atleast_1d(_m) for _m in tup]
     if arrs[0].ndim == 1:
@@ -68,12 +71,13 @@ def column_stack(tup):
         arrays.append(arr)
     return concatenate(arrays, 1)
 
-def array(A, *args, **kwargs):
-    t = builtins.type(A)
-    if t in (list, tuple):
-        return array_from_args(args, kwargs, *map(array, A))
-    else:
-        return _array_from_scalar_or_array(args, kwargs, A)
+def array(A, *array_args, **array_kwargs):
+    # t = builtins.type(A)
+    return array_from_args(array_args, array_kwargs, A)
+    # if t in (list, tuple):
+    #     return array_from_args(array_args, array_kwargs, A)
+    # else:
+    #     return _array_from_scalar_or_array(args, kwargs, A)
 
 def wrap_if_boxes_inside(raw_array, slow_op_name=None):
     if raw_array.dtype is _cp.dtype('O'):
@@ -89,11 +93,8 @@ def _array_from_scalar_or_array(array_args, array_kwargs, scalar):
     return _cp.array(scalar, *array_args, **array_kwargs)
 
 @primitive
-def array_from_args(array_args, array_kwargs, *args):
-    print(array_args)
-    print(array_kwargs)
-    print(*args)
-    return _cp.array(args, *array_args, **array_kwargs)
+def array_from_args(array_args, array_kwargs, args):
+    return _cp.array(args , *array_args, **array_kwargs)
 
 def select(condlist, choicelist, default=0):
     raw_array = _cp.select(list(condlist), list(choicelist), default=default)
