@@ -121,8 +121,6 @@ defvjp(anp.clip,    lambda ans, x, a_min, a_max : lambda g: g * anp.logical_and(
 defvjp(anp.swapaxes, lambda ans, x, axis1, axis2: lambda g: anp.swapaxes(g, axis2, axis1))
 defvjp(anp.moveaxis, lambda ans, a, source, destination: lambda g:
                     anp.moveaxis(g, destination, source))
-defvjp(anp.rollaxis, lambda ans, a, axis, start=0: lambda g: anp.rollaxis(g, start - 1, axis) if start > axis
-                                                 else anp.rollaxis(g, start, axis + 1))
 defvjp(anp.real_if_close, lambda ans, x : lambda g: match_complex(x, g))
 defvjp(anp.real,   lambda ans, x   : lambda g: match_complex(x, g))
 defvjp(anp.imag,   lambda ans, x   : lambda g: match_complex(x, -1j * g))
@@ -144,6 +142,15 @@ defvjp(anp._astype,
        lambda g: anp._astype(g, A.dtype))
 
 # ----- Trickier grads -----
+def grad_rollaxis(ans, a, axis, start=0):
+    if axis < 0:
+        raise NotImplementedError("Gradient of rollaxis not implemented for axis < 0. "
+            "Please use moveaxis instead.")
+    elif start < 0:
+        raise NotImplementedError("Gradient of rollaxis not implemented for start < 0. "
+            "Please use moveaxis instead.")
+    return lambda g: anp.rollaxis(g, start - 1, axis) if start > axis else anp.rollaxis(g, start, axis + 1)
+defvjp(anp.rollaxis, grad_rollaxis)
 
 def grad_diff(ans, a, n=1, axis=-1):
     nd = anp.ndim(a)

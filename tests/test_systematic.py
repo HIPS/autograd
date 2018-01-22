@@ -200,7 +200,7 @@ def test_tril_3d():  combo_check(np.tril, [0])([R(5, 5, 4)], k=[-1, 0, 1])
 def test_triu_3d():  combo_check(np.triu, [0])([R(5, 5, 4)], k=[-1, 0, 1])
 
 def test_swapaxes(): combo_check(np.swapaxes, [0])([R(3, 4, 5)], axis1=[0, 1, 2], axis2=[0, 1, 2])
-def test_rollaxis(): combo_check(np.rollaxis, [0])([R(2, 3, 4)], axis =[0, 1, 2], start=[0, 1, 2, 3])
+def test_rollaxis(): combo_check(np.rollaxis, [0])([R(2, 3, 4)], axis =[0, 1, 2], start=[0, 1, 2])
 def test_cross():    combo_check(np.cross, [0, 1])([R(3, 3)], [R(3, 3)],
                                  axisa=[-1, 0, 1], axisb=[-1, 0, 1], axisc=[-1, 0, 1], axis=[None, -1, 0, 1])
 
