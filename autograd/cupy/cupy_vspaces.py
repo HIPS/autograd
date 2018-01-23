@@ -54,14 +54,15 @@ class ComplexArrayVSpace(ArrayVSpace):
         return cp.conj(x)
 
 VSpace.register(cp.ndarray,
-                lambda x: ComplexArrayVSpace(x)
-                if cp.iscomplexobj(x)
-                else ArrayVSpace(x))
+                # lambda x: ComplexArrayVSpace(x)
+                # if cp.iscomplexobj(x)
+                # else ArrayVSpace(x))
+                lambda x: ArrayVSpace(x))
 
 float_types = [
-    float, 
-    cp.float64, 
-    cp.float32, 
+    float,
+    cp.float64,
+    cp.float32,
     cp.float16
 ]
 
@@ -69,8 +70,8 @@ for type_ in float_types:
     ArrayVSpace.register(type_)
 
 complex_types = [
-    complex, 
-    # cp.complex64, 
+    complex,
+    # cp.complex64,
     # cp.complex128
 ]
 

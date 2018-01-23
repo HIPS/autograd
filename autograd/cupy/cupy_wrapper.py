@@ -72,12 +72,12 @@ def column_stack(tup):
     return concatenate(arrays, 1)
 
 def array(A, *array_args, **array_kwargs):
-    # t = builtins.type(A)
-    return array_from_args(array_args, array_kwargs, A)
-    # if t in (list, tuple):
-    #     return array_from_args(array_args, array_kwargs, A)
-    # else:
-    #     return _array_from_scalar_or_array(args, kwargs, A)
+    t = builtins.type(A)
+    # return array_from_args(array_args, array_kwargs, A)
+    if t in (list, tuple):
+        return array_from_args(array_args, array_kwargs, A)
+    else:
+        return _array_from_scalar_or_array(array_args, array_kwargs, A)
 
 def wrap_if_boxes_inside(raw_array, slow_op_name=None):
     if raw_array.dtype is _cp.dtype('O'):
@@ -165,7 +165,8 @@ def make_diagonal(D, offset=0, axis1=0, axis2=1):
 
 @notrace_primitive
 def metadata(A):
-    return _cp.shape(A), _cp.ndim(A), _cp.result_type(A), _cp.iscomplexobj(A)
+    return A.shape , A.ndim# , _cp.result_type(A), _cp.iscomplexobj(A)
+    # return _cp.ndim(A)
 
 @notrace_primitive
 def parse_einsum_input(*args):
