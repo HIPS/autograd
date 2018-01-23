@@ -8,11 +8,18 @@ class ArrayVSpace(VSpace):
         self.dtype = value.dtype
 
     @property
-    def size(self): return cp.prod(self.shape)
+    def size(self): 
+        return cp.prod(cp.array(self.shape))
+    
     @property
-    def ndim(self): return len(self.shape)
-    def zeros(self): return cp.zeros(self.shape, dtype=self.dtype)
-    def ones(self):  return cp.ones( self.shape, dtype=self.dtype)
+    def ndim(self): 
+        return len(self.shape)
+    
+    def zeros(self): 
+        return cp.zeros(self.shape, dtype=self.dtype)
+    
+    def ones(self):  
+        return cp.ones( self.shape, dtype=self.dtype)
 
     def standard_basis(self):
       for idxs in cp.ndindex(*self.shape):
