@@ -4,6 +4,7 @@ import warnings
 from autograd.extend import primitive, notrace_primitive
 import cupy as _cp
 import autograd.builtins as builtins
+import numpy
 # from cupy.core.einsumfunc import _parse_einsum_input
 
 notrace_functions = [
@@ -165,7 +166,7 @@ def make_diagonal(D, offset=0, axis1=0, axis2=1):
 
 @notrace_primitive
 def metadata(A):
-    return A.shape , A.ndim# , _cp.result_type(A), _cp.iscomplexobj(A)
+    return A.shape , A.ndim, A.dtype, issubclass(A.dtype.type, numpy.complexfloating) # _cp.iscomplexobj(A)
     # return _cp.ndim(A)
 
 @notrace_primitive
