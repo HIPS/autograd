@@ -5,6 +5,7 @@ from autograd.extend import primitive, notrace_primitive
 import cupy as _cp
 import autograd.builtins as builtins
 import numpy
+from numpy import ndim, iscomplexobj
 # from cupy.core.einsumfunc import _parse_einsum_input
 
 notrace_functions = [

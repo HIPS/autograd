@@ -1,4 +1,5 @@
 import cupy as cp
+import numpy as np
 from autograd.extend import VSpace
 
 class ArrayVSpace(VSpace):
@@ -57,10 +58,9 @@ class ComplexArrayVSpace(ArrayVSpace):
         return cp.conj(x)
 
 VSpace.register(cp.ndarray,
-                # lambda x: ComplexArrayVSpace(x)
-                # if cp.iscomplexobj(x)
-                # else ArrayVSpace(x))
-                lambda x: ArrayVSpace(x))
+                lambda x: ComplexArrayVSpace(x)
+                if np.iscomplexobj(x)
+                else ArrayVSpace(x))
 
 float_types = [
     float,
@@ -74,8 +74,8 @@ for type_ in float_types:
 
 complex_types = [
     complex,
-    # cp.complex64,
-    # cp.complex128
+    np.complex64,
+    np.complex128
 ]
 
 for type_ in complex_types:
