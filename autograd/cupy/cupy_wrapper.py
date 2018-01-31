@@ -15,7 +15,7 @@ notrace_functions = [
     _cp.logical_or, _cp.logical_not, _cp.logical_xor, _cp.isfinite,
     _cp.isinf, _cp.isnan, _cp.greater, _cp.greater_equal, _cp.less,
     _cp.less_equal, _cp.equal, _cp.not_equal, _cp.isscalar,
-    _cp.zeros_like, _cp.ones_like
+    _cp.zeros_like, _cp.ones_like, _cp.sum
 ]
 
 def wrap_intdtype(cls):
