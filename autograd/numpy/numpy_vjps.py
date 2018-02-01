@@ -523,7 +523,8 @@ def grad_einsum(argnum, ans, operands_, kwargs):
                 new_operands = (g,) + rest_of_ops
 
             new_subscripts = new_input_subs + '->' + subs_wrt
-            return unbroadcast(anp.einsum(new_subscripts, *new_operands), result_meta)
+            # TODO(mattjj): remove optimize=False after github.com/numpy/numpy/issues/10343
+            return unbroadcast(anp.einsum(new_subscripts, *new_operands, optimize=False), result_meta)
         else:  # using (op0, sublist0, op1, sublist1, ..., sublistout) convention
             if len(operands) % 2 == 0:
                 raise NotImplementedError("Need sublistout argument")
