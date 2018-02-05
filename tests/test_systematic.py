@@ -78,6 +78,8 @@ def test_op_mod_neg(): binary_ufunc_check_no_same_args(op.mod, lims_B=[-0.3, -2.
 # Misc tests
 
 R = npr.randn
+C = lambda *shape: npr.randn(*shape) + 1j * npr.randn(*shape)
+
 def test_transpose(): combo_check(np.transpose, [0])(
                                   [R(2, 3, 4)], axes = [None, [0, 1, 2], [0, 2, 1],
                                                               [2, 0, 1], [2, 1, 0],
@@ -98,22 +100,23 @@ def test_tile():
     combo_check(np.tile, [0])([R(1)], reps=[(2,), 2])
 
 def test_kron():
-    combo_check(np.kron, [0,1])([R(5,5), R(4,4), R(5), R(5,1), R(1,5), R()],
-                                [R(3,3), R(2,2), R(3), R(1,3), R(3,1), R()])
+    combo_check(np.kron, [0,1])([R(5,5), R(4,4), R(5), R(5,1), R(1,5), R(), C(5,5)],
+                                [R(3,3), R(2,2), R(3), R(1,3), R(3,1), R(), C(3,3)])
 
 def test_inner(): combo_check(np.inner, [0, 1])(
                             [1.5, R(3), R(2, 3)],
                             [0.3, R(3), R(4, 3)])
 def test_dot(): combo_check(np.dot, [0, 1], order=3)(
-                            [1.5, R(3), R(2, 3), R(2, 2, 3)],
-                            [0.3, R(3), R(3, 4), R(2, 3, 4)])
+                            [1.5, R(3), R(2, 3), R(2, 2, 3), C(3), C(2, 3)],
+                            [0.3, R(3), R(3, 4), R(2, 3, 4), C(3)])
+def test_outer(): combo_check(np.outer, [0, 1], order=3)([R(3), C(3)], [R(3), C(3)])
 def test_matmul(): combo_check(np.matmul, [0, 1])(
-                               [R(3), R(2, 3), R(2, 2, 3)],
-                               [R(3), R(3, 4), R(2, 3, 4)])
+                               [R(3), R(2, 3), R(2, 2, 3), C(3), C(2, 3)],
+                               [R(3), R(3, 4), R(2, 3, 4), C(3), C(3, 4)])
 def test_matmul_broadcast(): combo_check(np.matmul, [0, 1])([R(1, 2, 2)], [R(3, 2, 1)])
 def test_tensordot_1(): combo_check(np.tensordot, [0, 1], order=3)(
-                                    [R(1, 3), R(2, 3, 2)],
-                                    [R(3),    R(3, 1),    R(3, 4, 2)],
+                                    [R(1, 3), R(2, 3, 2), C(1, 3)],
+                                    [R(3),    R(3, 1),    R(3, 4, 2), C(3)],
                                     axes=[ [(1,), (0,)] ])
 def test_tensordot_2(): combo_check(np.tensordot, [0, 1], order=3)(
                                     [R(3),    R(3, 1),    R(3, 4, 2)],
@@ -157,7 +160,7 @@ def test_atleast_3d(): combo_check(np.atleast_3d, [0])([1.2, R(1), R(7), R(1,4),
                                                         R(2, 4, 3, 5)])
 
 def test_einsum_transpose():  combo_check(np.einsum, [1])(   ['ij->ji'], [R(1, 1), R(4,4), R(3,4)])
-def test_einsum_matmult():    combo_check(np.einsum, [1, 2])(['ij,jk->ik'], [R(2, 3)], [R(3,4)])
+def test_einsum_matmult():    combo_check(np.einsum, [1, 2])(['ij,jk->ik'], [R(2, 3), C(2, 3)], [R(3, 4), C(3, 4)])
 def test_einsum_matmult_broadcast(): combo_check(np.einsum, [1, 2])(['...ij,...jk->...ik'],
                                                  [R(2, 3), R(2, 2, 3)],
                                                  [R(3, 4), R(2, 3, 4)])
