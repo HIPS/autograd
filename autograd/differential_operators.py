@@ -24,7 +24,7 @@ def grad(fun, x):
     vjp, ans = _make_vjp(fun, x)
     if not vspace(ans).size == 1:
         raise TypeError("Grad only applies to real scalar-output functions. "
-                        "Try jacobian or elementwise_grad.")
+                        "Try jacobian, elementwise_grad or holomorphic_grad.")
     return vjp(vspace(ans).ones())
 
 @unary_to_nary
@@ -127,6 +127,10 @@ def value_and_grad(fun, x):
     """Returns a function that returns both value and gradient. Suitable for use
     in scipy.optimize"""
     vjp, ans = _make_vjp(fun, x)
+    if not vspace(ans).size == 1:
+        raise TypeError("value_and_grad only applies to real scalar-output "
+                        "functions. Try jacobian, elementwise_grad or "
+                        "holomorphic_grad.")
     return ans, vjp(vspace(ans).ones())
 
 def grad_and_aux(fun, argnum=0):

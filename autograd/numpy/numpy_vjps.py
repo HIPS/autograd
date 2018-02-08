@@ -207,9 +207,9 @@ def grad_kron(argnum, ans, orig_A, orig_B):
         shape[n-1], shape[n] = shape[n], shape[n-1]
         reshaped_G = anp.swapaxes(anp.reshape(G, shape), n-1, n)
         if argnum == 0:
-            return anp.reshape(anp.tensordot(reshaped_G, B, axes=anp.ndim(B)), orig_A_shape)
+            return match_complex(orig_A, anp.reshape(anp.tensordot(reshaped_G, B, axes=anp.ndim(B)), orig_A_shape))
         else:
-            return anp.reshape(anp.tensordot(A, reshaped_G, axes=anp.ndim(A)), orig_B_shape)
+            return match_complex(orig_B, anp.reshape(anp.tensordot(A, reshaped_G, axes=anp.ndim(A)), orig_B_shape))
     return vjp
 defvjp(anp.kron, partial(grad_kron, 0), partial(grad_kron, 1))
 
@@ -324,9 +324,9 @@ def grad_matmul(argnum, ans, A, B):
     elif A_ndim == 1 or B_ndim == 1 or (A_ndim == 2 and B_ndim == 2):
         axes = ([A_ndim - 1], [max(0, B_ndim - 2)])
         if argnum == 0:
-            return lambda G: tensordot_adjoint_0(B, G, axes, A_ndim, B_ndim)
+            return lambda G: match_complex(A, tensordot_adjoint_0(B, G, axes, A_ndim, B_ndim))
         elif argnum == 1:
-            return lambda G: tensordot_adjoint_1(A, G, axes, A_ndim, B_ndim)
+            return lambda G: match_complex(B, tensordot_adjoint_1(A, G, axes, A_ndim, B_ndim))
     else:
         return grad_einsum(argnum + 1, ans, ("...ij,...jk->...ik", A, B), None)
 defvjp(anp.matmul, partial(grad_matmul, 0), partial(grad_matmul, 1))
@@ -356,18 +356,18 @@ def dot_adjoint_1(A, G, A_ndim, B_ndim):
 
 def dot_vjp_0(ans, A, B):
     A_ndim, B_ndim = anp.ndim(A), anp.ndim(B)
-    return lambda g: dot_adjoint_0(B, g, A_ndim, B_ndim)
+    return lambda g: match_complex(A, dot_adjoint_0(B, g, A_ndim, B_ndim))
 
 def dot_vjp_1(ans, A, B):
     A_ndim, B_ndim = anp.ndim(A), anp.ndim(B)
-    return lambda g: dot_adjoint_1(A, g, A_ndim, B_ndim)
+    return lambda g: match_complex(B, dot_adjoint_1(A, g, A_ndim, B_ndim))
 defvjp(anp.dot, dot_vjp_0, dot_vjp_1)
 
-defvjp(dot_adjoint_0, lambda ans, B, g, An, Bn: lambda A: dot_adjoint_1(A, g, An, Bn),
-                      lambda ans, B, g, An, Bn: lambda A: anp.dot(A, B))
+defvjp(dot_adjoint_0, lambda ans, B, g, An, Bn: lambda A: match_complex(B, dot_adjoint_1(A, g, An, Bn)),
+                      lambda ans, B, g, An, Bn: lambda A: match_complex(g, anp.dot(A, B)))
 
-defvjp(dot_adjoint_1, lambda ans, A, g, An, Bn: lambda B: dot_adjoint_0(B, g, An, Bn),
-                      lambda ans, A, g, An, Bn: lambda B: anp.dot(A, B))
+defvjp(dot_adjoint_1, lambda ans, A, g, An, Bn: lambda B: match_complex(A, dot_adjoint_0(B, g, An, Bn)),
+                      lambda ans, A, g, An, Bn: lambda B: match_complex(g, anp.dot(A, B)))
 
 @primitive
 def tensordot_adjoint_0(B, G, axes, A_ndim, B_ndim):
@@ -427,19 +427,19 @@ def tensordot_adjoint_1(A, G, axes, A_ndim, B_ndim):
 
 def tensordot_vjp_0(ans, A, B, axes=2):
     A_ndim, B_ndim = anp.ndim(A), anp.ndim(B)
-    return lambda G: tensordot_adjoint_0(B, G, axes, A_ndim, B_ndim)
+    return lambda G: match_complex(A, tensordot_adjoint_0(B, G, axes, A_ndim, B_ndim))
 
 def tensordot_vjp_1(ans, A, B, axes=2):
     A_ndim, B_ndim = anp.ndim(A), anp.ndim(B)
-    return lambda G: tensordot_adjoint_1(A, G, axes, A_ndim, B_ndim)
+    return lambda G: match_complex(B, tensordot_adjoint_1(A, G, axes, A_ndim, B_ndim))
 
 defvjp(anp.tensordot, tensordot_vjp_0, tensordot_vjp_1)
-defvjp(tensordot_adjoint_0, lambda ans, B, G, axes, An, Bn: lambda A: tensordot_adjoint_1(A, G, axes, An, Bn),
-                            lambda ans, B, G, axes, An, Bn: lambda A: anp.tensordot(A, B, axes))
-defvjp(tensordot_adjoint_1, lambda ans, A, G, axes, An, Bn: lambda B: tensordot_adjoint_0(B, G, axes, An, Bn),
-                            lambda ans, A, G, axes, An, Bn: lambda B: anp.tensordot(A, B, axes))
-defvjp(anp.outer, lambda ans, a, b : lambda g: anp.dot(g, b.T),
-                  lambda ans, a, b : lambda g: anp.dot(a.T, g))
+defvjp(tensordot_adjoint_0, lambda ans, B, G, axes, An, Bn: lambda A: match_complex(B, tensordot_adjoint_1(A, G, axes, An, Bn)),
+                            lambda ans, B, G, axes, An, Bn: lambda A: match_complex(G, anp.tensordot(A, B, axes)))
+defvjp(tensordot_adjoint_1, lambda ans, A, G, axes, An, Bn: lambda B: match_complex(A, tensordot_adjoint_0(B, G, axes, An, Bn)),
+                            lambda ans, A, G, axes, An, Bn: lambda B: match_complex(G, anp.tensordot(A, B, axes)))
+defvjp(anp.outer, lambda ans, a, b : lambda g: match_complex(a, anp.dot(g, b.T)),
+                  lambda ans, a, b : lambda g: match_complex(b, anp.dot(a.T, g)))
 
 def grad_concatenate_args(argnum, ans, axis_args, kwargs):
     axis, args = axis_args[0], axis_args[1:]
