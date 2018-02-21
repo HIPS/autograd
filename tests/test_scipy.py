@@ -21,7 +21,7 @@ else:
     from scipy.signal import convolve as sp_convolve
 
     from autograd.test_util import combo_check, check_grads
-    from numpy_utils import  unary_ufunc_check
+    from numpy_utils import  unary_ufunc_check, binary_ufunc_check
 
     npr.seed(1)
     R = npr.randn
@@ -42,45 +42,45 @@ else:
         return symmetrized_fun
 
     ### Stats ###
-    def test_chi2_pdf():    combo_check(stats.chi2.pdf,    [0])([R(4)**2 + 1.1], [1, 2, 3])
-    def test_chi2_cdf():    combo_check(stats.chi2.cdf,    [0])([R(4)**2 + 1.1], [1, 2, 3])
-    def test_chi2_logpdf(): combo_check(stats.chi2.logpdf, [0])([R(4)**2 + 1.1], [1, 2, 3])
+    def test_chi2_pdf():    combo_check(stats.chi2.pdf,    [0], modes=['fwd', 'rev'])([R(4)**2 + 1.1], [1, 2, 3])
+    def test_chi2_cdf():    combo_check(stats.chi2.cdf,    [0], modes=['fwd', 'rev'])([R(4)**2 + 1.1], [1, 2, 3])
+    def test_chi2_logpdf(): combo_check(stats.chi2.logpdf, [0], modes=['fwd', 'rev'])([R(4)**2 + 1.1], [1, 2, 3])
 
-    def test_beta_cdf():    combo_check(stats.beta.cdf,    [0])    ([U(0., 1., 4)], [R(4)**2 + 1.1], [R(4)**2 + 1.1])
-    def test_beta_pdf():    combo_check(stats.beta.pdf,    [0,1,2])([U(0., 1., 4)], [R(4)**2 + 1.1], [R(4)**2 + 1.1])
-    def test_beta_logpdf(): combo_check(stats.beta.logpdf, [0,1,2])([U(0., 1., 4)], [R(4)**2 + 1.1], [R(4)**2 + 1.1])
+    def test_beta_cdf():    combo_check(stats.beta.cdf,    [0],     modes=['fwd', 'rev'])([U(0., 1., 4)], [R(4)**2 + 1.1], [R(4)**2 + 1.1])
+    def test_beta_pdf():    combo_check(stats.beta.pdf,    [0,1,2], modes=['fwd', 'rev'])([U(0., 1., 4)], [R(4)**2 + 1.1], [R(4)**2 + 1.1])
+    def test_beta_logpdf(): combo_check(stats.beta.logpdf, [0,1,2], modes=['fwd', 'rev'])([U(0., 1., 4)], [R(4)**2 + 1.1], [R(4)**2 + 1.1])
 
-    def test_gamma_cdf():    combo_check(stats.gamma.cdf,    [0])  ([R(4)**2 + 1.1], [R(4)**2 + 1.1])
-    def test_gamma_pdf():    combo_check(stats.gamma.pdf,    [0,1])([R(4)**2 + 1.1], [R(4)**2 + 1.1])
-    def test_gamma_logpdf(): combo_check(stats.gamma.logpdf, [0,1])([R(4)**2 + 1.1], [R(4)**2 + 1.1])
+    def test_gamma_cdf():    combo_check(stats.gamma.cdf,    [0],   modes=['fwd', 'rev'])([R(4)**2 + 1.1], [R(4)**2 + 1.1])
+    def test_gamma_pdf():    combo_check(stats.gamma.pdf,    [0,1], modes=['fwd', 'rev'])([R(4)**2 + 1.1], [R(4)**2 + 1.1])
+    def test_gamma_logpdf(): combo_check(stats.gamma.logpdf, [0,1], modes=['fwd', 'rev'])([R(4)**2 + 1.1], [R(4)**2 + 1.1])
 
-    def test_norm_pdf():    combo_check(stats.norm.pdf,    [0,1,2])([R(4)], [R(4)], [R(4)**2 + 1.1])
-    def test_norm_cdf():    combo_check(stats.norm.cdf,    [0,1,2])([R(4)], [R(4)], [R(4)**2 + 1.1])
-    def test_norm_logpdf(): combo_check(stats.norm.logpdf, [0,1,2])([R(4)], [R(4)], [R(4)**2 + 1.1])
-    def test_norm_logcdf(): combo_check(stats.norm.logcdf, [0,1,2])([R(4)], [R(4)], [R(4)**2 + 1.1])
+    def test_norm_pdf():    combo_check(stats.norm.pdf,    [0,1,2], modes=['fwd', 'rev'])([R(4)], [R(4)], [R(4)**2 + 1.1])
+    def test_norm_cdf():    combo_check(stats.norm.cdf,    [0,1,2], modes=['fwd', 'rev'])([R(4)], [R(4)], [R(4)**2 + 1.1])
+    def test_norm_logpdf(): combo_check(stats.norm.logpdf, [0,1,2], modes=['fwd', 'rev'])([R(4)], [R(4)], [R(4)**2 + 1.1])
+    def test_norm_logcdf(): combo_check(stats.norm.logcdf, [0,1,2], modes=['fwd', 'rev'])([R(4)], [R(4)], [R(4)**2 + 1.1])
 
-    def test_norm_pdf_broadcast():    combo_check(stats.norm.pdf,    [0,1,2])([R(4,3)], [R(1,3)], [R(4,1)**2 + 1.1])
-    def test_norm_cdf_broadcast():    combo_check(stats.norm.cdf,    [0,1,2])([R(4,3)], [R(1,3)], [R(4,1)**2 + 1.1])
-    def test_norm_logpdf_broadcast(): combo_check(stats.norm.logpdf, [0,1,2])([R(4,3)], [R(1,3)], [R(4,1)**2 + 1.1])
-    def test_norm_logcdf_broadcast(): combo_check(stats.norm.logcdf, [0,1,2])([R(4,3)], [R(1,3)], [R(4,1)**2 + 1.1])
+    def test_norm_pdf_broadcast():    combo_check(stats.norm.pdf,    [0,1,2], modes=['fwd', 'rev'])([R(4,3)], [R(1,3)], [R(4,1)**2 + 1.1])
+    def test_norm_cdf_broadcast():    combo_check(stats.norm.cdf,    [0,1,2], modes=['fwd', 'rev'])([R(4,3)], [R(1,3)], [R(4,1)**2 + 1.1])
+    def test_norm_logpdf_broadcast(): combo_check(stats.norm.logpdf, [0,1,2], modes=['fwd', 'rev'])([R(4,3)], [R(1,3)], [R(4,1)**2 + 1.1])
+    def test_norm_logcdf_broadcast(): combo_check(stats.norm.logcdf, [0,1,2], modes=['fwd', 'rev'])([R(4,3)], [R(1,3)], [R(4,1)**2 + 1.1])
 
-    def test_poisson_cdf():    combo_check(stats.poisson.cdf,    [1])([np.round(R(4)**2)], [R(4)**2 + 1.1])
-    def test_poisson_logpmf(): combo_check(stats.poisson.logpmf, [1])([np.round(R(4)**2)], [R(4)**2 + 1.1])
-    def test_poisson_pmf():    combo_check(stats.poisson.pmf,    [1])([np.round(R(4)**2)], [R(4)**2 + 1.1])
+    def test_poisson_cdf():    combo_check(stats.poisson.cdf,    [1], modes=['fwd', 'rev'])([np.round(R(4)**2)], [R(4)**2 + 1.1])
+    def test_poisson_logpmf(): combo_check(stats.poisson.logpmf, [1], modes=['fwd', 'rev'])([np.round(R(4)**2)], [R(4)**2 + 1.1])
+    def test_poisson_pmf():    combo_check(stats.poisson.pmf,    [1], modes=['fwd', 'rev'])([np.round(R(4)**2)], [R(4)**2 + 1.1])
 
-    def test_poisson_cdf_broadcast():    combo_check(stats.poisson.cdf,    [1])([np.round(R(4, 3)**2)], [R(4, 1)**2 + 1.1])
-    def test_poisson_logpmf_broadcast(): combo_check(stats.poisson.logpmf, [1])([np.round(R(4, 3)**2)], [R(4, 1)**2 + 1.1])
-    def test_poisson_pmf_broadcast():    combo_check(stats.poisson.pmf,    [1])([np.round(R(4, 3)**2)], [R(4, 1)**2 + 1.1])
+    def test_poisson_cdf_broadcast():    combo_check(stats.poisson.cdf,    [1], modes=['fwd', 'rev'])([np.round(R(4, 3)**2)], [R(4, 1)**2 + 1.1])
+    def test_poisson_logpmf_broadcast(): combo_check(stats.poisson.logpmf, [1], modes=['fwd', 'rev'])([np.round(R(4, 3)**2)], [R(4, 1)**2 + 1.1])
+    def test_poisson_pmf_broadcast():    combo_check(stats.poisson.pmf,    [1], modes=['fwd', 'rev'])([np.round(R(4, 3)**2)], [R(4, 1)**2 + 1.1])
 
-    def test_t_pdf():    combo_check(stats.t.pdf,    [0,1,2,3])([R(4)], [R(4)**2 + 2.1], [R(4)], [R(4)**2 + 2.1])
-    def test_t_cdf():    combo_check(stats.t.cdf,    [0,2])(    [R(4)], [R(4)**2 + 2.1], [R(4)], [R(4)**2 + 2.1])
-    def test_t_logpdf(): combo_check(stats.t.logpdf, [0,1,2,3])([R(4)], [R(4)**2 + 2.1], [R(4)], [R(4)**2 + 2.1])
-    def test_t_logcdf(): combo_check(stats.t.logcdf, [0,2])(    [R(4)], [R(4)**2 + 2.1], [R(4)], [R(4)**2 + 2.1])
+    def test_t_pdf():    combo_check(stats.t.pdf,    [0,1,2,3], modes=['fwd', 'rev'])([R(4)], [R(4)**2 + 2.1], [R(4)], [R(4)**2 + 2.1])
+    def test_t_cdf():    combo_check(stats.t.cdf,    [0,2], modes=['fwd', 'rev'])(    [R(4)], [R(4)**2 + 2.1], [R(4)], [R(4)**2 + 2.1])
+    def test_t_logpdf(): combo_check(stats.t.logpdf, [0,1,2,3], modes=['fwd', 'rev'])([R(4)], [R(4)**2 + 2.1], [R(4)], [R(4)**2 + 2.1])
+    def test_t_logcdf(): combo_check(stats.t.logcdf, [0,2], modes=['fwd', 'rev'])(    [R(4)], [R(4)**2 + 2.1], [R(4)], [R(4)**2 + 2.1])
 
-    def test_t_pdf_broadcast():    combo_check(stats.t.pdf,    [0,1,2,3])([R(4,3)], [R(1,3)**2 + 2.1], [R(4,3)], [R(4,1)**2 + 2.1])
-    def test_t_cdf_broadcast():    combo_check(stats.t.cdf,    [0,2])(    [R(4,3)], [R(1,3)**2 + 2.1], [R(4,3)], [R(4,1)**2 + 2.1])
-    def test_t_logpdf_broadcast(): combo_check(stats.t.logpdf, [0,1,2,3])([R(4,3)], [R(1,3)**2 + 2.1], [R(4,3)], [R(4,1)**2 + 2.1])
-    def test_t_logcdf_broadcast(): combo_check(stats.t.logcdf, [0,2])(    [R(4,3)], [R(1,3)**2 + 2.1], [R(4,3)], [R(4,1)**2 + 2.1])
+    def test_t_pdf_broadcast():    combo_check(stats.t.pdf,    [0,1,2,3], modes=['fwd', 'rev'])([R(4,3)], [R(1,3)**2 + 2.1], [R(4,3)], [R(4,1)**2 + 2.1])
+    def test_t_cdf_broadcast():    combo_check(stats.t.cdf,    [0,2], modes=['fwd', 'rev'])(    [R(4,3)], [R(1,3)**2 + 2.1], [R(4,3)], [R(4,1)**2 + 2.1])
+    def test_t_logpdf_broadcast(): combo_check(stats.t.logpdf, [0,1,2,3], modes=['fwd', 'rev'])([R(4,3)], [R(1,3)**2 + 2.1], [R(4,3)], [R(4,1)**2 + 2.1])
+    def test_t_logcdf_broadcast(): combo_check(stats.t.logcdf, [0,2], modes=['fwd', 'rev'])(    [R(4,3)], [R(1,3)**2 + 2.1], [R(4,3)], [R(4,1)**2 + 2.1])
 
     def make_psd(mat): return np.dot(mat.T, mat) + np.eye(mat.shape[0])
     def test_mvn_pdf():    combo_check(symmetrize_matrix_arg(mvn.pdf, 2), [0, 1, 2], [R(4)], [R(4)], [make_psd(R(4, 4))], allow_singular=[False])
@@ -138,12 +138,12 @@ else:
             assert npo.allclose(ag_convolve(A_35, A_342, axes=([1],[2]),
                                             dot_axes=([0], [0]), mode=mode)[2],
                                 sum([sp_convolve(A_35[i, :], A_342[i, 2, :], mode)
-                                    for i in range(3)]))
+                                     for i in range(3)]))
             assert npo.allclose(ag_convolve(A_2543, A_24232, axes=([1, 2],[2, 4]),
                                             dot_axes=([0, 3], [0, 3]), mode=mode)[2],
                                 sum([sum([sp_convolve(A_2543[i, :, :, j],
-                                                    A_24232[i, 2, :, j, :], mode)
-                                        for i in range(2)]) for j in range(3)]))
+                                                      A_24232[i, 2, :, j, :], mode)
+                                          for i in range(2)]) for j in range(3)]))
 
     def test_convolve():
         combo_check(autograd.scipy.signal.convolve, [0,1])(
@@ -165,35 +165,37 @@ else:
                     axes=[([1],[1])], dot_axes=[([0],[2]), ([0],[0])], mode=['full', 'valid'])
 
     ### Special ###
-    def test_beta():    combo_check(special.beta,    [0,1])([R(4)**2 + 1.1], [R(4)**2 + 1.1])
-    def test_betainc(): combo_check(special.betainc, [2])  ([R(4)**2 + 1.1], [R(4)**2 + 1.1], [U(0., 1., 4)])
-    def test_betaln():  combo_check(special.betaln,  [0,1])([R(4)**2 + 1.1], [R(4)**2 + 1.1])
+    def test_beta():    combo_check(special.beta,    [0,1], modes=['fwd', 'rev'])([R(4)**2 + 1.1], [R(4)**2 + 1.1])
+    def test_betainc(): combo_check(special.betainc, [2]  , modes=['fwd', 'rev'])([R(4)**2 + 1.1], [R(4)**2 + 1.1], [U(0., 1., 4)])
+    def test_betaln():  combo_check(special.betaln,  [0,1], modes=['fwd', 'rev'])([R(4)**2 + 1.1], [R(4)**2 + 1.1])
 
-    def test_gammainc():  combo_check(special.gammainc,  [1])([1], R(4)**2 + 1.3)
-    def test_gammaincc(): combo_check(special.gammaincc, [1])([1], R(4)**2 + 1.3)
-    def test_polygamma(): combo_check(special.polygamma, [1])([0], R(4)**2 + 1.3)
-    def test_jn():        combo_check(special.jn,        [1])([2], R(4)**2 + 1.3)
-    def test_yn():        combo_check(special.yn,        [1])([2], R(4)**2 + 1.3)
+    def test_gammainc():  combo_check(special.gammainc,  [1], modes=['fwd', 'rev'])([1], R(4)**2 + 1.3)
+    def test_gammaincc(): combo_check(special.gammaincc, [1], modes=['fwd', 'rev'])([1], R(4)**2 + 1.3)
+    def test_polygamma(): combo_check(special.polygamma, [1], modes=['fwd', 'rev'])([0], R(4)**2 + 1.3)
+    def test_jn():        combo_check(special.jn,        [1], modes=['fwd', 'rev'])([2], R(4)**2 + 1.3)
+    def test_yn():        combo_check(special.yn,        [1], modes=['fwd', 'rev'])([2], R(4)**2 + 1.3)
 
-    def test_psi():       unary_ufunc_check(special.psi,     lims=[0.3, 2.0], test_complex=False)
-    def test_digamma():   unary_ufunc_check(special.digamma, lims=[0.3, 2.0], test_complex=False)
-    def test_gamma():     unary_ufunc_check(special.gamma,   lims=[0.3, 2.0], test_complex=False)
-    def test_gammaln():   unary_ufunc_check(special.gammaln, lims=[0.3, 2.0], test_complex=False)
-    def test_gammasgn():  unary_ufunc_check(special.gammasgn,lims=[0.3, 2.0], test_complex=False)
-    def test_rgamma()  :  unary_ufunc_check(special.rgamma,  lims=[0.3, 2.0], test_complex=False)
-    def test_multigammaln(): combo_check(special.multigammaln, [0])([U(4., 5.), U(4., 5., (2,3))],
-                                        [1, 2, 3])
+    def test_psi():       unary_ufunc_check(special.psi,     lims=[0.3, 2.0], test_complex=False, modes=['fwd', 'rev'])
+    def test_digamma():   unary_ufunc_check(special.digamma, lims=[0.3, 2.0], test_complex=False, modes=['fwd', 'rev'])
+    def test_gamma():     unary_ufunc_check(special.gamma,   lims=[0.3, 2.0], test_complex=False, modes=['fwd', 'rev'])
+    def test_gammaln():   unary_ufunc_check(special.gammaln, lims=[0.3, 2.0], test_complex=False, modes=['fwd', 'rev'])
+    def test_gammasgn():  unary_ufunc_check(special.gammasgn,lims=[0.3, 2.0], test_complex=False, modes=['fwd', 'rev'])
+    def test_rgamma()  :  unary_ufunc_check(special.rgamma,  lims=[0.3, 2.0], test_complex=False, modes=['fwd', 'rev'])
+    def test_multigammaln(): combo_check(special.multigammaln, [0], modes=['fwd', 'rev'])([U(4., 5.), U(4., 5., (2,3))],
+                                         [1, 2, 3])
 
-    def test_j0(): unary_ufunc_check(special.j0, lims=[0.2, 20.0], test_complex=False)
-    def test_j1(): unary_ufunc_check(special.j1, lims=[0.2, 20.0], test_complex=False)
-    def test_y0(): unary_ufunc_check(special.y0, lims=[0.2, 20.0], test_complex=False)
-    def test_y1(): unary_ufunc_check(special.y1, lims=[0.2, 20.0], test_complex=False)
+    def test_j0(): unary_ufunc_check(special.j0, lims=[0.2, 20.0], test_complex=False, modes=['fwd', 'rev'])
+    def test_j1(): unary_ufunc_check(special.j1, lims=[0.2, 20.0], test_complex=False, modes=['fwd', 'rev'])
+    def test_y0(): unary_ufunc_check(special.y0, lims=[0.2, 20.0], test_complex=False, modes=['fwd', 'rev'])
+    def test_y1(): unary_ufunc_check(special.y1, lims=[0.2, 20.0], test_complex=False, modes=['fwd', 'rev'])
 
-    def test_erf(): unary_ufunc_check(special.erf, lims=[-3., 3.], test_complex=True)
-    def test_erfc(): unary_ufunc_check(special.erfc, lims=[-3., 3.], test_complex=True)
+    def test_erf():  unary_ufunc_check(special.erf,  lims=[-3., 3.], test_complex=True, modes=['fwd', 'rev'])
+    def test_erfc(): unary_ufunc_check(special.erfc, lims=[-3., 3.], test_complex=True, modes=['fwd', 'rev'])
 
-    def test_erfinv(): unary_ufunc_check(special.erfinv, lims=[-0.95, 0.95], test_complex=False)
-    def test_erfcinv(): unary_ufunc_check(special.erfcinv, lims=[0.05, 1.95], test_complex=False)
+    def test_erfinv():  unary_ufunc_check(special.erfinv, lims=[-0.95, 0.95], test_complex=False, modes=['fwd', 'rev'])
+    def test_erfcinv(): unary_ufunc_check(special.erfcinv, lims=[0.05, 1.95], test_complex=False, modes=['fwd', 'rev'])
 
-    def test_logit(): unary_ufunc_check(special.logit, lims=[ 0.10, 0.90], test_complex=False)
-    def test_expit(): unary_ufunc_check(special.expit, lims=[-4.05, 4.95], test_complex=False)
+    def test_logit(): unary_ufunc_check(special.logit, lims=[0.05, 0.95],  test_complex=False, modes=['fwd', 'rev'])
+    def test_expit(): unary_ufunc_check(special.expit, lims=[-4.05, 4.95], test_complex=False, modes=['fwd', 'rev'])
+
+    def test_rel_entr(): binary_ufunc_check(special.rel_entr, lims_A=[0.05, 1], lims_B=[0.05, 1], test_complex=False, modes=['fwd', 'rev'])

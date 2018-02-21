@@ -154,5 +154,14 @@ def parse_einsum_input(*args):
     return _parse_einsum_input(args)
 
 @primitive
+def _broadcast_to_adjoint(x, shape):
+    while _np.ndim(x) > len(shape):
+        x = _np.sum(x, axis=0)
+    for axis, size in enumerate(shape):
+        if size == 1:
+            x = _np.sum(x, axis=axis, keepdims=True)
+    return x
+
+@primitive
 def _astype(A, dtype, order='K', casting='unsafe', subok=True, copy=True):
-  return A.astype(dtype, order, casting, subok, copy)
+    return A.astype(dtype, order, casting, subok, copy)

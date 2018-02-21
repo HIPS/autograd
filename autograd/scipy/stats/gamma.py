@@ -2,8 +2,8 @@ from __future__ import absolute_import
 
 import autograd.numpy as np
 import scipy.stats
-from autograd.extend import primitive, defvjp
-from autograd.numpy.numpy_vjps import unbroadcast_f
+from autograd.extend import primitive
+from autograd.numpy.util import def_ufunc_jps
 from autograd.scipy.special import gamma, psi
 
 cdf = primitive(scipy.stats.gamma.cdf)
@@ -16,10 +16,13 @@ def grad_gamma_logpdf_arg0(x, a):
 def grad_gamma_logpdf_arg1(x, a):
     return np.log(x) - psi(a)
 
-defvjp(cdf, lambda ans, x, a: unbroadcast_f(x, lambda g: g * np.exp(-x) * np.power(x, a-1) / gamma(a)), argnums=[0])
-defvjp(logpdf,
-       lambda ans, x, a: unbroadcast_f(x, lambda g: g * grad_gamma_logpdf_arg0(x, a)),
-       lambda ans, x, a: unbroadcast_f(a, lambda g: g * grad_gamma_logpdf_arg1(x, a)))
-defvjp(pdf,
-       lambda ans, x, a: unbroadcast_f(x, lambda g: g * ans * grad_gamma_logpdf_arg0(x, a)),
-       lambda ans, x, a: unbroadcast_f(a, lambda g: g * ans * grad_gamma_logpdf_arg1(x, a)))
+def_ufunc_jps(cdf,
+              (lambda ans, x, a: np.exp(-x) * np.power(x, a-1) / gamma(a), 'mul'),
+              None,
+              None)
+def_ufunc_jps(logpdf,
+              (lambda ans, x, a: grad_gamma_logpdf_arg0(x, a), 'mul'),
+              (lambda ans, x, a: grad_gamma_logpdf_arg1(x, a), 'mul'))
+def_ufunc_jps(pdf,
+              (lambda ans, x, a: ans * grad_gamma_logpdf_arg0(x, a), 'mul'),
+              (lambda ans, x, a: ans * grad_gamma_logpdf_arg1(x, a), 'mul'))

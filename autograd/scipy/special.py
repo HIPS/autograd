@@ -1,23 +1,24 @@
 from __future__ import absolute_import
 import scipy.special
 import autograd.numpy as np
-from autograd.extend import primitive, defvjp
-from autograd.numpy.numpy_vjps import unbroadcast_f
+from autograd.numpy.util import def_ufunc_jps, def_ufunc_jps_inv_pair
+from autograd.extend import primitive
 
 ### Beta function ###
 beta    = primitive(scipy.special.beta)
 betainc = primitive(scipy.special.betainc)
 betaln  = primitive(scipy.special.betaln)
 
-defvjp(beta,
-       lambda ans, a, b: unbroadcast_f(a, lambda g: g * ans * (psi(a) - psi(a + b))),
-       lambda ans, a, b: unbroadcast_f(b, lambda g: g * ans * (psi(b) - psi(a + b))))
-defvjp(betainc,
-       lambda ans, a, b, x: unbroadcast_f(x, lambda g: g * np.power(x, a - 1) * np.power(1 - x, b - 1) / beta(a, b)),
-       argnums=[2])
-defvjp(betaln,
-       lambda ans, a, b: unbroadcast_f(a, lambda g: g * (psi(a) - psi(a + b))),
-       lambda ans, a, b: unbroadcast_f(b, lambda g: g * (psi(b) - psi(a + b))))
+def_ufunc_jps(beta,
+              (lambda ans, a, b: ans * (psi(a) - psi(a + b)), 'mul'),
+              (lambda ans, a, b: ans * (psi(b) - psi(a + b)), 'mul'))
+def_ufunc_jps(betainc,
+              None,
+              None,
+              (lambda ans, a, b, x: np.power(x, a - 1) * np.power(1 - x, b - 1) / beta(a, b), 'mul'))
+def_ufunc_jps(betaln,
+              (lambda ans, a, b: psi(a) - psi(a + b), 'mul'),
+              (lambda ans, a, b: psi(b) - psi(a + b), 'mul'))
 
 ### Gamma functions ###
 polygamma    = primitive(scipy.special.polygamma)
@@ -31,24 +32,23 @@ gammasgn     = primitive(scipy.special.gammasgn)
 rgamma       = primitive(scipy.special.rgamma)
 multigammaln = primitive(scipy.special.multigammaln)
 
-defvjp(gammasgn, None)
-defvjp(polygamma, None, lambda ans, n, x: lambda g: g * polygamma(n + 1, x))
-defvjp(psi,      lambda ans, x: lambda g: g * polygamma(1, x))
-defvjp(digamma,  lambda ans, x: lambda g: g * polygamma(1, x))
-defvjp(gamma,    lambda ans, x: lambda g: g * ans * psi(x))
-defvjp(gammaln,  lambda ans, x: lambda g: g * psi(x))
-defvjp(rgamma,   lambda ans, x: lambda g: g * psi(x) / -gamma(x))
-defvjp(multigammaln,lambda ans, a, d: lambda g:
-       g * np.sum(digamma(np.expand_dims(a, -1) - np.arange(d)/2.), -1),
+def_ufunc_jps(gammasgn,  None)
+def_ufunc_jps(polygamma, None, (lambda ans, n, x: polygamma(n + 1, x), 'mul'))
+def_ufunc_jps(psi,       (lambda ans, x: polygamma(1, x),    'mul'))
+def_ufunc_jps(digamma,   (lambda ans, x: polygamma(1, x),    'mul'))
+def_ufunc_jps(gamma,     (lambda ans, x: ans * psi(x),       'mul'))
+def_ufunc_jps(gammaln,   (lambda ans, x: psi(x),             'mul'))
+def_ufunc_jps(rgamma,    (lambda ans, x: psi(x) / -gamma(x), 'mul'))
+def_ufunc_jps(multigammaln, (lambda ans, a, d:
+       np.sum(digamma(np.expand_dims(a, -1) - np.arange(d)/2.), -1), 'mul'),
        None)
 
 def make_gammainc_vjp_arg1(sign):
     def gammainc_vjp_arg1(ans, a, x):
-        coeffs = sign * np.exp(-x) * np.power(x, a - 1) / gamma(a)
-        return unbroadcast_f(x, lambda g: g * coeffs)
+        return sign * np.exp(-x) * np.power(x, a - 1) / gamma(a)
     return gammainc_vjp_arg1
-defvjp(gammainc, make_gammainc_vjp_arg1(1), argnums=[1])
-defvjp(gammaincc, make_gammainc_vjp_arg1(-1), argnums=[1])
+def_ufunc_jps(gammainc,  None, (make_gammainc_vjp_arg1(1),  'mul'))
+def_ufunc_jps(gammaincc, None, (make_gammainc_vjp_arg1(-1), 'mul'))
 
 ### Bessel functions ###
 j0 = primitive(scipy.special.j0)
@@ -58,33 +58,33 @@ y1 = primitive(scipy.special.y1)
 jn = primitive(scipy.special.jn)
 yn = primitive(scipy.special.yn)
 
-defvjp(j0,lambda ans, x: lambda g: -g * j1(x))
-defvjp(y0,lambda ans, x: lambda g: -g * y1(x))
-defvjp(j1,lambda ans, x: lambda g: g * (j0(x) - jn(2, x)) / 2.0)
-defvjp(y1,lambda ans, x: lambda g: g * (y0(x) - yn(2, x)) / 2.0)
-defvjp(jn, None, lambda ans, n, x: lambda g: g * (jn(n - 1, x) - jn(n + 1, x)) / 2.0)
-defvjp(yn, None, lambda ans, n, x: lambda g: g * (yn(n - 1, x) - yn(n + 1, x)) / 2.0)
+def_ufunc_jps(j0, (lambda ans, x: -j1(x),                   'mul'))
+def_ufunc_jps(y0, (lambda ans, x: -y1(x),                   'mul'))
+def_ufunc_jps(j1, (lambda ans, x: (j0(x) - jn(2, x)) / 2.0, 'mul'))
+def_ufunc_jps(y1, (lambda ans, x: (y0(x) - yn(2, x)) / 2.0, 'mul'))
+def_ufunc_jps(jn, None, (lambda ans, n, x: (jn(n - 1, x) - jn(n + 1, x)) / 2.0, 'mul'))
+def_ufunc_jps(yn, None, (lambda ans, n, x: (yn(n - 1, x) - yn(n + 1, x)) / 2.0, 'mul'))
 
 ### Error Function ###
 inv_root_pi = 0.56418958354775627928
 erf = primitive(scipy.special.erf)
 erfc = primitive(scipy.special.erfc)
 
-defvjp(erf, lambda ans, x: lambda g:  2.*g*inv_root_pi*np.exp(-x**2))
-defvjp(erfc,lambda ans, x: lambda g: -2.*g*inv_root_pi*np.exp(-x**2))
-
-
 ### Inverse error function ###
 root_pi = 1.7724538509055159
 erfinv = primitive(scipy.special.erfinv)
 erfcinv = primitive(scipy.special.erfcinv)
 
-defvjp(erfinv,lambda ans, x: lambda g: g * root_pi / 2 * np.exp(erfinv(x)**2))
-defvjp(erfcinv,lambda ans, x: lambda g: -g * root_pi / 2 * np.exp(erfcinv(x)**2))
+def_ufunc_jps_inv_pair(erf,  erfinv,  lambda ans, x: 2.*inv_root_pi*np.exp(-x**2))
+def_ufunc_jps_inv_pair(erfc, erfcinv, lambda ans, x: -2.*inv_root_pi*np.exp(-x**2))
 
 ### Logit and Expit ###
 logit = primitive(scipy.special.logit)
 expit = primitive(scipy.special.expit)
 
-defvjp(logit,lambda ans, x: lambda g: g / ( x * (1 - x)))
-defvjp(expit,lambda ans, x: lambda g: g * ans * (1 - ans))
+def_ufunc_jps_inv_pair(expit, logit, lambda ans, x:  ans * (1 - ans))
+
+### Relative entropy ###
+rel_entr = primitive(scipy.special.rel_entr)
+
+def_ufunc_jps(rel_entr, (lambda ans, x, y: np.log(x / y) + 1, 'mul'), (lambda ans, x, y: - x / y, 'mul'))

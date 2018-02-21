@@ -1,14 +1,18 @@
 from . import numpy_wrapper as anp
-from .numpy_vjps import (untake, balanced_eq, match_complex, replace_zero,
-                         dot_adjoint_0, dot_adjoint_1, tensordot_adjoint_0,
-                         tensordot_adjoint_1, nograd_functions)
+from .numpy_vjps import (untake, balanced_eq, replace_zero, dot_adjoint_0, dot_adjoint_1,
+                         tensordot_adjoint_0, tensordot_adjoint_1, nograd_functions)
 from autograd.extend import (defjvp, defjvp_argnum, def_linear, vspace, JVPNode,
                              register_notrace)
+from .util import def_ufunc_jps, def_ufunc_jps_inv_pair
+
 from ..util import func
 from .numpy_boxes import ArrayBox
 
 for fun in nograd_functions:
     register_notrace(JVPNode, fun)
+
+defjvp(anp.broadcast_to, 'same')
+defjvp(anp._broadcast_to_adjoint, 'same')
 
 defjvp(func(ArrayBox.__getitem__), 'same')
 defjvp(untake, 'same')
@@ -18,47 +22,74 @@ defjvp(anp._array_from_scalar_or_array, None, None,
        lambda g, ans, args, kwargs, _: anp._array_from_scalar_or_array(args, kwargs, g))
 
 # ----- Functions that are constant w.r.t. continuous inputs -----
+
 defjvp(anp.nan_to_num, lambda g, ans, x: anp.where(anp.isfinite(x), g, 0.))
 
-# ----- Binary ufuncs (linear) -----
-def_linear(anp.multiply)
+# ----- Unary ufuncs ------
+
+def_ufunc_jps(anp.negative,      'same')
+def_ufunc_jps(anp.rad2deg,       'same')
+def_ufunc_jps(anp.degrees,       'same')
+def_ufunc_jps(anp.deg2rad,       'same')
+def_ufunc_jps(anp.radians,       'same')
+def_ufunc_jps(anp.abs,
+        (lambda ans, x: replace_zero(anp.conj(x), 0.) / replace_zero(ans, 1.), 'cmul'))
+def_ufunc_jps(anp.fabs,          (lambda ans, x: anp.sign(x), 'mul'))  # fabs doesn't take complex numbers.
+def_ufunc_jps(anp.absolute,      (lambda ans, x: anp.conj(x) / ans,         'cmul'))
+def_ufunc_jps(anp.reciprocal,    (lambda ans, x: -ans**2,                   'mul' ))
+def_ufunc_jps(anp.log10,         (lambda ans, x: x * anp.log(10),           'div' ))
+def_ufunc_jps(anp.sin,           (lambda ans, x: anp.cos(x),                'mul' ))
+def_ufunc_jps(anp.cos,           (lambda ans, x: -anp.sin(x),               'mul' ))
+def_ufunc_jps(anp.arcsin,        (lambda ans, x: anp.sqrt(1 - x**2),        'div' ))
+def_ufunc_jps(anp.arccos,        (lambda ans, x:-anp.sqrt(1 - x**2),        'div' ))
+def_ufunc_jps(anp.cosh,          (lambda ans, x: anp.sinh(x),               'mul' ))
+def_ufunc_jps(anp.arccosh,       (lambda ans, x: anp.sqrt(x**2 - 1),        'div' ))
+def_ufunc_jps(anp.sinc,          (lambda ans, x: (anp.cos(anp.pi*x)-ans)/x, 'mul' ))
+def_ufunc_jps(anp.real_if_close, 'cid')
+def_ufunc_jps(anp.real,          'cid')
+def_ufunc_jps(anp.imag,          (lambda ans, x: -1j, 'cmul'))
+def_ufunc_jps(anp.conj,          'same')
+def_ufunc_jps(anp.conjugate,     'same')
+def_ufunc_jps(anp.angle,         (lambda ans, x: anp.conj(x * 1j)/anp.abs(x)**2, 'cmul'))
+
+def_ufunc_jps_inv_pair(anp.exp,    anp.log,     lambda ans, x: ans)
+def_ufunc_jps_inv_pair(anp.exp2,   anp.log2,    lambda ans, x: ans * anp.log(2))
+def_ufunc_jps_inv_pair(anp.expm1,  anp.log1p,   lambda ans, x: ans + 1)
+def_ufunc_jps_inv_pair(anp.tan,    anp.arctan,  lambda ans, x: 1 + ans**2)
+def_ufunc_jps_inv_pair(anp.tanh,   anp.arctanh, lambda ans, x: 1 - ans**2)
+def_ufunc_jps_inv_pair(anp.sinh,   anp.arcsinh, lambda ans, x: anp.sqrt(ans**2 + 1))
+def_ufunc_jps_inv_pair(anp.square, anp.sqrt,    lambda ans, x: 2 * x)
 
 # ----- Binary ufuncs -----
-defjvp(anp.add,        lambda g, ans, x, y : broadcast(g, ans),
-                       lambda g, ans, x, y : broadcast(g, ans))
-defjvp(anp.subtract,   lambda g, ans, x, y : broadcast(g, ans),
-                       lambda g, ans, x, y : broadcast(-g, ans))
-defjvp(anp.divide,     'same',
-                       lambda g, ans, x, y : - g * x / y**2)
-defjvp(anp.maximum,    lambda g, ans, x, y : g * balanced_eq(x, ans, y),
-                       lambda g, ans, x, y : g * balanced_eq(y, ans, x))
-defjvp(anp.minimum,    lambda g, ans, x, y : g * balanced_eq(x, ans, y),
-                       lambda g, ans, x, y : g * balanced_eq(y, ans, x))
-defjvp(anp.fmax,       lambda g, ans, x, y : g * balanced_eq(x, ans, y),
-                       lambda g, ans, x, y : g * balanced_eq(y, ans, x))
-defjvp(anp.fmin,       lambda g, ans, x, y : g * balanced_eq(x, ans, y),
-                       lambda g, ans, x, y : g * balanced_eq(y, ans, x))
-defjvp(anp.logaddexp,  lambda g, ans, x, y : g * anp.exp(x-ans),
-                       lambda g, ans, x, y : g * anp.exp(y-ans))
-defjvp(anp.logaddexp2, lambda g, ans, x, y : g * 2**(x-ans),
-                       lambda g, ans, x, y : g * 2**(y-ans))
-defjvp(anp.true_divide,'same',
-                       lambda g, ans, x, y : - g * x / y**2)
-defjvp(anp.mod,        lambda g, ans, x, y : broadcast(g, ans),
-                       lambda g, ans, x, y : -g * anp.floor(x/y))
-defjvp(anp.remainder,  lambda g, ans, x, y : broadcast(g, ans),
-                       lambda g, ans, x, y : -g * anp.floor(x/y))
-defjvp(anp.power,      lambda g, ans, x, y : g * y * x ** anp.where(y, y - 1, 1.),
-                       lambda g, ans, x, y : g * anp.log(replace_zero(x, 1.)) * x ** y)
-defjvp(anp.arctan2,    lambda g, ans, x, y : g * y / (x**2 + y**2),
-                       lambda g, ans, x, y : g * -x / (x**2 + y**2))
+
+def_ufunc_jps(anp.add,         'id', 'id')
+def_ufunc_jps(anp.subtract,    'id', 'neg')
+def_ufunc_jps(anp.multiply,    'same', 'same')
+def_ufunc_jps(anp.divide,      'same', (lambda ans, x, y: -ans/y, 'mul'))
+def_ufunc_jps(anp.maximum,     (lambda ans, x, y: balanced_eq(x, ans, y), 'mul'),
+                               (lambda ans, x, y: balanced_eq(y, ans, x), 'mul'))
+def_ufunc_jps(anp.minimum,     (lambda ans, x, y: balanced_eq(x, ans, y), 'mul'),
+                               (lambda ans, x, y: balanced_eq(y, ans, x), 'mul'))
+def_ufunc_jps(anp.fmax,        (lambda ans, x, y: balanced_eq(x, ans, y), 'mul'),
+                               (lambda ans, x, y: balanced_eq(y, ans, x), 'mul'))
+def_ufunc_jps(anp.fmin,        (lambda ans, x, y: balanced_eq(x, ans, y), 'mul'),
+                               (lambda ans, x, y: balanced_eq(y, ans, x), 'mul'))
+def_ufunc_jps(anp.logaddexp,   (lambda ans, x, y: anp.exp(x-ans), 'mul'),
+                               (lambda ans, x, y: anp.exp(y-ans), 'mul'))
+def_ufunc_jps(anp.logaddexp2,  (lambda ans, x, y: 2**(x-ans), 'mul'),
+                               (lambda ans, x, y: 2**(y-ans), 'mul'))
+def_ufunc_jps(anp.true_divide, 'same', (lambda ans, x, y: -ans/y, 'mul'))
+def_ufunc_jps(anp.mod,         'id', (lambda ans, x, y: -anp.floor(x/y), 'mul'))
+def_ufunc_jps(anp.remainder,   'id', (lambda ans, x, y: -anp.floor(x/y), 'mul'))
+def_ufunc_jps(anp.power,       (lambda ans, x, y: y * x ** anp.where(y, y - 1, 1.), 'mul'),
+                               (lambda ans, x, y: anp.log(replace_zero(x, 1.)) * x ** y, 'mul'))
+def_ufunc_jps(anp.hypot,       (lambda ans, x, y: x / ans, 'mul'),
+                               (lambda ans, x, y: y / ans, 'mul'))
+def_ufunc_jps(anp.arctan2,     (lambda ans, x, y: y / (x**2 + y**2), 'mul'),
+                               (lambda ans, x, y:-x / (x**2 + y**2), 'mul'))
 
 # ----- Simple grads (linear) -----
-defjvp(anp.negative,      'same')
-defjvp(anp.rad2deg,       'same')
-defjvp(anp.degrees,       'same')
-defjvp(anp.deg2rad,       'same')
-defjvp(anp.radians,       'same')
+
 defjvp(anp.reshape,       'same')
 defjvp(anp.roll,          'same')
 defjvp(anp.array_split,   'same')
@@ -85,44 +116,14 @@ defjvp(anp.moveaxis,      'same')
 def_linear(anp.cross)
 
 # ----- Simple grads -----
-defjvp(anp.abs,
-    lambda g, ans, x : anp.real(g * replace_zero(anp.conj(x), 0.)) / replace_zero(ans, 1.))
-defjvp(anp.fabs,        lambda g, ans, x : anp.sign(x) * g)  # fabs doesn't take complex numbers.
-defjvp(anp.absolute,    lambda g, ans, x : anp.real(g * anp.conj(x)) / ans)
-defjvp(anp.reciprocal,  lambda g, ans, x : - g / x**2)
-defjvp(anp.exp,         lambda g, ans, x : ans * g)
-defjvp(anp.exp2,        lambda g, ans, x : ans * anp.log(2) * g)
-defjvp(anp.expm1,       lambda g, ans, x : (ans + 1) * g)
-defjvp(anp.log,         lambda g, ans, x : g / x)
-defjvp(anp.log2,        lambda g, ans, x : g / x / anp.log(2))
-defjvp(anp.log10,       lambda g, ans, x : g / x / anp.log(10))
-defjvp(anp.log1p,       lambda g, ans, x : g / (x + 1))
-defjvp(anp.sin,         lambda g, ans, x : g * anp.cos(x))
-defjvp(anp.cos,         lambda g, ans, x : - g * anp.sin(x))
-defjvp(anp.tan,         lambda g, ans, x : g / anp.cos(x) **2)
-defjvp(anp.arcsin,      lambda g, ans, x : g / anp.sqrt(1 - x**2))
-defjvp(anp.arccos,      lambda g, ans, x :-g / anp.sqrt(1 - x**2))
-defjvp(anp.arctan,      lambda g, ans, x : g / (1 + x**2))
-defjvp(anp.sinh,        lambda g, ans, x : g * anp.cosh(x))
-defjvp(anp.cosh,        lambda g, ans, x : g * anp.sinh(x))
-defjvp(anp.tanh,        lambda g, ans, x : g / anp.cosh(x) **2)
-defjvp(anp.arcsinh,     lambda g, ans, x : g / anp.sqrt(x**2 + 1))
-defjvp(anp.arccosh,     lambda g, ans, x : g / anp.sqrt(x**2 - 1))
-defjvp(anp.arctanh,     lambda g, ans, x : g / (1 - x**2))
-defjvp(anp.square,      lambda g, ans, x : g * 2 * x)
-defjvp(anp.sqrt,        lambda g, ans, x : g * 0.5 * x**-0.5)
-defjvp(anp.sinc,        lambda g, ans, x : g * (anp.cos(anp.pi*x)*anp.pi*x - anp.sin(anp.pi*x))/(anp.pi*x**2))
+
 defjvp(anp.clip,        lambda g, ans, x, a_min, a_max : g * anp.logical_and(ans != a_min, ans != a_max))
-defjvp(anp.real_if_close, lambda g, ans, x : match_complex(ans, g))
-defjvp(anp.real,   lambda g, ans, x   : anp.real(g))
-defjvp(anp.imag,   lambda g, ans, x   : match_complex(ans, -1j * g))
-defjvp(anp.conj,   lambda g, ans, x   : anp.conj(g))
-defjvp(anp.angle,  lambda g, ans, x   : match_complex(ans, g * anp.conj(x * 1j) / anp.abs(x)**2))
 defjvp(anp.where,  None,
        lambda g, ans, c, x=None, y=None : anp.where(c, g, anp.zeros(anp.shape(g))),
        lambda g, ans, c, x=None, y=None : anp.where(c, anp.zeros(g.shape), g))
 
 # ----- Trickier grads -----
+
 defjvp(anp.kron,      'same', 'same')
 defjvp(anp.diff,      'same')
 defjvp(anp.repeat,    'same')
@@ -226,15 +227,3 @@ defjvp(anp.atleast_2d, atleast_jvpmaker(anp.atleast_2d))
 defjvp(anp.atleast_3d, atleast_jvpmaker(anp.atleast_3d))
 
 def_linear(anp.einsum)
-
-# TODO(mattjj): can we call np.broadcast_to or a related function instead?
-def broadcast(x, target):
-    target_shape, target_ndim, target_dtype, target_iscomplex = anp.metadata(target)
-    while anp.ndim(x) < target_ndim:
-        x = anp.expand_dims(x, 0)
-    for axis, size in enumerate(anp.shape(x)):
-        if size == 1:
-            x = anp.repeat(x, target_shape[axis], axis=axis)
-    if target_iscomplex and not anp.iscomplexobj(x):
-        x = x + 0j  # TODO(mattjj): this might promote the dtype
-    return x
