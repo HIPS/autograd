@@ -70,7 +70,6 @@ def defvjp(fun, *vjpmakers):
 # -------------------- forward mode --------------------
 
 def make_jvp(fun, x):
-    assert False
     def jvp(g):
         start_node = JVPNode.new_root(g)
         end_value, end_node = trace(start_node, fun, x)
@@ -82,43 +81,41 @@ def make_jvp(fun, x):
 
 class JVPNode(Node):
     __slots__ = ['g']
-    def __init__(self, value, fun, args, kwargs, parent_argnums, parents):
-        parent_gs = [parent.g for parent in parents]
+    def __init__(self, value, fun, args, kwargs, parents, fmap):
+        parent_gs = fmap(lambda p: p and p.g, parents)
         try:
             jvpmaker = primitive_jvps[fun]
         except KeyError:
             name = getattr(fun, '__name__', fun)
-            raise NotImplementedError("JVP of {} wrt argnums {} not defined"
-                                      .format(name, parent_argnums))
-        self.g = jvpmaker(parent_argnums, parent_gs, value, args, kwargs)
+            raise NotImplementedError("JVP of {} wrt".format(name))
+        self.g = jvpmaker(parents, parent_gs, value, args, kwargs)
 
     def initialize_root(self, g):
         self.g = g
 
 primitive_jvps = {}
-def defjvp_argnums(fun, jvpmaker):
+def defjvp_full(fun, jvpmaker):
     primitive_jvps[fun] = jvpmaker
 
 def defjvp_argnum(fun, jvpmaker):
-    def jvp_argnums(argnums, gs, ans, args, kwargs):
+    assert fun._fmap is map
+    def jvp_full(parents, gs, ans, args, kwargs):
         return sum_outgrads(jvpmaker(argnum, g, ans, args, kwargs)
-                            for argnum, g in zip(argnums, gs))
-    defjvp_argnums(fun, jvp_argnums)
+                            for argnum, parent, g in zip(count(), parents, gs) if parent)
+    defjvp_full(fun, jvp_full)
 
-def defjvp(fun, *jvpfuns, **kwargs):
-    argnums = kwargs.get('argnums', count())
-    jvps_dict = {argnum : translate_jvp(jvpfun, fun, argnum)
-                 for argnum, jvpfun in zip(argnums, jvpfuns)}
-    def jvp_argnums(argnums, gs, ans, args, kwargs):
-        return sum_outgrads(jvps_dict[argnum](g, ans, *args, **kwargs)
-                            for argnum, g in zip(argnums, gs))
+def defjvp(fun, *jvpfuns):
+    assert fun._fmap is map
+    def jvp_full(parents, gs, ans, args, kwargs):
+        return sum_outgrads(
+            translate_jvp(jvpfun, fun, argnum)(g, ans, *args, **kwargs)
+            for argnum, g, jvpfun, parent in
+            zip(count(), gs, jvpfuns, parents) if parent)
 
-    defjvp_argnums(fun, jvp_argnums)
+    defjvp_full(fun, jvp_full)
 
 def translate_jvp(jvpfun, fun, argnum):
-    if jvpfun is None:
-        return lambda g, ans, *a, **k: vspace(ans).zeros()
-    elif jvpfun == 'same':
+    if jvpfun == 'same':
         return (lambda g, ans, *args, **kwargs:
                 fun(*subval(args, argnum, g), **kwargs))
     elif callable(jvpfun):

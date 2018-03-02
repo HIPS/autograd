@@ -13,8 +13,7 @@ defvjp(beta,
        lambda ans, a, b: unbroadcast_f(a, lambda g: g * ans * (psi(a) - psi(a + b))),
        lambda ans, a, b: unbroadcast_f(b, lambda g: g * ans * (psi(b) - psi(a + b))))
 defvjp(betainc, None, None,
-       lambda ans, a, b, x: unbroadcast_f(x, lambda g: g * np.power(x, a - 1) * np.power(1 - x, b - 1) / beta(a, b)),
-       argnums)
+       lambda ans, a, b, x: unbroadcast_f(x, lambda g: g * np.power(x, a - 1) * np.power(1 - x, b - 1) / beta(a, b)))
 defvjp(betaln,
        lambda ans, a, b: unbroadcast_f(a, lambda g: g * (psi(a) - psi(a + b))),
        lambda ans, a, b: unbroadcast_f(b, lambda g: g * (psi(b) - psi(a + b))))

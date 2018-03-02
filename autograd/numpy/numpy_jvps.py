@@ -76,7 +76,7 @@ defjvp(anp.flipud,        'same')
 defjvp(anp.fliplr,        'same')
 defjvp(anp.rot90,         'same')
 defjvp(anp.trace,         'same')
-defjvp(anp.full,          'same', argnums=(1,))
+defjvp(anp.full, None,    'same')
 defjvp(anp.triu,          'same')
 defjvp(anp.tril,          'same')
 defjvp(anp.swapaxes,      'same')
@@ -118,7 +118,8 @@ defjvp(anp.real,   lambda g, ans, x   : anp.real(g))
 defjvp(anp.imag,   lambda g, ans, x   : match_complex(ans, -1j * g))
 defjvp(anp.conj,   lambda g, ans, x   : anp.conj(g))
 defjvp(anp.angle,  lambda g, ans, x   : match_complex(ans, g * anp.conj(x * 1j) / anp.abs(x)**2))
-defjvp(anp.where,  None,
+defjvp(anp.where,
+       lambda g, ans, c, x=None, y=None : anp.zeros(anp.shape(c)),
        lambda g, ans, c, x=None, y=None : anp.where(c, g, anp.zeros(anp.shape(g))),
        lambda g, ans, c, x=None, y=None : anp.where(c, anp.zeros(g.shape), g))
 
