@@ -1,7 +1,7 @@
 from itertools import count
 from functools import reduce
 from .tracer import trace, primitive, toposort, Node, Box, isbox, getval
-from .util import func, subval
+from .util import func, subval, subvals
 
 # -------------------- reverse mode --------------------
 
@@ -16,27 +16,35 @@ def make_vjp(fun, x):
 
 def backward_pass(g, end_node):
     outgrads = {end_node : (g, False)}
-    for node in toposort(end_node):
+    for node in toposort(end_node, get_parent_list):
         outgrad = outgrads.pop(node)
-        ingrads = node.vjp(outgrad[0])
-        for parent, ingrad in zip(node.parents, ingrads):
-            outgrads[parent] = add_outgrads(outgrads.get(parent), ingrad)
+        def accumulate(parent, parent_outgrad):
+            if parent:
+                outgrads[parent] = add_outgrads(outgrads.get(parent), parent_outgrad)
+        node.fmap(accumulate, node.parents, node.vjp(outgrad[0]))
+
     return outgrad[0]
 
+def get_parent_list(node):
+    parents = []
+    node.fmap(lambda p: p and parents.append(p), node.parents)
+    return parents
+
 class VJPNode(Node):
-    __slots__ = ['parents', 'vjp']
-    def __init__(self, value, fun, args, kwargs, parent_argnums, parents):
+    __slots__ = ['parents', 'vjp', 'fmap']
+    def __init__(self, value, fun, args, kwargs, parents, fmap):
         self.parents = parents
+        self.fmap = fmap
         try:
             vjpmaker = primitive_vjps[fun]
         except KeyError:
             fun_name = getattr(fun, '__name__', fun)
-            raise NotImplementedError("VJP of {} wrt argnums {} not defined"
-                                      .format(fun_name, parent_argnums))
-        self.vjp = vjpmaker(parent_argnums, value, args, kwargs)
+            raise NotImplementedError("VJP of {} not defined".format(fun_name))
+        self.vjp = vjpmaker(parents, value, args, kwargs)
 
     def initialize_root(self):
         self.parents = []
+        self.fmap = map
         self.vjp = lambda g: ()
 
 primitive_vjps = {}
@@ -44,41 +52,21 @@ def defvjp_argnums(fun, vjpmaker):
     primitive_vjps[fun] = vjpmaker
 
 def defvjp_argnum(fun, vjpmaker):
-    def vjp_argnums(argnums, *args):
-        vjps = [vjpmaker(argnum, *args) for argnum in argnums]
-        return lambda g: (vjp(g) for vjp in vjps)
+    assert fun._fmap is map
+    def vjp_argnums(parents, *args):
+        vjps = [parent and vjpmaker(argnum, *args)
+                for argnum, parent in enumerate(parents)]
+        return lambda g: (vjp and vjp(g) for vjp in vjps)
     defvjp_argnums(fun, vjp_argnums)
 
 def defvjp(fun, *vjpmakers, **kwargs):
-    argnums = kwargs.get('argnums', count())
-    vjps_dict = {argnum : translate_vjp(vjpmaker, fun, argnum)
-                 for argnum, vjpmaker in zip(argnums, vjpmakers)}
-    def vjp_argnums(argnums, ans, args, kwargs):
-        L = len(argnums)
-        # These first two cases are just optimizations
-        if L == 1:
-            argnum = argnums[0]
-            try:
-                vjpfun = vjps_dict[argnum]
-            except KeyError:
-                raise NotImplementedError(
-                    "VJP of {} wrt argnum 0 not defined".format(fun.__name__))
-            vjp = vjpfun(ans, *args, **kwargs)
-            return lambda g: (vjp(g),)
-        elif L == 2:
-            argnum_0, argnum_1 = argnums
-            try:
-                vjp_0_fun = vjps_dict[argnum_0]
-                vjp_1_fun = vjps_dict[argnum_1]
-            except KeyError:
-                raise NotImplementedError(
-                    "VJP of {} wrt argnums 0, 1 not defined".format(fun.__name__))
-            vjp_0 = vjp_0_fun(ans, *args, **kwargs)
-            vjp_1 = vjp_1_fun(ans, *args, **kwargs)
-            return lambda g: (vjp_0(g), vjp_1(g))
-        else:
-            vjps = [vjps_dict[argnum](ans, *args, **kwargs) for argnum in argnums]
-            return lambda g: (vjp(g) for vjp in vjps)
+    argnums = kwargs.get('argnums')
+    if argnums is not None:
+        vjpmakers = subvals(range(max(argnums) + 1), zip(argnums, vjpmakers))
+    def vjp_argnums(parents, ans, args, kwargs):
+        vjps = fun._fmap(lambda p, vjpmaker:
+                         p and vjpmaker(ans, *args, **kwargs), parents, vjpmakers)
+        return lambda g: fun._fmap(lambda p, vjp: p and vjp(g), parents, vjps)
 
     defvjp_argnums(fun, vjp_argnums)
 
@@ -93,6 +81,7 @@ def translate_vjp(vjpfun, fun, argnum):
 # -------------------- forward mode --------------------
 
 def make_jvp(fun, x):
+    assert False
     def jvp(g):
         start_node = JVPNode.new_root(g)
         end_value, end_node = trace(start_node, fun, x)

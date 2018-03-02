@@ -44,30 +44,20 @@ def general_primitive(f_raw, fmap):
         if boxed_args:
             top_box = max(boxed_args, key=lambda box: box._trace)
             node_constructor = type(top_box._node)
+            # TODO: use of zip(* here only works for lists
             argvals, parents = zip(*fmap(partial(unbox, top_box._trace), args))
             if f_wrapped in notrace_primitives[node_constructor]:
                 return f_wrapped(*argvals, **kwargs)
             ans = f_wrapped(*argvals, **kwargs)
-            # This won't be necessary once we remove downstream reliance on lists
-            argnums, flat_parents = zip(*filter_and_enumerate(fmap, bool, parents))
-            node = node_constructor(ans, f_wrapped, argvals, kwargs, argnums, flat_parents)
+            node = node_constructor(ans, f_wrapped, argvals, kwargs, parents, fmap)
             return new_box(ans, top_box._trace, node)
         else:
             return f_raw(*args, **kwargs)
 
     f_wrapped.fun = f_raw
     f_wrapped._is_autograd_primitive = True
+    f_wrapped._fmap = fmap
     return f_wrapped
-
-def filter_and_enumerate(fmap, test, xs):
-    enumerated = []
-    counter = count()
-    def maybe_append(x):
-        i = counter.next()
-        if test(x):
-            enumerated.append((i, x))
-    fmap(maybe_append, xs)
-    return enumerated
 
 def unbox(level, x):
     if isbox(x) and x._trace == level:
