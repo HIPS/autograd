@@ -59,24 +59,13 @@ def defvjp_argnum(fun, vjpmaker):
         return lambda g: (vjp and vjp(g) for vjp in vjps)
     defvjp_argnums(fun, vjp_argnums)
 
-def defvjp(fun, *vjpmakers, **kwargs):
-    argnums = kwargs.get('argnums')
-    if argnums is not None:
-        vjpmakers = subvals(range(max(argnums) + 1), zip(argnums, vjpmakers))
+def defvjp(fun, *vjpmakers):
     def vjp_argnums(parents, ans, args, kwargs):
         vjps = fun._fmap(lambda p, vjpmaker:
                          p and vjpmaker(ans, *args, **kwargs), parents, vjpmakers)
         return lambda g: fun._fmap(lambda p, vjp: p and vjp(g), parents, vjps)
 
     defvjp_argnums(fun, vjp_argnums)
-
-def translate_vjp(vjpfun, fun, argnum):
-    if vjpfun is None:
-        return lambda ans, *args, **kwargs: lambda g: vspace(args[argnum]).zeros()
-    elif callable(vjpfun):
-        return vjpfun
-    else:
-        raise Exception("Bad VJP '{}' for '{}'".format(vjpfun, fun.__name__))
 
 # -------------------- forward mode --------------------
 

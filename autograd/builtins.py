@@ -114,9 +114,9 @@ class dict(with_metaclass(DictMeta, dict_)):
 @primitive
 def _make_dict(keys, vals):
     return dict_(zip(keys, vals))
-defvjp(_make_dict,
+defvjp(_make_dict, None,
        lambda ans, keys, vals: lambda g:
-       list(g[key] for key in keys), argnums=(1,))
+       list(g[key] for key in keys))
 
 class ContainerVSpace(VSpace):
     def __init__(self, value):

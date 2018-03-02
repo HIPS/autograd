@@ -12,9 +12,9 @@ betaln  = primitive(scipy.special.betaln)
 defvjp(beta,
        lambda ans, a, b: unbroadcast_f(a, lambda g: g * ans * (psi(a) - psi(a + b))),
        lambda ans, a, b: unbroadcast_f(b, lambda g: g * ans * (psi(b) - psi(a + b))))
-defvjp(betainc,
+defvjp(betainc, None, None,
        lambda ans, a, b, x: unbroadcast_f(x, lambda g: g * np.power(x, a - 1) * np.power(1 - x, b - 1) / beta(a, b)),
-       argnums=[2])
+       argnums)
 defvjp(betaln,
        lambda ans, a, b: unbroadcast_f(a, lambda g: g * (psi(a) - psi(a + b))),
        lambda ans, a, b: unbroadcast_f(b, lambda g: g * (psi(b) - psi(a + b))))
@@ -47,8 +47,8 @@ def make_gammainc_vjp_arg1(sign):
         coeffs = sign * np.exp(-x) * np.power(x, a - 1) / gamma(a)
         return unbroadcast_f(x, lambda g: g * coeffs)
     return gammainc_vjp_arg1
-defvjp(gammainc, make_gammainc_vjp_arg1(1), argnums=[1])
-defvjp(gammaincc, make_gammainc_vjp_arg1(-1), argnums=[1])
+defvjp(gammainc , None, make_gammainc_vjp_arg1(1))
+defvjp(gammaincc, None, make_gammainc_vjp_arg1(-1))
 
 ### Bessel functions ###
 j0 = primitive(scipy.special.j0)

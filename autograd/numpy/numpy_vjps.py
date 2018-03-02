@@ -114,7 +114,7 @@ defvjp(anp.fliplr,  lambda ans, x,              : lambda g: anp.fliplr(g))
 defvjp(anp.rot90,   lambda ans, x, k=1          : lambda g: anp.rot90(g, -k))
 defvjp(anp.trace,   lambda ans, x, offset=0     : lambda g:
                     anp.einsum('ij,...->ij...', anp.eye(x.shape[0], x.shape[1], k=offset), g))
-defvjp(anp.full, lambda ans, shape, fill_value, dtype=None : lambda g: anp.sum(g), argnums=(1,))
+defvjp(anp.full, None, lambda ans, shape, fill_value, dtype=None : lambda g: anp.sum(g))
 defvjp(anp.triu,    lambda ans, x, k=0          : lambda g: anp.triu(g, k=k))
 defvjp(anp.tril,    lambda ans, x, k=0          : lambda g: anp.tril(g, k=k))
 defvjp(anp.clip,    lambda ans, x, a_min, a_max : lambda g: g * anp.logical_and(ans != a_min, ans != a_max))
@@ -127,7 +127,8 @@ defvjp(anp.imag,   lambda ans, x   : lambda g: match_complex(x, -1j * g))
 defvjp(anp.conj,   lambda ans, x   : lambda g: anp.conj(g))
 defvjp(anp.conjugate, lambda ans, x: lambda g: anp.conj(g))
 defvjp(anp.angle,  lambda ans, x   : lambda g: match_complex(x, g * anp.conj(x * 1j) / anp.abs(x)**2))
-defvjp(anp.where, None,
+defvjp(anp.where,
+       lambda ans, c, x=None, y=None : lambda g: vspace(c).zeros(),
        lambda ans, c, x=None, y=None : lambda g: anp.where(c, g, anp.zeros(g.shape)),
        lambda ans, c, x=None, y=None : lambda g: anp.where(c, anp.zeros(g.shape), g))
 defvjp(anp.cross, lambda ans, a, b, axisa=-1, axisb=-1, axisc=-1, axis=None : lambda g:
@@ -631,7 +632,7 @@ def array_from_scalar_or_array_gradmaker(ans, array_args, array_kwargs, scarray)
         return lambda g: anp.squeeze(g, axis=tuple(range(ndmin - scarray_ndim)))
     else:
         return lambda g: g
-defvjp(anp._array_from_scalar_or_array, array_from_scalar_or_array_gradmaker, argnums=(2,3))
+defvjp(anp._array_from_scalar_or_array, None, None, array_from_scalar_or_array_gradmaker)
 
 @primitive
 def untake(x, idx, vs):

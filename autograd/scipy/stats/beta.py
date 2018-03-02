@@ -19,7 +19,7 @@ def grad_beta_logpdf_arg1(x, a, b):
 def grad_beta_logpdf_arg2(x, a, b):
     return np.log1p(-x) - psi(b) + psi(a + b)
 
-defvjp(cdf, lambda ans, x, a, b: unbroadcast_f(x, lambda g: g * np.power(x, a-1) * np.power(1-x, b-1) / beta(a, b)), argnums=[0])
+defvjp(cdf, lambda ans, x, a, b: unbroadcast_f(x, lambda g: g * np.power(x, a-1) * np.power(1-x, b-1) / beta(a, b)))
 defvjp(logpdf,
        lambda ans, x, a, b: unbroadcast_f(x, lambda g: g * grad_beta_logpdf_arg0(x, a, b)),
        lambda ans, x, a, b: unbroadcast_f(a, lambda g: g * grad_beta_logpdf_arg1(x, a, b)),
