@@ -1,6 +1,8 @@
 import warnings
 from contextlib import contextmanager
 from collections import defaultdict
+from functools import partial
+from itertools import count
 from .util import subvals, toposort
 from .wrap_util import wraps
 
@@ -29,26 +31,49 @@ class Node(object):
         return root
 
 def primitive(f_raw):
+    return general_primitive(f_raw, map)
+
+def general_primitive(f_raw, fmap):
     """
     Wraps a function so that its gradient can be specified and its invocation
     can be recorded. For examples, see the docs."""
     @wraps(f_raw)
     def f_wrapped(*args, **kwargs):
-        boxed_args, trace, node_constructor = find_top_boxed_args(args)
+        boxed_args = []
+        fmap(lambda arg: isbox(arg) and boxed_args.append(arg), args)
         if boxed_args:
-            argvals = subvals(args, [(argnum, box._value) for argnum, box in boxed_args])
+            top_box = max(boxed_args, key=lambda box: box._trace)
+            node_constructor = type(top_box._node)
+            argvals, parents = zip(*fmap(partial(unbox, top_box._trace), args))
             if f_wrapped in notrace_primitives[node_constructor]:
                 return f_wrapped(*argvals, **kwargs)
-            parents = tuple(box._node for _     , box in boxed_args)
-            argnums = tuple(argnum    for argnum, _   in boxed_args)
             ans = f_wrapped(*argvals, **kwargs)
-            node = node_constructor(ans, f_wrapped, argvals, kwargs, argnums, parents)
-            return new_box(ans, trace, node)
+            # This won't be necessary once we remove downstream reliance on lists
+            argnums, flat_parents = zip(*filter_and_enumerate(fmap, bool, parents))
+            node = node_constructor(ans, f_wrapped, argvals, kwargs, argnums, flat_parents)
+            return new_box(ans, top_box._trace, node)
         else:
             return f_raw(*args, **kwargs)
+
     f_wrapped.fun = f_raw
     f_wrapped._is_autograd_primitive = True
     return f_wrapped
+
+def filter_and_enumerate(fmap, test, xs):
+    enumerated = []
+    counter = count()
+    def maybe_append(x):
+        i = counter.next()
+        if test(x):
+            enumerated.append((i, x))
+    fmap(maybe_append, xs)
+    return enumerated
+
+def unbox(level, x):
+    if isbox(x) and x._trace == level:
+        return x._value, x._node
+    else:
+        return x, None
 
 notrace_primitives = defaultdict(set)
 def register_notrace(trace_type, primitive_fun):
@@ -61,21 +86,6 @@ def notrace_primitive(f_raw):
         return f_raw(*argvals, **kwargs)
     f_wrapped._is_primitive = True
     return f_wrapped
-
-def find_top_boxed_args(args):
-    top_trace = -1
-    top_boxes = []
-    top_node_type = None
-    for argnum, arg in enumerate(args):
-        if isbox(arg):
-            trace = arg._trace
-            if trace > top_trace:
-                top_boxes = [(argnum, arg)]
-                top_trace = trace
-                top_node_type = type(arg._node)
-            elif trace == top_trace:
-                top_boxes.append((argnum, arg))
-    return top_boxes, top_trace, top_node_type
 
 class TraceStack(object):
     def __init__(self):
