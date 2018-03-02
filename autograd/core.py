@@ -48,24 +48,24 @@ class VJPNode(Node):
         self.vjp = lambda g: ()
 
 primitive_vjps = {}
-def defvjp_argnums(fun, vjpmaker):
+def defvjp_full(fun, vjpmaker):
     primitive_vjps[fun] = vjpmaker
 
 def defvjp_argnum(fun, vjpmaker):
     assert fun._fmap is map
-    def vjp_argnums(parents, *args):
+    def vjp_full(parents, *args):
         vjps = [parent and vjpmaker(argnum, *args)
                 for argnum, parent in enumerate(parents)]
         return lambda g: (vjp and vjp(g) for vjp in vjps)
-    defvjp_argnums(fun, vjp_argnums)
+    defvjp_full(fun, vjp_full)
 
 def defvjp(fun, *vjpmakers):
-    def vjp_argnums(parents, ans, args, kwargs):
+    def vjp_full(parents, ans, args, kwargs):
         vjps = fun._fmap(lambda p, vjpmaker:
                          p and vjpmaker(ans, *args, **kwargs), parents, vjpmakers)
         return lambda g: fun._fmap(lambda p, vjp: p and vjp(g), parents, vjps)
 
-    defvjp_argnums(fun, vjp_argnums)
+    defvjp_full(fun, vjp_full)
 
 # -------------------- forward mode --------------------
 

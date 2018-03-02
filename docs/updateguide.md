@@ -29,7 +29,7 @@ Here are some of the most important reasons for this update:
    and
    [pure-Python constant folding](https://github.com/hips/autograd/blob/master/autograd/misc/tracers.py).
 1. More exhaustive, fast reverse- and forward-mode checking with `autograd.test_util.check_grads`.
-1. Expensive VJPs can share work across arguments using `defvjp_argnums`.
+1. Expensive VJPs can share work across arguments using `defvjp_full`.
 1. These changes enabled some internal cleanups, and more features to come!
 
 ## New defvjp interface
