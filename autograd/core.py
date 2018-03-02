@@ -94,39 +94,38 @@ class JVPNode(Node):
         self.g = g
 
 primitive_jvps = {}
-def defjvp_full(fun, jvpmaker):
-    primitive_jvps[fun] = jvpmaker
+def defjvp_full(fun, jvp_full):
+    primitive_jvps[fun] = jvp_full
 
 def defjvp_argnum(fun, jvpmaker):
     assert fun._fmap is map
     def jvp_full(parents, gs, ans, args, kwargs):
-        return sum_outgrads(jvpmaker(argnum, g, ans, args, kwargs)
-                            for argnum, parent, g in zip(count(), parents, gs) if parent)
+        return sum_outgrads(fun._fmap,
+                            [jvpmaker(argnum, g, ans, args, kwargs)
+                             for argnum, parent, g in zip(count(), parents, gs) if parent])
     defjvp_full(fun, jvp_full)
 
 def defjvp(fun, *jvpfuns):
-    assert fun._fmap is map
     def jvp_full(parents, gs, ans, args, kwargs):
         return sum_outgrads(
-            translate_jvp(jvpfun, fun, argnum)(g, ans, *args, **kwargs)
-            for argnum, g, jvpfun, parent in
-            zip(count(), gs, jvpfuns, parents) if parent)
+            fun._fmap,
+            fun._fmap(
+                lambda jvpfun, g: None if g is None else jvpfun(g, ans, *args, **kwargs),
+                jvpfuns, gs))
 
     defjvp_full(fun, jvp_full)
-
-def translate_jvp(jvpfun, fun, argnum):
-    if jvpfun == 'same':
-        return (lambda g, ans, *args, **kwargs:
-                fun(*subval(args, argnum, g), **kwargs))
-    elif callable(jvpfun):
-        return jvpfun
-    else:
-        raise Exception("Bad JVP '{}' for '{}'".format(jvpfun, fun.__name__))
 
 def def_linear(fun):
     """Flags that a function is linear wrt all args"""
     defjvp_argnum(fun, lambda argnum, g, ans, args, kwargs:
                   fun(*subval(args, argnum, g), **kwargs))
+
+def defjvp_is_fun(fun):
+    def jvp_full(parents, gs, ans, args, kwargs):
+        new_args = fun._fmap(lambda p, g, arg: arg if p is None else g,
+                             parents, gs, args)
+        return fun(*new_args, **kwargs)
+    defjvp_full(fun, jvp_full)
 
 # -------------------- vector behavior --------------------
 
@@ -152,8 +151,13 @@ def add_outgrads(prev_g_flagged, g):
         else:
             return g, False
 
-def sum_outgrads(gs):
-    return reduce(add_outgrads, gs, None)[0]
+def sum_outgrads(fmap, gs):
+    outgrads = []
+    def accumulate(x):
+        if x is not None:
+            outgrads.append(x)
+    fmap(accumulate, gs)
+    return reduce(add_outgrads, outgrads, None)[0]
 
 @primitive
 def sparse_add(vs, x_prev, x_new):
@@ -246,9 +250,9 @@ identity_jvp = lambda g, *args, **kwargs: g
 defjvp(sparse_add, None, identity_jvp, identity_jvp)
 defjvp(func(VSpace.mut_add), None, identity_jvp, identity_jvp)
 defjvp(func(VSpace.add),     None, identity_jvp, identity_jvp)
-defjvp(func(VSpace.scalar_mul), None, 'same', 'same')
-defjvp(func(VSpace.inner_prod), None, 'same', 'same')
-defjvp(func(VSpace.covector),   None, 'same')
+def_linear(func(VSpace.scalar_mul))
+def_linear(func(VSpace.inner_prod))
+defjvp_is_fun(func(VSpace.covector))
 
 # -------------------- deprecation warnings -----------------------
 

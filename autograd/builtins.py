@@ -2,7 +2,8 @@ import itertools
 from future.utils import with_metaclass
 from .util import subvals
 from .extend import (Box, primitive, notrace_primitive, VSpace, vspace,
-                     SparseObject, defvjp, defvjp_argnum, defjvp, defjvp_argnum)
+                     SparseObject, defvjp, defvjp_argnum, defjvp,
+                     defjvp_argnum, defjvp_is_fun)
 
 isinstance_ = isinstance
 isinstance = notrace_primitive(isinstance)
@@ -18,7 +19,7 @@ def container_take(A, idx):
 def grad_container_take(ans, A, idx):
     return lambda g: container_untake(g, idx, vspace(A))
 defvjp(container_take, grad_container_take)
-defjvp(container_take, 'same')
+defjvp_is_fun(container_take)
 
 class SequenceBox(Box):
     __slots__ = []
@@ -58,7 +59,7 @@ def container_untake(x, idx, vs):
     return SparseObject(vs, mut_add)
 defvjp(container_untake, lambda ans, x, idx, _:
        lambda g: container_take(g, idx))
-defjvp(container_untake, 'same')
+defjvp_is_fun(container_untake)
 
 @primitive
 def sequence_extend_right(seq, *elts):

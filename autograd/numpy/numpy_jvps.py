@@ -3,15 +3,15 @@ from .numpy_vjps import (untake, balanced_eq, match_complex, replace_zero,
                          dot_adjoint_0, dot_adjoint_1, tensordot_adjoint_0,
                          tensordot_adjoint_1, nograd_functions)
 from autograd.extend import (defjvp, defjvp_argnum, def_linear, vspace, JVPNode,
-                             register_notrace)
+                             register_notrace, defjvp_is_fun)
 from ..util import func
 from .numpy_boxes import ArrayBox
 
 for fun in nograd_functions:
     register_notrace(JVPNode, fun)
 
-defjvp(func(ArrayBox.__getitem__), 'same')
-defjvp(untake, 'same')
+defjvp_is_fun(func(ArrayBox.__getitem__))
+defjvp_is_fun(untake)
 
 defjvp_argnum(anp.array_from_args, lambda argnum, g, ans, args, kwargs: untake(g, argnum-2, vspace(ans)))
 defjvp(anp._array_from_scalar_or_array, None, None,
@@ -28,7 +28,7 @@ defjvp(anp.add,        lambda g, ans, x, y : broadcast(g, ans),
                        lambda g, ans, x, y : broadcast(g, ans))
 defjvp(anp.subtract,   lambda g, ans, x, y : broadcast(g, ans),
                        lambda g, ans, x, y : broadcast(-g, ans))
-defjvp(anp.divide,     'same',
+defjvp(anp.divide,     lambda g, ans, x, y : anp.divide(g, y),
                        lambda g, ans, x, y : - g * x / y**2)
 defjvp(anp.maximum,    lambda g, ans, x, y : g * balanced_eq(x, ans, y),
                        lambda g, ans, x, y : g * balanced_eq(y, ans, x))
@@ -42,7 +42,7 @@ defjvp(anp.logaddexp,  lambda g, ans, x, y : g * anp.exp(x-ans),
                        lambda g, ans, x, y : g * anp.exp(y-ans))
 defjvp(anp.logaddexp2, lambda g, ans, x, y : g * 2**(x-ans),
                        lambda g, ans, x, y : g * 2**(y-ans))
-defjvp(anp.true_divide,'same',
+defjvp(anp.true_divide,lambda g, ans, x, y : anp.true_divide(g, y),
                        lambda g, ans, x, y : - g * x / y**2)
 defjvp(anp.mod,        lambda g, ans, x, y : broadcast(g, ans),
                        lambda g, ans, x, y : -g * anp.floor(x/y))
@@ -54,34 +54,34 @@ defjvp(anp.arctan2,    lambda g, ans, x, y : g * y / (x**2 + y**2),
                        lambda g, ans, x, y : g * -x / (x**2 + y**2))
 
 # ----- Simple grads (linear) -----
-defjvp(anp.negative,      'same')
-defjvp(anp.rad2deg,       'same')
-defjvp(anp.degrees,       'same')
-defjvp(anp.deg2rad,       'same')
-defjvp(anp.radians,       'same')
-defjvp(anp.reshape,       'same')
-defjvp(anp.roll,          'same')
-defjvp(anp.array_split,   'same')
-defjvp(anp.split,         'same')
-defjvp(anp.vsplit,        'same')
-defjvp(anp.hsplit,        'same')
-defjvp(anp.dsplit,        'same')
-defjvp(anp.ravel,         'same')
-defjvp(anp.expand_dims,   'same')
-defjvp(anp.squeeze,       'same')
-defjvp(anp.diag,          'same')
-defjvp(anp.diagonal,      'same')
-defjvp(anp.make_diagonal, 'same')
-defjvp(anp.flipud,        'same')
-defjvp(anp.fliplr,        'same')
-defjvp(anp.rot90,         'same')
-defjvp(anp.trace,         'same')
-defjvp(anp.full, None,    'same')
-defjvp(anp.triu,          'same')
-defjvp(anp.tril,          'same')
-defjvp(anp.swapaxes,      'same')
-defjvp(anp.rollaxis,      'same')
-defjvp(anp.moveaxis,      'same')
+defjvp_is_fun(anp.negative)
+defjvp_is_fun(anp.rad2deg)
+defjvp_is_fun(anp.degrees)
+defjvp_is_fun(anp.deg2rad)
+defjvp_is_fun(anp.radians)
+defjvp_is_fun(anp.reshape)
+defjvp_is_fun(anp.roll)
+defjvp_is_fun(anp.array_split)
+defjvp_is_fun(anp.split)
+defjvp_is_fun(anp.vsplit)
+defjvp_is_fun(anp.hsplit)
+defjvp_is_fun(anp.dsplit)
+defjvp_is_fun(anp.ravel)
+defjvp_is_fun(anp.expand_dims)
+defjvp_is_fun(anp.squeeze)
+defjvp_is_fun(anp.diag)
+defjvp_is_fun(anp.diagonal)
+defjvp_is_fun(anp.make_diagonal)
+defjvp_is_fun(anp.flipud)
+defjvp_is_fun(anp.fliplr)
+defjvp_is_fun(anp.rot90)
+defjvp_is_fun(anp.trace)
+defjvp_is_fun(anp.full)
+defjvp_is_fun(anp.triu)
+defjvp_is_fun(anp.tril)
+defjvp_is_fun(anp.swapaxes)
+defjvp_is_fun(anp.rollaxis)
+defjvp_is_fun(anp.moveaxis)
 def_linear(anp.cross)
 
 # ----- Simple grads -----
@@ -124,13 +124,13 @@ defjvp(anp.where,
        lambda g, ans, c, x=None, y=None : anp.where(c, anp.zeros(g.shape), g))
 
 # ----- Trickier grads -----
-defjvp(anp.kron,      'same', 'same')
-defjvp(anp.diff,      'same')
-defjvp(anp.repeat,    'same')
-defjvp(anp.tile,      'same')
-defjvp(anp.transpose, 'same')
-defjvp(anp.sum,       'same')
-defjvp(anp.mean,      'same')
+def_linear(anp.kron)
+defjvp_is_fun(anp.diff)
+defjvp_is_fun(anp.repeat)
+defjvp_is_fun(anp.tile)
+defjvp_is_fun(anp.transpose)
+defjvp_is_fun(anp.sum)
+defjvp_is_fun(anp.mean)
 defjvp(anp.prod, lambda g, ans, x, axis=None, keepdims=False: ans * anp.sum(g / x, axis=axis, keepdims=keepdims))
 defjvp(anp.linspace, lambda g, ans, start, stop, *args, **kwargs: anp.linspace(g, 0, *args, **kwargs),
                      lambda g, ans, start, stop, *args, **kwargs: anp.linspace(0, g, *args, **kwargs))
@@ -181,7 +181,7 @@ defjvp(anp.min, fwd_grad_chooser)
 defjvp(anp.amax, fwd_grad_chooser)
 defjvp(anp.amin, fwd_grad_chooser)
 
-defjvp(anp.cumsum, 'same')
+defjvp_is_fun(anp.cumsum)
 
 def_linear(anp.inner)
 def_linear(anp.matmul)
