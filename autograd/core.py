@@ -1,5 +1,6 @@
 from itertools import count
 from functools import reduce
+from operator import attrgetter
 from .tracer import trace, primitive, toposort, Node, Box, isbox, getval
 from .util import func, subval, subvals
 
@@ -20,34 +21,25 @@ def backward_pass(g, end_node):
         outgrad = outgrads.pop(node)
         def accumulate(parent, parent_outgrad):
             outgrads[parent] = add_outgrads(outgrads.get(parent), parent_outgrad)
-        node.parent_fmap(accumulate, node._parents, node.vjp(outgrad[0]))
+        node.parent_fmap(accumulate, node.parents, node.vjp(outgrad[0]))
 
     return outgrad[0]
 
 class VJPNode(Node):
-    __slots__ = ['_parents', 'vjp', 'fmap']
-    def __init__(self, value, fun, args, kwargs, parents, fmap):
-        self._parents = parents
-        self.fmap = fmap
+    __slots__ = ['parents', 'vjp', 'parent_fmap']
+    def __init__(self, value, fun, args, kwargs, parents, parent_fmap):
+        self.parents = parents
+        self.parent_fmap = parent_fmap
         try:
             vjpmaker = primitive_vjps[fun]
         except KeyError:
             fun_name = getattr(fun, '__name__', fun)
             raise NotImplementedError("VJP of {} not defined".format(fun_name))
-        self.vjp = vjpmaker(self.parent_fmap, value, *args, **kwargs)
-
-    @property
-    def parents(self):
-        parents = []
-        self.parent_fmap(parents.append, self._parents)
-        return parents
-
-    def parent_fmap(self, f, *args):
-        return self.fmap(lambda p, *xs: p and f(*xs), self._parents, *args)
+        self.vjp = vjpmaker(parent_fmap, value, *args, **kwargs)
 
     def initialize_root(self):
-        self._parents = []
-        self.fmap = map
+        self.parents = ()
+        self.parent_fmap = lambda *args: ()
         self.vjp = lambda g: ()
 
 primitive_vjps = {}
@@ -84,8 +76,8 @@ def make_jvp(fun, x):
 
 class JVPNode(Node):
     __slots__ = ['g']
-    def __init__(self, value, fun, args, kwargs, parents, fmap):
-        parent_gs = fmap(lambda p: p and p.g, parents)
+    def __init__(self, value, fun, args, kwargs, parents, parent_fmap):
+        parent_gs = parent_fmap(attrgetter('g'), parents)
         try:
             jvpmaker = primitive_jvps[fun]
         except KeyError:

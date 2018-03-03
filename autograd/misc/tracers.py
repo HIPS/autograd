@@ -1,34 +1,24 @@
 from itertools import repeat
 from autograd.wrap_util import wraps
-from autograd.util import subvals, toposort
-from autograd.tracer import trace, Node
+from autograd.tracer import trace, Node, toposort
 from functools import partial
 
 class ConstGraphNode(Node):
-    __slots__ = ['_parents', 'partial_fun', 'fmap']
-    def __init__(self, value, fun, args, kwargs, parents, fmap):
-        static_args = fmap(lambda p, arg: None if p else arg, parents, args)
+    __slots__ = ['parents', 'parent_fmap', 'partial_fun']
+    def __init__(self, value, fun, args, kwargs, parents, parent_fmap):
+        static_args = parent_fmap(lambda _: None, args)
         def partial_fun(dynamic_args):
-            return fun(*fmap(lambda p, static_arg, dynamic_arg:
-                             dynamic_arg if p else static_arg,
-                             parents, static_args, dynamic_args), **kwargs)
-        self._parents = parents
-        self.fmap = fmap
+            complete_args = parent_fmap(
+                lambda _, dynamic_arg: dynamic_arg, static_args, dynamic_args)
+            return fun(*complete_args)
+
+        self.parents = parents
+        self.parent_fmap = parent_fmap
         self.partial_fun = partial_fun
 
-    def parent_fmap(self, f, *args):
-        return self.fmap(lambda p, *xs: p and f(*xs), self._parents, *args)
-
-    # TODO(dougalm): this is common with VJPNode. Might belong in tracer.py
-    @property
-    def parents(self):
-        parents = []
-        self.parent_fmap(parents.append, self._parents)
-        return parents
-
     def initialize_root(self):
-        self._parents = []
-        self.fmap = map
+        self.parents = ()
+        self.parent_fmap = lambda *args: ()
 
 def const_graph_unary(fun):
     graph = []
@@ -38,7 +28,7 @@ def const_graph_unary(fun):
             _graph = graph[0]
             vals = {_graph[0] : x}
             for node in _graph[1:]:
-                vals[node] = node.partial_fun(node.fmap(vals.get, node._parents))
+                vals[node] = node.partial_fun(node.parent_fmap(vals.get, node.parents))
             return vals[node]
         else:
             start_node = ConstGraphNode.new_root()
@@ -57,6 +47,7 @@ def const_graph(fun, *args, **kwargs):
     def _fun(*args): return maybe_cached_unary_fun(args)
     return _fun
 
+# TODO: update this to new tracer interface
 class FullGraphNode(Node):
     __slots__ = ['value', 'recipe']
     def __init__(self, value, fun, args, kwargs, parent_argnums, parents):

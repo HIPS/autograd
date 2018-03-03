@@ -3,7 +3,8 @@ from contextlib import contextmanager
 from collections import defaultdict
 from functools import partial
 from itertools import count
-from .util import subvals, toposort
+from operator import attrgetter
+
 from .wrap_util import wraps
 
 def trace(start_node, fun, x):
@@ -43,14 +44,19 @@ def general_primitive(f_raw, fmap):
         fmap(lambda arg: isbox(arg) and boxed_args.append(arg), args)
         if boxed_args:
             top_box = max(boxed_args, key=lambda box: box._trace)
+            def get_parent(arg):
+                if isbox(arg) and arg._trace == top_box._trace:
+                    return arg._node
+            parents = fmap(get_parent, args)
+            def parent_fmap(f, *args):
+                return fmap(lambda p, x, *rest:
+                            f(x, *rest) if p else x,parents, *args)
+            argvals = parent_fmap(attrgetter('_value'), args)
             node_constructor = type(top_box._node)
-            istop = lambda arg: isbox(arg) and arg._trace == top_box._trace
-            argvals = fmap(lambda arg: arg._value if istop(arg) else arg , args)
-            parents = fmap(lambda arg: arg._node  if istop(arg) else None, args)
             if f_wrapped in notrace_primitives[node_constructor]:
                 return f_wrapped(*argvals, **kwargs)
             ans = f_wrapped(*argvals, **kwargs)
-            node = node_constructor(ans, f_wrapped, argvals, kwargs, parents, fmap)
+            node = node_constructor(ans, f_wrapped, argvals, kwargs, parents, parent_fmap)
             return new_box(ans, top_box._trace, node)
         else:
             return f_raw(*args, **kwargs)
@@ -117,3 +123,25 @@ def new_box(value, trace, node):
 box_types = Box.types
 isbox  = lambda x: type(x) in box_types  # almost 3X faster than isinstance(x, Box)
 getval = lambda x: getval(x._value) if isbox(x) else x
+
+def toposort(end_node):
+    child_counts = {}
+    stack = [end_node]
+    while stack:
+        node = stack.pop()
+        if node in child_counts:
+            child_counts[node] += 1
+        else:
+            child_counts[node] = 1
+            node.parent_fmap(stack.append, node.parents)
+
+    childless_nodes = [end_node]
+    while childless_nodes:
+        node = childless_nodes.pop()
+        yield node
+        def process_parents(parent):
+            if child_counts[parent] == 1:
+                childless_nodes.append(parent)
+            else:
+                child_counts[parent] -= 1
+        node.parent_fmap(process_parents, node.parents)
