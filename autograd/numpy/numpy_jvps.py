@@ -195,15 +195,15 @@ def_linear(dot_adjoint_1)
 def_linear(tensordot_adjoint_0)
 def_linear(tensordot_adjoint_1)
 
-def fwd_grad_concatenate_args(argnum, g, ans, axis_args, kwargs):
-    result = []
-    for i in range(1, len(axis_args)):
-        if i == argnum:
-            result.append(g)
-        else:
-            result.append(anp.zeros_like(axis_args[i]))
-    return anp.concatenate_args(axis_args[0], *result)
-defjvp_argnum(anp.concatenate_args, fwd_grad_concatenate_args)
+# def fwd_grad_concatenate_args(argnum, g, ans, axis_args, kwargs):
+#     result = []
+#     for i in range(1, len(axis_args)):
+#         if i == argnum:
+#             result.append(g)
+#         else:
+#             result.append(anp.zeros_like(axis_args[i]))
+#     return anp.concatenate_args(axis_args[0], *result)
+# defjvp_argnum(anp.concatenate_args, fwd_grad_concatenate_args)
 
 def fwd_grad_sort(g, ans, x, axis=-1, kind='quicksort', order=None):
     sort_perm = anp.argsort(x, axis, kind, order)

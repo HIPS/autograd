@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 import types
 import warnings
-from autograd.extend import primitive, notrace_primitive
+from autograd.extend import primitive, notrace_primitive, general_primitive
 import numpy as _np
 import autograd.builtins as builtins
 from numpy.core.einsumfunc import _parse_einsum_input
@@ -9,6 +9,10 @@ from numpy.core.einsumfunc import _parse_einsum_input
 notrace_functions = [
     _np.ndim, _np.shape, _np.iscomplexobj, _np.result_type, _np.zeros_like,
     _np.ones_like,
+]
+
+nowrap_functions = [
+    _np.concatenate
 ]
 
 def wrap_intdtype(cls):
@@ -23,7 +27,7 @@ def wrap_namespace(old, new):
     for name, obj in old.items():
         if obj in notrace_functions:
             new[name] = notrace_primitive(obj)
-        elif type(obj) in function_types:
+        elif type(obj) in function_types and obj not in nowrap_functions:
             new[name] = primitive(obj)
         elif type(obj) is type and obj in int_types:
             new[name] = wrap_intdtype(obj)
@@ -34,10 +38,11 @@ wrap_namespace(_np.__dict__, globals())
 
 # ----- Special treatment of list-input functions -----
 
-@primitive
-def concatenate_args(axis, *args):
-    return _np.concatenate(args, axis).view(ndarray)
-concatenate = lambda arr_list, axis=0 : concatenate_args(axis, *arr_list)
+def map_over_first(f, *args):
+    return (map(f, *[arg[0] for arg in args]),) + args[0][1:]
+
+concatenate = general_primitive(_np.concatenate, map_over_first)
+
 vstack = row_stack = lambda tup: concatenate([atleast_2d(_m) for _m in tup], axis=0)
 def hstack(tup):
     arrs = [atleast_1d(_m) for _m in tup]

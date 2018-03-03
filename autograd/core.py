@@ -34,7 +34,7 @@ class VJPNode(Node):
         except KeyError:
             fun_name = getattr(fun, '__name__', fun)
             raise NotImplementedError("VJP of {} not defined".format(fun_name))
-        self.vjp = vjpmaker(self.parent_fmap, value, args, kwargs)
+        self.vjp = vjpmaker(self.parent_fmap, value, *args, **kwargs)
 
     @property
     def parents(self):
@@ -56,14 +56,14 @@ def defvjp_full(fun, vjpmaker):
 
 def defvjp_argnum(fun, vjpmaker):
     assert fun._fmap is map
-    def vjp_full(parent_fmap, ans, args, kwargs):
+    def vjp_full(parent_fmap, ans, *args, **kwargs):
         vjps = parent_fmap(lambda argnum: vjpmaker(argnum, ans, args, kwargs),
                            range(len(args)))
         return lambda g: parent_fmap(lambda vjp: vjp(g), vjps)
     defvjp_full(fun, vjp_full)
 
 def defvjp(fun, *vjpmakers):
-    def vjp_full(parent_fmap, ans, args, kwargs):
+    def vjp_full(parent_fmap, ans, *args, **kwargs):
         vjps = parent_fmap(lambda vjpmaker:
                            vjpmaker(ans, *args, **kwargs), vjpmakers)
         return lambda g: parent_fmap(lambda vjp: vjp(g), vjps)
@@ -90,7 +90,7 @@ class JVPNode(Node):
             jvpmaker = primitive_jvps[fun]
         except KeyError:
             name = getattr(fun, '__name__', fun)
-            raise NotImplementedError("JVP of {} wrt".format(name))
+            raise NotImplementedError("JVP of {}".format(name))
         self.g = jvpmaker(parents, parent_gs, value, args, kwargs)
 
     def initialize_root(self, g):

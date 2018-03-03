@@ -6,7 +6,8 @@ from ..util import func
 from . import numpy_wrapper as anp
 from .numpy_boxes import ArrayBox
 from autograd.extend import (primitive, vspace, defvjp, defvjp_argnum,
-                             SparseObject, VJPNode, register_notrace)
+                             SparseObject, VJPNode, register_notrace,
+                             defvjp_full)
 
 # ----- Non-differentiable functions -----
 
@@ -478,14 +479,22 @@ defvjp(tensordot_adjoint_1, lambda ans, A, G, axes, An, Bn: lambda B: match_comp
 defvjp(anp.outer, lambda ans, a, b : lambda g: match_complex(a, anp.dot(g, b.T)),
                   lambda ans, a, b : lambda g: match_complex(b, anp.dot(a.T, g)))
 
-def grad_concatenate_args(argnum, ans, axis_args, kwargs):
-    axis, args = axis_args[0], axis_args[1:]
-    sizes = [anp.shape(a)[axis] for a in args[:argnum]]
-    start = sum(sizes[:-1])
-    idxs = [slice(None)] * ans.ndim
-    idxs[axis] = slice(start, start + sizes[-1])
-    return lambda g: g[idxs]
-defvjp_argnum(anp.concatenate_args, grad_concatenate_args)
+
+def make_slices(sizes, axis, ndim):
+    slices = []
+    start = 0
+    for size in sizes:
+        idxs = [slice(None)] * ndim
+        idxs[axis] = slice(start, start + size)
+        start += size
+        slices.append(idxs)
+    return slices
+
+def concatenate_vjp(parent_fmap, ans, arrs, axis=0):
+    sizes = [anp.shape(a)[axis] for a in arrs]
+    slices = (make_slices(sizes, axis, ans.ndim),)
+    return lambda g: parent_fmap(lambda s: g[s], slices)
+defvjp_full(anp.concatenate, concatenate_vjp)
 
 def wrapped_reshape(x, *args, **kwargs):
     # The reshape method can be called like A.reshape((5,4)) or A.reshape(5,4).

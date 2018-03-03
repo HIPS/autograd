@@ -44,8 +44,9 @@ def general_primitive(f_raw, fmap):
         if boxed_args:
             top_box = max(boxed_args, key=lambda box: box._trace)
             node_constructor = type(top_box._node)
-            # TODO: use of zip(* here only works for lists
-            argvals, parents = zip(*fmap(partial(unbox, top_box._trace), args))
+            istop = lambda arg: isbox(arg) and arg._trace == top_box._trace
+            argvals = fmap(lambda arg: arg._value if istop(arg) else arg , args)
+            parents = fmap(lambda arg: arg._node  if istop(arg) else None, args)
             if f_wrapped in notrace_primitives[node_constructor]:
                 return f_wrapped(*argvals, **kwargs)
             ans = f_wrapped(*argvals, **kwargs)
@@ -58,12 +59,6 @@ def general_primitive(f_raw, fmap):
     f_wrapped._is_autograd_primitive = True
     f_wrapped._fmap = fmap
     return f_wrapped
-
-def unbox(level, x):
-    if isbox(x) and x._trace == level:
-        return x._value, x._node
-    else:
-        return x, None
 
 notrace_primitives = defaultdict(set)
 def register_notrace(trace_type, primitive_fun):
