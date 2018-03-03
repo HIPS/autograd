@@ -16,34 +16,38 @@ def make_vjp(fun, x):
 
 def backward_pass(g, end_node):
     outgrads = {end_node : (g, False)}
-    for node in toposort(end_node, get_parent_list):
+    for node in toposort(end_node):
         outgrad = outgrads.pop(node)
         def accumulate(parent, parent_outgrad):
-            if parent:
-                outgrads[parent] = add_outgrads(outgrads.get(parent), parent_outgrad)
-        node.fmap(accumulate, node.parents, node.vjp(outgrad[0]))
+            outgrads[parent] = add_outgrads(outgrads.get(parent), parent_outgrad)
+        node.parent_fmap(accumulate, node._parents, node.vjp(outgrad[0]))
 
     return outgrad[0]
 
-def get_parent_list(node):
-    parents = []
-    node.fmap(lambda p: p and parents.append(p), node.parents)
-    return parents
-
 class VJPNode(Node):
-    __slots__ = ['parents', 'vjp', 'fmap']
+    __slots__ = ['_parents', 'vjp', 'fmap']
     def __init__(self, value, fun, args, kwargs, parents, fmap):
-        self.parents = parents
+        self._parents = parents
         self.fmap = fmap
         try:
             vjpmaker = primitive_vjps[fun]
         except KeyError:
             fun_name = getattr(fun, '__name__', fun)
             raise NotImplementedError("VJP of {} not defined".format(fun_name))
-        self.vjp = vjpmaker(parents, value, args, kwargs)
+        self.vjp = vjpmaker(self.parent_fmap, value, args, kwargs)
+
+    @property
+    def parents(self):
+        parents = []
+        self.parent_fmap(parents.append, self._parents)
+        return parents
+
+
+    def parent_fmap(self, f, *args):
+        return self.fmap(lambda p, *xs: p and f(*xs), self._parents, *args)
 
     def initialize_root(self):
-        self.parents = []
+        self._parents = []
         self.fmap = map
         self.vjp = lambda g: ()
 
@@ -53,17 +57,17 @@ def defvjp_full(fun, vjpmaker):
 
 def defvjp_argnum(fun, vjpmaker):
     assert fun._fmap is map
-    def vjp_full(parents, *args):
-        vjps = [parent and vjpmaker(argnum, *args)
-                for argnum, parent in enumerate(parents)]
-        return lambda g: (vjp and vjp(g) for vjp in vjps)
+    def vjp_full(parent_fmap, ans, args, kwargs):
+        vjps = parent_fmap(lambda argnum: vjpmaker(argnum, ans, args, kwargs),
+                           range(len(args)))
+        return lambda g: parent_fmap(lambda vjp: vjp(g), vjps)
     defvjp_full(fun, vjp_full)
 
 def defvjp(fun, *vjpmakers):
-    def vjp_full(parents, ans, args, kwargs):
-        vjps = fun._fmap(lambda p, vjpmaker:
-                         p and vjpmaker(ans, *args, **kwargs), parents, vjpmakers)
-        return lambda g: fun._fmap(lambda p, vjp: p and vjp(g), parents, vjps)
+    def vjp_full(parent_fmap, ans, args, kwargs):
+        vjps = parent_fmap(lambda vjpmaker:
+                           vjpmaker(ans, *args, **kwargs), vjpmakers)
+        return lambda g: parent_fmap(lambda vjp: vjp(g), vjps)
 
     defvjp_full(fun, vjp_full)
 

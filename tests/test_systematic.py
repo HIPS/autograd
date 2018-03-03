@@ -221,7 +221,7 @@ def test_array_split_1d(): combo_check(np.array_split, [0])([R(1), R(7)], [1, 3]
 def test_array_split_2d(): combo_check(np.array_split, [0])([R(7, 7)],    [4, [3, 5]], axis=[0, 1])
 def test_array_split_3d(): combo_check(np.array_split, [0])([R(7, 7, 7)], [4, [3, 5]], axis=[0, 1, 2])
 
-def test_concatenate_1ist():  combo_check(np.concatenate, [0])([(R(1), R(3))],             axis=[0])
+def test_concatenate_list():  combo_check(np.concatenate, [0])([(R(1), R(3))],             axis=[0])
 def test_concatenate_tuple(): combo_check(np.concatenate, [0])([[R(1), R(3)]],             axis=[0])
 def test_concatenate_2d():    combo_check(np.concatenate, [0])([(R(2, 2), R(2, 2))],       axis=[0, 1])
 def test_concatenate_3d():    combo_check(np.concatenate, [0])([(R(2, 2, 2), R(2, 2, 2))], axis=[0, 1, 2])
