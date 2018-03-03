@@ -91,7 +91,7 @@ class JVPNode(Node):
         except KeyError:
             name = getattr(fun, '__name__', fun)
             raise NotImplementedError("JVP of {}".format(name))
-        self.g = jvpmaker(parents, parent_gs, value, args, kwargs)
+        self.g = jvpmaker(parents, parent_gs, value, *args, **kwargs)
 
     def initialize_root(self, g):
         self.g = g
@@ -102,14 +102,14 @@ def defjvp_full(fun, jvp_full):
 
 def defjvp_argnum(fun, jvpmaker):
     assert fun._fmap is map
-    def jvp_full(parents, gs, ans, args, kwargs):
+    def jvp_full(parents, gs, ans, *args, **kwargs):
         return sum_outgrads(fun._fmap,
                             [jvpmaker(argnum, g, ans, args, kwargs)
                              for argnum, parent, g in zip(count(), parents, gs) if parent])
     defjvp_full(fun, jvp_full)
 
 def defjvp(fun, *jvpfuns):
-    def jvp_full(parents, gs, ans, args, kwargs):
+    def jvp_full(parents, gs, ans, *args, **kwargs):
         return sum_outgrads(
             fun._fmap,
             fun._fmap(
@@ -124,7 +124,7 @@ def def_linear(fun):
                   fun(*subval(args, argnum, g), **kwargs))
 
 def defjvp_is_fun(fun):
-    def jvp_full(parents, gs, ans, args, kwargs):
+    def jvp_full(parents, gs, ans, *args, **kwargs):
         new_args = fun._fmap(lambda p, g, arg: arg if p is None else g,
                              parents, gs, args)
         return fun(*new_args, **kwargs)

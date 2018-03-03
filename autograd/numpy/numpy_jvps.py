@@ -3,7 +3,7 @@ from .numpy_vjps import (untake, balanced_eq, match_complex, replace_zero,
                          dot_adjoint_0, dot_adjoint_1, tensordot_adjoint_0,
                          tensordot_adjoint_1, nograd_functions)
 from autograd.extend import (defjvp, defjvp_argnum, def_linear, vspace, JVPNode,
-                             register_notrace, defjvp_is_fun)
+                             register_notrace, defjvp_is_fun, defjvp_full)
 from ..util import func
 from .numpy_boxes import ArrayBox
 
@@ -195,15 +195,16 @@ def_linear(dot_adjoint_1)
 def_linear(tensordot_adjoint_0)
 def_linear(tensordot_adjoint_1)
 
-# def fwd_grad_concatenate_args(argnum, g, ans, axis_args, kwargs):
-#     result = []
-#     for i in range(1, len(axis_args)):
-#         if i == argnum:
-#             result.append(g)
-#         else:
-#             result.append(anp.zeros_like(axis_args[i]))
-#     return anp.concatenate_args(axis_args[0], *result)
-# defjvp_argnum(anp.concatenate_args, fwd_grad_concatenate_args)
+def concatenate_jvp(parents, gs, ans, arrs, axis=0):
+    result = []
+    for arr, g, parent in zip(arrs, gs[0], parents[0]):
+        if parent:
+            result.append(g)
+        else:
+            result.append(anp.zeros_like(arr))
+    return anp.concatenate(result, axis)
+
+defjvp_full(anp.concatenate, concatenate_jvp)
 
 def fwd_grad_sort(g, ans, x, axis=-1, kind='quicksort', order=None):
     sort_perm = anp.argsort(x, axis, kind, order)
