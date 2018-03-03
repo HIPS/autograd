@@ -5,17 +5,30 @@ from autograd.tracer import trace, Node
 from functools import partial
 
 class ConstGraphNode(Node):
-    __slots__ = ['parents', 'partial_fun']
-    def __init__(self, value, fun, args, kwargs, parent_argnums, parents):
-        args = subvals(args, zip(parent_argnums, repeat(None)))
-        def partial_fun(partial_args):
-            return fun(*subvals(args, zip(parent_argnums, partial_args)), **kwargs)
-
-        self.parents = parents
+    __slots__ = ['_parents', 'partial_fun', 'fmap']
+    def __init__(self, value, fun, args, kwargs, parents, fmap):
+        static_args = fmap(lambda p, arg: None if p else arg, parents, args)
+        def partial_fun(dynamic_args):
+            return fun(*fmap(lambda p, static_arg, dynamic_arg:
+                             dynamic_arg if p else static_arg,
+                             parents, static_args, dynamic_args), **kwargs)
+        self._parents = parents
+        self.fmap = fmap
         self.partial_fun = partial_fun
 
+    def parent_fmap(self, f, *args):
+        return self.fmap(lambda p, *xs: p and f(*xs), self._parents, *args)
+
+    # TODO(dougalm): this is common with VJPNode. Might belong in tracer.py
+    @property
+    def parents(self):
+        parents = []
+        self.parent_fmap(parents.append, self._parents)
+        return parents
+
     def initialize_root(self):
-        self.parents = []
+        self._parents = []
+        self.fmap = map
 
 def const_graph_unary(fun):
     graph = []
@@ -25,7 +38,7 @@ def const_graph_unary(fun):
             _graph = graph[0]
             vals = {_graph[0] : x}
             for node in _graph[1:]:
-                vals[node] = node.partial_fun([vals[p] for p in node.parents])
+                vals[node] = node.partial_fun(node.fmap(vals.get, node._parents))
             return vals[node]
         else:
             start_node = ConstGraphNode.new_root()

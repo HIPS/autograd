@@ -42,7 +42,6 @@ class VJPNode(Node):
         self.parent_fmap(parents.append, self._parents)
         return parents
 
-
     def parent_fmap(self, f, *args):
         return self.fmap(lambda p, *xs: p and f(*xs), self._parents, *args)
 

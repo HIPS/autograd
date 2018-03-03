@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 import scipy.special
 import autograd.numpy as np
-from autograd.extend import primitive, defvjp
+from autograd.extend import primitive, defvjp, register_notrace, VJPNode
 from autograd.numpy.numpy_vjps import unbroadcast_f
 
 ### Beta function ###
@@ -30,7 +30,7 @@ gammasgn     = primitive(scipy.special.gammasgn)
 rgamma       = primitive(scipy.special.rgamma)
 multigammaln = primitive(scipy.special.multigammaln)
 
-defvjp(gammasgn, None)
+register_notrace(VJPNode, gammasgn)
 defvjp(polygamma, None, lambda ans, n, x: lambda g: g * polygamma(n + 1, x))
 defvjp(psi,      lambda ans, x: lambda g: g * polygamma(1, x))
 defvjp(digamma,  lambda ans, x: lambda g: g * polygamma(1, x))
