@@ -2,15 +2,13 @@ from itertools import count
 from functools import reduce
 from operator import attrgetter
 from .tracer import trace, primitive, toposort, Node, Box, isbox, getval
-from .fmap_util import fmap_to_zipped, fmap_to_list
+from .fmap_util import fmap_to_zipped, fmap_to_list, container_fmap
 from .util import func, subval, subvals
 
 # -------------------- reverse mode --------------------
 
 def make_vjp(fun, xs):
-    fmap_in = lambda f, *args: f(*args)
-    fmap_out = lambda f, *args: f(*args)
-
+    fmap_in = fmap_out = container_fmap
     start_nodes = fmap_in(lambda _: VJPNode.new_root(), xs)
     end_values, end_nodes, lfmap_out = trace(start_nodes, fun, xs, fmap_in, fmap_out)
     def vjp(g):
@@ -70,8 +68,7 @@ def defvjp(fun, *vjpmakers):
 # -------------------- forward mode --------------------
 
 def make_jvp(fun, xs):
-    fmap_in = lambda f, *args: f(*args)
-    fmap_out = lambda f, *args: f(*args)
+    fmap_in = fmap_out = container_fmap
     def jvp(gs):
         start_nodes = fmap_in(JVPNode.new_root, gs)
         end_values, end_nodes, _ = trace(start_nodes, fun, xs, fmap_in, fmap_out)

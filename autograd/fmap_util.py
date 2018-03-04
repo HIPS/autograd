@@ -17,3 +17,15 @@ def fmap_to_zipped(fmap, xs, ys):
     L = []
     fmap(lambda x, y: L.append((x, y)), xs, ys)
     return L
+
+def container_fmap(f, xs, *rest):
+    # TODO(dougalm): consider making this extensible
+    t = type(xs)
+    if t in (tuple, list):
+        return t(map(lambda x, *rest_elts:
+                     container_fmap(f, x, *rest_elts), xs, *rest))
+    elif t is dict:
+        return {k : container_fmap(f, v, *[r[k] for r in rest])
+                for k, v in xs.items()}
+    else:
+        return f(xs, *rest)
