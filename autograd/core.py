@@ -2,6 +2,7 @@ from itertools import count
 from functools import reduce
 from operator import attrgetter
 from .tracer import trace, primitive, toposort, Node, Box, isbox, getval
+from .fmap_util import fmap_to_zipped, fmap_to_list
 from .util import func, subval, subvals
 
 # -------------------- reverse mode --------------------
@@ -11,25 +12,23 @@ def make_vjp(fun, xs):
     fmap_out = lambda f, *args: f(*args)
 
     start_nodes = fmap_in(lambda _: VJPNode.new_root(), xs)
-    end_values, end_nodes =  trace(start_nodes, fun, xs, fmap_in, fmap_out)
+    end_values, end_nodes, lfmap_out = trace(start_nodes, fun, xs, fmap_in, fmap_out)
     def vjp(g):
-        results = backward_pass(g, start_nodes, end_nodes, fmap_in, fmap_out)
-        return fmap_in(lambda result, x:
-                       vspace(x).zeros() if result is None else result,
-                       results, xs)
+        return backward_pass(g, xs, start_nodes, end_nodes, fmap_in, lfmap_out)
     return vjp, end_values
 
-def backward_pass(gs, start_nodes, end_nodes, fmap_in, fmap_out):
-    outgrads = {}
-    fmap_out(lambda end_node, g: outgrads.update([(end_node, (g, False))]),
-             end_nodes, gs)
-    for node in toposort(end_nodes, fmap_out):
-        outgrad = outgrads[node]  # TODO(dougalm): free memory here
-        def accumulate(parent, parent_outgrad):
-            outgrads[parent] = add_outgrads(outgrads.get(parent), parent_outgrad)
-        node.parent_fmap(accumulate, node.parents, node.vjp(outgrad[0]))
-    return fmap_in(lambda node: outgrads[node][0] if node in outgrads else None,
-                   start_nodes)
+def backward_pass(gs, xs, start_nodes, end_nodes, fmap_in, fmap_out):
+    init_outgrads = fmap_out(lambda n, g: (n, (g, False)), end_nodes, gs)
+    outgrads = dict(fmap_to_list(fmap_out, init_outgrads))
+    for node in toposort(outgrads.keys()):
+        outgrad = outgrads[node]  # TODO(dougalm): should free memory here
+        parent_outgrads = node.vjp(outgrad[0])
+        for p, p_outgrad in fmap_to_zipped(
+                node.parent_fmap, node.parents, parent_outgrads):
+            outgrads[p] = add_outgrads(outgrads.get(p), p_outgrad)
+
+    return fmap_in(lambda n, x: (outgrads.get(n) or [vspace(x).zeros()])[0],
+                   start_nodes, xs)
 
 class VJPNode(Node):
     __slots__ = ['parents', 'vjp', 'parent_fmap']
@@ -70,14 +69,15 @@ def defvjp(fun, *vjpmakers):
 
 # -------------------- forward mode --------------------
 
-def make_jvp(fun, x):
-    def jvp(g):
-        start_node = JVPNode.new_root(g)
-        end_value, end_node = trace(start_node, fun, x)
-        if end_node is None:
-            return end_value, vspace(end_value).zeros()
-        else:
-            return end_value, end_node.g
+def make_jvp(fun, xs):
+    fmap_in = lambda f, *args: f(*args)
+    fmap_out = lambda f, *args: f(*args)
+    def jvp(gs):
+        start_nodes = fmap_in(JVPNode.new_root, gs)
+        end_values, end_nodes, _ = trace(start_nodes, fun, xs, fmap_in, fmap_out)
+        gs_out = fmap_out(lambda n, v: vspace(v).zeros() if n is None else n.g,
+                          end_nodes, end_values)
+        return end_values, gs_out
     return jvp
 
 class JVPNode(Node):

@@ -4,7 +4,7 @@ from collections import defaultdict
 from functools import partial
 from itertools import count
 from operator import attrgetter
-
+from .fmap_util import limited_fmap
 from .wrap_util import wraps
 
 def trace(start_nodes, fun, xs, fmap_in, fmap_out):
@@ -12,11 +12,15 @@ def trace(start_nodes, fun, xs, fmap_in, fmap_out):
         start_boxes = fmap_in(lambda x, node: new_box(x, t, node),
                               xs, start_nodes)
         end_boxes = fun(start_boxes)
-        end_nodes = fmap_out(lambda box: box._node if isbox(box) and box._trace == t
-                             else None, end_boxes)
-        end_values = fmap_out(lambda box, node: box._value if node else box,
-                              end_boxes, end_nodes)
-        return end_values, end_nodes
+        return unpack_boxes(fmap_out, end_boxes, t)
+
+def unpack_boxes(fmap, boxes, trace):
+    is_top_box = lambda box: isbox(box) and box._trace == trace
+    valid_boxes = fmap(is_top_box, boxes)
+    nodes  = fmap(lambda cond, b: b._node if cond else None, valid_boxes, boxes)
+    l_fmap = limited_fmap(fmap, valid_boxes)
+    values = l_fmap(attrgetter('_value'), boxes)
+    return values, nodes, l_fmap
 
 class Node(object):
     __slots__ = []
@@ -45,19 +49,13 @@ def general_primitive(f_raw, fmap):
         fmap(lambda arg: isbox(arg) and boxed_args.append(arg), args)
         if boxed_args:
             top_box = max(boxed_args, key=lambda box: box._trace)
-            def get_parent(arg):
-                if isbox(arg) and arg._trace == top_box._trace:
-                    return arg._node
-            parents = fmap(get_parent, args)
-            def parent_fmap(f, *args):
-                return fmap(lambda p, x, *rest:
-                            f(x, *rest) if p else x,parents, *args)
-            argvals = parent_fmap(attrgetter('_value'), args)
+            argvals, parents, parent_fmap = unpack_boxes(fmap, args, top_box._trace)
             node_constructor = type(top_box._node)
             if f_wrapped in notrace_primitives[node_constructor]:
                 return f_wrapped(*argvals, **kwargs)
             ans = f_wrapped(*argvals, **kwargs)
-            node = node_constructor(ans, f_wrapped, argvals, kwargs, parents, parent_fmap)
+            node = node_constructor(ans, f_wrapped, argvals, kwargs,
+                                    parents, parent_fmap)
             return new_box(ans, top_box._trace, node)
         else:
             return f_raw(*args, **kwargs)
@@ -125,10 +123,9 @@ box_types = Box.types
 isbox  = lambda x: type(x) in box_types  # almost 3X faster than isinstance(x, Box)
 getval = lambda x: getval(x._value) if isbox(x) else x
 
-def toposort(end_nodes, fmap_out):
+def toposort(end_nodes):
     child_counts = {}
-    stack = []
-    fmap_out(lambda node: node and stack.append(node), end_nodes)
+    stack = list(end_nodes)
     while stack:
         node = stack.pop()
         if node in child_counts:
@@ -137,8 +134,7 @@ def toposort(end_nodes, fmap_out):
             child_counts[node] = 1
             node.parent_fmap(stack.append, node.parents)
 
-    childless_nodes = []
-    fmap_out(lambda node: node and childless_nodes.append(node), end_nodes)
+    childless_nodes = list(end_nodes)
     while childless_nodes:
         node = childless_nodes.pop()
         yield node

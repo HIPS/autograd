@@ -32,10 +32,12 @@ def const_graph_unary(fun):
             return vals[node]
         else:
             start_node = ConstGraphNode.new_root()
-            end_value, end_node = trace(start_node, _fun.pop(), x)
+            fmap_in = lambda f, *args: f(*args)
+            fmap_out = lambda f, *args: f(*args)
+            end_value, end_node, _ = trace(start_node, _fun.pop(), x, fmap_in, fmap_out)
             if end_node is None:
                 raise Exception("Output is independent of input")
-            graph.append(list(toposort(end_node))[::-1])
+            graph.append(list(toposort([end_node]))[::-1])
             return end_value
     return maybe_cached_fun
 
