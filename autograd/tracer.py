@@ -7,15 +7,16 @@ from operator import attrgetter
 
 from .wrap_util import wraps
 
-def trace(start_node, fun, x):
+def trace(start_nodes, fun, xs, fmap_in, fmap_out):
     with trace_stack.new_trace() as t:
-        start_box = new_box(x, t, start_node)
-        end_box = fun(start_box)
-        if isbox(end_box) and end_box._trace == start_box._trace:
-            return end_box._value, end_box._node
-        else:
-            warnings.warn("Output seems independent of input.")
-            return end_box, None
+        start_boxes = fmap_in(lambda x, node: new_box(x, t, node),
+                              xs, start_nodes)
+        end_boxes = fun(start_boxes)
+        end_nodes = fmap_out(lambda box: box._node if isbox(box) and box._trace == t
+                             else None, end_boxes)
+        end_values = fmap_out(lambda box, node: box._value if node else box,
+                              end_boxes, end_nodes)
+        return end_values, end_nodes
 
 class Node(object):
     __slots__ = []
@@ -124,9 +125,10 @@ box_types = Box.types
 isbox  = lambda x: type(x) in box_types  # almost 3X faster than isinstance(x, Box)
 getval = lambda x: getval(x._value) if isbox(x) else x
 
-def toposort(end_node):
+def toposort(end_nodes, fmap_out):
     child_counts = {}
-    stack = [end_node]
+    stack = []
+    fmap_out(lambda node: node and stack.append(node), end_nodes)
     while stack:
         node = stack.pop()
         if node in child_counts:
@@ -135,7 +137,8 @@ def toposort(end_node):
             child_counts[node] = 1
             node.parent_fmap(stack.append, node.parents)
 
-    childless_nodes = [end_node]
+    childless_nodes = []
+    fmap_out(lambda node: node and childless_nodes.append(node), end_nodes)
     while childless_nodes:
         node = childless_nodes.pop()
         yield node

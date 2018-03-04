@@ -6,24 +6,30 @@ from .util import func, subval, subvals
 
 # -------------------- reverse mode --------------------
 
-def make_vjp(fun, x):
-    start_node = VJPNode.new_root()
-    end_value, end_node =  trace(start_node, fun, x)
-    if end_node is None:
-        def vjp(g): return vspace(x).zeros()
-    else:
-        def vjp(g): return backward_pass(g, end_node)
-    return vjp, end_value
+def make_vjp(fun, xs):
+    fmap_in = lambda f, *args: f(*args)
+    fmap_out = lambda f, *args: f(*args)
 
-def backward_pass(g, end_node):
-    outgrads = {end_node : (g, False)}
-    for node in toposort(end_node):
-        outgrad = outgrads.pop(node)
+    start_nodes = fmap_in(lambda _: VJPNode.new_root(), xs)
+    end_values, end_nodes =  trace(start_nodes, fun, xs, fmap_in, fmap_out)
+    def vjp(g):
+        results = backward_pass(g, start_nodes, end_nodes, fmap_in, fmap_out)
+        return fmap_in(lambda result, x:
+                       vspace(x).zeros() if result is None else result,
+                       results, xs)
+    return vjp, end_values
+
+def backward_pass(gs, start_nodes, end_nodes, fmap_in, fmap_out):
+    outgrads = {}
+    fmap_out(lambda end_node, g: outgrads.update([(end_node, (g, False))]),
+             end_nodes, gs)
+    for node in toposort(end_nodes, fmap_out):
+        outgrad = outgrads[node]  # TODO(dougalm): free memory here
         def accumulate(parent, parent_outgrad):
             outgrads[parent] = add_outgrads(outgrads.get(parent), parent_outgrad)
         node.parent_fmap(accumulate, node.parents, node.vjp(outgrad[0]))
-
-    return outgrad[0]
+    return fmap_in(lambda node: outgrads[node][0] if node in outgrads else None,
+                   start_nodes)
 
 class VJPNode(Node):
     __slots__ = ['parents', 'vjp', 'parent_fmap']
