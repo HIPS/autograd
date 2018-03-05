@@ -47,6 +47,11 @@ class VJPNode(Node):
         self.parent_fmap = lambda *args: ()
         self.vjp = lambda g: ()
 
+    # TODO(dougalm): this should live at the trace level
+    def make_nodes(self, value, fun, args, kwargs, parents, parent_fmap):
+        output_nodes = VJPNode(value, fun, args, kwargs, parents, parent_fmap)
+        return output_nodes, fun._fmap_out
+
 primitive_vjps = {}
 def defvjp_full(fun, vjpmaker):
     primitive_vjps[fun] = vjpmaker
@@ -81,17 +86,22 @@ def make_jvp(fun, xs):
 
 class JVPNode(Node):
     __slots__ = ['g']
-    def __init__(self, value, fun, args, kwargs, parents, parent_fmap):
+    def __init__(self, g):
+        self.g = g
+
+    def initialize_root(self, g):
+        self.g = g
+
+    def make_nodes(self, value, fun, args, kwargs, parents, parent_fmap):
         parent_gs = parent_fmap(attrgetter('g'), parents)
         try:
             jvpmaker = primitive_jvps[fun]
         except KeyError:
             name = getattr(fun, '__name__', fun)
             raise NotImplementedError("JVP of {}".format(name))
-        self.g = jvpmaker(parents, parent_gs, value, *args, **kwargs)
-
-    def initialize_root(self, g):
-        self.g = g
+        gs = jvpmaker(parents, parent_gs, value, *args, **kwargs)
+        output_nodes = fun._fmap_out(JVPNode, gs)
+        return output_nodes, fun._fmap_out
 
 primitive_jvps = {}
 def defjvp_full(fun, jvp_full):

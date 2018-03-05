@@ -4,13 +4,12 @@ from collections import defaultdict
 from functools import partial
 from itertools import count
 from operator import attrgetter
-from .fmap_util import limited_fmap
+from .fmap_util import limited_fmap, apply
 from .wrap_util import wraps
 
 def trace(start_nodes, fun, xs, fmap_in, fmap_out):
     with trace_stack.new_trace() as t:
-        start_boxes = fmap_in(lambda x, node: new_box(x, t, node),
-                              xs, start_nodes)
+        start_boxes = fmap_in(partial(new_box, t), xs, start_nodes)
         end_boxes = fun(start_boxes)
         return unpack_boxes(fmap_out, end_boxes, t)
 
@@ -37,32 +36,33 @@ class Node(object):
         return root
 
 def primitive(f_raw):
-    return general_primitive(f_raw, map)
+    return general_primitive(f_raw, map, apply)
 
-def general_primitive(f_raw, fmap):
+def general_primitive(f_raw, fmap_in, fmap_out):
     """
     Wraps a function so that its gradient can be specified and its invocation
     can be recorded. For examples, see the docs."""
     @wraps(f_raw)
     def f_wrapped(*args, **kwargs):
         boxed_args = []
-        fmap(lambda arg: isbox(arg) and boxed_args.append(arg), args)
+        fmap_in(lambda arg: isbox(arg) and boxed_args.append(arg), args)
         if boxed_args:
             top_box = max(boxed_args, key=lambda box: box._trace)
-            argvals, parents, parent_fmap = unpack_boxes(fmap, args, top_box._trace)
-            node_constructor = type(top_box._node)
-            if f_wrapped in notrace_primitives[node_constructor]:
+            argvals, parents, parent_fmap = unpack_boxes(
+                fmap_in, args, top_box._trace)
+            if f_wrapped in notrace_primitives[type(top_box._node)]:
                 return f_wrapped(*argvals, **kwargs)
             ans = f_wrapped(*argvals, **kwargs)
-            node = node_constructor(ans, f_wrapped, argvals, kwargs,
-                                    parents, parent_fmap)
-            return new_box(ans, top_box._trace, node)
+            output_nodes, lfmap_out = top_box._node.make_nodes(
+                ans, f_wrapped, argvals, kwargs, parents, parent_fmap)
+            return lfmap_out(partial(new_box, top_box._trace), ans, output_nodes)
         else:
             return f_raw(*args, **kwargs)
 
     f_wrapped.fun = f_raw
     f_wrapped._is_autograd_primitive = True
-    f_wrapped._fmap = fmap
+    f_wrapped._fmap = fmap_in
+    f_wrapped._fmap_out = fmap_out
     return f_wrapped
 
 notrace_primitives = defaultdict(set)
@@ -113,7 +113,7 @@ class Box(object):
         Box.type_mappings[cls] = cls
 
 box_type_mappings = Box.type_mappings
-def new_box(value, trace, node):
+def new_box(trace, value, node):
     try:
         return box_type_mappings[type(value)](value, trace, node)
     except KeyError:

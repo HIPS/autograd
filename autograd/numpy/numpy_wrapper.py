@@ -2,6 +2,7 @@ from __future__ import absolute_import
 import types
 import warnings
 from autograd.extend import primitive, notrace_primitive, general_primitive
+from autograd.fmap_util import apply
 import numpy as _np
 import autograd.builtins as builtins
 from numpy.core.einsumfunc import _parse_einsum_input
@@ -13,6 +14,10 @@ notrace_functions = [
 
 nowrap_functions = [
     _np.concatenate
+]
+
+list_output_functions = [
+    _np.split, _np.array_split, _np.vsplit, _np.hsplit, _np.dsplit
 ]
 
 def wrap_intdtype(cls):
@@ -27,6 +32,8 @@ def wrap_namespace(old, new):
     for name, obj in old.items():
         if obj in notrace_functions:
             new[name] = notrace_primitive(obj)
+        elif obj in list_output_functions:
+            new[name] = general_primitive(obj, map, map)
         elif type(obj) in function_types and obj not in nowrap_functions:
             new[name] = primitive(obj)
         elif type(obj) is type and obj in int_types:
@@ -41,7 +48,7 @@ wrap_namespace(_np.__dict__, globals())
 def map_over_first(f, *args):
     return (map(f, *[arg[0] for arg in args]),) + args[0][1:]
 
-concatenate = general_primitive(_np.concatenate, map_over_first)
+concatenate = general_primitive(_np.concatenate, map_over_first, apply)
 
 vstack = row_stack = lambda tup: concatenate([atleast_2d(_m) for _m in tup], axis=0)
 def hstack(tup):

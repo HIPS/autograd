@@ -1,5 +1,8 @@
 from itertools import count
 
+def apply(f, *args):
+    return f(*args)  # built-in version doesn't do *args (and missing in py3)
+
 def limited_fmap(fmap, conds):
     """Only touches elements for which cond is true."""
     def lfmap(f, *args):
