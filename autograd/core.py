@@ -16,8 +16,10 @@ def make_vjp(fun, xs):
     return vjp, end_values
 
 def backward_pass(gs, xs, start_nodes, end_nodes, fmap_in, fmap_out):
-    init_outgrads = fmap_out(lambda n, g: (n, (g, False)), end_nodes, gs)
-    outgrads = dict(fmap_to_list(fmap_out, init_outgrads))
+    outgrads = {}
+    for n, g in fmap_to_zipped(fmap_out, end_nodes, gs):
+        outgrads[n] = add_outgrads(outgrads.get(n), g)
+
     for node in toposort(outgrads.keys()):
         outgrad = outgrads[node]  # TODO(dougalm): should free memory here
         parent_outgrads = node.vjp(outgrad[0])
