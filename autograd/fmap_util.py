@@ -1,4 +1,4 @@
-
+from itertools import count
 
 def limited_fmap(fmap, conds):
     """Only touches elements for which cond is true."""
@@ -18,6 +18,11 @@ def fmap_to_zipped(fmap, xs, ys):
     fmap(lambda x, y: L.append((x, y)), xs, ys)
     return L
 
+def fmap_to_basis(fmap, xs):
+    counter = count()
+    idxs = fmap(lambda _: counter.next(), xs)
+    return fmap(lambda i: HideType(fmap(lambda j: i==j, idxs)), idxs)
+
 def container_fmap(f, xs, *rest):
     # TODO(dougalm): consider making this extensible
     t = type(xs)
@@ -29,3 +34,7 @@ def container_fmap(f, xs, *rest):
                 for k, v in xs.items()}
     else:
         return f(xs, *rest)
+
+class HideType(object):
+    def __init__(self, value):
+        self.value = value

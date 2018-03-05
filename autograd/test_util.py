@@ -3,6 +3,7 @@ from itertools import product
 from .core import make_vjp, make_jvp, vspace
 from .util import subvals
 from .wrap_util import unary_to_nary, get_name
+from .fmap_util import container_fmap
 
 TOL  = 1e-6
 RTOL = 1e-6
