@@ -122,25 +122,3 @@ def new_box(trace, value, node):
 box_types = Box.types
 isbox  = lambda x: type(x) in box_types  # almost 3X faster than isinstance(x, Box)
 getval = lambda x: getval(x._value) if isbox(x) else x
-
-def toposort(end_nodes):
-    child_counts = {}
-    stack = list(end_nodes)
-    while stack:
-        node = stack.pop()
-        if node in child_counts:
-            child_counts[node] += 1
-        else:
-            child_counts[node] = 1
-            node.parent_fmap(stack.append, node.parents)
-
-    childless_nodes = list(end_nodes)
-    while childless_nodes:
-        node = childless_nodes.pop()
-        yield node
-        def process_parents(parent):
-            if child_counts[parent] == 1:
-                childless_nodes.append(parent)
-            else:
-                child_counts[parent] -= 1
-        node.parent_fmap(process_parents, node.parents)
