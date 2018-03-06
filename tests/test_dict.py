@@ -1,7 +1,7 @@
 import autograd.numpy as np
 import autograd.numpy.random as npr
 from autograd.test_util import check_grads
-from autograd import dict as ag_dict, isinstance as ag_isinstance
+from autograd import isinstance as ag_isinstance
 from autograd import grad
 import operator as op
 
@@ -103,22 +103,16 @@ def test_get():
 
 def test_make_dict():
     def fun(x):
-        return ag_dict([('a', x)], b=x)
+        return dict([('a', x)], b=x)
     check_grads(fun, modes=['rev'])(1.0)
 
     def fun(x):
-        return ag_dict({'a': x})
+        return dict({'a': x})
     check_grads(fun, modes=['rev'])(1.0)
-
-    # check some other forms of the constructor
-    ag_dict()
-    ag_dict(())
-    ag_dict({})
 
 def test_isinstance():
     def fun(x):
         assert ag_isinstance(x, dict)
-        assert ag_isinstance(x, ag_dict)
         return x['x']
     fun({'x': 1.})
     grad(fun)({'x': 1.})

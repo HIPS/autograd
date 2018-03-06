@@ -160,11 +160,6 @@ This can be a problem because Autograd keeps references to variables used in the
 Making copies would be too slow.
 
 Lists and dicts can be used freely - like control flow, Autograd usually doesn't even need to know about them.
-The exception is passing in a list to a primitive function, such as `autograd.numpy.sum`.
-This requires special care, since the list contents need to be examined for boxes.
-We do support passing lists to `autograd.numpy.array` and `autograd.numpy.concatenate`, but in other cases, you may need to explicitly construct an array using `autograd.numpy.array` before passing a list or tuple argument into a primitive.
-An alternative is to use the `list`, `dict`, and `tuple` classes in `autograd.builtins`, which should work just like the Python builtins while also ensuring boxes don't get hidden inside those containers.
-Remember, these issues typically only come up when you're passing a `list` or `tuple` to a primitive function; when passing around lists or tuples in your own (non-primitive) functions, you can put boxed values inside lists, tuples, or dicts without having to worry about it.
 
 #### TL;DR: Do use
 * [Most](../autograd/numpy/numpy_vjps.py) of numpy's functions
