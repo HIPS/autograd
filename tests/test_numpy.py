@@ -288,6 +288,11 @@ def test_trace2():
     offset = npr.randint(-9,11)
     check_grads(fun)(mat)
 
+def test_trace():
+    def fun(x): return np.split(x, 2)[0]
+    mat = npr.randn(10)
+    check_grads(fun)(mat)
+
 def test_trace_extradims():
     def fun(x): return np.trace(x, offset=offset)
     mat = npr.randn(5,6,4,3)

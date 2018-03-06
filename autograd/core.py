@@ -1,5 +1,5 @@
 from itertools import count
-from functools import reduce
+from functools import reduce, partial
 from operator import attrgetter
 from .tracer import trace, primitive, Node, Box, isbox, getval
 from .fmap_util import fmap_to_zipped, fmap_to_list, container_fmap
@@ -9,7 +9,7 @@ from .util import func, subval, toposort
 
 def make_vjp(fun, xs):
     fmap_in = fmap_out = container_fmap
-    start_nodes = fmap_in(lambda _: VJPNode(None), xs)
+    start_nodes = fmap_in(partial(VJPNode, None), xs)
     end_values, end_nodes, lfmap_out = trace((start_nodes,), fun, (xs,), fmap_in, fmap_out)
     def vjp(g):
         return backward_pass(g, xs, start_nodes, end_nodes, fmap_in, lfmap_out)
@@ -20,8 +20,9 @@ def backward_pass(gs, xs, start_nodes, end_nodes, fmap_in, fmap_out):
     final_fnode = VJPFunctionNode(lambda _: gs, (), lambda *a: (),
                                   end_nodes, fmap_out)
     for fnode in toposort(final_fnode, attrgetter('parent_fnodes')):
-        parent_outgrads = fnode.vjp(fnode.children_fmap(lambda n: outgrads[n][0],
-                                                        fnode.children))
+        parent_outgrads = fnode.vjp(fnode.children_fmap(
+            lambda n: outgrads[n][0] if n in outgrads else n.vspace.zeros(),
+            fnode.children))
         for p, p_outgrad in fmap_to_zipped(
                 fnode.parent_fmap, fnode.parents, parent_outgrads):
             outgrads[p] = add_outgrads(outgrads.get(p), p_outgrad)
@@ -30,9 +31,10 @@ def backward_pass(gs, xs, start_nodes, end_nodes, fmap_in, fmap_out):
                    start_nodes, xs)
 
 class VJPNode(Node):
-    __slots__ = ['fun']
-    def __init__(self, fun):
+    __slots__ = ['fun', 'vspace']
+    def __init__(self, fun, x):
         self.fun = fun
+        self.vspace = vspace(x)
 
     def process_primitive(self, ans, fun, args, kwargs, parents, parent_fmap):
         try:
@@ -43,7 +45,7 @@ class VJPNode(Node):
 
         vjp = vjpmaker(parent_fmap, ans, *args, **kwargs)
         fun_node = VJPFunctionNode(vjp, None, fun._fmap_out, parents, parent_fmap)
-        output_nodes = fun._fmap_out(lambda _: VJPNode(fun_node), ans)
+        output_nodes = fun._fmap_out(partial(VJPNode, fun_node), ans)
         fun_node.children = output_nodes
         return output_nodes, fun._fmap_out
 

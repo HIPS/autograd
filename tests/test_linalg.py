@@ -209,7 +209,6 @@ def test_svd_wide_2d():
     def fun(x):
         u, s, v = np.linalg.svd(x, full_matrices=False)
         return tuple((u, s, v))
-        return grad(fun)(x)
     m = 3
     n = 5
     mat = npr.randn(m, n)
@@ -219,7 +218,6 @@ def test_svd_wide_3d():
     def fun(x):
         u, s, v = np.linalg.svd(x, full_matrices=False)
         return tuple((u, s, v))
-        return grad(fun)(x)
 
     k = 4
     m = 3
@@ -232,7 +230,7 @@ def test_svd_square_2d():
     def fun(x):
         u, s, v = np.linalg.svd(x, full_matrices=False)
         return tuple((u, s, v))
-        return grad(fun)(x)
+
     m = 4
     n = 4
     mat = npr.randn(m, n)
@@ -242,7 +240,6 @@ def test_svd_square_3d():
     def fun(x):
         u, s, v = np.linalg.svd(x, full_matrices=False)
         return tuple((u, s, v))
-        return grad(fun)(x)
 
     k = 3
     m = 4
@@ -255,7 +252,7 @@ def test_svd_tall_2d():
     def fun(x):
         u, s, v = np.linalg.svd(x, full_matrices=False)
         return tuple((u, s, v))
-        return grad(fun)(x)
+
     m = 5
     n = 3
     mat = npr.randn(m, n)
@@ -278,7 +275,6 @@ def test_svd_only_s_2d():
     def fun(x):
         s = np.linalg.svd(x, full_matrices=False, compute_uv=False)
         return s
-        return grad(fun)(x)
 
     m = 5
     n = 3
@@ -289,7 +285,6 @@ def test_svd_only_s_3d():
     def fun(x):
         s = np.linalg.svd(x, full_matrices=False, compute_uv=False)
         return s
-        return grad(fun)(x)
 
     k = 4
     m = 5

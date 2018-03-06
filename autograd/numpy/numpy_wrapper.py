@@ -25,7 +25,7 @@ def wrap_intdtype(cls):
         __new__ = notrace_primitive(cls.__new__)
     return IntdtypeSubclass
 
-def wrap_namespace(old, new):
+def wrap_namespace(old, new, nowrap_functions=[]):
     unchanged_types = {float, int, type(None), type}
     int_types = {_np.int, _np.int8, _np.int16, _np.int32, _np.int64, _np.integer}
     function_types = {_np.ufunc, types.FunctionType, types.BuiltinFunctionType}
@@ -41,7 +41,7 @@ def wrap_namespace(old, new):
         elif type(obj) in unchanged_types:
             new[name] = obj
 
-wrap_namespace(_np.__dict__, globals())
+wrap_namespace(_np.__dict__, globals(), nowrap_functions)
 
 # ----- Special treatment of list-input functions -----
 
