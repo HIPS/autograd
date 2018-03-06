@@ -1,43 +1,50 @@
 from itertools import repeat
 from autograd.wrap_util import wraps
-from autograd.tracer import trace, Node, toposort
+from autograd.tracer import trace, Node
+from autograd.util import toposort
+from autograd.fmap_util import apply
 from functools import partial
 
 class ConstGraphNode(Node):
     __slots__ = ['parents', 'parent_fmap', 'partial_fun']
-    def __init__(self, value, fun, args, kwargs, parents, parent_fmap):
+    def __init__(self, parents, parent_fmap, partial_fun):
+        self.parents = parents
+        self.parent_fmap = parent_fmap
+        self.partial_fun = partial_fun
+
+    def initialize_root(self, _):
+        self.parents = ()
+        self.parent_fmap = lambda *args: ()
+
+    def process_primitive(self, ans, fun, args, kwargs, parents, parent_fmap):
+        assert fun._fmap_out is apply  # only works for single-output primitives
         static_args = parent_fmap(lambda _: None, args)
         def partial_fun(dynamic_args):
             complete_args = parent_fmap(
                 lambda _, dynamic_arg: dynamic_arg, static_args, dynamic_args)
             return fun(*complete_args)
-
-        self.parents = parents
-        self.parent_fmap = parent_fmap
-        self.partial_fun = partial_fun
-
-    def initialize_root(self):
-        self.parents = ()
-        self.parent_fmap = lambda *args: ()
+        return ConstGraphNode(parents, parent_fmap, partial_fun), fun._fmap_out
 
 def const_graph_unary(fun):
-    graph = []
+    cache = {}
     _fun = [fun]  # Allow fun to be freed, since it may have bound args
-    def maybe_cached_fun(x):
-        if graph:
-            _graph = graph[0]
-            vals = {_graph[0] : x}
-            for node in _graph[1:]:
+    def maybe_cached_fun(xs):
+        if cache:
+            graph = cache['graph']
+            start_nodes = cache['start_nodes']
+            vals = {n: x for n, x in zip(start_nodes, xs)}
+            for node in graph:
+                if node in start_nodes: continue
                 vals[node] = node.partial_fun(node.parent_fmap(vals.get, node.parents))
             return vals[node]
         else:
-            start_node = ConstGraphNode.new_root()
-            fmap_in = lambda f, *args: f(*args)
-            fmap_out = lambda f, *args: f(*args)
-            end_value, end_node, _ = trace(start_node, _fun.pop(), x, fmap_in, fmap_out)
+            start_nodes = map(ConstGraphNode.new_root, xs)
+            end_value, end_node, _ = trace(start_nodes, _fun.pop(), xs, map, apply)
             if end_node is None:
                 raise Exception("Output is independent of input")
-            graph.append(list(toposort([end_node]))[::-1])
+            graph = list(toposort(end_node, lambda n: filter(bool, n.parents)))[::-1]
+            cache['graph'] = graph
+            cache['start_nodes'] = start_nodes
             return end_value
     return maybe_cached_fun
 

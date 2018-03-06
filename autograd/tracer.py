@@ -26,6 +26,12 @@ class Node(object):
     def process_primitive(self, ans, fun, args, kwargs, parent_argnums, parents):
         assert False
 
+    @classmethod
+    def new_root(cls, *args, **kwargs):
+        root = cls.__new__(cls)
+        root.initialize_root(*args, **kwargs)
+        return root
+
 def primitive(f_raw):
     return general_primitive(f_raw, map, apply)
 
