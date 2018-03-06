@@ -23,17 +23,8 @@ def unpack_boxes(fmap, boxes, trace):
 
 class Node(object):
     __slots__ = []
-    def __init__(self, value, fun, args, kwargs, parent_argnums, parents):
+    def process_primitive(self, ans, fun, args, kwargs, parent_argnums, parents):
         assert False
-
-    def initialize_root(self, *args, **kwargs):
-        assert False
-
-    @classmethod
-    def new_root(cls, *args, **kwargs):
-        root = cls.__new__(cls)
-        root.initialize_root(*args, **kwargs)
-        return root
 
 def primitive(f_raw):
     return general_primitive(f_raw, map, apply)
@@ -53,7 +44,7 @@ def general_primitive(f_raw, fmap_in, fmap_out):
             if f_wrapped in notrace_primitives[type(top_box._node)]:
                 return f_wrapped(*argvals, **kwargs)
             ans = f_wrapped(*argvals, **kwargs)
-            output_nodes, lfmap_out = top_box._node.make_nodes(
+            output_nodes, lfmap_out = top_box._node.process_primitive(
                 ans, f_wrapped, argvals, kwargs, parents, parent_fmap)
             return lfmap_out(partial(new_box, top_box._trace), ans, output_nodes)
         else:

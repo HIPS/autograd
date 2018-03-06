@@ -9,7 +9,7 @@ from .util import func, subval, subvals
 
 def make_vjp(fun, xs):
     fmap_in = fmap_out = container_fmap
-    start_nodes = fmap_in(lambda _: VJPNode.new_root(), xs)
+    start_nodes = fmap_in(lambda _: VJPNode(None), xs)
     end_values, end_nodes, lfmap_out = trace(start_nodes, fun, xs, fmap_in, fmap_out)
     def vjp(g):
         return backward_pass(g, xs, start_nodes, end_nodes, fmap_in, lfmap_out)
@@ -17,53 +17,45 @@ def make_vjp(fun, xs):
 
 def backward_pass(gs, xs, start_nodes, end_nodes, fmap_in, fmap_out):
     outgrads = {}
-    dummy_output = lambda: None
-    dummy_output.parent_vjps = set()
-
-    for n, g in fmap_to_zipped(fmap_out, end_nodes, gs):
-        outgrads[n] = add_outgrads(outgrads.get(n), g)
-        if n.vjp is not None:
-            dummy_output.parent_vjps.add(n.vjp)
-
-    for vjp in list(toposort(dummy_output))[1:]:
-        parent_outgrads = vjp(vjp.children_fmap(lambda n: outgrads[n][0], vjp.children))
+    final_fnode = VJPFunctionNode(lambda _: gs, (), lambda *a: (),
+                                  end_nodes, fmap_out)
+    for fnode in toposort(final_fnode):
+        parent_outgrads = fnode.vjp(fnode.children_fmap(lambda n: outgrads[n][0],
+                                                        fnode.children))
         for p, p_outgrad in fmap_to_zipped(
-                vjp.parent_fmap, vjp.parents, parent_outgrads):
+                fnode.parent_fmap, fnode.parents, parent_outgrads):
             outgrads[p] = add_outgrads(outgrads.get(p), p_outgrad)
 
     return fmap_in(lambda n, x: (outgrads.get(n) or [vspace(x).zeros()])[0],
                    start_nodes, xs)
 
 class VJPNode(Node):
-    __slots__ = ['vjp']
-    def __init__(self, vjp):
-        self.vjp = vjp
+    __slots__ = ['fun']
+    def __init__(self, fun):
+        self.fun = fun
 
-    def initialize_root(self):
-        self.vjp = None
-
-    # TODO(dougalm): this should live at the trace level
-    def make_nodes(self, value, fun, args, kwargs, parents, parent_fmap):
+    def process_primitive(self, ans, fun, args, kwargs, parents, parent_fmap):
         try:
             vjpmaker = primitive_vjps[fun]
         except KeyError:
             fun_name = getattr(fun, '__name__', fun)
             raise NotImplementedError("VJP of {} not defined".format(fun_name))
 
-        # wrap it to make sure we have a unique object
-        vjp = wrap(vjpmaker(parent_fmap, value, *args, **kwargs))
-        vjp.parents = parents
-        vjp.parent_fmap = parent_fmap
-        vjp.children_fmap = fun._fmap_out
-        # TODO(dougalm): allow the possibility of only noding some outputs
-        output_nodes = fun._fmap_out(lambda _: VJPNode(vjp), value)
-        vjp.children = output_nodes
-        vjp.parent_vjps = set(filter(
-            bool,fmap_to_list(parent_fmap, parent_fmap(attrgetter('vjp'), parents))))
+        vjp = vjpmaker(parent_fmap, ans, *args, **kwargs)
+        fun_node = VJPFunctionNode(vjp, None, fun._fmap_out, parents, parent_fmap)
+        output_nodes = fun._fmap_out(lambda _: VJPNode(fun_node), ans)
+        fun_node.children = output_nodes
         return output_nodes, fun._fmap_out
 
-def wrap(f):
-    return lambda *args: f(*args)
+class VJPFunctionNode(object):
+    def __init__(self, vjp, children, children_fmap, parents, parent_fmap):
+        self.vjp = vjp
+        self.children = children
+        self.children_fmap = children_fmap
+        self.parents = parents
+        self.parent_fmap = parent_fmap
+        self.parent_fnodes = set(filter(bool, fmap_to_list(
+            parent_fmap, parent_fmap(attrgetter('fun'), parents))))
 
 def toposort(end_node):
     child_counts = {}
@@ -74,13 +66,13 @@ def toposort(end_node):
             child_counts[node] += 1
         else:
             child_counts[node] = 1
-            stack.extend(node.parent_vjps)
+            stack.extend(node.parent_fnodes)
 
     childless_nodes = [end_node]
     while childless_nodes:
         node = childless_nodes.pop()
         yield node
-        for parent in node.parent_vjps:
+        for parent in node.parent_fnodes:
             if child_counts[parent] == 1:
                 childless_nodes.append(parent)
             else:
@@ -111,7 +103,7 @@ def defvjp(fun, *vjpmakers):
 def make_jvp(fun, xs):
     fmap_in = fmap_out = container_fmap
     def jvp(gs):
-        start_nodes = fmap_in(JVPNode.new_root, gs)
+        start_nodes = fmap_in(JVPNode, gs)
         end_values, end_nodes, _ = trace(start_nodes, fun, xs, fmap_in, fmap_out)
         gs_out = fmap_out(lambda n, v: vspace(v).zeros() if n is None else n.g,
                           end_nodes, end_values)
@@ -123,17 +115,14 @@ class JVPNode(Node):
     def __init__(self, g):
         self.g = g
 
-    def initialize_root(self, g):
-        self.g = g
-
-    def make_nodes(self, value, fun, args, kwargs, parents, parent_fmap):
+    def process_primitive(self, ans, fun, args, kwargs, parents, parent_fmap):
         parent_gs = parent_fmap(attrgetter('g'), parents)
         try:
             jvpmaker = primitive_jvps[fun]
         except KeyError:
             name = getattr(fun, '__name__', fun)
             raise NotImplementedError("JVP of {}".format(name))
-        gs = jvpmaker(parents, parent_gs, value, *args, **kwargs)
+        gs = jvpmaker(parents, parent_gs, ans, *args, **kwargs)
         output_nodes = fun._fmap_out(JVPNode, gs)
         return output_nodes, fun._fmap_out
 
