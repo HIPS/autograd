@@ -8,11 +8,12 @@ from .util import func, subval, toposort
 # -------------------- reverse mode --------------------
 
 def make_vjp(fun, xs):
+    xs = (xs,)
     fmap_in = fmap_out = container_fmap
     start_nodes = fmap_in(lambda _: VJPNode(None), xs)
     end_values, end_nodes, lfmap_out = trace(start_nodes, fun, xs, fmap_in, fmap_out)
     def vjp(g):
-        return backward_pass(g, xs, start_nodes, end_nodes, fmap_in, lfmap_out)
+        return backward_pass(g, xs, start_nodes, end_nodes, fmap_in, lfmap_out)[0]
     return vjp, end_values
 
 def backward_pass(gs, xs, start_nodes, end_nodes, fmap_in, fmap_out):
@@ -79,10 +80,10 @@ def defvjp(fun, *vjpmakers):
 
 # -------------------- forward mode --------------------
 
-def make_jvp(fun, xs):
+def make_jvp(fun, *xs):
     fmap_in = fmap_out = container_fmap
     def jvp(gs):
-        start_nodes = fmap_in(JVPNode, gs)
+        start_nodes = fmap_in(JVPNode, (gs,))
         end_values, end_nodes, _ = trace(start_nodes, fun, xs, fmap_in, fmap_out)
         gs_out = fmap_out(lambda n, v: vspace(v).zeros() if n is None else n.g,
                           end_nodes, end_values)

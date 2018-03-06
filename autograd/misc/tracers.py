@@ -25,10 +25,10 @@ class ConstGraphNode(Node):
             return fun(*complete_args)
         return ConstGraphNode(parents, parent_fmap, partial_fun), fun._fmap_out
 
-def const_graph_unary(fun):
+def const_graph(fun, *args, **kwargs):
+    fun = [partial(fun, *args, **kwargs)] # Allow fun to be freed, since it may have bound args
     cache = {}
-    _fun = [fun]  # Allow fun to be freed, since it may have bound args
-    def maybe_cached_fun(xs):
+    def maybe_cached_fun(*xs):
         if cache:
             graph = cache['graph']
             start_nodes = cache['start_nodes']
@@ -39,22 +39,14 @@ def const_graph_unary(fun):
             return vals[node]
         else:
             start_nodes = map(ConstGraphNode.new_root, xs)
-            end_value, end_node, _ = trace(start_nodes, _fun.pop(), xs, map, apply)
+            end_value, end_node, _ = trace(start_nodes, fun.pop(), xs, map, apply)
             if end_node is None:
                 raise Exception("Output is independent of input")
             graph = list(toposort(end_node, lambda n: filter(bool, n.parents)))[::-1]
             cache['graph'] = graph
             cache['start_nodes'] = start_nodes
             return end_value
-    return maybe_cached_fun
-
-def const_graph(fun, *args, **kwargs):
-    partial_fun = partial(fun, *args, **kwargs)
-    unary_fun = lambda args: partial_fun(*args)
-    maybe_cached_unary_fun = const_graph_unary(unary_fun)
-    @wraps(fun)
-    def _fun(*args): return maybe_cached_unary_fun(args)
-    return _fun
+    return wraps(fun)(maybe_cached_fun)
 
 # TODO: update this to new tracer interface
 class FullGraphNode(Node):

@@ -10,7 +10,7 @@ from .wrap_util import wraps
 def trace(start_nodes, fun, xs, fmap_in, fmap_out):
     with trace_stack.new_trace() as t:
         start_boxes = fmap_in(partial(new_box, t), xs, start_nodes)
-        end_boxes = fun(start_boxes)
+        end_boxes = fun(*start_boxes)
         return unpack_boxes(fmap_out, end_boxes, t)
 
 def unpack_boxes(fmap, boxes, trace):
