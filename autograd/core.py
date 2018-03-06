@@ -3,7 +3,7 @@ from functools import reduce
 from operator import attrgetter
 from .tracer import trace, primitive, Node, Box, isbox, getval
 from .fmap_util import fmap_to_zipped, fmap_to_list, container_fmap
-from .util import func, subval, subvals
+from .util import func, subval, toposort
 
 # -------------------- reverse mode --------------------
 
@@ -19,7 +19,7 @@ def backward_pass(gs, xs, start_nodes, end_nodes, fmap_in, fmap_out):
     outgrads = {}
     final_fnode = VJPFunctionNode(lambda _: gs, (), lambda *a: (),
                                   end_nodes, fmap_out)
-    for fnode in toposort(final_fnode):
+    for fnode in toposort(final_fnode, attrgetter('parent_fnodes')):
         parent_outgrads = fnode.vjp(fnode.children_fmap(lambda n: outgrads[n][0],
                                                         fnode.children))
         for p, p_outgrad in fmap_to_zipped(
@@ -56,27 +56,6 @@ class VJPFunctionNode(object):
         self.parent_fmap = parent_fmap
         self.parent_fnodes = set(filter(bool, fmap_to_list(
             parent_fmap, parent_fmap(attrgetter('fun'), parents))))
-
-def toposort(end_node):
-    child_counts = {}
-    stack = [end_node]
-    while stack:
-        node = stack.pop()
-        if node in child_counts:
-            child_counts[node] += 1
-        else:
-            child_counts[node] = 1
-            stack.extend(node.parent_fnodes)
-
-    childless_nodes = [end_node]
-    while childless_nodes:
-        node = childless_nodes.pop()
-        yield node
-        for parent in node.parent_fnodes:
-            if child_counts[parent] == 1:
-                childless_nodes.append(parent)
-            else:
-                child_counts[parent] -= 1
 
 primitive_vjps = {}
 def defvjp_full(fun, vjpmaker):
