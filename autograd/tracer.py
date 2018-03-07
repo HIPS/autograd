@@ -32,10 +32,7 @@ class Node(object):
         root.initialize_root(*args, **kwargs)
         return root
 
-def primitive(f_raw):
-    return general_primitive(f_raw, map, apply)
-
-def general_primitive(f_raw, fmap_in, fmap_out):
+def primitive(f_raw, fmap_in=map, fmap_out=apply):
     """
     Wraps a function so that its gradient can be specified and its invocation
     can be recorded. For examples, see the docs."""
@@ -47,29 +44,23 @@ def general_primitive(f_raw, fmap_in, fmap_out):
             top_box = max(boxed_args, key=lambda box: box._trace)
             argvals, parents, parent_fmap = unpack_boxes(
                 fmap_in, args, top_box._trace)
-            if f_wrapped in notrace_primitives[type(top_box._node)]:
-                return f_wrapped(*argvals, **kwargs)
             ans = f_wrapped(*argvals, **kwargs)
-            output_nodes, lfmap_out = top_box._node.process_primitive(
+            output_nodes = top_box._node.process_primitive(
                 ans, f_wrapped, argvals, kwargs, parents, parent_fmap)
-            return lfmap_out(partial(new_box, top_box._trace), ans, output_nodes)
+            return fmap_out(partial(new_box, top_box._trace), ans, output_nodes)
         else:
             return f_raw(*args, **kwargs)
 
     f_wrapped.fun = f_raw
-    f_wrapped._is_autograd_primitive = True
+    f_wrapped._is_primitive = True
     f_wrapped._fmap = fmap_in
     f_wrapped._fmap_out = fmap_out
     return f_wrapped
 
-notrace_primitives = defaultdict(set)
-def register_notrace(trace_type, primitive_fun):
-    notrace_primitives[trace_type].add(primitive_fun)
-
-def notrace_primitive(f_raw):
+def notrace_primitive(f_raw, fmap=map):
     @wraps(f_raw)
     def f_wrapped(*args, **kwargs):
-        argvals = map(getval, args)
+        argvals = fmap(getval, args)
         return f_raw(*argvals, **kwargs)
     f_wrapped._is_primitive = True
     return f_wrapped
@@ -111,6 +102,8 @@ class Box(object):
 
 box_type_mappings = Box.type_mappings
 def new_box(trace, value, node):
+    if node is None:
+        return value
     try:
         return box_type_mappings[type(value)](value, trace, node)
     except KeyError:

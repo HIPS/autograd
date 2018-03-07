@@ -3,15 +3,15 @@ from functools import partial
 import numpy.linalg as npla
 from .numpy_wrapper import wrap_namespace
 from . import numpy_wrapper as anp
-from autograd.extend import defvjp, general_primitive
+from autograd.extend import defvjp, primitive
 from autograd.fmap_util import maybe_map
 
 multi_output_functions = [npla.slogdet, npla.eigh, npla.svd]
 wrap_namespace(npla.__dict__, globals(), multi_output_functions)
 
-eigh    = general_primitive(npla.eigh   , map, map)
-slogdet = general_primitive(npla.slogdet, map, map)
-svd     = general_primitive(npla.svd    , map, maybe_map)
+eigh    = primitive(npla.eigh   , map, map)
+slogdet = primitive(npla.slogdet, map, map)
+svd     = primitive(npla.svd    , map, maybe_map)
 
 # Some formulas are from
 # "An extended collection of matrix derivative results

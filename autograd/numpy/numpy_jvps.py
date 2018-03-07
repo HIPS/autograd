@@ -2,13 +2,13 @@ from . import numpy_wrapper as anp
 from .numpy_vjps import (untake, balanced_eq, match_complex, replace_zero,
                          dot_adjoint_0, dot_adjoint_1, tensordot_adjoint_0,
                          tensordot_adjoint_1, nograd_functions)
-from autograd.extend import (defjvp, defjvp_argnum, def_linear, vspace, JVPNode,
-                             register_notrace, defjvp_is_fun, defjvp_full)
+from autograd.extend import (defjvp, defjvp_argnum, def_linear, vspace,
+                             defjvp_is_fun, defjvp_full, defjvp_zero)
 from ..util import func
 from .numpy_boxes import ArrayBox
 
 for fun in nograd_functions:
-    register_notrace(JVPNode, fun)
+    defjvp_zero(fun)
 
 defjvp_is_fun(func(ArrayBox.__getitem__))
 defjvp_is_fun(untake)

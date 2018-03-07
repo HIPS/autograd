@@ -7,7 +7,7 @@ from . import numpy_wrapper as anp
 from .numpy_boxes import ArrayBox
 from .numpy_vspaces import SparseArray
 from autograd.extend import (primitive, vspace, defvjp, defvjp_argnum,
-                             VJPNode, register_notrace, defvjp_full)
+                             defvjp_full, defvjp_zero)
 
 # ----- Non-differentiable functions -----
 
@@ -22,7 +22,7 @@ nograd_functions = [
     anp.isreal, anp.zeros_like, anp.ones_like, anp.result_type]
 
 for fun in nograd_functions:
-    register_notrace(VJPNode, fun)
+    defvjp_zero(fun)
 
 # ----- Functions that are constant w.r.t. continuous inputs -----
 

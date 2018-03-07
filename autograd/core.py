@@ -41,11 +41,13 @@ class VJPNode(Node):
             fun_name = getattr(fun, '__name__', fun)
             raise NotImplementedError("VJP of {} not defined".format(fun_name))
 
+        if vjpmaker is None:
+            return fun._fmap_out(lambda _: None, ans)
         vjp = vjpmaker(parent_fmap, ans, *args, **kwargs)
         fun_node = VJPFunctionNode(vjp, None, fun._fmap_out, parents, parent_fmap)
         output_nodes = fun._fmap_out(partial(VJPNode, fun_node), ans)
         fun_node.children = output_nodes
-        return output_nodes, fun._fmap_out
+        return output_nodes
 
 class VJPFunctionNode(object):
     def __init__(self, vjp, children, children_fmap, parents, parent_fmap):
@@ -77,6 +79,9 @@ def defvjp(fun, *vjpmakers):
 
     defvjp_full(fun, vjp_full)
 
+def defvjp_zero(fun):
+    defvjp_full(fun, None)
+
 # -------------------- forward mode --------------------
 
 def make_jvp(fun, xs):
@@ -101,9 +106,11 @@ class JVPNode(Node):
         except KeyError:
             name = getattr(fun, '__name__', fun)
             raise NotImplementedError("JVP of {}".format(name))
+        if jvpmaker is None:
+            return fun._fmap_out(lambda _: None, ans)
         gs = jvpmaker(parents, parent_gs, ans, *args, **kwargs)
-        output_nodes = fun._fmap_out(JVPNode, gs)
-        return output_nodes, fun._fmap_out
+        output_nodes = fun._fmap_out(lambda g: None if g is None else JVPNode(g), gs)
+        return output_nodes
 
 primitive_jvps = {}
 def defjvp_full(fun, jvp_full):
@@ -139,6 +146,10 @@ def defjvp_is_fun(fun):
                              parents, gs, args)
         return fun(*new_args, **kwargs)
     defjvp_full(fun, jvp_full)
+
+def defjvp_zero(fun):
+    defjvp_full(fun, lambda parents, parent_gs, ans, *args, **kwargs:
+                fun._fmap_out(lambda _: None, ans))
 
 # -------------------- vector behavior --------------------
 

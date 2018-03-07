@@ -23,7 +23,7 @@ class ConstGraphNode(Node):
             complete_args = parent_fmap(
                 lambda _, dynamic_arg: dynamic_arg, static_args, dynamic_args)
             return fun(*complete_args)
-        return ConstGraphNode(parents, parent_fmap, partial_fun), fun._fmap_out
+        return ConstGraphNode(parents, parent_fmap, partial_fun)
 
 def const_graph(fun, *args, **kwargs):
     fun = [partial(fun, *args, **kwargs)] # Allow fun to be freed, since it may have bound args
