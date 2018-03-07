@@ -7,7 +7,7 @@ import warnings
 
 from .wrap_util import unary_to_nary
 from .core import make_vjp as _make_vjp, make_jvp as _make_jvp
-from .extend import primitive, defvjp_argnum, vspace
+from .extend import primitive, vspace, defvjp_full
 
 import autograd.numpy as np
 
@@ -189,8 +189,8 @@ def checkpoint(fun):
     for the backward pass. Useful to save memory, effectively trading off time
     and memory. See e.g. arxiv.org/abs/1604.06174.
     """
-    def wrapped_grad(argnum, ans, args, kwargs):
-        return make_vjp(fun, argnum)(*args, **kwargs)[0]
+    def wrapped_grad(parent_fmap, ans, *args):
+        return _make_vjp(lambda a: fun(*a), args)[0]
     wrapped = primitive(fun)
-    defvjp_argnum(wrapped, wrapped_grad)
+    defvjp_full(wrapped, wrapped_grad)
     return wrapped

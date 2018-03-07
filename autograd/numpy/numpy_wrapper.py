@@ -2,7 +2,6 @@ from __future__ import absolute_import
 import types
 import warnings
 from autograd.extend import primitive, notrace_primitive, primitive
-from autograd.fmap_util import apply
 import numpy as _np
 import autograd.builtins as builtins
 from numpy.core.einsumfunc import _parse_einsum_input
@@ -45,10 +44,10 @@ wrap_namespace(_np.__dict__, globals(), nowrap_functions)
 
 # ----- Special treatment of list-input functions -----
 
-def map_over_first(f, *args):
-    return (map(f, *[arg[0] for arg in args]),) + args[0][1:]
+def map_over_first(f, xs, *rest):
+    return (map(f, xs[0], *[other[0] for other in rest]),) + xs[1:]
 
-concatenate = primitive(_np.concatenate, map_over_first, apply)
+concatenate = primitive(_np.concatenate, map_over_first)
 
 vstack = row_stack = lambda tup: concatenate([atleast_2d(_m) for _m in tup], axis=0)
 def hstack(tup):
@@ -69,26 +68,17 @@ def column_stack(tup):
 def array(A, *args, **kwargs):
     t = builtins.type(A)
     if t in (list, tuple):
-        return array_from_args(args, kwargs, *map(array, A))
+        return _array_from_arrays(map(array, A), *args, **kwargs)
     else:
-        return _array_from_scalar_or_array(args, kwargs, A)
-
-def wrap_if_boxes_inside(raw_array, slow_op_name=None):
-    if raw_array.dtype is _np.dtype('O'):
-        if slow_op_name:
-            warnings.warn("{0} is slow for array inputs. "
-                          "np.concatenate() is faster.".format(slow_op_name))
-        return array_from_args((), {}, *raw_array.ravel()).reshape(raw_array.shape)
-    else:
-        return raw_array
+        return _array_from_scalar_or_array(A, *args, **kwargs)
 
 @primitive
-def _array_from_scalar_or_array(array_args, array_kwargs, scalar):
-    return _np.array(scalar, *array_args, **array_kwargs)
+def _array_from_scalar_or_array(scalar, *a, **kw):
+    return _np.array(scalar, *a, **kw)
 
-@primitive
-def array_from_args(array_args, array_kwargs, *args):
-    return _np.array(args, *array_args, **array_kwargs)
+def _array_from_arrays(arrays, *a, **kw):
+    return _np.array(arrays, *a, **kw)
+_array_from_arrays = primitive(_array_from_arrays, fmap_in=map_over_first)
 
 def select(condlist, choicelist, default=0):
     raw_array = _np.select(list(condlist), list(choicelist), default=default)
@@ -139,6 +129,16 @@ class c_class():
         raw_array = _np.c_[args]
         return wrap_if_boxes_inside(raw_array, slow_op_name = "c_")
 c_ = c_class()
+
+def wrap_if_boxes_inside(raw_array, slow_op_name=None):
+    # hack to avoid reimplementing complicated logic of r_/c_
+    if raw_array.dtype is _np.dtype('O'):
+        if slow_op_name:
+            warnings.warn("{0} is slow for array inputs. "
+                          "np.concatenate() is faster.".format(slow_op_name))
+        return array(list(raw_array.ravel())).reshape(raw_array.shape)
+    else:
+        return raw_array
 
 # ----- misc -----
 @primitive

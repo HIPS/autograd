@@ -63,14 +63,6 @@ primitive_vjps = {}
 def defvjp_full(fun, vjpmaker):
     primitive_vjps[fun] = vjpmaker
 
-def defvjp_argnum(fun, vjpmaker):
-    assert fun._fmap is map
-    def vjp_full(parent_fmap, ans, *args, **kwargs):
-        vjps = parent_fmap(lambda argnum: vjpmaker(argnum, ans, args, kwargs),
-                           range(len(args)))
-        return lambda g: parent_fmap(lambda vjp: vjp(g), vjps)
-    defvjp_full(fun, vjp_full)
-
 def defvjp(fun, *vjpmakers):
     def vjp_full(parent_fmap, ans, *args, **kwargs):
         vjps = parent_fmap(lambda vjpmaker:
@@ -116,14 +108,6 @@ primitive_jvps = {}
 def defjvp_full(fun, jvp_full):
     primitive_jvps[fun] = jvp_full
 
-def defjvp_argnum(fun, jvpmaker):
-    assert fun._fmap is map
-    def jvp_full(parents, gs, ans, *args, **kwargs):
-        vs = vspace(ans)
-        return vs.sum([jvpmaker(argnum, g, ans, args, kwargs)
-                       for argnum, parent, g in zip(count(), parents, gs) if parent])
-    defjvp_full(fun, jvp_full)
-
 def defjvp(fun, *jvpfuns):
     def jvp_full(parents, gs, ans, *args, **kwargs):
         vs = vspace(ans)
@@ -137,8 +121,12 @@ def defjvp(fun, *jvpfuns):
 
 def def_linear(fun):
     """Flags that a function is linear wrt all args"""
-    defjvp_argnum(fun, lambda argnum, g, ans, args, kwargs:
-                  fun(*subval(args, argnum, g), **kwargs))
+    assert fun._fmap is map
+    def jvp_full(parents, gs, ans, *args, **kwargs):
+        vs = vspace(ans)
+        return vs.sum([fun(*subval(args, argnum, g), **kwargs)
+                       for argnum, parent, g in zip(count(), parents, gs) if parent])
+    defjvp_full(fun, jvp_full)
 
 def defjvp_is_fun(fun):
     def jvp_full(parents, gs, ans, *args, **kwargs):

@@ -6,8 +6,7 @@ from ..util import func
 from . import numpy_wrapper as anp
 from .numpy_boxes import ArrayBox
 from .numpy_vspaces import SparseArray
-from autograd.extend import (primitive, vspace, defvjp, defvjp_argnum,
-                             defvjp_full, defvjp_zero)
+from autograd.extend import primitive, vspace, defvjp, defvjp_full, defvjp_zero
 
 # ----- Non-differentiable functions -----
 
@@ -578,7 +577,12 @@ def grad_einsum(argnum, ans, operands_, kwargs):
                     operands[(argnum+2):-1] + [operands[argnum+1]]
             return unbroadcast_einsum(anp.einsum(g, *rest_of_ops), result_meta, operands[argnum + 1])
     return vjp
-defvjp_argnum(anp.einsum, grad_einsum)
+
+def grad_einsum_full(parent_fmap, ans, *operands, **kwargs):
+    vjps = parent_fmap(lambda argnum: grad_einsum(argnum, ans, operands, kwargs),
+                       range(len(operands)))
+    return lambda g: parent_fmap(lambda vjp: vjp(g), vjps)
+defvjp_full(anp.einsum, grad_einsum_full)
 
 defvjp(anp.diagonal,
     lambda ans, A, offset=0, axis1=0, axis2=1 :
@@ -630,18 +634,17 @@ def replace_zero(x, val):
 
 # ----- extra functions used internally  -----
 
-def array_from_args_gradmaker(argnum, ans, args, kwargs):
-    return lambda g: g[argnum-2]
-defvjp_argnum(anp.array_from_args, array_from_args_gradmaker)
+def array_from_arrays_vjp(*a, **kw):
+    return lambda g: (list(g),)
+defvjp_full(anp._array_from_arrays, array_from_arrays_vjp)
 
-def array_from_scalar_or_array_gradmaker(ans, array_args, array_kwargs, scarray):
-    ndmin = array_kwargs.get('ndmin', 0)
+def array_from_scalar_or_array_vjp(ans, scarray, ndmin=0, **k):
     scarray_ndim = anp.ndim(scarray)
     if ndmin > scarray_ndim:
         return lambda g: anp.squeeze(g, axis=tuple(range(ndmin - scarray_ndim)))
     else:
         return lambda g: g
-defvjp(anp._array_from_scalar_or_array, None, None, array_from_scalar_or_array_gradmaker)
+defvjp(anp._array_from_scalar_or_array, array_from_scalar_or_array_vjp)
 
 @primitive
 def untake(x, idx, vs):

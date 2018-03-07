@@ -2,7 +2,7 @@ from . import numpy_wrapper as anp
 from .numpy_vjps import (untake, balanced_eq, match_complex, replace_zero,
                          dot_adjoint_0, dot_adjoint_1, tensordot_adjoint_0,
                          tensordot_adjoint_1, nograd_functions)
-from autograd.extend import (defjvp, defjvp_argnum, def_linear, vspace,
+from autograd.extend import (defjvp, def_linear, vspace,
                              defjvp_is_fun, defjvp_full, defjvp_zero)
 from ..util import func
 from .numpy_boxes import ArrayBox
@@ -12,10 +12,6 @@ for fun in nograd_functions:
 
 defjvp_is_fun(func(ArrayBox.__getitem__))
 defjvp_is_fun(untake)
-
-defjvp_argnum(anp.array_from_args, lambda argnum, g, ans, args, kwargs: untake(g, argnum-2, vspace(ans)))
-defjvp(anp._array_from_scalar_or_array, None, None,
-       lambda g, ans, args, kwargs, _: anp._array_from_scalar_or_array(args, kwargs, g))
 
 # ----- Functions that are constant w.r.t. continuous inputs -----
 defjvp(anp.nan_to_num, lambda g, ans, x: anp.where(anp.isfinite(x), g, 0.))
@@ -240,3 +236,11 @@ def broadcast(x, target):
     if target_iscomplex and not anp.iscomplexobj(x):
         x = x + 0j  # TODO(mattjj): this might promote the dtype
     return x
+
+def array_from_arrays_jvp(parents, gs, ans, arrays, *a, **kw):
+    out_components = [vspace(array).zeros() if g is None else g
+                      for g, array in zip(gs[0], arrays)]
+    return anp._array_from_arrays(out_components, *a, **kw)
+
+defjvp_full(anp._array_from_arrays, array_from_arrays_jvp)
+defjvp_is_fun(anp._array_from_scalar_or_array)
