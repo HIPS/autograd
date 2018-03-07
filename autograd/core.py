@@ -20,15 +20,13 @@ def backward_pass(gs, xs, start_nodes, end_nodes, fmap_in, fmap_out):
     final_fnode = VJPFunctionNode(lambda _: gs, (), lambda *a: (),
                                   end_nodes, fmap_out)
     for fnode in toposort(final_fnode, attrgetter('parent_fnodes')):
-        parent_outgrads = fnode.vjp(fnode.children_fmap(
-            lambda n: outgrads[n][0] if n in outgrads else n.vspace.zeros(),
-            fnode.children))
-        for p, p_outgrad in fmap_to_zipped(
-                fnode.parent_fmap, fnode.parents, parent_outgrads):
-            outgrads[p] = add_outgrads(outgrads.get(p), p_outgrad)
+        children_gs = fnode.children_fmap(
+            lambda n: n.vspace.densify(outgrads.get(n)), fnode.children)
+        parent_gs = fnode.vjp(children_gs)
+        for p, g in fmap_to_zipped(fnode.parent_fmap, fnode.parents, parent_gs):
+            outgrads[p] = p.vspace.add(outgrads.get(p), g)
 
-    return fmap_in(lambda n, x: (outgrads.get(n) or [vspace(x).zeros()])[0],
-                   start_nodes, xs)
+    return fmap_in(lambda n: n.vspace.densify(outgrads.get(n)), start_nodes)
 
 class VJPNode(Node):
     __slots__ = ['fun', 'vspace']
@@ -114,18 +112,19 @@ def defjvp_full(fun, jvp_full):
 def defjvp_argnum(fun, jvpmaker):
     assert fun._fmap is map
     def jvp_full(parents, gs, ans, *args, **kwargs):
-        return sum_outgrads(fun._fmap,
-                            [jvpmaker(argnum, g, ans, args, kwargs)
-                             for argnum, parent, g in zip(count(), parents, gs) if parent])
+        vs = vspace(ans)
+        return vs.sum([jvpmaker(argnum, g, ans, args, kwargs)
+                       for argnum, parent, g in zip(count(), parents, gs) if parent])
     defjvp_full(fun, jvp_full)
 
 def defjvp(fun, *jvpfuns):
     def jvp_full(parents, gs, ans, *args, **kwargs):
-        return sum_outgrads(
-            fun._fmap,
+        vs = vspace(ans)
+        return vs.sum(
+            fmap_to_list(fun._fmap,
             fun._fmap(
                 lambda jvpfun, g: None if g is None else jvpfun(g, ans, *args, **kwargs),
-                jvpfuns, gs))
+                jvpfuns, gs)))
 
     defjvp_full(fun, jvp_full)
 
@@ -143,41 +142,6 @@ def defjvp_is_fun(fun):
 
 # -------------------- vector behavior --------------------
 
-def add_outgrads(prev_g_flagged, g):
-    sparse = type(g) in sparse_object_types
-    if prev_g_flagged:
-        vs = vspace(g)
-        prev_g, mutable = prev_g_flagged
-        if mutable:
-            if sparse:
-                return sparse_add(vs, prev_g, g), True
-            else:
-                return vs.mut_add(prev_g, g), True
-        else:
-            if sparse:
-                prev_g_mutable = vs.mut_add(None, prev_g)
-                return sparse_add(vs, prev_g_mutable, g), True
-            else:
-                return vs.add(prev_g, g), True
-    else:
-        if sparse:
-            return sparse_add(vspace(g), None, g), True
-        else:
-            return g, False
-
-def sum_outgrads(fmap, gs):
-    outgrads = []
-    def accumulate(x):
-        if x is not None:
-            outgrads.append(x)
-    fmap(accumulate, gs)
-    return reduce(add_outgrads, outgrads, None)[0]
-
-@primitive
-def sparse_add(vs, x_prev, x_new):
-    x_prev = x_prev if x_prev is not None else vs.zeros()
-    return x_new.mut_add(x_prev)
-
 class VSpace(object):
     __slots__ = []
     mappings = {}
@@ -190,11 +154,7 @@ class VSpace(object):
     def randn(self):          assert False, repr(self)
 
     @primitive
-    def mut_add(self, x_prev, x_new):
-      x_prev = x_prev if x_prev is not None else self.zeros()
-      return self._mut_add(x_prev, x_new)
-    @primitive
-    def add(self, x_prev, x_new):     return self._add(x_prev, x_new)
+    def add_not_none(self, x, y):     return self._add(x, y)
     @primitive
     def scalar_mul(self, x, a):       return self._scalar_mul(x, a)
     @primitive
@@ -203,7 +163,6 @@ class VSpace(object):
     def covector(self, x):            return self._covector(x)
 
     def _add(self, x, y):        return x + y
-    def _mut_add(self, x, y):    x += y; return x
     def _scalar_mul(self, x, a): return x * a
     def _inner_prod(self, x, y): assert False
     def _covector(self, x):      return x
@@ -213,6 +172,20 @@ class VSpace(object):
 
     def __repr__(self):
         return "{}_{}".format(type(self).__name__, self.__dict__)
+
+    def densify(self, x):
+        if x is None:
+            return self.zeros()
+        else:
+            return x
+
+    def add(self, prev, new):
+        return new if prev is None else self.add_not_none(prev, new)
+
+    def sum(self, xs):
+        xs = [x for x in xs if x is not None]
+        xs_sum = reduce(self.add_not_none, xs)
+        return self.densify(xs_sum)
 
     @classmethod
     def register(cls, value_type, vspace_maker=None):
@@ -232,23 +205,10 @@ def vspace(value):
                             "Valid types are {}".format(
                                 value, type(value), VSpace.mappings.keys()))
 
-class SparseBox(Box):
-    __slots__ = []
-class SparseObject(object):
-    __slots__ = ['vs', 'mut_add']
-    def __init__(self, vs, mut_add):
-        self.vs = vs
-        self.mut_add = mut_add
-VSpace.register(SparseObject, lambda x : x.vs)
-SparseBox.register(SparseObject)
-sparse_object_types = {SparseObject, SparseBox}
-
 # -------------------- core reverse mode grads --------------------
 
 identity_vjp = lambda argnums, *args: lambda g: g
-defvjp(sparse_add, None, identity_vjp, identity_vjp)
-defvjp(func(VSpace.add    ), None, identity_vjp, identity_vjp)
-defvjp(func(VSpace.mut_add), None, identity_vjp, identity_vjp)
+defvjp(func(VSpace.add_not_none), None, identity_vjp, identity_vjp)
 defvjp(func(VSpace.inner_prod), None,
        lambda ans, vs, x, y: lambda g:  vs.covector(vs.scalar_mul(y, g)),
        lambda ans, vs, x, y: lambda g:  vs.covector(vs.scalar_mul(x, g)))
@@ -261,9 +221,7 @@ defvjp(func(VSpace.scalar_mul), None,
 # -------------------- core forward mode grads --------------------
 
 identity_jvp = lambda g, *args, **kwargs: g
-defjvp(sparse_add, None, identity_jvp, identity_jvp)
-defjvp(func(VSpace.mut_add), None, identity_jvp, identity_jvp)
-defjvp(func(VSpace.add),     None, identity_jvp, identity_jvp)
+defjvp(func(VSpace.add_not_none), None, identity_jvp, identity_jvp)
 def_linear(func(VSpace.scalar_mul))
 def_linear(func(VSpace.inner_prod))
 defjvp_is_fun(func(VSpace.covector))

@@ -1,5 +1,10 @@
+from collections import namedtuple
 import numpy as np
-from autograd.extend import VSpace
+from functools import reduce
+import operator as op
+from autograd.extend import VSpace, Box, primitive, defvjp, defjvp
+from autograd.core import identity_jvp, identity_vjp, func
+from autograd.builtins import isinstance as ag_isinstance
 
 class ArrayVSpace(VSpace):
     def __init__(self, value):
@@ -22,6 +27,34 @@ class ArrayVSpace(VSpace):
 
     def randn(self):
         return np.array(np.random.randn(*self.shape)).astype(self.dtype)
+
+
+    def densify(self, x):
+        if x is None:
+            return self.zeros()
+        elif ag_isinstance(x, SparseArray):
+            return self._sparse_to_dense(x)
+        else:
+            return x
+
+    def _add(self, x, y):
+        x_is_sparse = isinstance(x, SparseArray)
+        y_is_sparse = isinstance(y, SparseArray)
+        if x_is_sparse or y_is_sparse:
+            x_sparse = x if x_is_sparse else SparseArray(self, x, [])
+            y_sparse = y if y_is_sparse else SparseArray(self, y, [])
+            arrays = filter(lambda a: a is not None, [x_sparse.array, y_sparse.array])
+            new_array = reduce(op.add, arrays) if arrays else None
+            return SparseArray(self, new_array, x_sparse.updates + y_sparse.updates)
+        else:
+            return x + y
+
+    @primitive
+    def _sparse_to_dense(self, x):
+        out = self.zeros() if x.array is None else x.array.copy()
+        for idx, val in x.updates:
+            np.add.at(out, idx, val)
+        return out
 
     def _inner_prod(self, x, y):
         return np.dot(np.ravel(x), np.ravel(y))
@@ -63,3 +96,9 @@ for type_ in [float, np.float64, np.float32, np.float16]:
 
 for type_ in [complex, np.complex64, np.complex128]:
     ComplexArrayVSpace.register(type_)
+
+SparseArray = namedtuple("SparseArray", ["vs", "array", "updates"])
+VSpace.register(SparseArray, lambda x : x.vs)
+Box.register(SparseArray)
+defvjp(func(ArrayVSpace._sparse_to_dense), None, identity_vjp)
+defjvp(func(ArrayVSpace._sparse_to_dense), None, identity_jvp)

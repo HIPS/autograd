@@ -26,8 +26,6 @@ class ContainerVSpace(VSpace):
 
     def _add(self, xs, ys):
         return fmap(lambda vs, x, y: vs._add(x, y), self.shape, xs, ys)
-    def _mut_add(self, xs, ys):
-        return fmap(lambda vs, x, y: vs._mut_add(x, y), self.shape, xs, ys)
     def _scalar_mul(self, xs, a):
         return fmap(lambda vs, x: vs._scalar_mul(x, a), self.shape, xs)
     def _inner_prod(self, xs, ys):
