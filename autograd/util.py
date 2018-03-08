@@ -17,7 +17,7 @@ if sys.version_info >= (3,):
 else:
     def func(f): return f.im_func
 
-def toposort(end_node, get_parents):
+def toposort(end_node, get_parents=operator.attrgetter('parent_fnodes')):
     child_counts = {}
     stack = [end_node]
     while stack:

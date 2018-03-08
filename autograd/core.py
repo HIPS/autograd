@@ -1,5 +1,6 @@
 from itertools import count
 from functools import reduce, partial
+from collections import namedtuple
 from operator import attrgetter
 from .tracer import trace, primitive, Node, Box, isbox, getval
 from .fmap_util import fmap_to_zipped, fmap_to_list, container_fmap, select_map
@@ -9,30 +10,30 @@ from .util import func, subval, toposort
 
 def make_vjp(fun, xs):
     fmap_in = fmap_out = container_fmap
-    start_nodes = fmap_in(partial(VJPNode, None), xs)
+    start_fnode, children = source_fnode(xs, fmap_in)
+    start_nodes = fmap_in(partial(VJPNode, start_fnode), xs, children)
     end_values, end_nodes, lfmap_out = trace((start_nodes,), fun, (xs,), fmap_in, fmap_out)
     def vjp(g):
-        return backward_pass(g, xs, start_nodes, end_nodes, fmap_in, lfmap_out)
+        final_fnode = sink_fnode(g, end_nodes, lfmap_out, start_fnode)
+        return backward_pass(final_fnode)
     return vjp, end_values
 
-def backward_pass(gs, xs, start_nodes, end_nodes, fmap_in, fmap_out):
+def backward_pass(final_fnode):
     outgrads = {}
-    final_fnode = VJPFunctionNode(lambda _: gs, (), lambda *a: (),
-                                  end_nodes, fmap_out)
-    for fnode in toposort(final_fnode, attrgetter('parent_fnodes')):
-        children_gs = fnode.children_fmap(
-            lambda n: n.vspace.densify(outgrads.get(n)), fnode.children)
-        parent_gs = fnode.vjp(children_gs)
+    for fnode in toposort(final_fnode):
+        child_gs = fnode.child_fmap(lambda n: n.vspace.densify(outgrads.get(n)),
+                                    fnode.children)
+        parent_gs = fnode.vjp(child_gs)
         for p, g in fmap_to_zipped(fnode.parent_fmap, fnode.parents, parent_gs):
             outgrads[p] = p.vspace.add(outgrads.get(p), g)
 
-    return fmap_in(lambda n: n.vspace.densify(outgrads.get(n)), start_nodes)
+    return child_gs
 
 class VJPNode(Node):
-    __slots__ = ['fun', 'vspace']
-    def __init__(self, fun, x):
+    __slots__ = ['fun', 'var']
+    def __init__(self, fun, x, var):
         self.fun = fun
-        self.vspace = vspace(x)
+        self.var = var
 
     def process_primitive(self, ans, fun, args, kwargs, parents, parent_fmap):
         try:
@@ -44,20 +45,36 @@ class VJPNode(Node):
         if vjpmaker is None:
             return fun._fmap_out(lambda _: None, ans)
         vjp = vjpmaker(parent_fmap, ans, *args, **kwargs)
-        fun_node = VJPFunctionNode(vjp, None, fun._fmap_out, parents, parent_fmap)
-        output_nodes = fun._fmap_out(partial(VJPNode, fun_node), ans)
-        fun_node.children = output_nodes
+        fun_node, children = new_fnode(vjp, ans, fun._fmap_out, parents, parent_fmap)
+        output_nodes = fun._fmap_out(partial(VJPNode, fun_node), ans, children)
         return output_nodes
 
-class VJPFunctionNode(object):
-    def __init__(self, vjp, children, children_fmap, parents, parent_fmap):
+def source_fnode(xs, fmap_in):
+    return new_fnode(lambda x: (), xs, fmap_in, (), map)
+
+def sink_fnode(g, nodes, fmap_out, start_fnode):
+    fnode, _ = new_fnode(lambda _: g, (), map, nodes, fmap_out)
+    fnode.parent_fnodes.add(start_fnode)
+    return fnode
+
+def new_fnode(vjp, xs, child_fmap, parent_nodes, parent_fmap):
+    children = child_fmap(lambda x: VJPVariable(vspace(x)), xs)
+    parents = parent_fmap(attrgetter('var'), parent_nodes)
+    parent_fnodes = set(fmap_to_list(parent_fmap, parent_fmap(attrgetter('fun'), parent_nodes)))
+    return VJPFunction(vjp, children, child_fmap, parents, parent_fmap, parent_fnodes), children
+
+class VJPFunction(object):
+    def __init__(self, vjp, children, child_fmap, parents, parent_fmap, parent_fnodes):
         self.vjp = vjp
         self.children = children
-        self.children_fmap = children_fmap
+        self.child_fmap = child_fmap
         self.parents = parents
         self.parent_fmap = parent_fmap
-        self.parent_fnodes = set(filter(bool, fmap_to_list(
-            parent_fmap, parent_fmap(attrgetter('fun'), parents))))
+        self.parent_fnodes = parent_fnodes
+
+class VJPVariable(object):
+    def __init__(self, vspace):
+        self.vspace = vspace
 
 primitive_vjps = {}
 def defvjp_full(fun, vjpmaker):
