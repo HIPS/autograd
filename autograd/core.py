@@ -94,14 +94,13 @@ class JVPNode(Node):
     def process_primitive(self, ans, fun, args, kwargs, parents, parent_fmap):
         parent_gs = parent_fmap(attrgetter('g'), parents)
         try:
-            jvpmaker = primitive_jvps[fun]
+            jvp_full = primitive_jvps[fun]
         except KeyError:
             name = getattr(fun, '__name__', fun)
             raise NotImplementedError("JVP of {}".format(name))
-        if jvpmaker is None:
-            return fun._fmap_out(lambda _: None, ans)
-        gs = jvpmaker(parents, parent_gs, ans, *args, **kwargs)
-        output_nodes = fun._fmap_out(lambda g: None if g is None else JVPNode(g), gs)
+        child_gs = jvp_full(parent_gs, ans, *args, **kwargs)
+        output_nodes = fun._fmap_out(
+            lambda g: None if g is None else JVPNode(g), child_gs)
         return output_nodes
 
 primitive_jvps = {}
@@ -109,34 +108,34 @@ def defjvp_full(fun, jvp_full):
     primitive_jvps[fun] = jvp_full
 
 def defjvp(fun, *jvpfuns):
-    def jvp_full(parents, gs, ans, *args, **kwargs):
+    def jvp_full(gs, ans, *args, **kwargs):
         vs = vspace(ans)
         return vs.sum(
-            fmap_to_list(fun._fmap,
-            fun._fmap(
-                lambda jvpfun, g: None if g is None else jvpfun(g, ans, *args, **kwargs),
+            fmap_to_list(fun._fmap, fun._fmap(
+                lambda jvpfun, g: None if g is None
+                else jvpfun(g, ans, *args, **kwargs),
                 jvpfuns, gs)))
 
     defjvp_full(fun, jvp_full)
 
-def def_linear(fun):
+def def_multilinear(fun):
     """Flags that a function is linear wrt all args"""
     assert fun._fmap is map
-    def jvp_full(parents, gs, ans, *args, **kwargs):
+    def jvp_full(gs, ans, *args, **kwargs):
         vs = vspace(ans)
         return vs.sum([fun(*subval(args, argnum, g), **kwargs)
-                       for argnum, parent, g in zip(count(), parents, gs) if parent])
+                       for argnum, g in zip(count(), gs) if g is not None])
     defjvp_full(fun, jvp_full)
 
 def defjvp_is_fun(fun, parent_fmap=select_map([0])):
-    def jvp_full(parents, gs, ans, *args, **kwargs):
+    def jvp_full(gs, ans, *args, **kwargs):
         sub_val = lambda arg, g: vspace(arg).zeros() if g is None else g
         new_args = parent_fmap(sub_val, args, gs)
         return fun(*new_args, **kwargs)
     defjvp_full(fun, jvp_full)
 
 def defjvp_zero(fun):
-    defjvp_full(fun, lambda parents, parent_gs, ans, *args, **kwargs:
+    defjvp_full(fun, lambda parent_gs, ans, *args, **kwargs:
                 fun._fmap_out(lambda _: None, ans))
 
 # -------------------- vector behavior --------------------
@@ -221,6 +220,6 @@ defvjp(func(VSpace.scalar_mul), None,
 
 identity_jvp = lambda g, *args, **kwargs: g
 defjvp(func(VSpace.add_not_none), None, identity_jvp, identity_jvp)
-def_linear(func(VSpace.scalar_mul))
-def_linear(func(VSpace.inner_prod))
+def_multilinear(func(VSpace.scalar_mul))
+def_multilinear(func(VSpace.inner_prod))
 defjvp_is_fun(func(VSpace.covector), select_map([1]))

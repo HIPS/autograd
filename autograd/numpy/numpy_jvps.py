@@ -2,7 +2,7 @@ from . import numpy_wrapper as anp
 from .numpy_vjps import (untake, balanced_eq, match_complex, replace_zero,
                          dot_adjoint_0, dot_adjoint_1, tensordot_adjoint_0,
                          tensordot_adjoint_1, nograd_functions)
-from autograd.extend import (defjvp, def_linear, vspace,
+from autograd.extend import (defjvp, def_multilinear, vspace,
                              defjvp_is_fun, defjvp_full, defjvp_zero)
 from ..fmap_util import container_fmap, select_map, compose_fmaps
 from ..util import func
@@ -18,7 +18,7 @@ defjvp_is_fun(untake)
 defjvp(anp.nan_to_num, lambda g, ans, x: anp.where(anp.isfinite(x), g, 0.))
 
 # ----- Binary ufuncs (linear) -----
-def_linear(anp.multiply)
+def_multilinear(anp.multiply)
 
 # ----- Binary ufuncs -----
 defjvp(anp.add,        lambda g, ans, x, y : broadcast(g, ans),
@@ -79,7 +79,7 @@ defjvp_is_fun(anp.tril)
 defjvp_is_fun(anp.swapaxes)
 defjvp_is_fun(anp.rollaxis)
 defjvp_is_fun(anp.moveaxis)
-def_linear(anp.cross)
+def_multilinear(anp.cross)
 
 # ----- Simple grads -----
 defjvp(anp.abs,
@@ -121,7 +121,7 @@ defjvp(anp.where,
        lambda g, ans, c, x=None, y=None : anp.where(c, anp.zeros(g.shape), g))
 
 # ----- Trickier grads -----
-def_linear(anp.kron)
+def_multilinear(anp.kron)
 defjvp_is_fun(anp.diff)
 defjvp_is_fun(anp.repeat)
 defjvp_is_fun(anp.tile)
@@ -180,28 +180,19 @@ defjvp(anp.amin, fwd_grad_chooser)
 
 defjvp_is_fun(anp.cumsum)
 
-def_linear(anp.inner)
-def_linear(anp.matmul)
-def_linear(anp.dot)
-def_linear(anp.tensordot)
-def_linear(anp.outer)
+def_multilinear(anp.inner)
+def_multilinear(anp.matmul)
+def_multilinear(anp.dot)
+def_multilinear(anp.tensordot)
+def_multilinear(anp.outer)
 
-def_linear(dot_adjoint_0)
-def_linear(dot_adjoint_1)
+def_multilinear(dot_adjoint_0)
+def_multilinear(dot_adjoint_1)
 
-def_linear(tensordot_adjoint_0)
-def_linear(tensordot_adjoint_1)
+def_multilinear(tensordot_adjoint_0)
+def_multilinear(tensordot_adjoint_1)
 
-def concatenate_jvp(parents, gs, ans, arrs, axis=0):
-    result = []
-    for arr, g, parent in zip(arrs, gs[0], parents[0]):
-        if parent:
-            result.append(g)
-        else:
-            result.append(anp.zeros_like(arr))
-    return anp.concatenate(result, axis)
-
-defjvp_full(anp.concatenate, concatenate_jvp)
+defjvp_is_fun(anp.concatenate, anp.map_over_first)
 
 def fwd_grad_sort(g, ans, x, axis=-1, kind='quicksort', order=None):
     sort_perm = anp.argsort(x, axis, kind, order)
@@ -224,7 +215,7 @@ defjvp(anp.atleast_1d, atleast_jvpmaker(anp.atleast_1d))
 defjvp(anp.atleast_2d, atleast_jvpmaker(anp.atleast_2d))
 defjvp(anp.atleast_3d, atleast_jvpmaker(anp.atleast_3d))
 
-def_linear(anp.einsum)
+def_multilinear(anp.einsum)
 
 # TODO(mattjj): can we call np.broadcast_to or a related function instead?
 def broadcast(x, target):
