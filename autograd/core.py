@@ -2,7 +2,7 @@ from itertools import count
 from functools import reduce, partial
 from operator import attrgetter
 from .tracer import trace, primitive, Node, Box, isbox, getval
-from .fmap_util import fmap_to_zipped, fmap_to_list, container_fmap
+from .fmap_util import fmap_to_zipped, fmap_to_list, container_fmap, select_map
 from .util import func, subval, toposort
 
 # -------------------- reverse mode --------------------
@@ -128,10 +128,10 @@ def def_linear(fun):
                        for argnum, parent, g in zip(count(), parents, gs) if parent])
     defjvp_full(fun, jvp_full)
 
-def defjvp_is_fun(fun):
+def defjvp_is_fun(fun, parent_fmap=select_map([0])):
     def jvp_full(parents, gs, ans, *args, **kwargs):
-        new_args = fun._fmap(lambda p, g, arg: arg if p is None else g,
-                             parents, gs, args)
+        sub_val = lambda arg, g: vspace(arg).zeros() if g is None else g
+        new_args = parent_fmap(sub_val, args, gs)
         return fun(*new_args, **kwargs)
     defjvp_full(fun, jvp_full)
 
@@ -223,4 +223,4 @@ identity_jvp = lambda g, *args, **kwargs: g
 defjvp(func(VSpace.add_not_none), None, identity_jvp, identity_jvp)
 def_linear(func(VSpace.scalar_mul))
 def_linear(func(VSpace.inner_prod))
-defjvp_is_fun(func(VSpace.covector))
+defjvp_is_fun(func(VSpace.covector), select_map([1]))

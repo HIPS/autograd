@@ -4,6 +4,7 @@ from .numpy_vjps import (untake, balanced_eq, match_complex, replace_zero,
                          tensordot_adjoint_1, nograd_functions)
 from autograd.extend import (defjvp, def_linear, vspace,
                              defjvp_is_fun, defjvp_full, defjvp_zero)
+from ..fmap_util import container_fmap, select_map, compose_fmaps
 from ..util import func
 from .numpy_boxes import ArrayBox
 
@@ -237,10 +238,6 @@ def broadcast(x, target):
         x = x + 0j  # TODO(mattjj): this might promote the dtype
     return x
 
-def array_from_arrays_jvp(parents, gs, ans, arrays, *a, **kw):
-    out_components = [vspace(array).zeros() if g is None else g
-                      for g, array in zip(gs[0], arrays)]
-    return anp._array_from_arrays(out_components, *a, **kw)
-
-defjvp_full(anp._array_from_arrays, array_from_arrays_jvp)
+container_fmap_fst = compose_fmaps(select_map([0]), container_fmap)
+defjvp_is_fun(anp._array_from_arrays, container_fmap_fst)
 defjvp_is_fun(anp._array_from_scalar_or_array)

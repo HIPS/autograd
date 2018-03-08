@@ -9,6 +9,18 @@ def maybe_map(f, xs, *rest):
     else:
         return f(xs, *rest)
 
+def select_map(idxs):
+    def smap(f, *args):
+        out = list(args[0])
+        new_vals = map(f, *[[xs[i] for i in idxs] for xs in args])
+        for i, v in zip(idxs, new_vals):
+            out[i] = v
+        return out
+    return smap
+
+def compose_fmaps(fmap1, fmap2):
+    return lambda f, *a: fmap1(lambda *a: fmap2(f, *a),  *a)
+
 def limited_fmap(fmap, conds):
     """Only touches elements for which cond is true."""
     def lfmap(f, *args):

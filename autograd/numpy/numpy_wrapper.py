@@ -3,7 +3,7 @@ import types
 import warnings
 from autograd.extend import primitive, notrace_primitive, primitive
 import numpy as _np
-import autograd.builtins as builtins
+from autograd.fmap_util import compose_fmaps, select_map
 from numpy.core.einsumfunc import _parse_einsum_input
 
 notrace_functions = [
@@ -44,9 +44,7 @@ wrap_namespace(_np.__dict__, globals(), nowrap_functions)
 
 # ----- Special treatment of list-input functions -----
 
-def map_over_first(f, xs, *rest):
-    return (map(f, xs[0], *[other[0] for other in rest]),) + xs[1:]
-
+map_over_first = compose_fmaps(select_map([0]), map)
 concatenate = primitive(_np.concatenate, map_over_first)
 
 vstack = row_stack = lambda tup: concatenate([atleast_2d(_m) for _m in tup], axis=0)
@@ -66,7 +64,7 @@ def column_stack(tup):
     return concatenate(arrays, 1)
 
 def array(A, *args, **kwargs):
-    t = builtins.type(A)
+    t = type(A)
     if t in (list, tuple):
         return _array_from_arrays(map(array, A), *args, **kwargs)
     else:
