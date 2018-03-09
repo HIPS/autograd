@@ -235,7 +235,17 @@ def repeat_to_match_shape(g, shape, dtype, axis, keepdims):
     new_shape = onp.array(shape)
     new_shape[axis] = 1
     num_reps = onp.prod(onp.array(shape)[axis])
-    return anp.reshape(g, new_shape) + onp.zeros(shape, dtype=dtype), num_reps
+    return anp.broadcast_to(anp.reshape(g, new_shape), shape), num_reps
+
+def grad_broadcast_to(ans, x, new_shape):
+    old_shape = anp.shape(x)
+    assert anp.shape(ans) == new_shape
+    assert len(old_shape) == len(new_shape), "Can't handle extra leading dims"
+    broadcast_axes = tuple(onp.where(onp.logical_and(
+        onp.array(old_shape) == 1,
+        onp.array(new_shape) >  1))[0])
+    return lambda g: anp.sum(g, axis=broadcast_axes, keepdims=True)
+defvjp(anp.broadcast_to, grad_broadcast_to)
 
 def grad_np_sum(ans, x, axis=None, keepdims=False, dtype=None):
     shape, dtype = anp.shape(x), anp.result_type(x)
