@@ -1,41 +1,39 @@
 from itertools import count
 from functools import reduce, partial
-from collections import namedtuple
-from operator import attrgetter
 from .tracer import trace, primitive, Node, Box, isbox, getval
-from .fmap_util import fmap_to_zipped, fmap_to_list, container_fmap, select_map
+from .fmap_util import fmap_to_list, container_fmap, select_map, bound_fmap
 from .util import func, subval, toposort
 
 # -------------------- reverse mode --------------------
 
 def make_vjp(fun, xs):
     fmap_in = fmap_out = container_fmap
-    start_fnode, children = source_fnode(xs, fmap_in)
-    start_nodes = fmap_in(partial(VJPNode, start_fnode), xs, children)
-    end_values, end_nodes, lfmap_out = trace((start_nodes,), fun, (xs,), fmap_in, fmap_out)
+    start_nodes = fmap_in(partial(VJPNode, None), xs)
+    end_values, end_nodes = trace((start_nodes,), fun, (xs,), fmap_in, fmap_out)
+    start_fmap = bound_fmap(fmap_in , start_nodes)
+    end_fmap   = bound_fmap(fmap_out, end_nodes)
     def vjp(g):
-        final_fnode = sink_fnode(g, end_nodes, lfmap_out, start_fnode)
-        return backward_pass(final_fnode)
+        return backward_pass(start_fmap, end_fmap, g)
     return vjp, end_values
 
-def backward_pass(final_fnode):
-    outgrads = {}
-    for fnode in toposort(final_fnode):
-        child_gs = fnode.child_fmap(lambda n: n.vspace.densify(outgrads.get(n)),
-                                    fnode.children)
+def backward_pass(start_fmap, end_fmap, end_gs):
+    gs = {}
+    get_g     = lambda n   : n.vspace.densify(gs.get(n))
+    update_gs = lambda n, g: gs.update({n: n.vspace.add(gs.get(n), g)})
+    end_fmap(update_gs, end_gs)
+    for fnode in toposort(get_fnodes(end_fmap)):
+        child_gs = fnode.child_fmap(get_g)
         parent_gs = fnode.vjp(child_gs)
-        for p, g in fmap_to_zipped(fnode.parent_fmap, fnode.parents, parent_gs):
-            outgrads[p] = p.vspace.add(outgrads.get(p), g)
-
-    return child_gs
+        fnode.parent_fmap(update_gs, parent_gs)
+    return start_fmap(get_g)
 
 class VJPNode(Node):
-    __slots__ = ['fun', 'var']
-    def __init__(self, fun, x, var):
+    __slots__ = ['fun', 'vspace']
+    def __init__(self, fun, x):
         self.fun = fun
-        self.var = var
+        self.vspace = vspace(x)
 
-    def process_primitive(self, ans, fun, args, kwargs, parents, parent_fmap):
+    def process_primitive(self, ans, fun, args, kwargs, parents):
         try:
             vjpmaker = primitive_vjps[fun]
         except KeyError:
@@ -43,49 +41,39 @@ class VJPNode(Node):
             raise NotImplementedError("VJP of {} not defined".format(fun_name))
 
         if vjpmaker is None:
-            return fun._fmap_out(lambda _: None, ans)
-        vjp = vjpmaker(parent_fmap, ans, *args, **kwargs)
-        fun_node, children = new_fnode(vjp, ans, fun._fmap_out, parents, parent_fmap)
-        output_nodes = fun._fmap_out(partial(VJPNode, fun_node), ans, children)
-        return output_nodes
-
-def source_fnode(xs, fmap_in):
-    return new_fnode(lambda x: (), xs, fmap_in, (), map)
-
-def sink_fnode(g, nodes, fmap_out, start_fnode):
-    fnode, _ = new_fnode(lambda _: g, (), map, nodes, fmap_out)
-    fnode.parent_fnodes.add(start_fnode)
-    return fnode
-
-def new_fnode(vjp, xs, child_fmap, parent_nodes, parent_fmap):
-    children = child_fmap(lambda x: VJPVariable(vspace(x)), xs)
-    parents = parent_fmap(attrgetter('var'), parent_nodes)
-    parent_fnodes = set(fmap_to_list(parent_fmap, parent_fmap(attrgetter('fun'), parent_nodes)))
-    return VJPFunction(vjp, children, child_fmap, parents, parent_fmap, parent_fnodes), children
+            return fun.fmap_out(lambda _: None, ans)
+        vjp = vjpmaker(parents, ans, *args, **kwargs)
+        fnode = VJPFunction()
+        children = fun.fmap_out(partial(VJPNode, fnode), ans)
+        parent_fmap = bound_fmap(fun.fmap_in, parents)
+        child_fmap  = bound_fmap(fun.fmap_out, children)
+        fnode.initialize(vjp, parent_fmap, child_fmap)
+        return children
 
 class VJPFunction(object):
-    def __init__(self, vjp, children, child_fmap, parents, parent_fmap, parent_fnodes):
+    __slots__ = ['vjp', 'child_fmap', 'parent_fmap', 'parent_fnodes']
+    def __init__(self): pass
+    def initialize(self, vjp, parent_fmap, child_fmap):
         self.vjp = vjp
-        self.children = children
         self.child_fmap = child_fmap
-        self.parents = parents
         self.parent_fmap = parent_fmap
-        self.parent_fnodes = parent_fnodes
+        self.parent_fnodes = get_fnodes(parent_fmap)
 
-class VJPVariable(object):
-    def __init__(self, vspace):
-        self.vspace = vspace
+def get_fnodes(fmap):
+    fnodes = set()
+    fmap(lambda p: p.fun and fnodes.add(p.fun))
+    return fnodes
 
 primitive_vjps = {}
 def defvjp_full(fun, vjpmaker):
     primitive_vjps[fun] = vjpmaker
 
 def defvjp(fun, *vjpmakers):
-    def vjp_full(parent_fmap, ans, *args, **kwargs):
-        vjps = parent_fmap(lambda vjpmaker:
-                           vjpmaker(ans, *args, **kwargs), vjpmakers)
-        return lambda g: parent_fmap(lambda vjp: vjp(g), vjps)
-
+    def vjp_full(parents, ans, *args, **kwargs):
+        vjps = fun.fmap_in(
+            lambda p, vjpmaker:
+            p and vjpmaker(ans, *args, **kwargs), parents, vjpmakers)
+        return lambda g: fun.fmap_in(lambda p, vjp: p and vjp(g), parents, vjps)
     defvjp_full(fun, vjp_full)
 
 def defvjp_zero(fun):
@@ -97,7 +85,8 @@ def make_jvp(fun, xs):
     fmap_in = fmap_out = container_fmap
     def jvp(gs):
         start_nodes = fmap_in(JVPNode, gs)
-        end_values, end_nodes, _ = trace((start_nodes,), fun, (xs,), fmap_in, fmap_out)
+        end_values, end_nodes = trace((start_nodes,), fun, (xs,),
+                                      fmap_in, fmap_out)
         gs_out = fmap_out(lambda n, v: vspace(v).zeros() if n is None else n.g,
                           end_nodes, end_values)
         return end_values, gs_out
@@ -108,15 +97,15 @@ class JVPNode(Node):
     def __init__(self, g):
         self.g = g
 
-    def process_primitive(self, ans, fun, args, kwargs, parents, parent_fmap):
-        parent_gs = parent_fmap(attrgetter('g'), parents)
+    def process_primitive(self, ans, fun, args, kwargs, parents):
+        parent_gs = fun.fmap_in(lambda p: p and p.g, parents)
         try:
             jvp_full = primitive_jvps[fun]
         except KeyError:
             name = getattr(fun, '__name__', fun)
             raise NotImplementedError("JVP of {}".format(name))
         child_gs = jvp_full(parent_gs, ans, *args, **kwargs)
-        output_nodes = fun._fmap_out(
+        output_nodes = fun.fmap_out(
             lambda g: None if g is None else JVPNode(g), child_gs)
         return output_nodes
 
@@ -128,7 +117,7 @@ def defjvp(fun, *jvpfuns):
     def jvp_full(gs, ans, *args, **kwargs):
         vs = vspace(ans)
         return vs.sum(
-            fmap_to_list(fun._fmap, fun._fmap(
+            fmap_to_list(fun.fmap_in, fun.fmap_in(
                 lambda jvpfun, g: None if g is None
                 else jvpfun(g, ans, *args, **kwargs),
                 jvpfuns, gs)))
@@ -137,23 +126,23 @@ def defjvp(fun, *jvpfuns):
 
 def def_multilinear(fun):
     """Flags that a function is linear wrt all args"""
-    assert fun._fmap is map
+    assert fun.fmap_in is map
     def jvp_full(gs, ans, *args, **kwargs):
         vs = vspace(ans)
         return vs.sum([fun(*subval(args, argnum, g), **kwargs)
                        for argnum, g in zip(count(), gs) if g is not None])
     defjvp_full(fun, jvp_full)
 
-def defjvp_is_fun(fun, parent_fmap=select_map([0])):
+def defjvp_is_fun(fun, fmap=select_map([0])):
     def jvp_full(gs, ans, *args, **kwargs):
         sub_val = lambda arg, g: vspace(arg).zeros() if g is None else g
-        new_args = parent_fmap(sub_val, args, gs)
+        new_args = fmap(sub_val, args, gs)
         return fun(*new_args, **kwargs)
     defjvp_full(fun, jvp_full)
 
 def defjvp_zero(fun):
     defjvp_full(fun, lambda parent_gs, ans, *args, **kwargs:
-                fun._fmap_out(lambda _: None, ans))
+                fun.fmap_out(lambda _: None, ans))
 
 # -------------------- vector behavior --------------------
 

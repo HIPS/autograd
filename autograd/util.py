@@ -1,5 +1,6 @@
 import operator
 import sys
+from collections import Counter
 
 def subvals(x, ivs):
     x_ = list(x)
@@ -17,18 +18,17 @@ if sys.version_info >= (3,):
 else:
     def func(f): return f.im_func
 
-def toposort(end_node, get_parents=operator.attrgetter('parent_fnodes')):
-    child_counts = {}
-    stack = [end_node]
+def toposort(end_nodes, get_parents=operator.attrgetter('parent_fnodes')):
+    child_counts = Counter()
+    stack = list(end_nodes)
     while stack:
         node = stack.pop()
-        if node in child_counts:
-            child_counts[node] += 1
-        else:
-            child_counts[node] = 1
+        if node not in child_counts:
             stack.extend(get_parents(node))
+        child_counts[node] += 1
 
-    childless_nodes = [end_node]
+    child_counts.subtract(end_nodes)
+    childless_nodes = [n for n in end_nodes if child_counts[n] == 0]
     while childless_nodes:
         node = childless_nodes.pop()
         yield node

@@ -489,10 +489,11 @@ def make_slices(sizes, axis, ndim):
         slices.append(idxs)
     return slices
 
-def concatenate_vjp(parent_fmap, ans, arrs, axis=0):
+def concatenate_vjp(parents, ans, arrs, axis=0):
     sizes = [anp.shape(a)[axis] for a in arrs]
     slices = (make_slices(sizes, axis, ans.ndim),)
-    return lambda g: parent_fmap(lambda s: g[s], slices)
+    fmap = anp.concatenate.fmap_in
+    return lambda g: fmap(lambda p, s: p and g[s], parents, slices)
 defvjp_full(anp.concatenate, concatenate_vjp)
 
 def wrapped_reshape(x, *args, **kwargs):
@@ -578,10 +579,11 @@ def grad_einsum(argnum, ans, operands_, kwargs):
             return unbroadcast_einsum(anp.einsum(g, *rest_of_ops), result_meta, operands[argnum + 1])
     return vjp
 
-def grad_einsum_full(parent_fmap, ans, *operands, **kwargs):
-    vjps = parent_fmap(lambda argnum: grad_einsum(argnum, ans, operands, kwargs),
-                       range(len(operands)))
-    return lambda g: parent_fmap(lambda vjp: vjp(g), vjps)
+def grad_einsum_full(parents, ans, *operands, **kwargs):
+    vjps = map(lambda p, argnum: p and grad_einsum(argnum, ans, operands, kwargs),
+               parents, range(len(operands)))
+    return lambda g: map(lambda p, vjp: p and vjp(g), parents, vjps)
+
 defvjp_full(anp.einsum, grad_einsum_full)
 
 defvjp(anp.diagonal,

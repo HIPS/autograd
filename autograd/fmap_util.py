@@ -21,6 +21,14 @@ def select_map(idxs):
 def compose_fmaps(fmap1, fmap2):
     return lambda f, *a: fmap1(lambda *a: fmap2(f, *a),  *a)
 
+only_touch_first = select_map([0])
+map_over_first = compose_fmaps(only_touch_first, map)
+
+def bound_fmap(fmap, xs):
+    def _bound_fmap(f, *rest):
+        return fmap(lambda x, *rest_elts: x and f(x, *rest_elts), xs, *rest)
+    return _bound_fmap
+
 def limited_fmap(fmap, conds):
     """Only touches elements for which cond is true."""
     def lfmap(f, *args):

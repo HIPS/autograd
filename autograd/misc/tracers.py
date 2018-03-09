@@ -2,7 +2,7 @@ from itertools import repeat
 from autograd.wrap_util import wraps
 from autograd.tracer import trace, Node
 from autograd.util import toposort
-from autograd.fmap_util import apply
+from autograd.fmap_util import apply, limited_fmap
 from functools import partial
 
 class ConstGraphNode(Node):
@@ -16,8 +16,9 @@ class ConstGraphNode(Node):
         self.parents = ()
         self.parent_fmap = lambda *args: ()
 
-    def process_primitive(self, ans, fun, args, kwargs, parents, parent_fmap):
-        assert fun._fmap_out is apply  # only works for single-output primitives
+    def process_primitive(self, ans, fun, args, kwargs, parents):
+        assert fun.fmap_out is apply  # only works for single-output primitives
+        parent_fmap = limited_fmap(fun.fmap_in, parents)
         static_args = parent_fmap(lambda _: None, args)
         def partial_fun(dynamic_args):
             complete_args = parent_fmap(
@@ -39,10 +40,11 @@ def const_graph(fun, *args, **kwargs):
             return vals[node]
         else:
             start_nodes = map(ConstGraphNode.new_root, xs)
-            end_value, end_node, _ = trace(start_nodes, fun.pop(), xs, map, apply)
+            end_value, end_node = trace(start_nodes, fun.pop(), xs, map, apply)
             if end_node is None:
                 raise Exception("Output is independent of input")
-            graph = list(toposort(end_node, lambda n: filter(bool, n.parents)))[::-1]
+            graph = list(toposort(
+                [end_node], lambda n: filter(bool, n.parents)))[::-1]
             cache['graph'] = graph
             cache['start_nodes'] = start_nodes
             return end_value

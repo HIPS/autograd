@@ -1,10 +1,6 @@
-import warnings
 from contextlib import contextmanager
-from collections import defaultdict
 from functools import partial
-from itertools import count
-from operator import attrgetter
-from .fmap_util import limited_fmap, apply
+from .fmap_util import apply
 from .wrap_util import wraps
 
 def trace(start_nodes, fun, xs, fmap_in, fmap_out):
@@ -15,11 +11,9 @@ def trace(start_nodes, fun, xs, fmap_in, fmap_out):
 
 def unpack_boxes(fmap, boxes, trace):
     is_top_box = lambda box: isbox(box) and box._trace == trace
-    valid_boxes = fmap(is_top_box, boxes)
-    nodes  = fmap(lambda cond, b: b._node if cond else None, valid_boxes, boxes)
-    l_fmap = limited_fmap(fmap, valid_boxes)
-    values = l_fmap(attrgetter('_value'), boxes)
-    return values, nodes, l_fmap
+    nodes  = fmap(lambda b   : b._node  if is_top_box(b) else None, boxes)
+    values = fmap(lambda b, n: b._value if n else b, boxes, nodes)
+    return values, nodes
 
 class Node(object):
     __slots__ = []
@@ -42,19 +36,18 @@ def primitive(f_raw, fmap_in=map, fmap_out=apply):
         fmap_in(lambda arg: isbox(arg) and boxed_args.append(arg), args)
         if boxed_args:
             top_box = max(boxed_args, key=lambda box: box._trace)
-            argvals, parents, parent_fmap = unpack_boxes(
-                fmap_in, args, top_box._trace)
+            argvals, parents = unpack_boxes(fmap_in, args, top_box._trace)
             ans = f_wrapped(*argvals, **kwargs)
             output_nodes = top_box._node.process_primitive(
-                ans, f_wrapped, argvals, kwargs, parents, parent_fmap)
+                ans, f_wrapped, argvals, kwargs, parents)
             return fmap_out(partial(new_box, top_box._trace), ans, output_nodes)
         else:
             return f_raw(*args, **kwargs)
 
     f_wrapped.fun = f_raw
-    f_wrapped._is_primitive = True
-    f_wrapped._fmap = fmap_in
-    f_wrapped._fmap_out = fmap_out
+    f_wrapped.is_primitive = True
+    f_wrapped.fmap_in = fmap_in
+    f_wrapped.fmap_out = fmap_out
     return f_wrapped
 
 def notrace_primitive(f_raw, fmap=map):
@@ -62,7 +55,7 @@ def notrace_primitive(f_raw, fmap=map):
     def f_wrapped(*args, **kwargs):
         argvals = fmap(getval, args)
         return f_raw(*argvals, **kwargs)
-    f_wrapped._is_primitive = True
+    f_wrapped.is_primitive = True
     return f_wrapped
 
 class TraceStack(object):
