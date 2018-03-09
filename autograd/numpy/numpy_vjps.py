@@ -235,7 +235,9 @@ def repeat_to_match_shape(g, shape, dtype, axis, keepdims):
     new_shape = onp.array(shape)
     new_shape[axis] = 1
     num_reps = onp.prod(onp.array(shape)[axis])
-    return anp.broadcast_to(anp.reshape(g, new_shape), shape), num_reps
+    # Can't use broadcast_to because of numpy bug: https://github.com/numpy/numpy/issues/9165
+    # return anp.broadcast_to(anp.reshape(g, new_shape), shape), num_reps
+    return anp.reshape(g, new_shape) + onp.zeros(shape, dtype=dtype), num_reps
 
 def grad_broadcast_to(ans, x, new_shape):
     old_shape = anp.shape(x)
