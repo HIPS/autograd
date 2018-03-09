@@ -79,6 +79,7 @@ defjvp_is_fun(anp.tril)
 defjvp_is_fun(anp.swapaxes)
 defjvp_is_fun(anp.rollaxis)
 defjvp_is_fun(anp.moveaxis)
+defjvp_is_fun(anp.broadcast_to)
 def_multilinear(anp.cross)
 
 # ----- Simple grads -----
