@@ -45,14 +45,15 @@ class ArrayVSpace(VSpace):
             y_sparse = y if y_is_sparse else SparseArray(self, y, [])
             arrays = filter(lambda a: a is not None, [x_sparse.array, y_sparse.array])
             new_array = reduce(op.add, arrays) if arrays else None
-            return SparseArray(self, new_array, x_sparse.updates + y_sparse.updates)
+            new_updates = [x_sparse.updates, y_sparse.updates]
+            return SparseArray(self, new_array, new_updates)
         else:
             return x + y
 
     @primitive
     def _sparse_to_dense(self, x):
         out = self.zeros() if x.array is None else x.array.copy()
-        for idx, val in x.updates:
+        for idx, val in walk_list_tree(x.updates):
             np.add.at(out, idx, val)
         return out
 
@@ -102,3 +103,12 @@ VSpace.register(SparseArray, lambda x : x.vs)
 Box.register(SparseArray)
 defvjp(func(ArrayVSpace._sparse_to_dense), None, identity_vjp)
 defjvp(func(ArrayVSpace._sparse_to_dense), None, identity_jvp)
+
+def walk_list_tree(root):
+    stack = [root]
+    while stack:
+        x = stack.pop()
+        if type(x) is list:
+            stack.extend(x)
+        else:
+            yield x
