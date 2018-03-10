@@ -490,7 +490,6 @@ defvjp(tensordot_adjoint_1, lambda ans, A, G, axes, An, Bn: lambda B: match_comp
 defvjp(anp.outer, lambda ans, a, b : lambda g: match_complex(a, anp.dot(g, b.T)),
                   lambda ans, a, b : lambda g: match_complex(b, anp.dot(a.T, g)))
 
-
 def make_slices(sizes, axis, ndim):
     slices = []
     start = 0
@@ -498,7 +497,7 @@ def make_slices(sizes, axis, ndim):
         idxs = [slice(None)] * ndim
         idxs[axis] = slice(start, start + size)
         start += size
-        slices.append(idxs)
+        slices.append(tuple(idxs))
     return slices
 
 def concatenate_vjp(parents, ans, arrs, axis=0):
