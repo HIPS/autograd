@@ -495,7 +495,7 @@ def grad_concatenate_args(argnum, ans, axis_args, kwargs):
     start = sum(sizes[:-1])
     idxs = [slice(None)] * ans.ndim
     idxs[axis] = slice(start, start + sizes[-1])
-    return lambda g: g[idxs]
+    return lambda g: g[tuple(idxs)]
 defvjp_argnum(anp.concatenate_args, grad_concatenate_args)
 
 def wrapped_reshape(x, *args, **kwargs):
