@@ -235,7 +235,19 @@ def repeat_to_match_shape(g, shape, dtype, axis, keepdims):
     new_shape = onp.array(shape)
     new_shape[axis] = 1
     num_reps = onp.prod(onp.array(shape)[axis])
+    # Can't use broadcast_to because of numpy bug: https://github.com/numpy/numpy/issues/9165
+    # return anp.broadcast_to(anp.reshape(g, new_shape), shape), num_reps
     return anp.reshape(g, new_shape) + onp.zeros(shape, dtype=dtype), num_reps
+
+def grad_broadcast_to(ans, x, new_shape):
+    old_shape = anp.shape(x)
+    assert anp.shape(ans) == new_shape
+    assert len(old_shape) == len(new_shape), "Can't handle extra leading dims"
+    broadcast_axes = tuple(onp.where(onp.logical_and(
+        onp.array(old_shape) == 1,
+        onp.array(new_shape) >  1))[0])
+    return lambda g: anp.sum(g, axis=broadcast_axes, keepdims=True)
+defvjp(anp.broadcast_to, grad_broadcast_to)
 
 def grad_np_sum(ans, x, axis=None, keepdims=False, dtype=None):
     shape, dtype = anp.shape(x), anp.result_type(x)
@@ -368,35 +380,37 @@ def matmul_vjp_1(ans, A, B):
 defvjp(anp.matmul, matmul_vjp_0, matmul_vjp_1)
 
 @primitive
-def dot_adjoint_0(B, G, A_ndim, B_ndim):
-    # The adjoint of the operator
-    # A |--> np.dot(A, B)
+def dot_adjoint_0(B, G, A_meta, B_meta):
+    _, A_ndim, A_dtype, _ = A_meta
+    _, B_ndim, _, _ = B_meta
     if B_ndim == 0 or B_ndim == 1 or A_ndim == 0:
         contract_num = max(0, B_ndim - (A_ndim != 0))
-        return onp.tensordot(G, B, contract_num)
+        out = onp.tensordot(G, B, contract_num)
     else:
-        return onp.tensordot(G, onp.swapaxes(B, -1, -2), B_ndim - 1)
+        out = onp.tensordot(G, onp.swapaxes(B, -1, -2), B_ndim - 1)
+    return onp.asarray(out, dtype=A_dtype)
 
 @primitive
-def dot_adjoint_1(A, G, A_ndim, B_ndim):
-    # The adjoint of the operator
-    # B |--> np.dot(A, B)
+def dot_adjoint_1(A, G, A_meta, B_meta):
+    _, A_ndim, _, _ = A_meta
+    _, B_ndim, B_dtype, _ = B_meta
     needs_transpose = B_ndim > 1 and A_ndim != 0
     swap = (lambda x: onp.swapaxes(x, -1, -2)) if needs_transpose else (lambda x: x)
     if A_ndim == 0 or A_ndim == 1 or B_ndim == 0:
         contract_num = max(0, A_ndim - (B_ndim != 0))
-        return swap(onp.tensordot(G, A, contract_num))
+        out = swap(onp.tensordot(G, A, contract_num))
     else:
-        return swap(onp.tensordot(
+        out = swap(onp.tensordot(
             G, A, [range(-A_ndim - B_ndim + 2, -B_ndim + 1), range(A_ndim - 1)]))
+    return onp.asarray(out, dtype=B_dtype)
 
 def dot_vjp_0(ans, A, B):
-    A_ndim, B_ndim = anp.ndim(A), anp.ndim(B)
-    return lambda g: match_complex(A, dot_adjoint_0(B, g, A_ndim, B_ndim))
+    A_meta, B_meta = anp.metadata(A), anp.metadata(B)
+    return lambda g: match_complex(A, dot_adjoint_0(B, g, A_meta, B_meta))
 
 def dot_vjp_1(ans, A, B):
-    A_ndim, B_ndim = anp.ndim(A), anp.ndim(B)
-    return lambda g: match_complex(B, dot_adjoint_1(A, g, A_ndim, B_ndim))
+    A_meta, B_meta = anp.metadata(A), anp.metadata(B)
+    return lambda g: match_complex(B, dot_adjoint_1(A, g, A_meta, B_meta))
 defvjp(anp.dot, dot_vjp_0, dot_vjp_1)
 
 defvjp(dot_adjoint_0, lambda ans, B, g, An, Bn: lambda A: match_complex(B, dot_adjoint_1(A, g, An, Bn)),
@@ -483,7 +497,7 @@ def grad_concatenate_args(argnum, ans, axis_args, kwargs):
     start = sum(sizes[:-1])
     idxs = [slice(None)] * ans.ndim
     idxs[axis] = slice(start, start + sizes[-1])
-    return lambda g: g[idxs]
+    return lambda g: g[tuple(idxs)]
 defvjp_argnum(anp.concatenate_args, grad_concatenate_args)
 
 def wrapped_reshape(x, *args, **kwargs):

@@ -25,7 +25,6 @@ def test_mul():
 def test_add():
     fun = lambda x, y : x + y
     for arg1, arg2 in arg_pairs():
-        print(type(arg1), type(arg2))
         check_grads(fun)(arg1, arg2)
 
 def test_sub():
