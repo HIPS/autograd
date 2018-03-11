@@ -37,6 +37,7 @@ def test_falseyness():
     check_grads(fun)(2.)
     check_grads(fun)(2. + 1j)
 
+
 def test_unimplemented_falseyness():
     @contextmanager
     def remove_grad_definitions(fun):
@@ -47,5 +48,5 @@ def test_unimplemented_falseyness():
 
     with remove_grad_definitions(np.iscomplex):
         fun = lambda x: np.real(x**2 if np.iscomplex(x) else np.sum(x))
-        check_grads(fun)(5.)
-        check_grads(fun)(2. + 1j)
+        assert fun(5.) == 5.
+        assert fun(2. + 1j) == 3.
