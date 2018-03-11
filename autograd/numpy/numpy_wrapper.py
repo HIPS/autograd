@@ -7,8 +7,7 @@ from autograd.fmap_util import map_over_first
 from numpy.core.einsumfunc import _parse_einsum_input
 
 notrace_functions = [
-    _np.ndim, _np.shape, _np.iscomplexobj, _np.result_type, _np.zeros_like,
-    _np.ones_like, _np.iscomplex
+    _np.ndim, _np.shape, _np.iscomplexobj, _np.result_type
 ]
 
 nowrap_functions = [

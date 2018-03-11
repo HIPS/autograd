@@ -20,7 +20,6 @@ def test_getter():
                    npr.randn(2, 4))
 
     result = d_fun(input_tuple)
-    print(result)
     assert np.allclose(result[0], np.ones((5, 6)))
     assert np.allclose(result[1], 2 * np.ones((4, 3)))
     assert np.allclose(result[2], np.zeros((2, 4)))
