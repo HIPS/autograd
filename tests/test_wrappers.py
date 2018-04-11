@@ -8,7 +8,8 @@ from autograd.test_util import check_grads, check_equivalent # , nd
 from autograd.tracer import primitive, isbox
 from autograd import (grad, elementwise_grad, jacobian, value_and_grad,
                       hessian_tensor_product, hessian, make_hvp,
-                      tensor_jacobian_product, checkpoint, make_jvp, make_ggnvp)
+                      tensor_jacobian_product, checkpoint, make_jvp,
+                      make_ggnvp, grad_and_aux)
 
 npr.seed(1)
 
@@ -318,6 +319,18 @@ def test_make_ggnvp_nondefault_g():
 
     fun2 = lambda x: np.tanh(np.dot(A, x))
     check_equivalent(make_ggnvp(fun2, g)(x)(v), _make_explicit_ggnvp(fun2, g)(x)(v))
+
+def test_grad_and_aux():
+    A = npr.randn(5, 4)
+    x = npr.randn(4)
+
+    f = lambda x: (np.sum(np.dot(A, x)), x**2)
+    g = lambda x: np.sum(np.dot(A, x))
+
+    assert len(grad_and_aux(f)(x)) == 2
+
+    check_equivalent(grad_and_aux(f)(x)[0], grad(g)(x))
+    check_equivalent(grad_and_aux(f)(x)[1], x**2)
 
 ## No longer support this behavior
 # def test_make_ggnvp_broadcasting():

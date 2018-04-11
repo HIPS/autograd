@@ -74,11 +74,11 @@ training_gradient_fun = grad(training_loss)
 
 # Optimize weights using gradient descent.
 weights = np.array([0.0, 0.0, 0.0])
-print "Initial loss:", training_loss(weights)
-for i in xrange(100):
+print("Initial loss:", training_loss(weights))
+for i in range(100):
     weights -= training_gradient_fun(weights) * 0.01
 
-print  "Trained loss:", training_loss(weights)
+print("Trained loss:", training_loss(weights))
 ```
 
 Python syntax is pretty good for specifying probabilistic models.  The biggest

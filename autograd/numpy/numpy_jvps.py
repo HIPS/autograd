@@ -82,6 +82,7 @@ defjvp(anp.tril,          'same')
 defjvp(anp.swapaxes,      'same')
 defjvp(anp.rollaxis,      'same')
 defjvp(anp.moveaxis,      'same')
+defjvp(anp.broadcast_to,  'same')
 def_linear(anp.cross)
 
 # ----- Simple grads -----
