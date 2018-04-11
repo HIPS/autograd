@@ -1,3 +1,4 @@
+.cache/*
 *.pyc
 scratch/
 examples/data
