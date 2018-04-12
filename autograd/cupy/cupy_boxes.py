@@ -8,7 +8,7 @@ Box.__array_priority__ = 90.0
 
 class ArrayBox(Box):
     __slots__ = []
-    __array_priority__ = 100.0
+    __array_priority__ = 1000.0
 
     @primitive
     def __getitem__(A, idx):
@@ -105,6 +105,7 @@ class ArrayBox(Box):
 
 ArrayBox.register(cp.ndarray)
 for type_ in [
+    int,
     float,
     cp.float64,
     cp.float32,

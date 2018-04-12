@@ -31,6 +31,11 @@ def test_dot():
 
 @pytest.mark.cupy
 def test_dot_with_floats():
+    """
+    Test function for dot product.
+
+    We are not supporting a.dot(b), so do not write this test.
+    """
 
     def fun(x, y):
         return cp.dot(x, y)
@@ -43,22 +48,6 @@ def test_dot_with_floats():
     check_grads(fun)(float1, mat1)
     check_grads(fun)(vect1, float1)
     check_grads(fun)(float1, vect1)
-
-
-# No longer supporting this
-# def test_dot_method():
-#     def fun(x, y): return x.dot(y)
-
-#     mat1 = cpr.randn(10, 11)
-#     mat2 = cpr.randn(10, 11)
-#     vect1 = cpr.randn(10)
-#     vect2 = cpr.randn(11)
-#     vect3 = cpr.randn(11)
-
-#     check_grads(fun)(mat1, vect2)
-#     check_grads(fun)(mat1, mat2.T)
-#     check_grads(fun)(vect1, mat1)
-#     check_grads(fun)(vect2, vect3)
 
 
 @pytest.mark.cupy

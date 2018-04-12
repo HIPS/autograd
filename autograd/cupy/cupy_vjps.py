@@ -194,7 +194,7 @@ defvjp(
     acp.power,
     lambda ans,
     x,
-    y: unbroadcast_f(x, lambda g: g * y * x ** acp.where(y, y - 1, 1.)),
+    y: unbroadcast_f(x, lambda g: g * y * x ** acp.where(y, y - 1., 1.)),
     lambda ans,
     x,
     y: unbroadcast_f(y, lambda g: g * acp.log(replace_zero(x, 1.)) * x ** y)
@@ -236,7 +236,7 @@ defvjp(acp.log, lambda ans, x: lambda g: g / x)
 defvjp(acp.log2, lambda ans, x: lambda g: g / x / acp.log(2))
 defvjp(acp.log10, lambda ans, x: lambda g: g / x / acp.log(10))
 defvjp(acp.log1p, lambda ans, x: lambda g: g / (x + 1))
-defvjp(acp.sin, lambda ans, x: lambda g: g * acp.cos(x))
+defvjp(acp.sin, lambda ans, x: lambda g: acp.multiply(g, acp.cos(x)))
 defvjp(acp.cos, lambda ans, x: lambda g: -g * acp.sin(x))
 defvjp(acp.tan, lambda ans, x: lambda g: g / acp.cos(x) ** 2)
 defvjp(acp.arcsin, lambda ans, x: lambda g: g / acp.sqrt(1 - x ** 2))
@@ -244,7 +244,7 @@ defvjp(acp.arccos, lambda ans, x: lambda g: -g / acp.sqrt(1 - x ** 2))
 defvjp(acp.arctan, lambda ans, x: lambda g: g / (1 + x ** 2))
 defvjp(acp.sinh, lambda ans, x: lambda g: g * acp.cosh(x))
 defvjp(acp.cosh, lambda ans, x: lambda g: g * acp.sinh(x))
-defvjp(acp.tanh, lambda ans, x: lambda g: g / acp.cosh(x) ** 2)
+defvjp(acp.tanh, lambda ans, x: lambda g: acp.divide(g, acp.power(acp.cosh(x), 2)))
 defvjp(acp.arcsinh, lambda ans, x: lambda g: g / acp.sqrt(x ** 2 + 1))
 defvjp(acp.arccosh, lambda ans, x: lambda g: g / acp.sqrt(x ** 2 - 1))
 defvjp(acp.arctanh, lambda ans, x: lambda g: g / (1 - x ** 2))
