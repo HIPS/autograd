@@ -74,10 +74,18 @@ def grad_norm(ans, x, ord=None, axis=None):
             unroll = lambda a: anp.rollaxis(anp.rollaxis(a, a.ndim-2, row_axis),
                                             a.ndim-1, col_axis)
 
+    # Used for returning zero gradient of zero norms
+    replace_zero     = lambda x, val: anp.where(x, x, val)
+    # For manually set the second derivative of norm to zero, to match np.abs()
+    replace_zero_ans = lambda x, val: anp.where(expand(ans), x, val)
+
     check_implemented()
     def vjp(g):
         if ord is None or ord == 2 or ord is 'fro':
-            return expand(g / ans) * x
+            # The gradient is 1 / ans * x
+            # FIXME: when x is complex vector, the gradient seems to be:
+            #        1 / ans * conj(x)
+            return expand(g / replace_zero(ans, 1.)) * replace_zero_ans(x, 0.)
         elif ord == 'nuc':
             dot = anp.dot if x.ndim == 2 else partial(anp.einsum, '...ij,...jk->...ik')
             x_rolled = roll(x)
@@ -88,8 +96,14 @@ def grad_norm(ans, x, ord=None, axis=None):
             g = expand(g)
             return g * uvt
         else:
-            # see https://en.wikipedia.org/wiki/Norm_(mathematics)#p-norm
-            return expand(g / ans**(ord-1)) * x * anp.abs(x)**(ord-2)
+            # See https://en.wikipedia.org/wiki/Norm_(mathematics)#p-norm
+            # The gradient is 1 / ans**(ord-1) * abs(x)**(ord-1) * sign(x)
+            # Use `abs(x)**(ord-1) * sign(x)` instead of `abs(x)**(ord-2) * x`
+            # avoids NaN when x contains zero.
+            # FIXME: when x is complex vector, the gradient seems to be:
+            #        1 / ans**(ord-1) * abs(x)**(ord-1) * conj(x) / abs(x)
+            return expand(g / replace_zero(ans**(ord-1), 1.0)) \
+                   * anp.abs(x)**(ord-1) * anp.sign(x)
     return vjp
 defvjp(norm, grad_norm)
 
