@@ -6,8 +6,8 @@ python:
   - "2.7"
   - "3.6"
 env:
-  - DEPS="pip nose future numpy scipy"
-  - DEPS="pip nose future numpy"
+  - DEPS="pip nose future numpy scipy dask[array]"
+  - DEPS="pip nose future numpy dask[array]"
 before_install:
   - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
       wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh -O miniconda.sh;
@@ -21,6 +21,6 @@ before_install:
 install:
   - conda install --yes python=$TRAVIS_PYTHON_VERSION $DEPS
   - pip install -v .
-script: 
+script:
   - cd tests      # Run from inside tests directory to make sure Autograd has
   - nosetests     # fully installed.
