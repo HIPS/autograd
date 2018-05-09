@@ -1,8 +1,10 @@
 import warnings
 from contextlib import contextmanager
 from collections import defaultdict
-from .util import subvals, toposort
+from .util import subvals, toposort, typeof
 from .wrap_util import wraps
+
+import numpy
 
 def trace(start_node, fun, x):
     with trace_stack.new_trace() as t:
@@ -115,7 +117,7 @@ class Box(object):
 box_type_mappings = Box.type_mappings
 def new_box(value, trace, node):
     try:
-        return box_type_mappings[type(value)](value, trace, node)
+        return box_type_mappings[typeof(value)](value, trace, node)
     except KeyError:
         raise TypeError("Can't differentiate w.r.t. type {}".format(type(value)))
 
