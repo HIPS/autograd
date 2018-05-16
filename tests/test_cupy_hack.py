@@ -14,3 +14,8 @@ def test_sin():
 
     df(a)
 
+
+@pytest.mark.integration
+def test_linalg_norm():
+    x_gpu = cp.array([1, 2, 3])
+    l2_gpu = cp.linalg.norm(x_gpu)
