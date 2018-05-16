@@ -15,6 +15,22 @@ def test_sin():
     df(a)
 
 
+@pytest.mark.higher_order
+def test_higher_order_derivatives():
+    a = cp.arange(10)
+    def f(x):
+        return cp.sin(x)
+
+    df = egrad(f)
+    ddf = egrad(df)
+    dddf = egrad(ddf)
+
+    df(a)
+    ddf(a)
+    dddf(a)
+
+
+
 @pytest.mark.integration
 def test_linalg_norm():
     """All that I'm asking of this test is that it doesn't error out."""
