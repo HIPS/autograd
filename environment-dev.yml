@@ -10,3 +10,4 @@ dependencies:
 - numpy
 - matplotlib
 - cython
+- dask
