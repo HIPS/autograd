@@ -15,3 +15,4 @@ autograd.egg-info/
 asv.conf.json
 benchmarks/asv.conf.js
 .pytest_cache/
+*.ipynb_checkpoints/
