@@ -1,0 +1,12 @@
+name: autograd_cupy_dev
+channels:
+- defaults
+- conda-forge
+- ericmjl
+dependencies:
+- python=3.6
+- jupyter
+- jupyterlab
+- autograd
+- numpy
+- matplotlib
