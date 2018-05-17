@@ -34,6 +34,8 @@ notrace_functions = [
     _cp.greater_equal,
     _cp.less,
     _cp.less_equal,
+    _cp.max,
+    _cp.min,
     _cp.equal,
     _cp.not_equal,
     _cp.isscalar,
