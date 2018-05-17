@@ -6,6 +6,7 @@ import autograd.cupy.random as cpr
 from autograd.test_util import check_grads
 from autograd import grad
 import pytest
+import autograd.numpy as np
 
 # from numpy_utils import combo_check
 cpr.seed(1)
@@ -1016,12 +1017,12 @@ def test_make_diagonal():
 
     D = cp.random.randn(4)
     A = cp.make_diagonal(D, axis1=-1, axis2=-2)
-    assert cp.allclose(cp.diag(A), D)
+    assert np.allclose(cp.diag(A), D)
     check_grads(fun)(D)
 
     D = cp.random.randn(3, 4)
     A = cp.make_diagonal(D, axis1=-1, axis2=-2)
-    assert all([cp.allclose(cp.diag(A[i]), D[i]) for i in range(3)])
+    assert all([np.allclose(cp.diag(A[i]), D[i]) for i in range(3)])
     check_grads(fun)(D)
 
 
@@ -1077,6 +1078,7 @@ def test_max_equal_values_2d():
 
 
 @pytest.mark.cupy
+@pytest.mark.min
 def test_min_3_way_equality():
 
     def fun(x):
