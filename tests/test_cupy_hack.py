@@ -16,6 +16,7 @@ def test_sin():
 
 
 @pytest.mark.higher_order
+@pytest.mark.integration
 def test_higher_order_derivatives():
     a = cp.arange(10)
     def f(x):
