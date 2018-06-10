@@ -17,11 +17,12 @@ else:
     import autograd.scipy.stats.multivariate_normal as mvn
     import autograd.scipy.special as special
     import autograd.scipy.linalg as spla
+    import autograd.scipy.integrate as integrate
     from autograd import grad
     from scipy.signal import convolve as sp_convolve
 
     from autograd.test_util import combo_check, check_grads
-    from numpy_utils import  unary_ufunc_check
+    from numpy_utils import unary_ufunc_check
 
     npr.seed(1)
     R = npr.randn
@@ -197,3 +198,10 @@ else:
 
     def test_logit(): unary_ufunc_check(special.logit, lims=[ 0.10, 0.90], test_complex=False)
     def test_expit(): unary_ufunc_check(special.expit, lims=[-4.05, 4.95], test_complex=False)
+
+    ### ODE integrator ###
+    def func(y, t, arg1, arg2):
+        return -np.sqrt(t) - y + arg1 - np.mean((y + arg2)**2)
+    def test_odeint():
+        combo_check(integrate.odeint, [1,2,3])([func], [R(3)], [np.linspace(0.1, 0.2, 4)],
+                                                 [(R(3), R(3))])
