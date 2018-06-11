@@ -3,8 +3,7 @@ import cupy as cp
 from autograd.extend import Box, primitive
 from . import cupy_wrapper as acp
 
-Box.__array_priority__ = 90.0
-
+Box.__array_priority__ = 102.0
 
 class ArrayBox(Box):
     __slots__ = []

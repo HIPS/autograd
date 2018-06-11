@@ -3,6 +3,7 @@ from autograd import elementwise_grad as egrad
 import pytest
 from autograd import grad
 import pdb
+import numpy as np
 
 @pytest.mark.integration
 def test_sin():
@@ -49,20 +50,29 @@ def test_argmin():
 @pytest.mark.integration
 @pytest.mark.gradient
 def test_gradient_descent():
-    x = cp.array([[1,2,3,4,5,6,7,8]])
-    y = cp.array([[-1,-1,-1,-1,1,1,1,1]])
+    # x = cp.array([[1,2,3,4,5,6,7,8]])
+    # y = cp.array([[-1,-1,-1,-1,1,1,1,1]])
+    x = cp.random.random(size=(10, 2))
+    w_truth = cp.random.random(size=(2,1))
+    y = cp.dot(x, w_truth)
 
+    # def model(w, x):
+    #     a = w[0] + cp.dot(w[1:], x)
+    #     return a.T
     def model(w, x):
-        a = w[0] + cp.dot(x.T,w[1:])
-        return a.T
+        return cp.dot(x, w)
 
-    def softmax(w):
-        cost = cp.sum(cp.log(1 + cp.exp(-y*model(w, x))))
-        return cost/float(cp.size(y))
+    def loss(w, x, y):
+        preds = model(w, x)
+        loss_score = cp.mean(cp.power(preds.ravel() - y.ravel(), cp.array(2)))
+        return loss_score
 
-    w = cp.random.rand(2,1)
+    w = cp.random.rand(2, 1)
 
-    gradient = grad(softmax)
+    dloss = egrad(loss)
 
-    a = gradient(w)
-    print(a)
+    a = dloss(w, x, y)
+    for i in range(10000):
+        w = w + -dloss(w, x, y) * 0.01
+        print(w)
+    print(w_truth)

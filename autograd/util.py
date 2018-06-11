@@ -46,11 +46,11 @@ def typeof(x):
     This improves portability of autograd to other projects that might support
     the numpy API, despite not being exactly numpy.
     """
-    if all(hasattr(x, attr) for attr in ['__array_ufunc__', 'shape', 'dtype']):
-        import numpy
-        return numpy.ndarray
-    else:
-        return type(x)
+    # if all(hasattr(x, attr) for attr in ['__array_ufunc__', 'shape', 'dtype']):
+    #     import numpy
+    #     return numpy.ndarray
+    # else:
+    return type(x)
 
 # -------------------- deprecation warnings -----------------------
 

@@ -192,12 +192,8 @@ defvjp(
 )
 defvjp(
     acp.power,
-    lambda ans,
-    x,
-    y: unbroadcast_f(x, lambda g: g * y * x ** acp.where(y, y - 1., 1.)),
-    lambda ans,
-    x,
-    y: unbroadcast_f(y, lambda g: g * acp.log(replace_zero(x, 1.)) * x ** y)
+    lambda ans, x, y: unbroadcast_f(x, lambda g: g * y * x ** acp.where(y, y - 1., 1.)),
+    lambda ans, x, y: unbroadcast_f(y, lambda g: g * acp.log(replace_zero(x, 1.)) * x ** y)
 )
 defvjp(
     acp.arctan2,
@@ -259,8 +255,7 @@ defvjp(
     acp.reshape,
     lambda ans,
     x,
-    shape,
-    order=None: lambda g: acp.reshape(g, acp.shape(x), order=order),
+    shape: lambda g: acp.reshape(g, x.shape),
 )  # noqa: E501)
 defvjp(
     acp.roll, lambda ans, x, shift, axis=None: lambda g: acp.roll(g, -shift, axis=axis)  # noqa: E501
@@ -281,11 +276,10 @@ defvjp(acp.dsplit, lambda ans, ary, idxs: lambda g: acp.concatenate(g, axis=2))
 defvjp(
     acp.ravel,
     lambda ans,
-    x,
-    order=None: lambda g: acp.reshape(g, acp.shape(x), order=order),
+    x: lambda g: acp.reshape(g, x.shape),
 )  # noqa: E501
-defvjp(acp.expand_dims, lambda ans, x, axis: lambda g: acp.reshape(g, acp.shape(x)))  # noqa: E501
-defvjp(acp.squeeze, lambda ans, x, axis=None: lambda g: acp.reshape(g, acp.shape(x)))  # noqa: E501
+defvjp(acp.expand_dims, lambda ans, x, axis: lambda g: acp.reshape(g, x.shape))  # noqa: E501
+defvjp(acp.squeeze, lambda ans, x, axis=None: lambda g: acp.reshape(g, x.shape))  # noqa: E501
 defvjp(acp.diag, lambda ans, x, k=0: lambda g: acp.diag(g, k))
 defvjp(acp.flipud, lambda ans, x: lambda g: acp.flipud(g))
 defvjp(acp.fliplr, lambda ans, x: lambda g: acp.fliplr(g))
@@ -412,7 +406,7 @@ def grad_diff(ans, a, n=1, axis=-1):
 
 
 def grad_repeat(ans, x, repeats, axis=None):
-    shape = acp.shape(x)
+    shape = x.shape
 
     def vjp(g):
         if axis is None:  # If axis is none, np.repeat() repeats the flattened array.  # noqa: E501
@@ -437,7 +431,7 @@ defvjp(acp.repeat, grad_repeat)
 
 def grad_tile(ans, x, reps):
     reps = [reps] if acp.isscalar(reps) else reps
-    x_shape = acp.shape(x)
+    x_shape = x.shape
 
     def vjp(g):
         for axis, rep in enumerate(reps):
@@ -492,24 +486,24 @@ def repeat_to_match_shape(g, shape, dtype, axis, keepdims):
        Also returns the number of repetitions of the array."""
     if shape == ():
         return g, 1
-
     axis = list(axis) if isinstance(axis, tuple) else axis
     new_shape = ocp.array(shape)
     new_shape[axis] = 1
+    new_shape = tuple([int(i) for i in new_shape])
     num_reps = ocp.prod(ocp.array(shape)[axis])
     return acp.reshape(g, new_shape) + ocp.zeros(shape, dtype=dtype), num_reps
 
 
 def grad_np_sum(ans, x, axis=None, keepdims=False, dtype=None):
-    shape, dtype = acp.shape(x), acp.result_type(x)
+    shape, dtype = x.shape, acp.result_type(x)
     return lambda g: repeat_to_match_shape(g, shape, dtype, axis, keepdims)[0]
 
 
-# defvjp(acp.sum, grad_np_sum)
+defvjp(acp.sum, grad_np_sum)
 
 
-def grad_np_mean(ans, x, axis=None, keepdims=False):
-    shape, dtype = acp.shape(x), acp.result_type(x)
+def grad_cp_mean(ans, x, axis=None, keepdims=False):
+    shape, dtype = x.shape, acp.result_type(x)
 
     def vjp(g):
         g_repeated, num_reps = repeat_to_match_shape(g, shape, dtype, axis, keepdims)  # noqa: E501
@@ -518,11 +512,11 @@ def grad_np_mean(ans, x, axis=None, keepdims=False):
     return vjp
 
 
-defvjp(acp.mean, grad_np_mean)
+defvjp(acp.mean, grad_cp_mean)
 
 
 def grad_np_prod(ans, x, axis=None, keepdims=False):  # TODO: Support tuples of axes.  # noqa: E501
-    shape, dtype = acp.shape(x), acp.result_type(x)
+    shape, dtype = x.shape, acp.result_type(x)
 
     def vjp(g):
         g_repeated, _ = repeat_to_match_shape(g * ans, shape, dtype, axis, keepdims)  # noqa: E501
@@ -576,7 +570,7 @@ defvjp(acp.std, grad_np_std)
 
 
 def grad_chooser(ans, x, axis=None, keepdims=None):
-    shape, dtype = acp.shape(x), acp.result_type(x)
+    shape, dtype = x.shape, acp.result_type(x)
 
     def vjp(g):
         """
