@@ -76,3 +76,4 @@ def test_gradient_descent():
         w = w + -dloss(w, x, y) * 0.01
         print(w)
     print(w_truth)
+    assert np.allclose(cp.asnumpy(w), cp.asnumpy(w_truth), atol=0.001)
