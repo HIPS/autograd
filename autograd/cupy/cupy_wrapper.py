@@ -9,6 +9,8 @@ from numpy import ndim, iscomplexobj
 
 # from cupy.core.einsumfunc import _parse_einsum_input
 
+# Commenting this out so that I can replace it with one that looks like the
+# numpy_wrapper.py.
 notrace_functions = [
     _cp.floor,
     _cp.ceil,
@@ -73,6 +75,8 @@ def wrap_namespace(old, new):
 # else:
 #     print(name, obj, isinstance(obj, _cp.ufunc))
 
+import pdb
+pdb.set_trace()
 wrap_namespace(_cp.__dict__, globals())
 
 # ----- Special treatment of list-input functions -----
@@ -225,17 +229,21 @@ def make_diagonal(D, offset=0, axis1=0, axis2=1):
 
 @notrace_primitive
 def metadata(A):
-    return A.shape, A.ndim, A.dtype, issubclass(
-        A.dtype.type, numpy.complexfloating
-    )  # _cp.iscomplexobj(A)
+    return (
+        A.shape,
+        A.ndim,
+        A.dtype,
+        # issubclass(A.dtype.type, numpy.complexfloating)
+        _cp.iscomplexobj(A)
+        )
 
 
 # return _cp.ndim(A)
 
 
-@notrace_primitive
-def parse_einsum_input(*args):
-    return _parse_einsum_input(args)
+# @notrace_primitive
+# def parse_einsum_input(*args):
+#     return _parse_einsum_input(args)
 
 
 @primitive

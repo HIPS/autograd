@@ -436,7 +436,7 @@ def broadcast(x, target):
     target_shape, target_ndim, target_dtype, target_iscomplex = acp.metadata(target)
     while acp.ndim(x) < target_ndim:
         x = acp.expand_dims(x, 0)
-    for axis, size in enumerate(acp.shape(x)):
+    for axis, size in enumerate(x.shape):
         if size == 1:
             x = acp.repeat(x, target_shape[axis], axis=axis)
     if target_iscomplex and not acp.iscomplexobj(x):

@@ -68,7 +68,7 @@ def test_outer():
     check_grads(fun)(vect2.T, vect3.T)
 
 
-@pytest.mark.test
+@pytest.mark.fail_max  # these tests fail because something is wrong with cp.max vjp definition
 @pytest.mark.cupy
 def test_max():
 
@@ -79,6 +79,7 @@ def test_max():
     check_grads(fun)(mat)
 
 
+@pytest.mark.fail_max
 @pytest.mark.cupy
 def test_max_axis():
 
@@ -89,6 +90,7 @@ def test_max_axis():
     check_grads(fun)(mat)
 
 
+@pytest.mark.fail_max
 @pytest.mark.cupy
 def test_max_axis_keepdims():
 
@@ -99,6 +101,7 @@ def test_max_axis_keepdims():
     check_grads(fun)(mat)
 
 
+@pytest.mark.fail_min  # fails because likely there is something wrong with min vjp
 @pytest.mark.cupy
 def test_min():
 
@@ -109,6 +112,7 @@ def test_min():
     check_grads(fun)(mat)
 
 
+@pytest.mark.fail_min
 @pytest.mark.cupy
 def test_min_axis():
 
@@ -119,6 +123,7 @@ def test_min_axis():
     check_grads(fun)(mat)
 
 
+@pytest.mark.fail_min
 @pytest.mark.cupy
 def test_min_axis_keepdims():
 
@@ -129,6 +134,7 @@ def test_min_axis_keepdims():
     check_grads(fun)(mat)
 
 
+@pytest.mark.fail_sum
 @pytest.mark.cupy
 def test_sum_1():
 
@@ -139,6 +145,7 @@ def test_sum_1():
     check_grads(fun)(mat)
 
 
+@pytest.mark.fail_sum
 @pytest.mark.cupy
 def test_sum_2():
 
@@ -149,6 +156,7 @@ def test_sum_2():
     check_grads(fun)(mat)
 
 
+@pytest.mark.fail_sum
 @pytest.mark.cupy
 def test_sum_3():
 
@@ -159,6 +167,7 @@ def test_sum_3():
     check_grads(fun)(mat)
 
 
+@pytest.mark.fail_sum
 @pytest.mark.cupy
 def test_sum_with_axis_tuple():
 
@@ -169,6 +178,7 @@ def test_sum_with_axis_tuple():
     check_grads(fun)(mat)
 
 
+@pytest.mark.works
 @pytest.mark.cupy
 def test_flipud():
 
@@ -179,6 +189,7 @@ def test_flipud():
     check_grads(fun)(mat)
 
 
+@pytest.mark.works
 @pytest.mark.cupy
 def test_fliplr():
 
@@ -189,6 +200,7 @@ def test_fliplr():
     check_grads(fun)(mat)
 
 
+@pytest.mark.works
 @pytest.mark.cupy
 def test_rot90():
 
@@ -199,6 +211,7 @@ def test_rot90():
     check_grads(fun)(mat)
 
 
+@pytest.mark.works
 @pytest.mark.cupy
 def test_cumsum_axis0():
 
@@ -209,6 +222,7 @@ def test_cumsum_axis0():
     check_grads(fun)(mat)
 
 
+@pytest.mark.works
 @pytest.mark.cupy
 def test_cumsum_axis1():
 
@@ -219,6 +233,7 @@ def test_cumsum_axis1():
     check_grads(fun)(mat)
 
 
+@pytest.mark.works
 @pytest.mark.cupy
 def test_cumsum_1d():
 
@@ -229,6 +244,7 @@ def test_cumsum_1d():
     check_grads(fun)(mat)
 
 
+@pytest.mark.works
 @pytest.mark.cupy
 def test_cumsum_no_axis():
 
@@ -239,9 +255,10 @@ def test_cumsum_no_axis():
     check_grads(fun)(mat)
 
 
-@pytest.mark.cupy
-def test_non_numpy_sum():
-
+@pytest.mark.deprecate
+def test_non_cupy_sum():
+    """I think this test should be deprecated because it complicates the
+    codebase to use non-CuPy operations."""
     def fun(x, y):
         return sum([x, y])
 
@@ -250,6 +267,7 @@ def test_non_numpy_sum():
     check_grads(fun)(mat1, mat2)
 
 
+@pytest.mark.works
 @pytest.mark.cupy
 def test_mean_1():
 
@@ -260,6 +278,7 @@ def test_mean_1():
     check_grads(fun)(mat)
 
 
+@pytest.mark.works
 @pytest.mark.cupy
 def test_mean_2():
 
@@ -270,6 +289,7 @@ def test_mean_2():
     check_grads(fun)(mat)
 
 
+@pytest.mark.works
 @pytest.mark.cupy
 def test_mean_3():
 
@@ -280,6 +300,7 @@ def test_mean_3():
     check_grads(fun)(mat)
 
 
+@pytest.mark.works
 @pytest.mark.cupy
 def test_index_ints():
     A = cpr.randn(5, 6, 4)
@@ -290,6 +311,7 @@ def test_index_ints():
     check_grads(fun)(A)
 
 
+@pytest.mark.works
 @pytest.mark.cupy
 def test_index_slice():
     A = cpr.randn(5, 6, 4)
@@ -300,6 +322,10 @@ def test_index_slice():
     check_grads(fun)(A)
 
 
+# This test fails with scatter_add only supporting float32 dtype.
+# The type of the array A below is float64.
+# See comments on mut_add function for more details.
+@pytest.mark.fails_scatter_add
 @pytest.mark.cupy
 def test_index_lists():
     A = cpr.randn(5, 6, 4)
@@ -310,6 +336,7 @@ def test_index_lists():
     check_grads(fun)(A)
 
 
+@pytest.mark.fails_scatter_add
 @pytest.mark.cupy
 def test_index_mixed():
     A = cpr.randn(5, 6, 4)
@@ -320,6 +347,7 @@ def test_index_mixed():
     check_grads(fun)(A)
 
 
+@pytest.mark.works
 @pytest.mark.cupy
 def test_vector_slice():
     A = cpr.randn(5)
@@ -330,6 +358,9 @@ def test_vector_slice():
     check_grads(fun)(A)
 
 
+# Error message below:
+# NotImplementedError: JVP of iscomplexobj wrt argnums (0,) not defined
+@pytest.mark.fail_iscomplex_jvp
 @pytest.mark.cupy
 def test_index_slice_fanout():
     A = cpr.randn(5, 6, 4)
@@ -342,6 +373,7 @@ def test_index_slice_fanout():
     check_grads(fun)(A)
 
 
+@pytest.mark.works
 @pytest.mark.cupy
 def test_index_multiple_slices():
     A = cpr.randn(7)
@@ -354,6 +386,7 @@ def test_index_multiple_slices():
     check_grads(fun)(A)
 
 
+@pytest.mark.works
 @pytest.mark.cupy
 def test_reshape_method():
     A = cpr.randn(5, 6, 4)
@@ -364,6 +397,7 @@ def test_reshape_method():
     check_grads(fun)(A)
 
 
+@pytest.mark.works
 @pytest.mark.cupy
 def test_reshape_call():
     A = cpr.randn(5, 6, 4)
@@ -374,6 +408,7 @@ def test_reshape_call():
     check_grads(fun)(A)
 
 
+@pytest.mark.works
 @pytest.mark.cupy
 def test_reshape_method_nolist():
     # The reshape can be called in two different ways:
@@ -387,6 +422,7 @@ def test_reshape_method_nolist():
     check_grads(fun)(A)
 
 
+@pytest.mark.works
 @pytest.mark.cupy
 def test_ravel_method():
     A = cpr.randn(5, 6, 4)
@@ -397,6 +433,7 @@ def test_ravel_method():
     check_grads(fun)(A)
 
 
+@pytest.mark.works
 @pytest.mark.cupy
 def test_ravel_call():
     A = cpr.randn(5, 6, 4)
@@ -407,6 +444,7 @@ def test_ravel_call():
     check_grads(fun)(A)
 
 
+@pytest.mark.works
 @pytest.mark.cupy
 def test_flatten_method():
     A = cpr.randn(5, 6, 4)
@@ -417,6 +455,9 @@ def test_flatten_method():
     check_grads(fun)(A)
 
 
+# To keep things pure in CuPy-land (see one of the comments above)
+# this should not be available as an operation to autograd-cupy users
+@pytest.mark.deprecated
 @pytest.mark.cupy
 def test_simple_append_list():
     A = [1., 2., 3.]
@@ -424,6 +465,8 @@ def test_simple_append_list():
     check_grads(cp.append, argnum=(0, 1))(A, b)
 
 
+# Deprecated; see above comment.
+@pytest.mark.deprecated
 @pytest.mark.cupy
 def test_simple_append_arr():
     A = cp.array([1., 2., 3.])
@@ -431,6 +474,8 @@ def test_simple_append_arr():
     check_grads(cp.append, argnum=(0, 1))(A, b)
 
 
+# Deprecated; see above comment.
+@pytest.mark.deprecated
 @pytest.mark.cupy
 def test_simple_append_list_2D():
     A = [[1., 2., 3.], [4., 5., 6.]]
@@ -438,6 +483,10 @@ def test_simple_append_list_2D():
     check_grads(cp.append, argnum=(0, 1))(A, B, axis=0)
 
 
+# Fails because of some KeyError. I think this has to do
+# with a difference in NumPy's vs. CuPy's API, though what
+# exactly I'm not quite sure.
+@pytest.mark.fail_key_error
 @pytest.mark.cupy
 def test_simple_concatenate():
     A = cpr.randn(5, 6, 4)
@@ -449,6 +498,8 @@ def test_simple_concatenate():
     check_grads(fun)(B)
 
 
+# Also fails with a KeyError. May have to do with API differences? See above.
+@pytest.mark.fail_key_error
 @pytest.mark.cupy
 def test_concatenate_axis_0():
     A = cpr.randn(5, 6, 4)
@@ -460,6 +511,7 @@ def test_concatenate_axis_0():
     check_grads(fun)(A)
 
 
+@pytest.mark.fail_key_error
 @pytest.mark.cupy
 def test_concatenate_axis_1():
     A = cpr.randn(5, 6, 4)
@@ -471,6 +523,7 @@ def test_concatenate_axis_1():
     check_grads(fun)(A)
 
 
+@pytest.mark.fail_key_error
 @pytest.mark.cupy
 def test_concatenate_axis_1_unnamed():
     """Tests whether you can specify the axis without saying "axis=1"."""
@@ -483,6 +536,12 @@ def test_concatenate_axis_1_unnamed():
     check_grads(fun)(A)
 
 
+# This test uses einstein summation. CuPy does not provide a _parse_einsum_input
+# function, while NumPy does. In CuPy, einsum input parsing is done
+# automatically (https://github.com/cupy/cupy/blob/v4.1.0/cupy/linalg/einsum.py#L208)
+# Some steps below `cupy_vjps.py` at `isinstance(operands[0], string_types)` that
+# I currently do not understand.
+@pytest.mark.fail_einsum
 @pytest.mark.cupy
 def test_trace():
 
@@ -490,10 +549,11 @@ def test_trace():
         return cp.trace(x, offset=offset)
 
     mat = cpr.randn(10, 11)
-    offset = cpr.randint(-9, 11)
+    offset = int(cpr.randint(-9, 11))
     check_grads(fun)(mat)
 
 
+@pytest.mark.fail_einsum
 @pytest.mark.cupy
 def test_trace2():
 
@@ -501,10 +561,11 @@ def test_trace2():
         return cp.trace(x, offset=offset)
 
     mat = cpr.randn(11, 10)
-    offset = cpr.randint(-9, 11)
+    offset = int(cpr.randint(-9, 11))
     check_grads(fun)(mat)
 
 
+@pytest.mark.fail_einsum
 @pytest.mark.cupy
 def test_trace_extradims():
 
@@ -512,7 +573,7 @@ def test_trace_extradims():
         return cp.trace(x, offset=offset)
 
     mat = cpr.randn(5, 6, 4, 3)
-    offset = cpr.randint(-5, 6)
+    offset = int(cpr.randint(-5, 6))
     check_grads(fun)(mat)
 
 
@@ -524,6 +585,7 @@ def test_trace_extradims():
 #     check_grads(fun)(mat)
 
 
+@pytest.mark.works
 @pytest.mark.cupy
 def test_diag():
 
@@ -534,6 +596,7 @@ def test_diag():
     check_grads(fun)(mat)
 
 
+@pytest.mark.works
 @pytest.mark.cupy
 def test_transpose():
 
@@ -544,6 +607,7 @@ def test_transpose():
     check_grads(fun)(mat)
 
 
+@pytest.mark.works
 @pytest.mark.cupy
 def test_roll():
 
@@ -554,6 +618,7 @@ def test_roll():
     check_grads(fun)(mat)
 
 
+@pytest.mark.works
 @pytest.mark.cupy
 def test_roll_no_axis():
 
@@ -564,6 +629,7 @@ def test_roll_no_axis():
     check_grads(fun)(mat)
 
 
+@pytest.mark.works
 @pytest.mark.cupy
 def test_triu():
 
@@ -574,6 +640,7 @@ def test_triu():
     check_grads(fun)(mat)
 
 
+@pytest.mark.works
 @pytest.mark.cupy
 def test_tril():
 
@@ -584,6 +651,7 @@ def test_tril():
     check_grads(fun)(mat)
 
 
+@pytest.mark.works
 @pytest.mark.cupy
 def test_clip():
 
@@ -594,6 +662,7 @@ def test_clip():
     check_grads(fun)(mat)
 
 
+@pytest.mark.test
 @pytest.mark.cupy
 def test_prod_1():
 

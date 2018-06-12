@@ -300,8 +300,8 @@ defvjp(
     dtype=None: lambda g: acp.sum(g),
     argnums=(1,),
 )
-# defvjp(acp.triu,    lambda ans, x, k=0          : lambda g: acp.triu(g, k=k))
-# defvjp(acp.tril,    lambda ans, x, k=0          : lambda g: acp.tril(g, k=k))
+defvjp(acp.triu,    lambda ans, x, k=0          : lambda g: acp.triu(g, k=k))
+defvjp(acp.tril,    lambda ans, x, k=0          : lambda g: acp.tril(g, k=k))
 defvjp(
     acp.clip,
     lambda ans,
@@ -1077,7 +1077,12 @@ defvjp(
 def untake(x, idx, vs):
 
     def mut_add(A):
-        ocp.add.at(A, idx, x)
+        # in numpy codebase, this used to be:
+        # onp.add.at(A, idx, x)
+        # according to https://docs-cupy.chainer.org/en/stable/reference/ufunc.html?highlight=ufunc.at,
+        # scatter_add is the correct function to use.
+        # TODO: PR into cupy codebase the ability to use scatter_add with float64?
+        ocp.scatter_add(A, idx, x)
         return A
 
     return SparseObject(vs, mut_add)
