@@ -12,6 +12,7 @@ import autograd.numpy as np
 cpr.seed(1)
 
 
+@pytest.mark.works
 @pytest.mark.cupy
 def test_dot():
 
@@ -30,6 +31,7 @@ def test_dot():
     check_grads(fun)(vect2, vect3)
 
 
+@pytest.mark.works
 @pytest.mark.cupy
 def test_dot_with_floats():
     """
@@ -51,6 +53,7 @@ def test_dot_with_floats():
     check_grads(fun)(float1, vect1)
 
 
+@pytest.mark.works
 @pytest.mark.cupy
 def test_outer():
 
@@ -65,6 +68,7 @@ def test_outer():
     check_grads(fun)(vect2.T, vect3.T)
 
 
+@pytest.mark.test
 @pytest.mark.cupy
 def test_max():
 
