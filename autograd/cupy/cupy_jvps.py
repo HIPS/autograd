@@ -207,11 +207,11 @@ defjvp(acp.fliplr, "same")
 defjvp(acp.rot90, "same")
 defjvp(acp.trace, "same")
 defjvp(acp.full, "same", argnums=(1,))
-# defjvp(acp.triu,          'same')
-# defjvp(acp.tril,          'same')
+defjvp(acp.triu,          'same')
+defjvp(acp.tril,          'same')
 defjvp(acp.swapaxes, "same")
 defjvp(acp.rollaxis, "same")
-# defjvp(acp.moveaxis,      'same')
+defjvp(acp.moveaxis,      'same')
 # def_linear(acp.cross)
 
 # ----- Simple grads -----
@@ -221,7 +221,8 @@ defjvp(
     ans,
     x: acp.real(g * replace_zero(acp.conj(x), 0.)) / replace_zero(ans, 1.),
 )
-# defjvp(acp.fabs,        lambda g, ans, x : acp.sign(x) * g)  # fabs doesn't take complex numbers.
+# defjvp(acp.fabs,        lambda g, ans, x : acp.sign(x) * g)  # fabs doesn't take complex 
+# numbers.
 defjvp(acp.absolute, lambda g, ans, x: acp.real(g * acp.conj(x)) / ans)
 defjvp(acp.reciprocal, lambda g, ans, x: -g / x ** 2)
 defjvp(acp.exp, lambda g, ans, x: ans * g)
@@ -245,7 +246,8 @@ defjvp(acp.arccosh, lambda g, ans, x: g / acp.sqrt(x ** 2 - 1))
 defjvp(acp.arctanh, lambda g, ans, x: g / (1 - x ** 2))
 defjvp(acp.square, lambda g, ans, x: g * 2 * x)
 defjvp(acp.sqrt, lambda g, ans, x: g * 0.5 * x ** -0.5)
-# defjvp(acp.sinc,        lambda g, ans, x : g * (acp.cos(acp.pi*x)*acp.pi*x - acp.sin(acp.pi*x))/(acp.pi*x**2))
+# defjvp(acp.sinc,        lambda g, ans, x : g * (acp.cos(acp.pi*x)*acp.pi*x - 
+# acp.sin(acp.pi*x))/(acp.pi*x**2))
 defjvp(
     acp.clip,
     lambda g,
@@ -254,6 +256,7 @@ defjvp(
     a_min,
     a_max: g * acp.logical_and(ans != a_min, ans != a_max)
 )
+
 # defjvp(acp.real_if_close, lambda g, ans, x : match_complex(ans, g))
 defjvp(acp.real, lambda g, ans, x: acp.real(g))
 defjvp(acp.imag, lambda g, ans, x: match_complex(ans, -1j * g))
@@ -285,9 +288,10 @@ defjvp(acp.kron, "same", "same")
 defjvp(acp.repeat, "same")
 defjvp(acp.tile, "same")
 defjvp(acp.transpose, "same")
-# defjvp(acp.sum,       'same')
+defjvp(acp.sum,       'same')
 defjvp(acp.mean, "same")
-# defjvp(acp.prod, lambda g, ans, x, axis=None, keepdims=False: ans * acp.sum(g / x, axis=axis, keepdims=keepdims))
+# defjvp(acp.prod, lambda g, ans, x, axis=None, keepdims=False: ans * acp.sum(g / x, axis=axis, 
+# keepdims=keepdims))
 defjvp(
     acp.linspace,
     lambda g,
@@ -358,10 +362,10 @@ def fwd_grad_chooser(g, ans, x, axis=None, keepdims=False):
     )
 
 
-# defjvp(acp.max, fwd_grad_chooser)
-# defjvp(acp.min, fwd_grad_chooser)
-# defjvp(acp.amax, fwd_grad_chooser)
-# defjvp(acp.amin, fwd_grad_chooser)
+defjvp(acp.max, fwd_grad_chooser)
+defjvp(acp.min, fwd_grad_chooser)
+defjvp(acp.amax, fwd_grad_chooser)
+defjvp(acp.amin, fwd_grad_chooser)
 
 defjvp(acp.cumsum, "same")
 
