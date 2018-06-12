@@ -8,7 +8,8 @@ from autograd import grad
 import pytest
 import autograd.numpy as np
 
-# from numpy_utils import combo_check
+from autograd.test_util import combo_check
+
 cpr.seed(1)
 
 
@@ -709,7 +710,10 @@ def test_prod_4():
     check_grads(fun)(mat)
 
 
-@pytest.mark.test
+# This test below returns an "unsupported dtype object" error.
+# I find this baffling, but it may be irrelevant to check_grads for this one?
+# TODO: Have to ask Dougal why this test exists.
+@pytest.mark.fail_dtype_object
 @pytest.mark.cupy
 def test_1d_array():
 
@@ -719,6 +723,7 @@ def test_1d_array():
     check_grads(fun)(3.0)
 
 
+@pytest.mark.fail_dtype_object
 @pytest.mark.cupy
 def test_2d_array():
 
@@ -728,6 +733,7 @@ def test_2d_array():
     check_grads(fun)(3.0)
 
 
+@pytest.mark.fail_dtype_object
 @pytest.mark.cupy
 def test_1d_array_fanout():
 
@@ -738,6 +744,7 @@ def test_1d_array_fanout():
     check_grads(fun)(3.0)
 
 
+@pytest.mark.fail_dtype_object
 @pytest.mark.cupy
 def test_2d_array_fanout():
 
@@ -748,6 +755,8 @@ def test_2d_array_fanout():
     check_grads(fun)(3.0)
 
 
+# Fails with an error "unsupported type <class 'numpy.ndarray'>"
+@pytest.mark.fail_unsupported_type
 @pytest.mark.cupy
 def test_array_from_scalar():
 
@@ -757,6 +766,8 @@ def test_array_from_scalar():
     check_grads(fun)(3.0)
 
 
+# I believe that this is unsupported behaviour in CuPy.
+@pytest.mark.fail_dtype_object
 @pytest.mark.cupy
 def test_array_from_arrays():
 
@@ -767,6 +778,8 @@ def test_array_from_arrays():
     check_grads(fun)(A)
 
 
+# Also suspect this test fails because of unsupported CuPy behaviour.
+@pytest.mark.fail_dtype_object
 @pytest.mark.cupy
 def test_array_from_arrays_2():
 
@@ -777,6 +790,7 @@ def test_array_from_arrays_2():
     check_grads(fun)(A)
 
 
+@pytest.mark.works
 @pytest.mark.cupy
 def test_len():
 
@@ -788,6 +802,8 @@ def test_len():
     check_grads(fun)(A)
 
 
+# I do not have a hypothesis as to why this one is failing.
+@pytest.mark.fail_dtype_object
 @pytest.mark.cupy
 def test_r_basic():
     with warnings.catch_warnings(record=True) as w:
@@ -801,6 +817,8 @@ def test_r_basic():
         check_grads(fun)(A)
 
 
+# Also not sure why this one fails.
+@pytest.mark.fail_dtype_object
 @pytest.mark.cupy
 def test_r_double():
     with warnings.catch_warnings(record=True) as w:
@@ -814,6 +832,7 @@ def test_r_double():
         check_grads(fun)(A)
 
 
+@pytest.mark.works
 @pytest.mark.cupy
 def test_no_relation():
     with warnings.catch_warnings(record=True) as w:
@@ -826,6 +845,7 @@ def test_no_relation():
         check_grads(fun)(A)
 
 
+@pytest.mark.works
 @pytest.mark.cupy
 def test_r_no_relation():
     with warnings.catch_warnings(record=True) as w:
@@ -839,6 +859,8 @@ def test_r_no_relation():
         check_grads(fun)(A)
 
 
+# Probably same general issue as other ones that involve cp._r
+@pytest.mark.fail_dtype_object
 @pytest.mark.cupy
 def test_r_node_and_const():
     with warnings.catch_warnings(record=True) as w:
@@ -852,6 +874,8 @@ def test_r_node_and_const():
         check_grads(fun)(A)
 
 
+# Probably failing because of cp._r
+@pytest.mark.fail_dtype_object
 @pytest.mark.cupy
 def test_r_mixed():
     with warnings.catch_warnings(record=True) as w:
@@ -865,6 +889,8 @@ def test_r_mixed():
         check_grads(fun)(A)
 
 
+# Fails because of NotImplementedError error raised.
+@pytest.mark.fail_not_implemented
 @pytest.mark.cupy
 def test_r_slicing():
     with warnings.catch_warnings(record=True) as w:
@@ -878,6 +904,7 @@ def test_r_slicing():
         check_grads(fun)(A)
 
 
+@pytest.mark.fail_dtype_object
 @pytest.mark.cupy
 def test_c_():
     with warnings.catch_warnings(record=True) as w:
@@ -891,6 +918,7 @@ def test_c_():
         check_grads(fun)(A)
 
 
+@pytest.mark.fail_dtype_object
 @pytest.mark.cupy
 def test_c_mixed():
     with warnings.catch_warnings(record=True) as w:
@@ -904,6 +932,8 @@ def test_c_mixed():
         check_grads(fun)(A)
 
 
+# Fails because of error: NotImplementedError: JVP of size wrt argnums (0,) not defined
+@pytest.mark.fail_jvp_error
 @pytest.mark.cupy
 def test_var_ddof():
     B = cpr.randn(3)
@@ -915,6 +945,8 @@ def test_var_ddof():
     combo_check(cp.var, (0,))([C, D], axis=[None, 1], keepdims=[True, False], ddof=[2])
 
 
+# Fails, error msg: NotImplementedError: JVP of size wrt argnums (0,) not defined
+@pytest.mark.fail_jvp_error
 @pytest.mark.cupy
 def test_std_ddof():
     B = cpr.randn(3)
@@ -926,6 +958,7 @@ def test_std_ddof():
     combo_check(cp.std, (0,))([C, D], axis=[None, 1], keepdims=[True, False], ddof=[2])
 
 
+@pytest.mark.works
 @pytest.mark.cupy
 def test_where():
 
@@ -939,6 +972,7 @@ def test_where():
     check_grads(fun)(A, B)
 
 
+@pytest.mark.works
 @pytest.mark.cupy
 def test_squeeze_func():
     A = cpr.randn(5, 1, 4)
@@ -949,6 +983,7 @@ def test_squeeze_func():
     check_grads(fun)(A)
 
 
+@pytest.mark.works
 @pytest.mark.cupy
 def test_squeeze_method():
     A = cpr.randn(5, 1, 4)
@@ -959,6 +994,8 @@ def test_squeeze_method():
     check_grads(fun)(A)
 
 
+# Error: AssertionError: Value mismatch:
+@pytest.mark.fail_value_mismatch
 @pytest.mark.cupy
 def test_repeat():
     A = cpr.randn(5, 3, 4)
@@ -969,6 +1006,7 @@ def test_repeat():
     check_grads(fun)(A)
 
 
+@pytest.mark.fail_value_mismatch
 @pytest.mark.cupy
 def test_repeat_axis1_rep1():
     A = cpr.randn(5, 3, 4)
@@ -979,6 +1017,7 @@ def test_repeat_axis1_rep1():
     check_grads(fun)(A)
 
 
+@pytest.mark.fail_value_mismatch
 @pytest.mark.cupy
 def test_repeat_axis0():
     A = cpr.randn(5, 3)
@@ -989,6 +1028,7 @@ def test_repeat_axis0():
     check_grads(fun)(A)
 
 
+@pytest.mark.fail_value_mismatch
 @pytest.mark.cupy
 def test_repeat_1d_axis0():
     A = cpr.randn(5)
@@ -999,6 +1039,7 @@ def test_repeat_1d_axis0():
     check_grads(fun)(A)
 
 
+@pytest.mark.fail_value_mismatch
 @pytest.mark.cupy
 def test_repeat_axis0_rep1():
     A = cpr.randn(5, 1)
@@ -1009,6 +1050,7 @@ def test_repeat_axis0_rep1():
     check_grads(fun)(A)
 
 
+@pytest.mark.works
 @pytest.mark.cupy
 def test_expand_dims():
     A = cpr.randn(5, 1, 4)
@@ -1019,6 +1061,8 @@ def test_expand_dims():
     check_grads(fun)(A)
 
 
+# Error: AttributeError: module 'cupy' has no attribute 'ndim'
+@pytest.mark.fail_ndim
 @pytest.mark.cupy
 def test_tensordot_kwargs_by_position():
 
@@ -1028,6 +1072,7 @@ def test_tensordot_kwargs_by_position():
     grad(fun)(1.0)
 
 
+@pytest.mark.fail_value_mismatch
 @pytest.mark.cupy
 def test_multi_index():
     A = cpr.randn(3)
@@ -1035,6 +1080,7 @@ def test_multi_index():
     check_grads(fun)(A)
 
 
+@pytest.mark.fail_value_mismatch
 @pytest.mark.cupy
 def test_multi_index2():
     A = cpr.randn(3)
@@ -1042,6 +1088,7 @@ def test_multi_index2():
     check_grads(fun)(A)
 
 
+@pytest.mark.works
 @pytest.mark.cupy
 def test_index_dot_slices():
     A = cpr.randn(4)
@@ -1070,6 +1117,8 @@ def test_index_dot_slices():
 # getitem
 
 
+# Error: ValueError: object __array__ method not producing an array
+@pytest.mark.fail_array
 @pytest.mark.cupy
 def test_cast_to_int():
     inds = cp.ones(5)[:, None]
@@ -1089,6 +1138,8 @@ def test_cast_to_int():
     check_grads(fun)(W)
 
 
+# Error: ValueError: object __array__ method not producing an array
+@pytest.mark.fail_array
 @pytest.mark.cupy
 def test_make_diagonal():
 
@@ -1106,6 +1157,7 @@ def test_make_diagonal():
     check_grads(fun)(D)
 
 
+@pytest.mark.works
 @pytest.mark.cupy
 def test_diagonal():
 
@@ -1121,6 +1173,8 @@ def test_diagonal():
     check_grads(fun)(D)
 
 
+# CuPy does not have a nan_to_num implemented at the moment.
+@pytest.mark.deprecated
 @pytest.mark.cupy
 def test_nan_to_num():
     y = cp.array([0., cp.nan, cp.inf, -cp.inf])
@@ -1138,6 +1192,8 @@ def test_nan_to_num():
 #    check_grads(fun)(A)
 
 
+# Error: ValueError: Unsupported dtype object
+@pytest.mark.fail_dtype_object
 @pytest.mark.cupy
 def test_max_equal_values():
 
@@ -1147,6 +1203,8 @@ def test_max_equal_values():
     check_grads(fun)(1.0)
 
 
+# Error: ValueError: Unsupported dtype object
+@pytest.mark.fail_dtype_object
 @pytest.mark.cupy
 def test_max_equal_values_2d():
 
@@ -1157,8 +1215,9 @@ def test_max_equal_values_2d():
     check_grads(fun)(-1.0)
 
 
+# Error: ValueError: Unsupported dtype object
+@pytest.mark.fail_dtype_object
 @pytest.mark.cupy
-@pytest.mark.min
 def test_min_3_way_equality():
 
     def fun(x):
@@ -1170,6 +1229,8 @@ def test_min_3_way_equality():
     check_grads(fun)(-1.0)
 
 
+# Error: TypeError: Unsupported type <class 'numpy.ndarray'>
+@pytest.mark.fail_unsupported_type
 @pytest.mark.cupy
 def test_maximum_equal_values():
 
@@ -1179,6 +1240,8 @@ def test_maximum_equal_values():
     check_grads(fun)(1.0)
 
 
+# ValueError: Unsupported dtype object
+@pytest.mark.fail_dtype_object
 @pytest.mark.cupy
 def test_maximum_equal_values_2d():
 
@@ -1190,6 +1253,8 @@ def test_maximum_equal_values_2d():
     check_grads(fun)(2.0)
 
 
+# Error: TypeError: Unsupported type <class 'numpy.ndarray'>
+@pytest.mark.fail_unsupported_type
 @pytest.mark.cupy
 def test_linspace():
     for num in [0, 1, 5]:

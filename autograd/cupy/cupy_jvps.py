@@ -274,7 +274,7 @@ defjvp(
     ans,
     c,
     x=None,
-    y=None: acp.where(c, g, acp.zeros(acp.shape(g))),
+    y=None: acp.where(c, g, acp.zeros(g.shape)),
     lambda g,
     ans,
     c,
@@ -309,7 +309,7 @@ def forward_grad_np_var(g, ans, x, axis=None, ddof=0, keepdims=False):
     if axis is None:
         num_reps = acp.size(g)
     elif isinstance(axis, int):
-        num_reps = acp.shape(g)[axis]
+        num_reps = g.shape[axis]
     elif isinstance(axis, tuple):
         num_reps = acp.prod(acp.array(np.shape(g))[list(axis)])
 
@@ -328,9 +328,9 @@ def forward_grad_np_std(g, ans, x, axis=None, ddof=0, keepdims=False):
     if axis is None:
         num_reps = acp.size(g)
     elif isinstance(axis, int):
-        num_reps = acp.shape(g)[axis]
+        num_reps = g.shape[axis]
     elif isinstance(axis, tuple):
-        num_reps = acp.prod(acp.array(acp.shape(g))[list(axis)])
+        num_reps = acp.prod(acp.array(g.shape)[list(axis)])
 
     if num_reps <= 1:
         return acp.zeros_like(ans)
