@@ -590,7 +590,7 @@ def grad_chooser(ans, x, axis=None, keepdims=None):
     return vjp
 
 
-# defvjp(acp.max, grad_chooser)
+defvjp(acp.max, grad_chooser)
 # defvjp(acp.min, grad_chooser)
 # defvjp(acp.amax, grad_chooser)
 # defvjp(acp.amin, grad_chooser)
