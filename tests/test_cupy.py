@@ -662,7 +662,9 @@ def test_clip():
     check_grads(fun)(mat)
 
 
-@pytest.mark.test
+# Fails because prod is not in wrapper namespace. I am not quite sure
+# how to include prod in the namespace.
+@pytest.mark.fail_prod
 @pytest.mark.cupy
 def test_prod_1():
 
@@ -673,6 +675,8 @@ def test_prod_1():
     check_grads(fun)(mat)
 
 
+
+@pytest.mark.fail_prod
 @pytest.mark.cupy
 def test_prod_2():
 
@@ -683,6 +687,7 @@ def test_prod_2():
     check_grads(fun)(mat)
 
 
+@pytest.mark.fail_prod
 @pytest.mark.cupy
 def test_prod_3():
 
@@ -693,6 +698,7 @@ def test_prod_3():
     check_grads(fun)(mat)
 
 
+@pytest.mark.fail_prod
 @pytest.mark.cupy
 def test_prod_4():
 
@@ -703,6 +709,7 @@ def test_prod_4():
     check_grads(fun)(mat)
 
 
+@pytest.mark.test
 @pytest.mark.cupy
 def test_1d_array():
 
