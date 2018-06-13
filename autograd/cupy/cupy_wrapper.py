@@ -75,8 +75,6 @@ def wrap_namespace(old, new):
 # else:
 #     print(name, obj, isinstance(obj, _cp.ufunc))
 
-import pdb
-pdb.set_trace()
 wrap_namespace(_cp.__dict__, globals())
 
 # ----- Special treatment of list-input functions -----
