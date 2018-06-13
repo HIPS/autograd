@@ -54,8 +54,8 @@ nograd_functions = [
     acp.less_equal,
     acp.equal,
     acp.not_equal,
-    # acp.iscomplexobj,
-    # acp.iscomplex,
+    acp.iscomplexobj,
+    acp.iscomplex,
     # acp.size,
     acp.isscalar,
     # acp.isreal,
@@ -578,11 +578,7 @@ def grad_chooser(ans, x, axis=None, keepdims=None):
         or max.
         """
         g_repeated, _ = repeat_to_match_shape(g, shape, dtype, axis, keepdims)
-        argmax_locations = x == repeat_to_match_shape(
-            ans, shape, dtype, axis, keepdims
-        )[
-            0
-        ]
+        argmax_locations = x == repeat_to_match_shape(ans, shape, dtype, axis, keepdims)[0]
         return g_repeated * argmax_locations / ocp.sum(
             argmax_locations, axis=axis, keepdims=True
         )
@@ -591,9 +587,9 @@ def grad_chooser(ans, x, axis=None, keepdims=None):
 
 
 defvjp(acp.max, grad_chooser)
-# defvjp(acp.min, grad_chooser)
-# defvjp(acp.amax, grad_chooser)
-# defvjp(acp.amin, grad_chooser)
+defvjp(acp.min, grad_chooser)
+defvjp(acp.amax, grad_chooser)
+defvjp(acp.amin, grad_chooser)
 
 
 def reverse_axis(x, axis):
