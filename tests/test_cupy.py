@@ -69,6 +69,7 @@ def test_outer():
     check_grads(fun)(vect2.T, vect3.T)
 
 
+@pytest.mark.fail_fusion
 @pytest.mark.fail_max  # these tests fail because something is wrong with cp.max vjp definition
 @pytest.mark.cupy
 def test_max():
@@ -80,6 +81,7 @@ def test_max():
     check_grads(fun)(mat)
 
 
+@pytest.mark.fail_fusion
 @pytest.mark.fail_max
 @pytest.mark.cupy
 def test_max_axis():
@@ -91,6 +93,7 @@ def test_max_axis():
     check_grads(fun)(mat)
 
 
+@pytest.mark.fail_fusion
 @pytest.mark.fail_max
 @pytest.mark.cupy
 def test_max_axis_keepdims():
@@ -102,6 +105,7 @@ def test_max_axis_keepdims():
     check_grads(fun)(mat)
 
 
+@pytest.mark.fail_fusion
 @pytest.mark.fail_min  # fails because likely there is something wrong with min vjp
 @pytest.mark.cupy
 def test_min():
@@ -113,6 +117,7 @@ def test_min():
     check_grads(fun)(mat)
 
 
+@pytest.mark.fail_fusion
 @pytest.mark.fail_min
 @pytest.mark.cupy
 def test_min_axis():
@@ -124,6 +129,7 @@ def test_min_axis():
     check_grads(fun)(mat)
 
 
+@pytest.mark.fail_fusion
 @pytest.mark.fail_min
 @pytest.mark.cupy
 def test_min_axis_keepdims():
@@ -135,6 +141,7 @@ def test_min_axis_keepdims():
     check_grads(fun)(mat)
 
 
+@pytest.mark.fail_fusion
 @pytest.mark.fail_sum
 @pytest.mark.cupy
 def test_sum_1():
@@ -146,6 +153,7 @@ def test_sum_1():
     check_grads(fun)(mat)
 
 
+@pytest.mark.fail_fusion
 @pytest.mark.fail_sum
 @pytest.mark.cupy
 def test_sum_2():
@@ -157,6 +165,7 @@ def test_sum_2():
     check_grads(fun)(mat)
 
 
+@pytest.mark.fail_fusion
 @pytest.mark.fail_sum
 @pytest.mark.cupy
 def test_sum_3():
@@ -168,6 +177,7 @@ def test_sum_3():
     check_grads(fun)(mat)
 
 
+@pytest.mark.fail_fusion
 @pytest.mark.fail_sum
 @pytest.mark.cupy
 def test_sum_with_axis_tuple():
@@ -665,6 +675,7 @@ def test_clip():
 
 # Fails because prod is not in wrapper namespace. I am not quite sure
 # how to include prod in the namespace.
+@pytest.mark.fail_fusion
 @pytest.mark.fail_prod
 @pytest.mark.cupy
 def test_prod_1():
@@ -677,6 +688,7 @@ def test_prod_1():
 
 
 
+@pytest.mark.fail_fusion
 @pytest.mark.fail_prod
 @pytest.mark.cupy
 def test_prod_2():
@@ -688,6 +700,7 @@ def test_prod_2():
     check_grads(fun)(mat)
 
 
+@pytest.mark.fail_fusion
 @pytest.mark.fail_prod
 @pytest.mark.cupy
 def test_prod_3():
@@ -699,6 +712,7 @@ def test_prod_3():
     check_grads(fun)(mat)
 
 
+@pytest.mark.fail_fusion
 @pytest.mark.fail_prod
 @pytest.mark.cupy
 def test_prod_4():
