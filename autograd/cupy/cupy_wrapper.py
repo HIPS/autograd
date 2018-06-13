@@ -44,6 +44,8 @@ notrace_functions = [
     _cp.zeros_like,
     _cp.ones_like,
     _cp.sum,
+    _cp.amax,
+    _cp.amin,
 ]
 
 
