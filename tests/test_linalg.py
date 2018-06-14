@@ -35,6 +35,21 @@ def test_inv():
     mat = np.dot(mat, mat) + 1.0 * np.eye(D)
     check_grads(fun)(mat)
 
+def test_pinv():
+    def fun(x): return np.linalg.pinv(x)
+    N = 8
+    ## Non-square matrices:
+    for M in range( N//2, N + N//2 + 1 ):
+        mat = npr.randn(N, M)
+        check_grads(fun)(mat)
+    
+    ## Square matrices with varying ranks:
+    ## This doesn't work because the numerical derivative explodes.
+    #for M in range( N//2, N + N//2 + 1 ):
+    #    mat = npr.randn(N, M)
+    #    mat = np.dot(mat, mat.T)
+    #    check_grads(fun)(mat)
+
 def test_inv_3d():
     fun = lambda x: np.linalg.inv(x)
 

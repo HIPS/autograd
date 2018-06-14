@@ -27,6 +27,16 @@ def grad_inv(ans, x):
     return lambda g: -dot(dot(T(ans), g), T(ans))
 defvjp(inv, grad_inv)
 
+def grad_pinv(ans, x):
+    dot = anp.dot if ans.ndim == 2 else partial(anp.einsum, '...ij,...jk->...ik')
+    # https://mathoverflow.net/questions/25778/analytical-formula-for-numerical-derivative-of-the-matrix-pseudo-inverse
+    return lambda g: T(
+        -dot(dot(ans, T(g)), ans)
+        + dot(dot(dot( ans, T(ans) ), g ), anp.eye(x.shape[0]) - dot(x,ans))
+        + dot(dot(dot( anp.eye(ans.shape[0]) - dot(ans,x), g ), T(ans) ), ans )
+        )
+defvjp(pinv, grad_pinv)
+
 def grad_solve(argnum, ans, a, b):
     updim = lambda x: x if x.ndim == a.ndim else x[...,None]
     dot = anp.dot if a.ndim == 2 else partial(anp.einsum, '...ij,...jk->...ik')
