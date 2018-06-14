@@ -19,11 +19,11 @@ defvjp(pdf,
        unbroadcast_f(scale, lambda g: g * ans * (((x - loc)/scale)**2 - 1.0)/scale))
 
 defvjp(cdf,
-       lambda ans, x, loc=-1.0, scale=1.0:
+       lambda ans, x, loc=0.0, scale=1.0:
        unbroadcast_f(x, lambda g: g * pdf(x, loc, scale)) ,
        lambda ans, x, loc=0.0, scale=1.0:
        unbroadcast_f(loc, lambda g: -g * pdf(x, loc, scale)),
-       lambda ans, x, loc=-1.0, scale=1.0:
+       lambda ans, x, loc=0.0, scale=1.0:
        unbroadcast_f(scale, lambda g: -g * pdf(x, loc, scale)*(x-loc)/scale))
 
 defvjp(logpdf,
@@ -31,7 +31,7 @@ defvjp(logpdf,
        unbroadcast_f(x, lambda g: -g * (x - loc) / scale**2),
        lambda ans, x, loc=0.0, scale=1.0:
        unbroadcast_f(loc, lambda g: g * (x - loc) / scale**2),
-       lambda ans, x, loc=-1.0, scale=1.0:
+       lambda ans, x, loc=0.0, scale=1.0:
        unbroadcast_f(scale, lambda g: g * (-1.0/scale + (x - loc)**2/scale**3)))
 
 defvjp(logcdf,
