@@ -36,16 +36,15 @@ notrace_functions = [
     _cp.greater_equal,
     _cp.less,
     _cp.less_equal,
-    _cp.max,
-    _cp.min,
+    # _cp.max,
+    # _cp.min,
     _cp.equal,
     _cp.not_equal,
     _cp.isscalar,
     _cp.zeros_like,
     _cp.ones_like,
-    _cp.sum,
-    _cp.amax,
-    _cp.amin,
+    # _cp.amax,
+    # _cp.amin,
 ]
 
 
@@ -58,15 +57,17 @@ def wrap_intdtype(cls):
 
 
 def wrap_namespace(old, new):
+    """
+    Wraps namespace of array library.
+    """
     unchanged_types = {float, int, type(None), type}
     int_types = {_cp.int8, _cp.int16, _cp.int32, _cp.int64, _cp.integer}  # _cp.int,
-    function_types = {_cp.ufunc, types.FunctionType, types.BuiltinFunctionType}
+    function_types = {_cp.ufunc, types.FunctionType, types.BuiltinFunctionType,}
     for name, obj in old.items():
-        # print(name, obj, type(obj))
         if obj in notrace_functions:
             new[name] = notrace_primitive(obj)
         # Note: type(obj) == _cp.ufunc doesn't work! Should use isinstance(obj, _cp.ufunc)
-        elif (type(obj) in function_types) or (isinstance(obj, _cp.ufunc)):
+        elif type(obj) in function_types or isinstance(obj, _cp.ufunc) or isinstance(obj, _cp.core.fusion.reduction):
             new[name] = primitive(obj)
         elif type(obj) is type and obj in int_types:
             new[name] = wrap_intdtype(obj)

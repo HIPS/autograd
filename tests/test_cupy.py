@@ -69,8 +69,7 @@ def test_outer():
     check_grads(fun)(vect2.T, vect3.T)
 
 
-@pytest.mark.fail_fusion
-@pytest.mark.fail_max  # these tests fail because something is wrong with cp.max vjp definition
+@pytest.mark.works
 @pytest.mark.cupy
 def test_max():
 
@@ -81,8 +80,7 @@ def test_max():
     check_grads(fun)(mat)
 
 
-@pytest.mark.fail_fusion
-@pytest.mark.fail_max
+@pytest.mark.works
 @pytest.mark.cupy
 def test_max_axis():
 
@@ -93,8 +91,7 @@ def test_max_axis():
     check_grads(fun)(mat)
 
 
-@pytest.mark.fail_fusion
-@pytest.mark.fail_max
+@pytest.mark.works
 @pytest.mark.cupy
 def test_max_axis_keepdims():
 
@@ -105,8 +102,7 @@ def test_max_axis_keepdims():
     check_grads(fun)(mat)
 
 
-@pytest.mark.fail_fusion
-@pytest.mark.fail_min  # fails because likely there is something wrong with min vjp
+@pytest.mark.works
 @pytest.mark.cupy
 def test_min():
 
@@ -117,8 +113,7 @@ def test_min():
     check_grads(fun)(mat)
 
 
-@pytest.mark.fail_fusion
-@pytest.mark.fail_min
+@pytest.mark.works
 @pytest.mark.cupy
 def test_min_axis():
 
@@ -129,8 +124,7 @@ def test_min_axis():
     check_grads(fun)(mat)
 
 
-@pytest.mark.fail_fusion
-@pytest.mark.fail_min
+@pytest.mark.works
 @pytest.mark.cupy
 def test_min_axis_keepdims():
 
@@ -141,8 +135,7 @@ def test_min_axis_keepdims():
     check_grads(fun)(mat)
 
 
-@pytest.mark.fail_fusion
-@pytest.mark.fail_sum
+@pytest.mark.works
 @pytest.mark.cupy
 def test_sum_1():
 
@@ -153,8 +146,7 @@ def test_sum_1():
     check_grads(fun)(mat)
 
 
-@pytest.mark.fail_fusion
-@pytest.mark.fail_sum
+@pytest.mark.works
 @pytest.mark.cupy
 def test_sum_2():
 
@@ -165,8 +157,7 @@ def test_sum_2():
     check_grads(fun)(mat)
 
 
-@pytest.mark.fail_fusion
-@pytest.mark.fail_sum
+@pytest.mark.works
 @pytest.mark.cupy
 def test_sum_3():
 
@@ -177,8 +168,7 @@ def test_sum_3():
     check_grads(fun)(mat)
 
 
-@pytest.mark.fail_fusion
-@pytest.mark.fail_sum
+@pytest.mark.works
 @pytest.mark.cupy
 def test_sum_with_axis_tuple():
 
@@ -369,9 +359,7 @@ def test_vector_slice():
     check_grads(fun)(A)
 
 
-# Error message below:
-# NotImplementedError: JVP of iscomplexobj wrt argnums (0,) not defined
-@pytest.mark.fail_iscomplex_jvp
+@pytest.mark.works
 @pytest.mark.cupy
 def test_index_slice_fanout():
     A = cpr.randn(5, 6, 4)
@@ -1008,8 +996,7 @@ def test_squeeze_method():
     check_grads(fun)(A)
 
 
-# Error: AssertionError: Value mismatch:
-@pytest.mark.fail_value_mismatch
+@pytest.mark.works
 @pytest.mark.cupy
 def test_repeat():
     A = cpr.randn(5, 3, 4)
@@ -1020,7 +1007,7 @@ def test_repeat():
     check_grads(fun)(A)
 
 
-@pytest.mark.fail_value_mismatch
+@pytest.mark.works
 @pytest.mark.cupy
 def test_repeat_axis1_rep1():
     A = cpr.randn(5, 3, 4)
@@ -1031,7 +1018,7 @@ def test_repeat_axis1_rep1():
     check_grads(fun)(A)
 
 
-@pytest.mark.fail_value_mismatch
+@pytest.mark.works
 @pytest.mark.cupy
 def test_repeat_axis0():
     A = cpr.randn(5, 3)
@@ -1042,7 +1029,7 @@ def test_repeat_axis0():
     check_grads(fun)(A)
 
 
-@pytest.mark.fail_value_mismatch
+@pytest.mark.works
 @pytest.mark.cupy
 def test_repeat_1d_axis0():
     A = cpr.randn(5)
@@ -1053,7 +1040,7 @@ def test_repeat_1d_axis0():
     check_grads(fun)(A)
 
 
-@pytest.mark.fail_value_mismatch
+@pytest.mark.works
 @pytest.mark.cupy
 def test_repeat_axis0_rep1():
     A = cpr.randn(5, 1)
@@ -1086,7 +1073,7 @@ def test_tensordot_kwargs_by_position():
     grad(fun)(1.0)
 
 
-@pytest.mark.fail_value_mismatch
+@pytest.mark.fail_scatter_add
 @pytest.mark.cupy
 def test_multi_index():
     A = cpr.randn(3)
@@ -1094,7 +1081,7 @@ def test_multi_index():
     check_grads(fun)(A)
 
 
-@pytest.mark.fail_value_mismatch
+@pytest.mark.fail_scatter_add
 @pytest.mark.cupy
 def test_multi_index2():
     A = cpr.randn(3)

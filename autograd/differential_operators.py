@@ -10,13 +10,12 @@ from .builtins import tuple as atuple
 from .core import make_vjp as _make_vjp, make_jvp as _make_jvp
 from .extend import primitive, defvjp_argnum, vspace
 
-# import autograd.numpy as np
-import autograd.cupy as np
-
-import pdb
+import autograd.numpy as np
+# import autograd.cupy as np
 
 make_vjp = unary_to_nary(_make_vjp)
 make_jvp = unary_to_nary(_make_jvp)
+
 
 @unary_to_nary
 def grad(fun, x):
@@ -57,7 +56,8 @@ def jacobian(fun, x):
     ans_vspace = vspace(ans)
     jacobian_shape = ans_vspace.shape + vspace(x).shape
     grads = map(vjp, ans_vspace.standard_basis())
-    return np.reshape(np.stack(grads), jacobian_shape)
+    xp = cp.get_array_module(grads)
+    return xp.reshape(xp.stack(grads), jacobian_shape)
 
 @unary_to_nary
 def holomorphic_grad(fun, x):

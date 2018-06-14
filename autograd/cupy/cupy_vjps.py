@@ -374,6 +374,8 @@ defvjp(
 # ----- Trickier grads -----
 
 
+# grad_diff is irrelevant for CuPy because CuPy does not currently implement
+# diff.
 def grad_diff(ans, a, n=1, axis=-1):
     nd = acp.ndim(a)
     ans_shape = acp.shape(ans)
@@ -402,6 +404,7 @@ def grad_diff(ans, a, n=1, axis=-1):
     return lambda g: helper(g, n)
 
 
+# Commented out because CuPy does not implement diff.
 # defvjp(acp.diff, grad_diff)
 
 
@@ -494,12 +497,12 @@ def repeat_to_match_shape(g, shape, dtype, axis, keepdims):
     return acp.reshape(g, new_shape) + ocp.zeros(shape, dtype=dtype), num_reps
 
 
-def grad_np_sum(ans, x, axis=None, keepdims=False, dtype=None):
+def grad_cp_sum(ans, x, axis=None, keepdims=False, dtype=None):
     shape, dtype = x.shape, acp.result_type(x)
     return lambda g: repeat_to_match_shape(g, shape, dtype, axis, keepdims)[0]
 
 
-defvjp(acp.sum, grad_np_sum)
+defvjp(acp.sum, grad_cp_sum)
 
 
 def grad_cp_mean(ans, x, axis=None, keepdims=False):
@@ -515,7 +518,7 @@ def grad_cp_mean(ans, x, axis=None, keepdims=False):
 defvjp(acp.mean, grad_cp_mean)
 
 
-def grad_np_prod(ans, x, axis=None, keepdims=False):  # TODO: Support tuples of axes.  # noqa: E501
+def grad_cp_prod(ans, x, axis=None, keepdims=False):  # TODO: Support tuples of axes.  # noqa: E501
     shape, dtype = x.shape, acp.result_type(x)
 
     def vjp(g):
@@ -525,10 +528,10 @@ def grad_np_prod(ans, x, axis=None, keepdims=False):  # TODO: Support tuples of 
     return vjp
 
 
-# defvjp(acp.prod, grad_np_prod)
+defvjp(acp.prod, grad_cp_prod)
 
 
-def grad_np_var(ans, x, axis=None, ddof=0, keepdims=False):
+def grad_cp_var(ans, x, axis=None, ddof=0, keepdims=False):
     shape, _, dtype, iscomplex = acp.metadata(x)
 
     def vjp(g):
@@ -541,10 +544,10 @@ def grad_np_var(ans, x, axis=None, ddof=0, keepdims=False):
     return vjp
 
 
-defvjp(acp.var, grad_np_var)
+defvjp(acp.var, grad_cp_var)
 
 
-def grad_np_std(ans, x, axis=None, ddof=0, keepdims=False):
+def grad_cp_std(ans, x, axis=None, ddof=0, keepdims=False):
     shape, _, dtype, iscomplex = acp.metadata(x)
 
     def vjp(g):
@@ -566,7 +569,7 @@ def grad_np_std(ans, x, axis=None, ddof=0, keepdims=False):
     return vjp
 
 
-defvjp(acp.std, grad_np_std)
+defvjp(acp.std, grad_cp_std)
 
 
 def grad_chooser(ans, x, axis=None, keepdims=None):
