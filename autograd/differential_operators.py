@@ -56,13 +56,13 @@ def jacobian(fun, x):
     ans_vspace = vspace(ans)
     jacobian_shape = ans_vspace.shape + vspace(x).shape
     grads = map(vjp, ans_vspace.standard_basis())
-    xp = cp.get_array_module(grads)
-    return xp.reshape(xp.stack(grads), jacobian_shape)
+    return np.reshape(np.stack(grads), jacobian_shape)
 
 @unary_to_nary
 def holomorphic_grad(fun, x):
     if not vspace(x).iscomplex:
         warnings.warn("Input to holomorphic_grad is not complex")
+    xp = cp.get_array_module(x)
     return grad(lambda x: np.real(fun(x)))(x)
 
 def grad_named(fun, argname):
@@ -90,6 +90,7 @@ def hessian_tensor_product(fun, argnum=0):
     fun_grad = grad(fun, argnum)
     def vector_dot_grad(*args, **kwargs):
         args, vector = args[:-1], args[-1]
+        xp = cp.get_array_module(vector)
         return np.tensordot(fun_grad(*args, **kwargs), vector, np.ndim(vector))
     return grad(vector_dot_grad, argnum)
 hessian_vector_product = hessian_tensor_product
