@@ -457,7 +457,6 @@ def test_flatten_method():
 # To keep things pure in CuPy-land (see one of the comments above)
 # this should not be available as an operation to autograd-cupy users
 @pytest.mark.deprecated
-@pytest.mark.cupy
 def test_simple_append_list():
     A = [1., 2., 3.]
     b = 4.
@@ -466,7 +465,6 @@ def test_simple_append_list():
 
 # Deprecated; see above comment.
 @pytest.mark.deprecated
-@pytest.mark.cupy
 def test_simple_append_arr():
     A = cp.array([1., 2., 3.])
     b = 4.
@@ -475,7 +473,6 @@ def test_simple_append_arr():
 
 # Deprecated; see above comment.
 @pytest.mark.deprecated
-@pytest.mark.cupy
 def test_simple_append_list_2D():
     A = [[1., 2., 3.], [4., 5., 6.]]
     B = [[7., 8., 9.]]
