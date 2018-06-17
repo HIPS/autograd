@@ -38,6 +38,20 @@ def toposort(end_node, parents=operator.attrgetter('parents')):
             else:
                 child_counts[parent] -= 1
 
+
+def typeof(x):
+    """
+    A Modified type function that returns np.ndarray for any array-like
+
+    This improves portability of autograd to other projects that might support
+    the numpy API, despite not being exactly numpy.
+    """
+    # if all(hasattr(x, attr) for attr in ['__array_ufunc__', 'shape', 'dtype']):
+    #     import numpy
+    #     return numpy.ndarray
+    # else:
+    return type(x)
+
 # -------------------- deprecation warnings -----------------------
 
 import warnings

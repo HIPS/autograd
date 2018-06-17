@@ -3,7 +3,8 @@ from autograd.extend import VSpace
 
 class ArrayVSpace(VSpace):
     def __init__(self, value):
-        value = np.array(value, copy=False)
+        if not hasattr(value, 'shape') or not hasattr(value, 'dtype'):
+            value = np.array(value, copy=False)
         self.shape = value.shape
         self.dtype = value.dtype
 

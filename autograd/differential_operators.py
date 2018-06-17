@@ -11,9 +11,11 @@ from .core import make_vjp as _make_vjp, make_jvp as _make_jvp
 from .extend import primitive, defvjp_argnum, vspace
 
 import autograd.numpy as np
+# import autograd.cupy as np
 
 make_vjp = unary_to_nary(_make_vjp)
 make_jvp = unary_to_nary(_make_jvp)
+
 
 @unary_to_nary
 def grad(fun, x):
@@ -21,7 +23,8 @@ def grad(fun, x):
     Returns a function which computes the gradient of `fun` with respect to
     positional argument number `argnum`. The returned function takes the same
     arguments as `fun`, but returns the gradient instead. The function `fun`
-    should be scalar-valued. The gradient has the same type as the argument."""
+    should be scalar-valued. The gradient has the same type as the argument.
+    """
     vjp, ans = _make_vjp(fun, x)
     if not vspace(ans).size == 1:
         raise TypeError("Grad only applies to real scalar-output functions. "
@@ -59,6 +62,7 @@ def jacobian(fun, x):
 def holomorphic_grad(fun, x):
     if not vspace(x).iscomplex:
         warnings.warn("Input to holomorphic_grad is not complex")
+    xp = cp.get_array_module(x)
     return grad(lambda x: np.real(fun(x)))(x)
 
 def grad_named(fun, argname):
@@ -86,6 +90,7 @@ def hessian_tensor_product(fun, argnum=0):
     fun_grad = grad(fun, argnum)
     def vector_dot_grad(*args, **kwargs):
         args, vector = args[:-1], args[-1]
+        xp = cp.get_array_module(vector)
         return np.tensordot(fun_grad(*args, **kwargs), vector, np.ndim(vector))
     return grad(vector_dot_grad, argnum)
 hessian_vector_product = hessian_tensor_product

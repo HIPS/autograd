@@ -1,7 +1,7 @@
 from itertools import count
 from functools import reduce
 from .tracer import trace, primitive, toposort, Node, Box, isbox, getval
-from .util import func, subval
+from .util import func, subval, typeof
 
 # -------------------- reverse mode --------------------
 
@@ -230,7 +230,7 @@ class VSpace(object):
 
 def vspace(value):
     try:
-        return VSpace.mappings[type(value)](value)
+        return VSpace.mappings[typeof(value)](value)
     except KeyError:
         if isbox(value):
             return vspace(getval(value))

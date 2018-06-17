@@ -1,10 +1,13 @@
 import warnings
 from contextlib import contextmanager
 from collections import defaultdict
-from .util import subvals, toposort
+from .util import subvals, toposort, typeof
 from .wrap_util import wraps
 
+import pdb
+
 def trace(start_node, fun, x):
+    # pdb.set_trace()
     with trace_stack.new_trace() as t:
         start_box = new_box(x, t, start_node)
         end_box = fun(start_box)
@@ -113,8 +116,12 @@ class Box(object):
         Box.type_mappings[cls] = cls
 
 box_type_mappings = Box.type_mappings
+
+import pdb
+
 def new_box(value, trace, node):
     try:
+        # pdb.set_trace()
         return box_type_mappings[type(value)](value, trace, node)
     except KeyError:
         raise TypeError("Can't differentiate w.r.t. type {}".format(type(value)))
