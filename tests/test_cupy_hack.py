@@ -6,6 +6,7 @@ import pdb
 import numpy as np
 
 @pytest.mark.integration
+@pytest.mark.cupy
 def test_sin():
     a = cp.arange(10)
 
@@ -19,6 +20,7 @@ def test_sin():
 
 @pytest.mark.higher_order
 @pytest.mark.integration
+@pytest.mark.cupy
 def test_higher_order_derivatives():
     a = cp.arange(10)
     def f(x):
@@ -34,6 +36,7 @@ def test_higher_order_derivatives():
 
 
 @pytest.mark.integration
+@pytest.mark.cupy
 def test_linalg_norm():
     """All that I'm asking of this test is that it doesn't error out."""
     x = cp.array([1, 2, 3])
@@ -41,6 +44,7 @@ def test_linalg_norm():
 
 
 @pytest.mark.integration
+@pytest.mark.cupy
 def test_argmin():
     """I just don't want this test to error out."""
     x = cp.arange(10)
@@ -49,6 +53,7 @@ def test_argmin():
 
 @pytest.mark.integration
 @pytest.mark.gradient
+@pytest.mark.cupy
 def test_gradient_descent():
     # x = cp.array([[1,2,3,4,5,6,7,8]])
     # y = cp.array([[-1,-1,-1,-1,1,1,1,1]])
