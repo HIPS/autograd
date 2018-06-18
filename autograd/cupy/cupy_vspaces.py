@@ -74,7 +74,7 @@ class ComplexArrayVSpace(ArrayVSpace):
 
 VSpace.register(
     cp.ndarray,
-    lambda x: ComplexArrayVSpace(x) if np.iscomplexobj(x) else ArrayVSpace(x),
+    lambda x: ComplexArrayVSpace(x) if cp.iscomplexobj(x) else ArrayVSpace(x),
 )
 
 float_types = [float, cp.float64, cp.float32, cp.float16]

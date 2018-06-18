@@ -230,7 +230,7 @@ class VSpace(object):
 
 def vspace(value):
     try:
-        return VSpace.mappings[typeof(value)](value)
+        return VSpace.mappings[type(value)](value)
     except KeyError:
         if isbox(value):
             return vspace(getval(value))

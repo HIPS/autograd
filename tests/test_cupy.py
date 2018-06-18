@@ -458,7 +458,6 @@ def test_flatten_method():
 # To keep things pure in CuPy-land (see one of the comments above)
 # this should not be available as an operation to autograd-cupy users
 @pytest.mark.deprecated
-@pytest.mark.cupy
 def test_simple_append_list():
     A = [1., 2., 3.]
     b = 4.
@@ -467,7 +466,6 @@ def test_simple_append_list():
 
 # Deprecated; see above comment.
 @pytest.mark.deprecated
-@pytest.mark.cupy
 def test_simple_append_arr():
     A = cp.array([1., 2., 3.])
     b = 4.
@@ -476,16 +474,24 @@ def test_simple_append_arr():
 
 # Deprecated; see above comment.
 @pytest.mark.deprecated
-@pytest.mark.cupy
 def test_simple_append_list_2D():
     A = [[1., 2., 3.], [4., 5., 6.]]
     B = [[7., 8., 9.]]
     check_grads(cp.append, argnum=(0, 1))(A, B, axis=0)
 
 
-# Fails because of some KeyError. I think this has to do
-# with a difference in NumPy's vs. CuPy's API, though what
-# exactly I'm not quite sure.
+# Fails because of some KeyError.
+# I have verified that cp.concatenate works (in an IPython shell)
+# What's left is probably something to do with the derivative.
+# Through interactive debugging, I'm finding an error in autograd/test_util.py.
+#
+#     y = f(x)
+#     x_vs, y_vs = vspace(x), vspace(y)
+#
+# In the interactive debugger, if I run f(x), then I get a segfault. If I don't run
+# f(x), then inspecting y_vs, I get ArrayVSpace_{... 'dtype': dtype('O')}. This is
+# very likely the cause of the segfault in my interactive debugging, as well as the
+# source of the KeyError('O') that the test returns.
 @pytest.mark.fail_key_error
 @pytest.mark.cupy
 def test_simple_concatenate():
@@ -498,7 +504,7 @@ def test_simple_concatenate():
     check_grads(fun)(B)
 
 
-# Also fails with a KeyError. May have to do with API differences? See above.
+# Also fails with a KeyError. Very likely related to the above test as well.
 @pytest.mark.fail_key_error
 @pytest.mark.cupy
 def test_concatenate_axis_0():
@@ -511,6 +517,7 @@ def test_concatenate_axis_0():
     check_grads(fun)(A)
 
 
+# Also fails with a KeyError. Very likely related to the above test as well.
 @pytest.mark.fail_key_error
 @pytest.mark.cupy
 def test_concatenate_axis_1():
@@ -523,6 +530,7 @@ def test_concatenate_axis_1():
     check_grads(fun)(A)
 
 
+# Also fails with a KeyError. Very likely related to the above test as well.
 @pytest.mark.fail_key_error
 @pytest.mark.cupy
 def test_concatenate_axis_1_unnamed():
@@ -662,10 +670,7 @@ def test_clip():
     check_grads(fun)(mat)
 
 
-# Fails because prod is not in wrapper namespace. I am not quite sure
-# how to include prod in the namespace.
-@pytest.mark.fail_fusion
-@pytest.mark.fail_prod
+@pytest.mark.works
 @pytest.mark.cupy
 def test_prod_1():
 
@@ -677,8 +682,7 @@ def test_prod_1():
 
 
 
-@pytest.mark.fail_fusion
-@pytest.mark.fail_prod
+@pytest.mark.works
 @pytest.mark.cupy
 def test_prod_2():
 
@@ -689,8 +693,7 @@ def test_prod_2():
     check_grads(fun)(mat)
 
 
-@pytest.mark.fail_fusion
-@pytest.mark.fail_prod
+@pytest.mark.works
 @pytest.mark.cupy
 def test_prod_3():
 
@@ -701,8 +704,7 @@ def test_prod_3():
     check_grads(fun)(mat)
 
 
-@pytest.mark.fail_fusion
-@pytest.mark.fail_prod
+@pytest.mark.works
 @pytest.mark.cupy
 def test_prod_4():
 
@@ -714,14 +716,22 @@ def test_prod_4():
 
 
 # This test below returns an "unsupported dtype object" error.
-# I find this baffling, but it may be irrelevant to check_grads for this one?
-# TODO: Have to ask Dougal why this test exists.
+# To debug this, I went into the CuPy wrapper (`cupy_wrapper.py`) and added in a PDB
+# trace step. There, I was able to inspect the inputs to the array_from_args function.
+#
+# In the forward computation, we get a list of floats [3.0, 3.0, 3.0] as the input array.
+# In the backward computation, we get a list of `ArrayBox`es. ArrayBoxes cannot be passed
+# into the CuPy constructor. I have attempted to modify cupy_wrapper.array, but after
+# finding out how hairy it would be to modify the function to automatically convert the
+# list of boxes into a list of floats (rather than a list of single element CuPy arrays),
+# I gave up. I think there has to be a better way to approach this.
 @pytest.mark.fail_dtype_object
 @pytest.mark.cupy
 def test_1d_array():
 
     def fun(x):
-        return cp.array([x, x * 1.0, x + 2.5])
+        # return cp.array([x, x * 1.0, x + 2.5])
+        return cp.array([x, x, x])
 
     check_grads(fun)(3.0)
 
@@ -758,8 +768,7 @@ def test_2d_array_fanout():
     check_grads(fun)(3.0)
 
 
-# Fails with an error "unsupported type <class 'numpy.ndarray'>"
-@pytest.mark.fail_unsupported_type
+@pytest.mark.works
 @pytest.mark.cupy
 def test_array_from_scalar():
 
@@ -769,7 +778,8 @@ def test_array_from_scalar():
     check_grads(fun)(3.0)
 
 
-# I believe that this is unsupported behaviour in CuPy.
+# I believe that this is unsupported behaviour in CuPy: we cannot pass in a list of arrays
+# as this would entail implicit data movement from CPU to GPU.
 @pytest.mark.fail_dtype_object
 @pytest.mark.cupy
 def test_array_from_arrays():
@@ -935,8 +945,7 @@ def test_c_mixed():
         check_grads(fun)(A)
 
 
-# Fails because of error: NotImplementedError: JVP of size wrt argnums (0,) not defined
-@pytest.mark.fail_jvp_error
+@pytest.mark.works
 @pytest.mark.cupy
 def test_var_ddof():
     B = cpr.randn(3)
@@ -948,8 +957,7 @@ def test_var_ddof():
     combo_check(cp.var, (0,))([C, D], axis=[None, 1], keepdims=[True, False], ddof=[2])
 
 
-# Fails, error msg: NotImplementedError: JVP of size wrt argnums (0,) not defined
-@pytest.mark.fail_jvp_error
+@pytest.mark.works
 @pytest.mark.cupy
 def test_std_ddof():
     B = cpr.randn(3)
@@ -1063,7 +1071,7 @@ def test_expand_dims():
     check_grads(fun)(A)
 
 
-# Error: AttributeError: module 'cupy' has no attribute 'ndim'
+# Error: AttributeError: 'float' object has no attribute 'shape'.
 @pytest.mark.fail_ndim
 @pytest.mark.cupy
 def test_tensordot_kwargs_by_position():
@@ -1074,6 +1082,7 @@ def test_tensordot_kwargs_by_position():
     grad(fun)(1.0)
 
 
+# Fails because of scatter_add only supporting int32, float32, uint32, uint64 as data type.
 @pytest.mark.fail_scatter_add
 @pytest.mark.cupy
 def test_multi_index():
@@ -1231,8 +1240,8 @@ def test_min_3_way_equality():
     check_grads(fun)(-1.0)
 
 
-# Error: TypeError: Unsupported type <class 'numpy.ndarray'>
-@pytest.mark.fail_unsupported_type
+# AttributeError: 'float' object has no attribute 'shape'
+@pytest.mark.fail_attribute_error
 @pytest.mark.cupy
 def test_maximum_equal_values():
 
@@ -1255,8 +1264,7 @@ def test_maximum_equal_values_2d():
     check_grads(fun)(2.0)
 
 
-# Error: TypeError: Unsupported type <class 'numpy.ndarray'>
-@pytest.mark.fail_unsupported_type
+@pytest.mark.works
 @pytest.mark.cupy
 def test_linspace():
     for num in [0, 1, 5]:

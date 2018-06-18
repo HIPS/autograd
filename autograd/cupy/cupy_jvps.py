@@ -290,8 +290,7 @@ defjvp(acp.tile, "same")
 defjvp(acp.transpose, "same")
 defjvp(acp.sum,       'same')
 defjvp(acp.mean, "same")
-# defjvp(acp.prod, lambda g, ans, x, axis=None, keepdims=False: ans * acp.sum(g / x, axis=axis, 
-# keepdims=keepdims))
+defjvp(acp.prod, lambda g, ans, x, axis=None, keepdims=False: ans * acp.sum(g / x, axis=axis, keepdims=keepdims))
 defjvp(
     acp.linspace,
     lambda g,

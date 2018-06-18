@@ -56,7 +56,7 @@ nograd_functions = [
     acp.not_equal,
     acp.iscomplexobj,
     acp.iscomplex,
-    # acp.size,
+    acp.size,
     acp.isscalar,
     # acp.isreal,
     acp.zeros_like,

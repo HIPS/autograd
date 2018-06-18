@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 import types
 import warnings
-from autograd.extend import primitive, notrace_primitive
+from autograd.extend import primitive, notrace_primitive, Box
 import cupy as _cp
 import autograd.builtins as builtins
 import numpy
@@ -116,7 +116,6 @@ def array(A, *array_args, **array_kwargs):
     # return array_from_args(array_args, array_kwargs, A)
     if t in (list, tuple):
         return array_from_args(array_args, array_kwargs, A)
-
     else:
         return _array_from_scalar_or_array(array_args, array_kwargs, A)
 
