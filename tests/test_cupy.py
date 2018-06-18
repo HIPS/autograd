@@ -256,10 +256,8 @@ def test_cumsum_no_axis():
     check_grads(fun)(mat)
 
 
-@pytest.mark.deprecate
+@pytest.mark.cupy
 def test_non_cupy_sum():
-    """I think this test should be deprecated because it complicates the
-    codebase to use non-CuPy operations."""
     def fun(x, y):
         return sum([x, y])
 
@@ -326,10 +324,12 @@ def test_index_slice():
 # This test fails with scatter_add only supporting float32 dtype.
 # The type of the array A below is float64.
 # See comments on mut_add function for more details.
+# Additional tests: `a.astype('float32')` does not pass test. Looks related
+# to a precision issue.
 @pytest.mark.fails_scatter_add
 @pytest.mark.cupy
 def test_index_lists():
-    A = cpr.randn(5, 6, 4)
+    A = cpr.randn(5, 6, 4).astype('float32')
 
     def fun(x):
         return x[[0, 1, 2], :, :]
@@ -340,7 +340,7 @@ def test_index_lists():
 @pytest.mark.fails_scatter_add
 @pytest.mark.cupy
 def test_index_mixed():
-    A = cpr.randn(5, 6, 4)
+    A = cpr.randn(5, 6, 4).astype('float32')
 
     def fun(x):
         return x[3, 2:, [1, 3]]
