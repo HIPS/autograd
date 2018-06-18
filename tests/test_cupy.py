@@ -256,6 +256,7 @@ def test_cumsum_no_axis():
     check_grads(fun)(mat)
 
 
+@pytest.mark.works
 @pytest.mark.cupy
 def test_non_cupy_sum():
     def fun(x, y):
