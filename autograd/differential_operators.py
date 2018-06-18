@@ -11,7 +11,6 @@ from .core import make_vjp as _make_vjp, make_jvp as _make_jvp
 from .extend import primitive, defvjp_argnum, vspace
 
 import autograd.numpy as np
-# import autograd.cupy as np
 
 make_vjp = unary_to_nary(_make_vjp)
 make_jvp = unary_to_nary(_make_jvp)
@@ -62,7 +61,6 @@ def jacobian(fun, x):
 def holomorphic_grad(fun, x):
     if not vspace(x).iscomplex:
         warnings.warn("Input to holomorphic_grad is not complex")
-    xp = cp.get_array_module(x)
     return grad(lambda x: np.real(fun(x)))(x)
 
 def grad_named(fun, argname):
@@ -90,7 +88,6 @@ def hessian_tensor_product(fun, argnum=0):
     fun_grad = grad(fun, argnum)
     def vector_dot_grad(*args, **kwargs):
         args, vector = args[:-1], args[-1]
-        xp = cp.get_array_module(vector)
         return np.tensordot(fun_grad(*args, **kwargs), vector, np.ndim(vector))
     return grad(vector_dot_grad, argnum)
 hessian_vector_product = hessian_tensor_product
