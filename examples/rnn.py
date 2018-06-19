@@ -4,13 +4,13 @@ has a fixed length."""
 
 from __future__ import absolute_import
 from __future__ import print_function
+from builtins import range
 import autograd.numpy as np
 import autograd.numpy.random as npr
 from autograd import grad
 from autograd.scipy.misc import logsumexp
 from os.path import dirname, join
-from builtins import range
-from autograd.optimizers import adam
+from autograd.misc.optimizers import adam
 
 
 ### Helper functions #################

@@ -5,9 +5,10 @@ from __future__ import print_function
 import autograd.numpy as np
 import autograd.numpy.random as npr
 import autograd.scipy.stats.norm as norm
+from autograd.scipy.special import expit as sigmoid
 
 from autograd import grad
-from autograd.optimizers import adam
+from autograd.misc.optimizers import adam
 from data import load_mnist, save_images
 
 def diag_gaussian_log_density(x, mu, log_std):
@@ -29,7 +30,6 @@ def bernoulli_log_density(targets, unnormalized_logprobs):
     return np.sum(label_probabilities, axis=-1)   # Sum across pixels.
 
 def relu(x):    return np.maximum(0, x)
-def sigmoid(x): return 0.5 * (np.tanh(0.5 * x) + 1)
 
 def init_net_params(scale, layer_sizes, rs=npr.RandomState(0)):
     """Build a (weights, biases) tuples for all layers."""
@@ -70,7 +70,7 @@ def vae_lower_bound(gen_params, rec_params, data, rs):
     q_means, q_log_stds = nn_predict_gaussian(rec_params, data)
     latents = sample_diag_gaussian(q_means, q_log_stds, rs)
     q_latents = diag_gaussian_log_density(latents, q_means, q_log_stds)
-    p_latents = diag_gaussian_log_density(latents, 0, 1)
+    p_latents = diag_gaussian_log_density(latents, 0, 0)
     likelihood = p_images_given_latents(gen_params, data, latents)
     return np.mean(p_latents + likelihood - q_latents)
 

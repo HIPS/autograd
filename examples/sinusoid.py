@@ -1,9 +1,9 @@
 from __future__ import absolute_import
 from __future__ import print_function
+from builtins import range, map
 import autograd.numpy as np
 import matplotlib.pyplot as plt
 from autograd import grad
-from builtins import range, map
 
 def fun(x):
     return np.sin(x)

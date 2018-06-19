@@ -1,11 +1,11 @@
 from __future__ import absolute_import
 from __future__ import print_function
+from builtins import range
 from autograd import grad
 import autograd.numpy as np
 import autograd.numpy.random as npr
 from time import time
 from contextlib import contextmanager
-from builtins import range
 
 @contextmanager
 def tictoc(text=""):

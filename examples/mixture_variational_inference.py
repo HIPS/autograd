@@ -14,7 +14,7 @@ import autograd.scipy.stats.norm as norm
 from autograd.scipy.misc import logsumexp
 
 from autograd import grad
-from autograd.optimizers import adam
+from autograd.misc.optimizers import adam
 
 def diag_gaussian_log_density(x, mu, log_std):
     return np.sum(norm.logpdf(x, mu, np.exp(log_std)), axis=-1)

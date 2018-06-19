@@ -6,9 +6,9 @@ import autograd.numpy as np
 import autograd.numpy.random as npr
 import autograd.scipy.stats.norm as norm
 from autograd import grad
-from autograd.util import flatten
+from autograd.misc import flatten
 
-from autograd.optimizers import adam
+from autograd.misc.optimizers import adam
 
 def init_random_params(scale, layer_sizes, rs=npr.RandomState(0)):
     """Build a list of (weights, biases) tuples, one for each layer."""
