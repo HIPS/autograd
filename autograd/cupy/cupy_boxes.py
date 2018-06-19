@@ -115,7 +115,7 @@ for type_ in [
 ]:
     ArrayBox.register(type_)
 
-# These numpy.ndarray methods are just refs to an equivalent numpy function
+# These cupy.ndarray methods are just refs to an equivalent cupy function
 nondiff_methods = [
     # 'all',
     # 'any',
