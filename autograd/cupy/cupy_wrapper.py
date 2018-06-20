@@ -6,10 +6,10 @@ import cupy as _cp
 import autograd.builtins as builtins
 from numpy import ndim
 
+# Commented out because this is not available in CuPy.
 # from cupy.core.einsumfunc import _parse_einsum_input
 
-# Commenting this out so that I can replace it with one that looks like the
-# numpy_wrapper.py.
+# What are "notrace_functions"?
 notrace_functions = [
     _cp.floor,
     _cp.ceil,
@@ -80,21 +80,18 @@ def wrap_namespace(old, new):
             new[name] = obj
 
 
-# else:
-#     print(name, obj, isinstance(obj, _cp.ufunc))
-
 wrap_namespace(_cp.__dict__, globals())
 
+
 # ----- Special treatment of list-input functions -----
-
-
 @primitive
 def concatenate_args(axis, *args):
     return _cp.concatenate(args, axis).view(ndarray)
 
 
-concatenate = lambda arr_list, axis=0: concatenate_args(axis, *arr_list)
+concatenate = lambda arr_list, axis=0: concatenate_args(axis, *arr_list)  # noqa
 
+# Expecting an error here: vstack won't work!
 vstack = row_stack = lambda tup: concatenate([atleast_2d(_m) for _m in tup], axis=0)
 
 
@@ -118,7 +115,6 @@ def column_stack(tup):
 
 def array(A, *array_args, **array_kwargs):
     t = builtins.type(A)
-    # return array_from_args(array_args, array_kwargs, A)
     if t in (list, tuple):
         return array_from_args(array_args, array_kwargs, A)
     else:
@@ -132,7 +128,8 @@ def wrap_if_boxes_inside(raw_array, slow_op_name=None):
                 "{0} is slow for array inputs. "
                 "np.concatenate() is faster.".format(slow_op_name)
             )
-        return array_from_args((), {}, *raw_array.ravel()).reshape(raw_array.shape)
+        return (array_from_args((), {}, *raw_array.ravel())
+                .reshape(raw_array.shape))
 
     else:
         return raw_array
@@ -168,7 +165,9 @@ def stack(arrays, axis=0):
 
     result_ndim = arrays[0].ndim + 1
     if not -result_ndim <= axis < result_ndim:
-        raise IndexError("axis {0} out of bounds [-{1}, {1})".format(axis, result_ndim))
+        raise IndexError(
+            "axis {0} out of bounds [-{1}, {1})".format(axis, result_ndim)
+            )
 
     if axis < 0:
         axis += result_ndim
@@ -182,15 +181,13 @@ def append(arr, values, axis=None):
     arr = array(arr)
     if axis is None:
         if ndim(arr) != 1:
-            arr = ravel(arr)
-        values = ravel(array(values))
+            arr = _cp.ravel(arr)
+        values = _cp.ravel(array(values))
         axis = ndim(arr) - 1
     return concatenate((arr, values), axis=axis)
 
 
 # ----- Enable functions called using [] ----
-
-
 class r_class():
 
     def __getitem__(self, args):
@@ -210,9 +207,8 @@ class c_class():
 
 c_ = c_class()
 
+
 # ----- misc -----
-
-
 @primitive
 def make_diagonal(D, offset=0, axis1=0, axis2=1):
     # Numpy doesn't offer a complement to np.diagonal: a function to create new
@@ -220,7 +216,7 @@ def make_diagonal(D, offset=0, axis1=0, axis2=1):
     # gradient of np.diagonal and it's also quite handy to have. So here it is.
     if not (offset == 0 and axis1 == -1 and axis2 == -2):
         raise NotImplementedError(
-            "Currently make_diagonal only supports offset=0, axis1=-1, axis2=-2"
+            "Currently make_diagonal only supports offset=0, axis1=-1, axis2=-2"  # noqa
         )
 
     # We use a trick: calling np.diagonal returns a view on the original array,
@@ -238,14 +234,11 @@ def metadata(A):
         A.shape,
         A.ndim,
         A.dtype,
-        # issubclass(A.dtype.type, numpy.complexfloating)
         _cp.iscomplexobj(A)
         )
 
 
-# return _cp.ndim(A)
-
-
+# Commented out because this is unsupported in CuPy.
 # @notrace_primitive
 # def parse_einsum_input(*args):
 #     return _parse_einsum_input(args)
