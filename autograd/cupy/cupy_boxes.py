@@ -103,16 +103,16 @@ class ArrayBox(Box):
 
 
 ArrayBox.register(cp.ndarray)
-for type_ in [
-    int,
-    float,
-    cp.float64,
-    cp.float32,
-    cp.float16,
-    complex,
-    cp.complex64,
-    cp.complex128
-]:
+types = [int,
+         float,
+         cp.float64,
+         cp.float32,
+         cp.float16,
+         complex,
+         complex64,
+         complex128
+        ]
+for type_ in types:
     ArrayBox.register(type_)
 
 # These cupy.ndarray methods are just refs to an equivalent cupy function
