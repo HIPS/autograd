@@ -42,7 +42,7 @@ defvjp(logpdf,
        lambda ans, x, mean, cov, allow_singular=False:
        unbroadcast_f(mean, lambda g:  np.expand_dims(g, 1) * solve(allow_singular)(cov, (x - mean).T).T),
        lambda ans, x, mean, cov, allow_singular=False:
-       unbroadcast_f(cov, lambda g: -np.reshape(g, np.shape(g) + (1, 1)) * covgrad(x, mean, cov, allow_singular)))
+       unbroadcast_f(cov, lambda g: np.reshape(g, np.shape(g) + (1, 1)) * covgrad(x, mean, cov, allow_singular)))
 
 # Same as log pdf, but multiplied by the pdf (ans).
 defvjp(pdf,
@@ -51,7 +51,7 @@ defvjp(pdf,
        lambda ans, x, mean, cov, allow_singular=False:
        unbroadcast_f(mean, lambda g:  np.expand_dims(ans * g, 1) * solve(allow_singular)(cov, (x - mean).T).T),
        lambda ans, x, mean, cov, allow_singular=False:
-       unbroadcast_f(cov, lambda g: -np.reshape(ans * g, np.shape(g) + (1, 1)) * covgrad(x, mean, cov, allow_singular)))
+       unbroadcast_f(cov, lambda g: np.reshape(ans * g, np.shape(g) + (1, 1)) * covgrad(x, mean, cov, allow_singular)))
 
 defvjp(entropy, None,
        lambda ans, mean, cov:
