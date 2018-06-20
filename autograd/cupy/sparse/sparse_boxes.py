@@ -5,6 +5,8 @@ import autograd.cupy.cupy_wrapper as acp
 
 Box.__array_priority__ = 90.0
 
+
+# Define a general box for a sparse array.
 class SparseArrayBox(Box):
     __slots__ = []
     __array_priority__ = 110.0
@@ -14,39 +16,98 @@ class SparseArrayBox(Box):
 
     # Constants w.r.t float data just pass though
     shape = property(lambda self: self._value.shape)
-    ndim  = property(lambda self: self._value.ndim)
-    size  = property(lambda self: self._value.size)
+    ndim = property(lambda self: self._value.ndim)
+    size = property(lambda self: self._value.size)
     dtype = property(lambda self: self._value.dtype)
     T = property(lambda self: acp.transpose(self))
-    def __len__(self): return len(self._value)
-    def astype(self, *args, **kwargs): return acp._astype(self, *args, **kwargs)
 
-    def __neg__(self): return acp.negative(self)
-    def __add__(self, other): return acp.add(     self, other)
-    def __sub__(self, other): return acp.subtract(self, other)
-    def __mul__(self, other): return acp.multiply(self, other)
-    def __pow__(self, other): return acp.power   (self, other)
-    def __div__(self, other): return acp.divide(  self, other)
-    def __mod__(self, other): return acp.mod(     self, other)
-    def __truediv__(self, other): return acp.true_divide(self, other)
-    def __matmul__(self, other): return acp.matmul(self, other)
-    def __radd__(self, other): return acp.add(     other, self)
-    def __rsub__(self, other): return acp.subtract(other, self)
-    def __rmul__(self, other): return acp.multiply(other, self)
-    def __rpow__(self, other): return acp.power(   other, self)
-    def __rdiv__(self, other): return acp.divide(  other, self)
-    def __rmod__(self, other): return acp.mod(     other, self)
-    def __rtruediv__(self, other): return acp.true_divide(other, self)
-    def __rmatmul__(self, other): return acp.matmul(other, self)
-    def __eq__(self, other): return acp.equal(self, other)
-    def __ne__(self, other): return acp.not_equal(self, other)
-    def __gt__(self, other): return acp.greater(self, other)
-    def __ge__(self, other): return acp.greater_equal(self, other)
-    def __lt__(self, other): return acp.less(self, other)
-    def __le__(self, other): return acp.less_equal(self, other)
-    def __abs__(self): return acp.abs(self)
-    def __hash__(self): return id(self)
+    def __len__(self):
+        return len(self._value)
 
+    def astype(self, *args, **kwargs):
+        return acp._astype(self, *args, **kwargs)
+
+    def __neg__(self):
+        return acp.negative(self)
+
+    def __add__(self, other):
+        return acp.add(self, other)
+
+    def __sub__(self, other):
+        return acp.subtract(self, other)
+
+    def __mul__(self, other):
+        return acp.multiply(self, other)
+
+    def __pow__(self, other):
+        return acp.power(self, other)
+
+    def __div__(self, other):
+        return acp.divide(self, other)
+
+    def __mod__(self, other):
+        return acp.mod(self, other)
+
+    def __truediv__(self, other):
+        return acp.true_divide(self, other)
+
+    # dia_matrix has no attribute '__matmul__'
+    # def __matmul__(self, other):
+    #     return acp.matmul(self, other)
+
+    def __radd__(self, other):
+        return acp.add(other, self)
+
+    def __rsub__(self, other):
+        return acp.subtract(other, self)
+
+    def __rmul__(self, other):
+        return acp.multiply(other, self)
+
+    # AttributeError: 'dia_matrix' object has no attribute '__rpow__'
+    # def __rpow__(self, other):
+    #     return acp.power(other, self)
+
+    def __rdiv__(self, other):
+        return acp.divide(other, self)
+
+    # AttributeError: 'dia_matrix' object has no attribute '__rmod__'
+    # def __rmod__(self, other):
+    #     return acp.mod(other, self)
+
+    def __rtruediv__(self, other):
+        return acp.true_divide(other, self)
+
+    # AttributeError: 'dia_matrix' object has no attribute '__rmatmul__'
+    # def __rmatmul__(self, other):
+    #     return acp.matmul(other, self)
+
+    def __eq__(self, other):
+        return acp.equal(self, other)
+
+    def __ne__(self, other):
+        return acp.not_equal(self, other)
+
+    def __gt__(self, other):
+        return acp.greater(self, other)
+
+    def __ge__(self, other):
+        return acp.greater_equal(self, other)
+
+    def __lt__(self, other):
+        return acp.less(self, other)
+
+    def __le__(self, other):
+        return acp.less_equal(self, other)
+
+    def __abs__(self):
+        return acp.abs(self)
+
+    def __hash__(self):
+        return id(self)
+
+
+# Register the types of sparse arrays
 SparseArrayBox.register(cp.sparse.dia.dia_matrix)
 SparseArrayBox.register(cp.sparse.csr.csr_matrix)
 SparseArrayBox.register(cp.sparse.coo.coo_matrix)
