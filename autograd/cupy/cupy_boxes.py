@@ -110,8 +110,8 @@ for type_ in [
     cp.float32,
     cp.float16,
     complex,
-    # cp.complex64,
-    # cp.complex128
+    cp.complex64,
+    cp.complex128
 ]:
     ArrayBox.register(type_)
 
