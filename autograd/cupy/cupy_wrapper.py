@@ -1,11 +1,10 @@
 from __future__ import absolute_import
 import types
 import warnings
-from autograd.extend import primitive, notrace_primitive, Box
+from autograd.extend import primitive, notrace_primitive
 import cupy as _cp
 import autograd.builtins as builtins
-import numpy
-from numpy import ndim, iscomplexobj
+from numpy import ndim
 
 # from cupy.core.einsumfunc import _parse_einsum_input
 
@@ -61,13 +60,19 @@ def wrap_namespace(old, new):
     Wraps namespace of array library.
     """
     unchanged_types = {float, int, type(None), type}
-    int_types = {_cp.int8, _cp.int16, _cp.int32, _cp.int64, _cp.integer}  # _cp.int,
+    int_types = {_cp.int, _cp.int8, _cp.int16, _cp.int32, _cp.int64, _cp.integer}
     function_types = {_cp.ufunc, types.FunctionType, types.BuiltinFunctionType,}
     for name, obj in old.items():
         if obj in notrace_functions:
             new[name] = notrace_primitive(obj)
-        # Note: type(obj) == _cp.ufunc doesn't work! Should use isinstance(obj, _cp.ufunc)
-        elif type(obj) in function_types or isinstance(obj, _cp.ufunc) or isinstance(obj, _cp.core.fusion.reduction):
+
+        # Note: type(obj) == _cp.ufunc doesn't work! Should use:
+        #
+        #     isinstance(obj, _cp.ufunc)
+        #
+        elif (type(obj) in function_types
+              or isinstance(obj, _cp.ufunc)
+              or isinstance(obj, _cp.core.fusion.reduction)):
             new[name] = primitive(obj)
         elif type(obj) is type and obj in int_types:
             new[name] = wrap_intdtype(obj)
