@@ -5,6 +5,7 @@ from . import cupy_wrapper as acp
 
 Box.__array_priority__ = 102.0
 
+
 class ArrayBox(Box):
     __slots__ = []
     __array_priority__ = 1000.0
@@ -109,9 +110,9 @@ types = [int,
          cp.float32,
          cp.float16,
          complex,
-         complex64,
-         complex128
-        ]
+         cp.complex64,
+         cp.complex128
+         ]
 for type_ in types:
     ArrayBox.register(type_)
 
