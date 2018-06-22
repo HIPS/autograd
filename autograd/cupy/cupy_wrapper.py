@@ -140,6 +140,7 @@ def _array_from_scalar_or_array(array_args, array_kwargs, scalar):
     return _cp.array(scalar, *array_args, **array_kwargs)
 
 
+# Question: why does this have to be a primitive?
 @primitive
 def array_from_args(array_args, array_kwargs, args):
     return _cp.array(args, *array_args, **array_kwargs)
