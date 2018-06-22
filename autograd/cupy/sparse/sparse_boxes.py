@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 import cupy as cp
 from autograd.extend import Box, primitive
-import autograd.cupy.cupy_wrapper as acp
+from autograd.cupy import cupy_wrapper as acp
 
 Box.__array_priority__ = 90.0
 
@@ -118,14 +118,14 @@ for type_ in [float, cp.float64, cp.float32, cp.float16,
     SparseArrayBox.register(type_)
 
 # These numpy.ndarray methods are just refs to an equivalent numpy function
-nondiff_methods = ['all', 'any', 'argmax', 'argmin', 'argpartition',
-                   'argsort', 'nonzero', 'searchsorted', 'round']
-diff_methods = ['clip', 'compress', 'cumprod', 'cumsum', 'diagonal',
-                'max', 'mean', 'min', 'prod', 'ptp', 'ravel', 'repeat',
-                'reshape', 'squeeze', 'std', 'sum', 'swapaxes', 'take',
-                'trace', 'transpose', 'var']
-for method_name in nondiff_methods + diff_methods:
-    setattr(SparseArrayBox, method_name, acp.__dict__[method_name])
+# nondiff_methods = ['all', 'any', 'argmax', 'argmin', 'argpartition',
+#                    'argsort', 'nonzero', 'searchsorted', 'round']
+# diff_methods = ['clip', 'compress', 'cumprod', 'cumsum', 'diagonal',
+#                 'max', 'mean', 'min', 'prod', 'ptp', 'ravel', 'repeat',
+#                 'reshape', 'squeeze', 'std', 'sum', 'swapaxes', 'take',
+#                 'trace', 'transpose', 'var']
+# for method_name in nondiff_methods + diff_methods:
+#     setattr(SparseArrayBox, method_name, acp.__dict__[method_name])
 
 # Flatten has no function, only a method.
-setattr(SparseArrayBox, 'flatten', acp.__dict__['ravel'])
+# setattr(SparseArrayBox, 'flatten', acp.__dict__['ravel'])
