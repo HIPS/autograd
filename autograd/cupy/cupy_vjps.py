@@ -300,18 +300,14 @@ defvjp(
     dtype=None: lambda g: acp.sum(g),
     argnums=(1,),
 )
-defvjp(acp.triu,    lambda ans, x, k=0          : lambda g: acp.triu(g, k=k))
-defvjp(acp.tril,    lambda ans, x, k=0          : lambda g: acp.tril(g, k=k))
-defvjp(
-    acp.clip,
-    lambda ans,
-    x,
-    a_min,
-    a_max: lambda g: g * acp.logical_and(ans != a_min, ans != a_max)
-)
-defvjp(
-    acp.swapaxes, lambda ans, x, axis1, axis2: lambda g: acp.swapaxes(g, axis2, axis1)  # noqa: E501
-)
+defvjp(acp.triu,    lambda ans, x, k=0         : lambda g: acp.triu(g, k=k))
+defvjp(acp.tril,    lambda ans, x, k=0         : lambda g: acp.tril(g, k=k))
+defvjp(acp.clip,    lambda ans, x, a_min, a_max:
+                        lambda g: g * acp.logical_and(ans != a_min, ans != a_max)
+       )
+defvjp(acp.swapaxes, lambda ans, x, axis1, axis2:
+                         lambda g: acp.swapaxes(g, axis2, axis1)
+       )
 # defvjp(acp.moveaxis, lambda ans, a, source, destination: lambda g:
 #                     acp.moveaxis(g, destination, source))
 defvjp(
@@ -694,33 +690,19 @@ def dot_vjp_1(ans, A, B):
 
 defvjp(acp.dot, dot_vjp_0, dot_vjp_1)
 
-defvjp(
-    dot_adjoint_0,
-    lambda ans,
-    B,
-    g,
-    An,
-    Bn: lambda A: dot_adjoint_1(A, g, An, Bn),
-    lambda ans,
-    B,
-    g,
-    An,
-    Bn: lambda A: acp.dot(A, B),
-)
+defvjp(dot_adjoint_0,
+       lambda ans, B, g, An, Bn:
+           lambda A: dot_adjoint_1(A, g, An, Bn),
+       lambda ans, B, g, An, Bn:
+           lambda A: acp.dot(A, B),
+       )
 
-defvjp(
-    dot_adjoint_1,
-    lambda ans,
-    A,
-    g,
-    An,
-    Bn: lambda B: dot_adjoint_0(B, g, An, Bn),
-    lambda ans,
-    A,
-    g,
-    An,
-    Bn: lambda B: acp.dot(A, B),
-)
+defvjp(dot_adjoint_1,
+       lambda ans, A, g, An, Bn:
+           lambda B: dot_adjoint_0(B, g, An, Bn),
+       lambda ans, A, g, An, Bn:
+           lambda B: acp.dot(A, B),
+       )
 
 
 @primitive
