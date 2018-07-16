@@ -190,6 +190,10 @@ else:
     def test_y0(): unary_ufunc_check(special.y0, lims=[0.2, 20.0], test_complex=False)
     def test_y1(): unary_ufunc_check(special.y1, lims=[0.2, 20.0], test_complex=False)
 
+    def test_i0(): unary_ufunc_check(special.i0, lims=[0.2, 20.0], test_complex=False)
+    def test_i1(): unary_ufunc_check(special.i1, lims=[0.2, 20.0], test_complex=False)
+    def test_iv(): unary_ufunc_check(special.iv, lims=[0.2, 20.0], test_complex=False)
+
     def test_erf(): unary_ufunc_check(special.erf, lims=[-3., 3.], test_complex=True)
     def test_erfc(): unary_ufunc_check(special.erfc, lims=[-3., 3.], test_complex=True)
 

@@ -51,6 +51,7 @@ defvjp(gammainc, make_gammainc_vjp_arg1(1), argnums=[1])
 defvjp(gammaincc, make_gammainc_vjp_arg1(-1), argnums=[1])
 
 ### Bessel functions ###
+
 j0 = primitive(scipy.special.j0)
 y0 = primitive(scipy.special.y0)
 j1 = primitive(scipy.special.j1)
@@ -64,6 +65,16 @@ defvjp(j1,lambda ans, x: lambda g: g * (j0(x) - jn(2, x)) / 2.0)
 defvjp(y1,lambda ans, x: lambda g: g * (y0(x) - yn(2, x)) / 2.0)
 defvjp(jn, None, lambda ans, n, x: lambda g: g * (jn(n - 1, x) - jn(n + 1, x)) / 2.0)
 defvjp(yn, None, lambda ans, n, x: lambda g: g * (yn(n - 1, x) - yn(n + 1, x)) / 2.0)
+
+
+### Faster versions of common Bessel functions ###
+i0 = primitive(scipy.special.i0)
+i1 = primitive(scipy.special.i1)
+iv = primitive(scipy.special.iv)
+
+defvjp(i0, lambda ans, x: lambda g: g * i1(x))
+defvjp(i1, lambda ans, x: lambda g: g * (i0(x) + iv(2, x)) / 2.0)
+defvjp(iv, None, lambda ans, n, x: lambda g: g * (iv(n - 1, x) + iv(n + 1, x)) / 2.0)
 
 ### Error Function ###
 inv_root_pi = 0.56418958354775627928
