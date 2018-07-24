@@ -241,11 +241,13 @@ def vspace(value):
 
 class SparseBox(Box):
     __slots__ = []
+
 class SparseObject(object):
     __slots__ = ['vs', 'mut_add']
     def __init__(self, vs, mut_add):
         self.vs = vs
         self.mut_add = mut_add
+
 VSpace.register(SparseObject, lambda x : x.vs)
 SparseBox.register(SparseObject)
 sparse_object_types = {SparseObject, SparseBox}
