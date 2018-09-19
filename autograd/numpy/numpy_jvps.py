@@ -239,3 +239,6 @@ def broadcast(x, target):
     if target_iscomplex and not anp.iscomplexobj(x):
         x = x + 0j  # TODO(mattjj): this might promote the dtype
     return x
+
+defjvp(anp.pad, lambda g, ans, array, width, mode, **kwargs:
+       anp.pad(g, width, mode))
