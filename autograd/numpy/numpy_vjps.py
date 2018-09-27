@@ -655,3 +655,20 @@ def untake(x, idx, vs):
     return SparseObject(vs, mut_add)
 defvjp(func(ArrayBox.__getitem__), lambda ans, A, idx: lambda g: untake(g, idx, vspace(A)))
 defvjp(untake, lambda ans, x, idx, _: lambda g: g[idx])
+
+def _unpad(array, width):
+    if anp.isscalar(width):
+        width = [[width, width]]
+    elif anp.shape(width) == (1,):
+        width = [anp.concatenate((width, width))]
+    elif anp.shape(width) == (2,):
+        width = [width]
+    if anp.shape(width)[0] == 1:
+        width = anp.repeat(width, anp.ndim(array), 0)
+    idxs = [slice(l, -u or None) for l, u in width]
+    return array[idxs]
+
+def pad_vjp(ans, array, pad_width, mode, **kwargs):
+    assert mode == "constant", "Only constant mode padding is supported."
+    return lambda g: _unpad(g, pad_width)
+defvjp(anp.pad, pad_vjp)

@@ -242,3 +242,5 @@ def test_column_stack_2d(): combo_check(np.column_stack, [0])([R(2, 2), (R(2, 2)
 
 def test_select(): combo_check(np.select, [1])([[R(3,4,5) > 0, R(3,4,5) > 0, R(3,4,5) > 0]],
                                                [[R(3,4,5),     R(3,4,5),     R(3,4,5)]], default=[0.0, 1.1])
+def test_pad(): combo_check(np.pad, [0])([R(2, 2)], [0, 3, (3,), (3, 2), ((3, 2),),
+                                                     ((1, 2), (3, 4)), ((0, 0), (0, 0))], ['constant'])
