@@ -39,16 +39,16 @@ def test_pinv():
     def fun(x): return np.linalg.pinv(x)
     N = 8
     ## Non-square matrices:
-    for M in range( N//2, N + N//2 + 1 ):
+    for M in range(N // 2, N + N // 2 + 1):
         mat = npr.randn(N, M)
         check_grads(fun)(mat)
-    
-    ## Square matrices with varying ranks:
-    ## This doesn't work because the numerical derivative explodes.
-    #for M in range( N//2, N + N//2 + 1 ):
-    #    mat = npr.randn(N, M)
-    #    mat = np.dot(mat, mat.T)
-    #    check_grads(fun)(mat)
+
+    ## Square, low (fixed) rank matrices
+    def fun_low_rank(x): return np.linalg.pinv(np.dot(np.transpose(x), x))
+
+    for M in range(N // 2, N + N // 2 + 1):
+        mat = npr.randn(N, M)
+        check_grads(fun_low_rank)(mat)
 
 def test_inv_3d():
     fun = lambda x: np.linalg.inv(x)
