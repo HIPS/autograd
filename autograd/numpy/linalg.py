@@ -16,6 +16,8 @@ wrap_namespace(npla.__dict__, globals())
 # transpose by swapping last two dimensions
 def T(x): return anp.swapaxes(x, -1, -2)
 
+_dot = partial(anp.einsum, '...ij,...jk->...ik')
+
 # add two dimensions to the end of x
 def add2d(x): return anp.reshape(x, anp.shape(x) + (1, 1))
 
@@ -23,15 +25,22 @@ defvjp(det, lambda ans, x: lambda g: add2d(g) * add2d(ans) * T(inv(x)))
 defvjp(slogdet, lambda ans, x: lambda g: add2d(g[1]) * T(inv(x)))
 
 def grad_inv(ans, x):
-    dot = anp.dot if ans.ndim == 2 else partial(anp.einsum, '...ij,...jk->...ik')
-    return lambda g: -dot(dot(T(ans), g), T(ans))
+    return lambda g: -_dot(_dot(T(ans), g), T(ans))
 defvjp(inv, grad_inv)
+
+def grad_pinv(ans, x):
+    # https://mathoverflow.net/questions/25778/analytical-formula-for-numerical-derivative-of-the-matrix-pseudo-inverse
+    return lambda g: T(
+        -_dot(_dot(ans, T(g)), ans)
+        + _dot(_dot(_dot(ans, T(ans)), g), anp.eye(x.shape[-2]) - _dot(x,ans))
+        + _dot(_dot(_dot(anp.eye(ans.shape[-2]) - _dot(ans,x), g), T(ans)), ans)
+        )
+defvjp(pinv, grad_pinv)
 
 def grad_solve(argnum, ans, a, b):
     updim = lambda x: x if x.ndim == a.ndim else x[...,None]
-    dot = anp.dot if a.ndim == 2 else partial(anp.einsum, '...ij,...jk->...ik')
     if argnum == 0:
-        return lambda g: -dot(updim(solve(T(a), g)), T(updim(ans)))
+        return lambda g: -_dot(updim(solve(T(a), g)), T(updim(ans)))
     else:
         return lambda g: solve(T(a), g)
 defvjp(solve, partial(grad_solve, 0), partial(grad_solve, 1))
@@ -79,10 +88,9 @@ def grad_norm(ans, x, ord=None, axis=None):
         if ord is None or ord == 2 or ord is 'fro':
             return expand(g / ans) * x
         elif ord == 'nuc':
-            dot = anp.dot if x.ndim == 2 else partial(anp.einsum, '...ij,...jk->...ik')
             x_rolled = roll(x)
             u, s, vt = svd(x_rolled, full_matrices=False)
-            uvt_rolled = dot(u, vt)
+            uvt_rolled = _dot(u, vt)
             # Roll the matrix axes back to their correct positions
             uvt = unroll(uvt_rolled)
             g = expand(g)
@@ -97,13 +105,12 @@ def grad_eigh(ans, x, UPLO='L'):
     """Gradient for eigenvalues and vectors of a symmetric matrix."""
     N = x.shape[-1]
     w, v = ans              # Eigenvalues, eigenvectors.
-    dot = anp.dot if x.ndim == 2 else partial(anp.einsum, '...ij,...jk->...ik')
     def vjp(g):
         wg, vg = g          # Gradient w.r.t. eigenvalues, eigenvectors.
         w_repeated = anp.repeat(w[..., anp.newaxis], N, axis=-1)
         off_diag = anp.ones((N, N)) - anp.eye(N)
         F = off_diag / (T(w_repeated) - w_repeated + anp.eye(N))
-        return dot(v * wg[..., anp.newaxis, :] + dot(v, F * dot(T(v), vg)), T(v))
+        return _dot(v * wg[..., anp.newaxis, :] + _dot(v, F * _dot(T(v), vg)), T(v))
     return vjp
 defvjp(eigh, grad_eigh)
 
@@ -127,7 +134,6 @@ defvjp(cholesky, grad_cholesky)
 def grad_svd(usv_, a, full_matrices=True, compute_uv=True):
     def vjp(g):
         usv = usv_
-        dot = anp.dot if a.ndim == 2 else partial(anp.einsum, '...ij,...jk->...ik')
 
         if not compute_uv:
             s = usv
@@ -137,7 +143,7 @@ def grad_svd(usv_, a, full_matrices=True, compute_uv=True):
             u = usv[0]
             v = T(usv[2])
 
-            return dot(u * g[..., anp.newaxis, :], T(v))
+            return _dot(u * g[..., anp.newaxis, :], T(v))
 
         elif full_matrices:
             raise NotImplementedError(
@@ -161,19 +167,19 @@ def grad_svd(usv_, a, full_matrices=True, compute_uv=True):
                 gs = g[1]
                 gv = T(g[2])
 
-                utgu = dot(T(u), gu)
-                vtgv = dot(T(v), gv)
+                utgu = _dot(T(u), gu)
+                vtgv = _dot(T(v), gv)
 
                 i_minus_vvt = (anp.reshape(anp.eye(n), anp.concatenate((anp.ones(a.ndim - 2, dtype=int), (n, n)))) -
-                                dot(v, T(v)))
+                                _dot(v, T(v)))
 
                 t1 = (f * (utgu - T(utgu))) * s[..., anp.newaxis, :]
                 t1 = t1 + i * gs[..., :, anp.newaxis]
                 t1 = t1 + s[..., :, anp.newaxis] * (f * (vtgv - T(vtgv)))
 
-                t1 = dot(dot(u, t1), T(v))
+                t1 = _dot(_dot(u, t1), T(v))
 
-                t1 = t1 + dot(dot(u / s[..., anp.newaxis, :], T(gv)), i_minus_vvt)
+                t1 = t1 + _dot(_dot(u / s[..., anp.newaxis, :], T(gv)), i_minus_vvt)
 
                 return t1
 
@@ -182,14 +188,14 @@ def grad_svd(usv_, a, full_matrices=True, compute_uv=True):
                 gs = g[1]
                 gv = T(g[2])
 
-                utgu = dot(T(u), gu)
-                vtgv = dot(T(v), gv)
+                utgu = _dot(T(u), gu)
+                vtgv = _dot(T(v), gv)
 
                 t1 = (f * (utgu - T(utgu))) * s[..., anp.newaxis, :]
                 t1 = t1 + i * gs[..., :, anp.newaxis]
                 t1 = t1 + s[..., :, anp.newaxis] * (f * (vtgv - T(vtgv)))
 
-                t1 = dot(dot(u, t1), T(v))
+                t1 = _dot(_dot(u, t1), T(v))
 
                 return t1
 
@@ -198,19 +204,19 @@ def grad_svd(usv_, a, full_matrices=True, compute_uv=True):
                 gs = g[1]
                 gv = T(g[2])
 
-                utgu = dot(T(u), gu)
-                vtgv = dot(T(v), gv)
+                utgu = _dot(T(u), gu)
+                vtgv = _dot(T(v), gv)
 
                 i_minus_uut = (anp.reshape(anp.eye(m), anp.concatenate((anp.ones(a.ndim - 2, dtype=int), (m, m)))) -
-                                dot(u, T(u)))
+                                _dot(u, T(u)))
 
                 t1 = (f * (utgu - T(utgu))) * s[..., anp.newaxis, :]
                 t1 = t1 + i * gs[..., :, anp.newaxis]
                 t1 = t1 + s[..., :, anp.newaxis] * (f * (vtgv - T(vtgv)))
 
-                t1 = dot(dot(u, t1), T(v))
+                t1 = _dot(_dot(u, t1), T(v))
 
-                t1 = t1 + dot(i_minus_uut, dot(gu, T(v) / s[..., :, anp.newaxis]))
+                t1 = t1 + _dot(i_minus_uut, _dot(gu, T(v) / s[..., :, anp.newaxis]))
 
                 return t1
     return vjp
