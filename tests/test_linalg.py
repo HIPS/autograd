@@ -35,6 +35,29 @@ def test_inv():
     mat = np.dot(mat, mat) + 1.0 * np.eye(D)
     check_grads(fun)(mat)
 
+def test_pinv():
+    def fun(x): return np.linalg.pinv(x)
+    N = 5
+    D = 2
+    ## Non-square matrices:
+    for M in range(N // 2, N + N // 2 + 1):
+        mat = npr.randn(N, M)
+        check_grads(fun)(mat)
+        # Stacked
+        mat = npr.randn(D, N, M)
+        check_grads(fun)(mat)
+
+
+    ## Square, low (fixed) rank matrices
+    def fun_low_rank(x): return np.linalg.pinv(np.linalg._dot(np.linalg.T(x), x))
+
+    for M in range(N // 2, N + N // 2 + 1):
+        mat = npr.randn(N, M)
+        check_grads(fun_low_rank)(mat)
+        # Stacked
+        mat = npr.randn(D, N, M)
+        check_grads(fun_low_rank)(mat)
+
 def test_inv_3d():
     fun = lambda x: np.linalg.inv(x)
 
