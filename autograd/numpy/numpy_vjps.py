@@ -665,7 +665,7 @@ def _unpad(array, width):
         width = [width]
     if anp.shape(width)[0] == 1:
         width = anp.repeat(width, anp.ndim(array), 0)
-    idxs = [slice(l, -u or None) for l, u in width]
+    idxs = tuple(slice(l, -u or None) for l, u in width)
     return array[idxs]
 
 def pad_vjp(ans, array, pad_width, mode, **kwargs):
