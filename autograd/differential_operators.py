@@ -30,6 +30,11 @@ def grad(fun, x):
 
 @unary_to_nary
 def elementwise_grad(fun, x):
+    """
+    Like `jacobian`, but produces a function which computes just the diagonal
+    of the Jacobian, and does the computation in one pass rather than in a loop.
+    Note: this is only valid if the Jacobian is diagonal, i.e. if all non-diagonal
+    elements are zero."""
     vjp, ans = _make_vjp(fun, x)
     if vspace(ans).iscomplex:
         raise TypeError("Elementwise_grad only applies to real-output functions.")
