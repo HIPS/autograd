@@ -2,6 +2,7 @@
 Inferring a function from a reproducing kernel Hilbert space (RKHS) by taking
 gradients of eval with respect to the function-valued argument
 """
+from __future__ import print_function
 import autograd.numpy as np
 import autograd.numpy.random as npr
 from autograd.extend import primitive, defvjp, defjvp, VSpace, Box
@@ -75,4 +76,4 @@ if __name__=="__main__":
         f = f + grad(logprob)(f, xs, ys) * 0.01
 
     for x, y in zip(xs, ys):
-        print '{}\t{}\t{}'.format(x, y, f(x))
+        print('{}\t{}\t{}'.format(x, y, f(x)))

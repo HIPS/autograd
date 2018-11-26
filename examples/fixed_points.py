@@ -1,3 +1,4 @@
+from __future__ import print_function
 import autograd.numpy as np
 from autograd import grad
 from autograd.misc.fixed_points import fixed_point
@@ -14,12 +15,12 @@ def sqrt(a, guess=10.):
 
 def distance(x, y): return np.abs(x - y)
 
-print np.sqrt(2.)
-print sqrt(2.)
-print
-print grad(np.sqrt)(2.)
-print grad(sqrt)(2.)
-print
-print grad(grad(np.sqrt))(2.)
-print grad(grad(sqrt))(2.)
-print
+print(np.sqrt(2.))
+print(sqrt(2.))
+print()
+print(grad(np.sqrt)(2.))
+print(grad(sqrt)(2.))
+print()
+print(grad(grad(np.sqrt))(2.))
+print(grad(grad(sqrt))(2.))
+print()

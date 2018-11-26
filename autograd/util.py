@@ -15,7 +15,7 @@ def subval(x, i, v):
 if sys.version_info >= (3,):
     def func(f): return f
 else:
-    def func(f): return f.im_func
+    def func(f): return f.__func__
 
 def toposort(end_node, parents=operator.attrgetter('parents')):
     child_counts = {}

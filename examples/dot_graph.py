@@ -3,6 +3,7 @@ Usage (need the dot binary, from the graphviz package, www.graphviz.org):
 
 python2 dot_graph.py | dot -Tpdf -o graph.pdf
 """
+from __future__ import print_function
 import autograd.numpy as np
 from autograd.tracer import trace, Node
 from autograd import grad
@@ -62,4 +63,4 @@ if __name__ == '__main__':
         y = np.sin(x)
         return (y + np.exp(x) - 0.5) * y
 
-    print graph_to_dotfile(trace_graph(fun, 1.0))
+    print(graph_to_dotfile(trace_graph(fun, 1.0)))
