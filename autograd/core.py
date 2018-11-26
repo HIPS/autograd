@@ -216,7 +216,7 @@ class VSpace(object):
     def _covector(self, x):      return x
 
     def __eq__(self, other):
-        return isinstance(self, type(other)) and self.__dict__ == other.__dict__
+        return type(self) == type(other) and self.__dict__ == other.__dict__
 
     def __repr__(self):
         return "{}_{}".format(type(self).__name__, self.__dict__)

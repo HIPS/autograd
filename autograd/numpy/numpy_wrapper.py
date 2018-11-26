@@ -24,7 +24,7 @@ def wrap_namespace(old, new):
             new[name] = notrace_primitive(obj)
         elif type(obj) in function_types:
             new[name] = primitive(obj)
-        elif isinstance(obj, type) and obj in int_types:
+        elif type(obj) is type and obj in int_types:
             new[name] = wrap_intdtype(obj)
         elif type(obj) in unchanged_types:
             new[name] = obj
