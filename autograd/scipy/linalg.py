@@ -11,7 +11,7 @@ def _vjp_sqrtm(ans, A, disp=True, blocksize=64):
     assert disp, "sqrtm vjp not implemented for disp=False"
     ans_transp = anp.transpose(ans)
     def vjp(g):
-        return solve_sylvester(ans_transp, ans_transp, g)
+        return anp.real(solve_sylvester(ans_transp, ans_transp, g))
     return vjp
 defvjp(sqrtm, _vjp_sqrtm)
 
