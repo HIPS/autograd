@@ -3,7 +3,7 @@ import scipy.linalg
 
 import autograd.numpy as anp
 from autograd.numpy.numpy_wrapper import wrap_namespace
-from autograd.extend import defvjp
+from autograd.extend import defvjp, defjvp
 
 wrap_namespace(scipy.linalg.__dict__, globals())  # populates module namespace
 
@@ -28,3 +28,8 @@ defvjp(solve_triangular,
        grad_solve_triangular,
        lambda ans, a, b, trans=0, lower=False, **kwargs:
        lambda g: solve_triangular(a, g, trans=_flip(a, trans), lower=lower))
+
+def _jvp_sqrtm(dA, ans, A, disp=True, blocksize=64):
+    assert disp, "jvp not implemented for disp=False"
+    return solve_sylvester(ans, ans, dA)
+defjvp(sqrtm, _jvp_sqrtm)

@@ -209,3 +209,6 @@ else:
     def test_odeint():
         combo_check(integrate.odeint, [1,2,3])([func], [R(3)], [np.linspace(0.1, 0.2, 4)],
                                                  [(R(3), R(3))])
+
+    ## Linalg
+    def test_sqrtm(): combo_check(spla.sqrtm, [0], modes=['fwd'], order=1)([R(3, 3)])
