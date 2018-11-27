@@ -192,7 +192,8 @@ else:
 
     def test_i0(): unary_ufunc_check(special.i0, lims=[0.2, 20.0], test_complex=False)
     def test_i1(): unary_ufunc_check(special.i1, lims=[0.2, 20.0], test_complex=False)
-    def test_iv(): combo_check(special.iv, [0, 1])(U(1., 50.,4), R(4)**2 + 1.3)
+    def test_iv():  combo_check(special.iv,  [1])(U(1., 50.,4), R(4)**2 + 1.3)
+    def test_ive(): combo_check(special.ive, [1])(U(1., 50.,4), R(4)**2 + 1.3)
 
     def test_erf(): unary_ufunc_check(special.erf, lims=[-3., 3.], test_complex=True)
     def test_erfc(): unary_ufunc_check(special.erfc, lims=[-3., 3.], test_complex=True)
