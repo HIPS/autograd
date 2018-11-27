@@ -211,4 +211,5 @@ else:
                                                  [(R(3), R(3))])
 
     ## Linalg
-    def test_sqrtm(): combo_check(spla.sqrtm, [0], modes=['fwd'], order=1)([R(3, 3)])
+    def test_sqrtm(): combo_check(symmetrize_matrix_arg(spla.sqrtm, 0), [0], order=1)([R(3, 3)])
+    def test_sqrtm_fwd(): combo_check(spla.sqrtm, [0], modes=['fwd'], order=1)([R(3, 3)])
