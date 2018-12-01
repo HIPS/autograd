@@ -30,6 +30,11 @@ def grad(fun, x):
 
 @unary_to_nary
 def elementwise_grad(fun, x):
+    """
+    Returns a function that computes the sum of each row of the Jacobian of
+    `fun`, in one pass. If the Jacobian is diagonal, then this is the diagonal
+    of the Jacobian.
+    """
     vjp, ans = _make_vjp(fun, x)
     if vspace(ans).iscomplex:
         raise TypeError("Elementwise_grad only applies to real-output functions.")
