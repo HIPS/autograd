@@ -31,7 +31,7 @@ def grad(fun, x):
 @unary_to_nary
 def elementwise_grad(fun, x):
     """
-    Returns a function that computes the sum of each row of the Jacobian of
+    Returns a function that computes the sum of each column of the Jacobian of
     `fun`, in one pass. If the Jacobian is diagonal, then this is the diagonal
     of the Jacobian.
     """
