@@ -36,7 +36,7 @@ def taylor_sine(x):  # Taylor approximation to sine function
     return ans
 
 grad_sine = grad(taylor_sine)
-print "Gradient of sin(pi) is", grad_sine(np.pi)
+print("Gradient of sin(pi) is", grad_sine(np.pi))
 ```
 
 ## Complete example: logistic regression
