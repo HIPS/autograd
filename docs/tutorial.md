@@ -236,7 +236,7 @@ def example_func(y):
     return np.sum(lse)
 
 grad_of_example = grad(example_func)
-print "Gradient: ", grad_of_example(np.array([1.5, 6.7, 1e-10])
+print("Gradient: ", grad_of_example(np.array([1.5, 6.7, 1e-10]))
 ```
 
 This example can be found as a Python script [here](../examples/define_gradient.py).
