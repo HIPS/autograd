@@ -105,12 +105,14 @@ def grad_eigh(ans, x, UPLO='L'):
     """Gradient for eigenvalues and vectors of a symmetric matrix."""
     N = x.shape[-1]
     w, v = ans              # Eigenvalues, eigenvectors.
+    vc = anp.conj(v)
+    
     def vjp(g):
         wg, vg = g          # Gradient w.r.t. eigenvalues, eigenvectors.
         w_repeated = anp.repeat(w[..., anp.newaxis], N, axis=-1)
         off_diag = anp.ones((N, N)) - anp.eye(N)
         F = off_diag / (T(w_repeated) - w_repeated + anp.eye(N))
-        return _dot(v * wg[..., anp.newaxis, :] + _dot(v, F * _dot(T(v), vg)), T(v))
+        return _dot(vc * wg[..., anp.newaxis, :] + _dot(vc, F * _dot(T(v), vg)), T(v))
     return vjp
 defvjp(eigh, grad_eigh)
 
