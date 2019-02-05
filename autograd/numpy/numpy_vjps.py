@@ -431,11 +431,10 @@ def tensordot_adjoint_0(B, G, axes, A_ndim, B_ndim):
         axes = max(axes, 0)
         B_axes = onp.arange(B_ndim)
         return onp.tensordot(G, B, [G_axes[A_ndim-axes:], B_axes[axes:]])
-    elif type(axes[0]) is int:
-        axes = [axes[0] % A_ndim, axes[1] % B_ndim]
-        B_axes = onp.arange(B_ndim)
-        return onp.tensordot(G, B, [G_axes[A_ndim-1:], onp.delete(B_axes, axes[1])])
     else:
+        axes0 = [axes[0]] if type(axes[0]) is int else axes[0]
+        axes1 = [axes[1]] if type(axes[1]) is int else axes[1]
+        axes = [axes0, axes1]
         A_axes = onp.arange(A_ndim)
         B_axes = onp.arange(B_ndim)
         summed_axes = [onp.asarray(axes[0]) % A_ndim,
@@ -459,11 +458,10 @@ def tensordot_adjoint_1(A, G, axes, A_ndim, B_ndim):
         axes = max(axes, 0)
         A_axes = onp.arange(A_ndim)
         return onp.tensordot(A, G, [A_axes[:A_ndim-axes], G_axes[:A_ndim-axes]])
-    elif type(axes[0]) is int:
-        axes = [axes[0] % A_ndim, axes[1] % B_ndim]
-        A_axes = onp.arange(A_ndim)
-        return onp.tensordot(A, G, [onp.delete(A_axes, axes[0]), G_axes[:A_ndim-1]])
     else:
+        axes0 = [axes[0]] if type(axes[0]) is int else axes[0]
+        axes1 = [axes[1]] if type(axes[1]) is int else axes[1]
+        axes = [axes0, axes1]
         A_axes = onp.arange(A_ndim)
         B_axes = onp.arange(B_ndim)
         summed_axes = [onp.asarray(axes[0]) % A_ndim,
