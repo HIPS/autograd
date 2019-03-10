@@ -105,6 +105,30 @@ def tensor_jacobian_product(fun, argnum=0):
     return jacobian(vector_dot_fun, argnum)
 vector_jacobian_product = tensor_jacobian_product
 
+def linear_combination_of_hessians(fun, argnum=0, *args, **kwargs):
+  """
+  Returns a function that computes the linear combination of hessians.
+  The returned function as arguments (*args, vector, **kwargs),
+  where vector is used for the linear combination.
+  """
+  functionhessian = hessian(fun, argnum, *args, **kwargs)
+  #not using wrap_nary_f because we need to do the docstring on our own
+  def linear_combination_of_hessians(*funargs, **funkwargs):
+    return np.tensordot(functionhessian(*funargs[:-1], **funkwargs), funargs[-1], axes=(0, 0))
+
+  linear_combination_of_hessians.__name__ = functionhessian.__name__.replace(
+    "hessian", "linear_combination_of_hessians", 1
+  )
+
+  linear_combination_of_hessians.__doc__ = """
+    linear combination of hessians of function {fun.__name__} with respect to
+    argument number {argnum}.  Takes the same arguments as {fun.__name__} plus a vector
+    (given as a final, non-keyword argument) to dot with the hessians.
+  """.lstrip("\n").format(fun=fun, argnum=argnum)
+
+  return linear_combination_of_hessians
+
+
 @unary_to_nary
 def make_jvp_reversemode(fun, x):
     """Builds a function for evaluating the Jacobian-vector product at a
