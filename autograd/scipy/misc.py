@@ -4,7 +4,7 @@ from autograd.extend import primitive, defvjp, defjvp
 import autograd.numpy as anp
 from autograd.numpy.numpy_vjps import repeat_to_match_shape
 
-logsumexp = primitive(scipy.misc.logsumexp)
+logsumexp = primitive(scipy.special.logsumexp)
 
 def make_grad_logsumexp(ans, x, axis=None, b=1.0, keepdims=False):
     shape, dtype = anp.shape(x), anp.result_type(x)
