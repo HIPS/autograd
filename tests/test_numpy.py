@@ -704,5 +704,3 @@ def test_gradient():
 
     for a in [None, 0, 1, -1, (0, 1), (0, -1)]:
         check_grads(np.gradient, 0, order=1)(npr.randn(10, 10, 10), axis=a)
-
-
