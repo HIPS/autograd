@@ -176,6 +176,63 @@ def grad_diff(ans, a, n=1, axis=-1):
 
 defvjp(anp.diff, grad_diff)
 
+def grad_gradient(ans, x, axis=None):
+    if axis is None:
+        if ans.ndim == x.ndim:
+            # 1D case (no axis but same shape)
+            axis = [0]
+        else:
+            # gradient along all axes
+            axis = range(x.ndim)
+
+    elif type(axis) is int:
+        # not 1D but only along 1 axis
+        axis = [axis]
+
+    elif not onp.iterable(axis):
+        raise ValueError("`axis` must be None, int or iterable")
+
+    if len(axis) == 1:
+        # along one axis only, can be 1D or nD array
+        def vjp(g):
+            # Jacobian of np.gradient is mainly negative gradient
+            out = (-1.) * onp.gradient(g, axis=axis[0])
+
+            # shift gradient axis to the front
+            out_swap = out.swapaxes(0, axis[0])
+            g_swap = g.swapaxes(0, axis[0])
+
+            # border handling
+            out_swap[0] = -g_swap[0] - 0.5 * g_swap[1]
+            out_swap[1] =  g_swap[0] - 0.5 * g_swap[2]
+            out_swap[-2] = 0.5 * g_swap[-3] - g_swap[-1]
+            out_swap[-1] = 0.5 * g_swap[-2] + g_swap[-1]
+
+            return out
+
+    else:
+        # nd case
+        def vjp(g):
+            out = onp.zeros_like(g)
+            for i, k in enumerate(axis):
+                # Jacobian of np.gradient is mainly negative gradient
+                out[i] = (-1.) * onp.array(onp.gradient(g[i], axis=k))
+
+                # border handling 
+                out_swap = out.swapaxes(1, 1+k)
+                g_swap = g.swapaxes(1, 1+k)
+
+                out_swap[i, 0] = -g_swap[i, 0] - 0.5 * g_swap[i, 1]
+                out_swap[i, 1] =  g_swap[i, 0] - 0.5 * g_swap[i, 2]
+                out_swap[i, -2] = 0.5 * g_swap[i, -3] - g_swap[i, -1]
+                out_swap[i, -1] = 0.5 * g_swap[i, -2] + g_swap[i, -1]
+
+            return onp.sum(out, axis=0)
+
+    return vjp
+
+defvjp(anp.gradient, grad_gradient)
+
 def grad_repeat(ans, x, repeats, axis=None):
     shape = anp.shape(x)
     def vjp(g):
