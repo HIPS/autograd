@@ -705,6 +705,6 @@ def test_gradient():
     for a in [None, 0, 1, -1, (0, 1), (0, -1)]:
         check_grads(
             lambda x: np.gradient(x, axis=a), 
-            0, modes=['rev'], order=1)(npr.randn(10, 10, 10))
+            0, order=1)(npr.randn(10, 10, 10))
 
 
