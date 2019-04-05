@@ -189,8 +189,14 @@ def grad_gradient(ans, x, axis=None):
         # not 1D but only along 1 axis
         axis = [axis]
 
-    elif not onp.iterable(axis):
-        raise ValueError("`axis` must be None, int or iterable")
+    else:
+        # axis should be already iterable 
+        axis = list(axis)
+
+    # makes negative indices in axis positive 
+    # (needed for axis swap later)
+    for i, a in enumerate(axis):
+        if a < 0: axis[i] = x.ndim + a
 
     if len(axis) == 1:
         # along one axis only, can be 1D or nD array
