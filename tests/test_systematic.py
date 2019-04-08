@@ -95,8 +95,8 @@ def test_diff():
     combo_check(np.diff, [0])([R(1,1), R(3,1)], axis=[1])
 
 def test_gradient():
-    combo_check(np.gradient, [0], order=1)([R(5,5), R(5,5,5)], axis=[0,1,-1])
-    combo_check(np.gradient, [0], order=1)([R(5,5,5)], axis=[(0, 1), (0, -1)])
+    combo_check(np.gradient, [0])([R(5,5), R(5,5,5)], axis=[0,1,-1])
+    combo_check(np.gradient, [0])([R(5,5,5)], axis=[(0, 1), (0, -1)])
 
 def test_tile():
     combo_check(np.tile, [0])([R(2,1,3,1)], reps=[(1, 4, 1, 2)])
