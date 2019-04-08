@@ -163,9 +163,7 @@ def grad_diff(ans, a, n=1, axis=-1):
 
     def undiff(g):
         if g.shape[axis] > 0:
-            return anp.concatenate(
-                (-g[sl1], -anp.diff(g, axis=axis), g[sl2]), 
-                axis=axis)
+            return anp.concatenate((-g[sl1], -anp.diff(g, axis=axis), g[sl2]), axis=axis)
         shape = list(ans_shape)
         shape[axis] = 1
         return anp.zeros(shape)
