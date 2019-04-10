@@ -184,9 +184,6 @@ def grad_gradient(ans, x, axis=None):
     else:
         axis = list(axis)
 
-    # make all indices positive
-    axis = [(x.ndim + a) % x.ndim for a in axis]
-
     x_dtype = x.dtype
     x_shape = x.shape
     nd = x.ndim
