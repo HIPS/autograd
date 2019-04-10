@@ -176,7 +176,12 @@ def grad_diff(ans, a, n=1, axis=-1):
 
 defvjp(anp.diff, grad_diff)
 
-def grad_gradient(ans, x, axis=None):
+def grad_gradient(ans, x, *vargs, **kwargs):
+    axis = kwargs.pop('axis', None)
+    if vargs or kwargs:
+        raise NotImplementedError(
+            "The only optional argument currently supported for np.gradient "
+            "is axis.")
     if axis is None:
         axis = range(x.ndim)
     elif type(axis) is int:
@@ -189,11 +194,11 @@ def grad_gradient(ans, x, axis=None):
     nd = x.ndim
 
     def vjp(g):
-        if g.ndim == nd:
+        if anp.ndim(g) == nd:
             # add axis if gradient was along one axis only
             g = g[anp.newaxis]
 
-        # accumulate gradient 
+        # accumulate gradient
         out = anp.zeros(x_shape, dtype=x_dtype)
 
         for i, a in enumerate(axis):

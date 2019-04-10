@@ -113,10 +113,6 @@ def append(arr, values, axis=None):
         axis = ndim(arr) - 1
     return concatenate((arr, values), axis=axis)
 
-@primitive
-def gradient(arr, axis=None):
-    return _np.array(_np.gradient(arr, axis=axis), dtype=arr.dtype)
-
 # ----- Enable functions called using [] ----
 
 class r_class():
