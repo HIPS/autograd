@@ -176,6 +176,51 @@ def grad_diff(ans, a, n=1, axis=-1):
 
 defvjp(anp.diff, grad_diff)
 
+def grad_gradient(ans, x, *vargs, **kwargs):
+    axis = kwargs.pop('axis', None)
+    if vargs or kwargs:
+        raise NotImplementedError(
+            "The only optional argument currently supported for np.gradient "
+            "is axis.")
+    if axis is None:
+        axis = range(x.ndim)
+    elif type(axis) is int:
+        axis = [axis]
+    else:
+        axis = list(axis)
+
+    x_dtype = x.dtype
+    x_shape = x.shape
+    nd = x.ndim
+
+    def vjp(g):
+        if anp.ndim(g) == nd:
+            # add axis if gradient was along one axis only
+            g = g[anp.newaxis]
+
+        # accumulate gradient
+        out = anp.zeros(x_shape, dtype=x_dtype)
+
+        for i, a in enumerate(axis):
+            # swap gradient axis to the front
+            g_swap = anp.swapaxes(g[i], 0, a)[:, anp.newaxis]
+
+            out_axis = anp.concatenate((
+                -g_swap[0] - 0.5 * g_swap[1],
+                 g_swap[0] - 0.5 * g_swap[2],
+                (-1.) * anp.gradient(g_swap, axis=0)[2:-2, 0],
+                0.5 * g_swap[-3] - g_swap[-1],
+                0.5 * g_swap[-2] + g_swap[-1],
+            ), axis=0)
+
+            out = out + anp.swapaxes(out_axis, 0, a)
+
+        return out
+
+    return vjp
+
+defvjp(anp.gradient, grad_gradient)
+
 def grad_repeat(ans, x, repeats, axis=None):
     shape = anp.shape(x)
     def vjp(g):

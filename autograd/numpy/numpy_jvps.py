@@ -126,6 +126,7 @@ defjvp(anp.where,  None,
 # ----- Trickier grads -----
 defjvp(anp.kron,      'same', 'same')
 defjvp(anp.diff,      'same')
+defjvp(anp.gradient,  'same')
 defjvp(anp.repeat,    'same')
 defjvp(anp.tile,      'same')
 defjvp(anp.transpose, 'same')

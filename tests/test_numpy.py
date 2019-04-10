@@ -696,3 +696,11 @@ def test_astype():
     x = np.arange(3, dtype='float32')
     def f(x): return np.sum(np.sin(x.astype('float64')))
     assert grad(f)(x).dtype == np.dtype('float32')
+
+def test_gradient():
+    check_grads(np.gradient, 0)(npr.randn(10))
+    check_grads(np.gradient, 0)(npr.randn(10, 10))
+    check_grads(np.gradient, 0)(npr.randn(10, 10, 10))
+
+    for a in [None, 0, 1, -1, (0, 1), (0, -1)]:
+        check_grads(np.gradient, 0)(npr.randn(10, 10, 10), axis=a)
