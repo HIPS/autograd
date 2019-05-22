@@ -1,8 +1,8 @@
 from __future__ import absolute_import
 import scipy.special
 import autograd.numpy as np
-from autograd.extend import primitive, defvjp
-from autograd.numpy.numpy_vjps import unbroadcast_f
+from autograd.extend import primitive, defvjp, defjvp
+from autograd.numpy.numpy_vjps import unbroadcast_f, repeat_to_match_shape
 
 ### Beta function ###
 beta    = primitive(scipy.special.beta)
@@ -101,3 +101,27 @@ expit = primitive(scipy.special.expit)
 
 defvjp(logit,lambda ans, x: lambda g: g / ( x * (1 - x)))
 defvjp(expit,lambda ans, x: lambda g: g * ans * (1 - ans))
+
+### logsumexp ###
+logsumexp = primitive(scipy.special.logsumexp)
+
+def make_grad_logsumexp(ans, x, axis=None, b=1.0, keepdims=False):
+    shape, dtype = np.shape(x), np.result_type(x)
+    def vjp(g):
+        g_repeated,   _ = repeat_to_match_shape(g,   shape, dtype, axis, keepdims)
+        ans_repeated, _ = repeat_to_match_shape(ans, shape, dtype, axis, keepdims)
+        return g_repeated * b * np.exp(x - ans_repeated)
+    return vjp
+
+defvjp(logsumexp, make_grad_logsumexp)
+
+def fwd_grad_logsumexp(g, ans, x, axis=None, b=1.0, keepdims=False):
+    if not keepdims:
+        if isinstance(axis, int):
+            ans = np.expand_dims(ans, axis)
+        elif isinstance(axis, tuple):
+            for ax in sorted(axis):
+                ans = np.expand_dims(ans, ax)
+    return np.sum(g * b * np.exp(x - ans), axis=axis, keepdims=keepdims)
+
+defjvp(logsumexp, fwd_grad_logsumexp)
