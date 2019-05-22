@@ -1,7 +1,7 @@
 from __future__ import division, print_function
 import autograd.numpy as np
 import autograd.numpy.random as npr
-from autograd.scipy.misc import logsumexp
+from autograd.scipy.special import logsumexp
 from autograd import value_and_grad as vgrad
 from functools import partial
 from os.path import join, dirname

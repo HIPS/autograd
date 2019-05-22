@@ -10,7 +10,7 @@ import autograd.numpy as np
 import autograd.numpy.random as npr
 from autograd import grad, hessian_vector_product
 from scipy.optimize import minimize
-from autograd.scipy.misc import logsumexp
+from autograd.scipy.special import logsumexp
 import autograd.scipy.stats.multivariate_normal as mvn
 from autograd.misc.flatten import flatten_func
 from data import make_pinwheel
