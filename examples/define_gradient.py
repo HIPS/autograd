@@ -17,7 +17,7 @@ from autograd.test_util import check_grads
 # how to execute, and you can do things like in-place operations on arrays.
 @primitive
 def logsumexp(x):
-    """Numerically stable log(sum(exp(x))), also defined in scipy.misc"""
+    """Numerically stable log(sum(exp(x))), also defined in scipy.special"""
     max_x = np.max(x)
     return max_x + np.log(np.sum(np.exp(x - max_x)))
 

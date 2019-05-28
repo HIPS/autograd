@@ -8,7 +8,7 @@ from builtins import range
 import autograd.numpy as np
 import autograd.numpy.random as npr
 from autograd import grad
-from autograd.scipy.misc import logsumexp
+from autograd.scipy.special import logsumexp
 from os.path import dirname, join
 from autograd.misc.optimizers import adam
 

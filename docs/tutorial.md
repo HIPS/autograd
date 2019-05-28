@@ -189,7 +189,7 @@ This can happen if your code depends on external library calls or C code.
 It can sometimes even be a good idea to provide the gradient of a pure Python function for speed or numerical stability.
 
 For example, let's add the gradient of a numerically stable version of `log(sum(exp(x)))`.
-This function is included in `scipy.misc` and already supported, but let's make our own version.
+This function is included in `scipy.special` and already supported, but let's make our own version.
 
 Next, we define our function using standard Python, using `@primitive` as a decorator:
 
