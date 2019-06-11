@@ -36,9 +36,8 @@ def convolve(A, B, axes=None, dot_axes=[(),()], mode='full'):
         B_view_strides.append(B.strides[ax_B])
         B_view_shape[ax_B] = A.shape[ax_A]
         flipped_idxs[ax_A] = slice(None, None, -1)
-
     B_view = as_strided(B, B_view_shape, B_view_strides)
-    A_view = A[flipped_idxs]
+    A_view = A[tuple(flipped_idxs)]
     all_axes = [list(axes[i]) + list(dot_axes[i]) for i in [0, 1]]
     return einsum_tensordot(A_view, B_view, all_axes)
 
@@ -61,27 +60,27 @@ def pad_to_full(A, B, axes):
 def parse_axes(A_shape, B_shape, conv_axes, dot_axes, mode):
     A_ndim, B_ndim = len(A_shape), len(B_shape)
     if conv_axes is None:
-        conv_axes = [list(range(A_ndim)), list(range(A_ndim))]
-    axes = {'A' : {'conv' : list(conv_axes[0]),
-                   'dot'  : list(dot_axes[0]),
-                   'ignore' : [i for i in range(A_ndim)
-                             if i not in conv_axes[0] and i not in dot_axes[0]]},
-            'B' : {'conv' : list(conv_axes[1]),
-                   'dot'  : list(dot_axes[1]),
-                   'ignore' : [i for i in range(B_ndim)
-                               if i not in conv_axes[1] and i not in dot_axes[1]]}}
+        conv_axes = (tuple(range(A_ndim)), tuple(range(A_ndim)),)
+    axes = {'A' : {'conv' : tuple(conv_axes[0]),
+                   'dot'  : tuple(dot_axes[0]),
+                   'ignore' : tuple(i for i in range(A_ndim)
+                             if i not in conv_axes[0] and i not in dot_axes[0])},
+            'B' : {'conv' : tuple(conv_axes[1]),
+                   'dot'  : tuple(dot_axes[1]),
+                   'ignore' : tuple(i for i in range(B_ndim)
+                               if i not in conv_axes[1] and i not in dot_axes[1])}}
     assert len(axes['A']['dot'])  == len(axes['B']['dot'])
     assert len(axes['A']['conv']) == len(axes['B']['conv'])
     i1 =      len(axes['A']['ignore'])
     i2 = i1 + len(axes['B']['ignore'])
     i3 = i2 + len(axes['A']['conv'])
-    axes['out'] = {'ignore_A' : list(range(i1)),
-                   'ignore_B' : list(range(i1, i2)),
-                   'conv'     : list(range(i2, i3))}
-    conv_shape = [compute_conv_size(A_shape[i], B_shape[j], mode)
-                  for i, j in zip(axes['A']['conv'], axes['B']['conv'])]
-    shapes = {'A'   : {s : [A_shape[i] for i in ax] for s, ax in iteritems(axes['A'])},
-              'B'   : {s : [B_shape[i] for i in ax] for s, ax in iteritems(axes['B'])}}
+    axes['out'] = {'ignore_A' : tuple(range(i1)),
+                   'ignore_B' : tuple(range(i1, i2)),
+                   'conv'     : tuple(range(i2, i3))}
+    conv_shape = (compute_conv_size(A_shape[i], B_shape[j], mode)
+                  for i, j in zip(axes['A']['conv'], axes['B']['conv']))
+    shapes = {'A'   : {s : (A_shape[i] for i in ax) for s, ax in iteritems(axes['A'])},
+              'B'   : {s : (B_shape[i] for i in ax) for s, ax in iteritems(axes['B'])}}
     shapes['out'] = {'ignore_A' : shapes['A']['ignore'],
                      'ignore_B' : shapes['B']['ignore'],
                      'conv'     : conv_shape}
@@ -101,7 +100,7 @@ def flipped_idxs(ndim, axes):
     new_idxs = [slice(None)] * ndim
     for ax in axes:
         new_idxs[ax] = slice(None, None, -1)
-    return new_idxs
+    return tuple(new_idxs)
 
 def grad_convolve(argnum, ans, A, B, axes=None, dot_axes=[(),()], mode='full'):
     assert mode in ['valid', 'full'], "Grad for mode {0} not yet implemented".format(mode)
