@@ -96,9 +96,9 @@ defvjp(ifftshift, lambda ans, x, axes=None : lambda g:
 def truncate_pad(x, shape):
     # truncate/pad x to have the appropriate shape
     slices = [slice(n) for n in shape]
-    pads = list(zip(anp.zeros(len(shape), dtype=int),
+    pads = tuple(zip(anp.zeros(len(shape), dtype=int),
                anp.maximum(0, anp.array(shape) - anp.array(x.shape))))
-    return anp.pad(x, pads, 'constant')[slices]
+    return anp.pad(x, pads, 'constant')[tuple(slices)]
 defvjp(truncate_pad, lambda ans, x, shape: lambda g:
        match_complex(x, truncate_pad(g, vspace(x).shape)))
 

@@ -163,7 +163,7 @@ def grad_diff(ans, a, n=1, axis=-1):
 
     def undiff(g):
         if g.shape[axis] > 0:
-            return anp.concatenate((-g[sl1], -anp.diff(g, axis=axis), g[sl2]), axis=axis)
+            return anp.concatenate((-g[tuple(sl1)], -anp.diff(g, axis=axis), g[tuple(sl2)]), axis=axis)
         shape = list(ans_shape)
         shape[axis] = 1
         return anp.zeros(shape)
@@ -482,8 +482,8 @@ def tensordot_adjoint_0(B, G, axes, A_ndim, B_ndim):
         axes = [axes0, axes1]
         A_axes = onp.arange(A_ndim)
         B_axes = onp.arange(B_ndim)
-        summed_axes = [onp.asarray(axes[0]) % A_ndim,
-                       onp.asarray(axes[1]) % B_ndim]
+        summed_axes = [onp.asarray(axes[0], dtype='int64') % A_ndim,
+                       onp.asarray(axes[1], dtype='int64') % B_ndim]
         other_axes  = [onp.delete(A_axes, summed_axes[0]),
                        onp.delete(B_axes, summed_axes[1])]
         out = onp.tensordot(G, B, [G_axes[len(other_axes[0]):], other_axes[1]])
@@ -509,8 +509,8 @@ def tensordot_adjoint_1(A, G, axes, A_ndim, B_ndim):
         axes = [axes0, axes1]
         A_axes = onp.arange(A_ndim)
         B_axes = onp.arange(B_ndim)
-        summed_axes = [onp.asarray(axes[0]) % A_ndim,
-                       onp.asarray(axes[1]) % B_ndim]
+        summed_axes = [onp.asarray(axes[0], dtype='int64') % A_ndim,
+                       onp.asarray(axes[1], dtype='int64') % B_ndim]
         other_axes  = [onp.delete(A_axes, summed_axes[0]),
                        onp.delete(B_axes, summed_axes[1])]
         out = onp.tensordot(A, G, [other_axes[0], G_axes[:len(other_axes[0])]])
@@ -692,6 +692,8 @@ defvjp(anp._array_from_scalar_or_array, array_from_scalar_or_array_gradmaker, ar
 
 @primitive
 def untake(x, idx, vs):
+    if isinstance(idx, list) and (len(idx) == 0 or not isinstance(idx[0], slice)):
+        idx = onp.array(idx, dtype='int64')
     def mut_add(A):
         onp.add.at(A, idx, x)
         return A
