@@ -4,7 +4,7 @@ import autograd.numpy as np
 import autograd.numpy.random as npr
 from autograd.test_util import check_grads
 from autograd import grad
-from nose.tools import raises
+import pytest
 npr.seed(1)
 
 ### fwd mode not yet implemented
@@ -165,12 +165,12 @@ def test_rfftn():
     mat = npr.randn(D, D, D) / 10.0
     check_grads(fun)(mat)
 
-@raises(NotImplementedError)
 def test_rfftn_odd_not_implemented():
     def fun(x): return np.fft.rfftn(x)
     D = 5
     mat = npr.randn(D, D, D) / 10.0
-    check_grads(fun)(mat)
+    with pytest.raises(NotImplementedError):
+        check_grads(fun)(mat)
 
 def test_rfftn_subset():
     def fun(x): return np.fft.rfftn(x)[(0, 1, 0), (3, 3, 2)]
