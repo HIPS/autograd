@@ -21,7 +21,7 @@ def time_short_forward_pass():
     if MASTER_BRANCH:
         forward_pass(f_short, (2.,), {})
     else:
-        start_node = VJPNode.new_root(x)
+        start_node = VJPNode.new_root()
         trace(start_node, f_short, x)
 
 def time_short_backward_pass():
@@ -46,7 +46,7 @@ def time_long_forward_pass():
     if MASTER_BRANCH:
         forward_pass(f_long, (2.,), {})
     else:
-        start_node = VJPNode.new_root(x)
+        start_node = VJPNode.new_root()
         trace(start_node, f_long, x)
 
 def time_long_backward_pass():
@@ -71,7 +71,7 @@ def time_fan_out_fan_in_forward_pass():
     if MASTER_BRANCH:
         forward_pass(fan_out_fan_in, (2.,), {})
     else:
-        start_node = VJPNode.new_root(x)
+        start_node = VJPNode.new_root()
         trace(start_node, fan_out_fan_in, x)
 
 def time_fan_out_fan_in_backward_pass():
@@ -122,8 +122,8 @@ if MASTER_BRANCH:
     progenitor = new_progenitor(2.)
 else:
     x = 2.
-    start_node = VJPNode.new_root(x)
+    start_node = VJPNode.new_root()
     start_box = new_box(x, 0, start_node)
-    _, short_end_node = trace(VJPNode.new_root(x), f_short, x)
-    _, long_end_node  = trace(VJPNode.new_root(x), f_long, x)
-    _, fan_end_node   = trace(VJPNode.new_root(x), fan_out_fan_in, x)
+    _, short_end_node = trace(VJPNode.new_root(), f_short, x)
+    _, long_end_node  = trace(VJPNode.new_root(), f_long, x)
+    _, fan_end_node   = trace(VJPNode.new_root(), fan_out_fan_in, x)
