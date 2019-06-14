@@ -4,7 +4,7 @@ import autograd.numpy.random as npr
 from autograd.test_util import check_grads
 from autograd import grad
 import warnings
-from nose.tools import raises
+import pytest
 npr.seed(1)
 
 def test_grad_fanout():
@@ -153,21 +153,21 @@ def test_singleton_array_output_axis1_keepdims():
    check_grads(fun)(npr.randn(1, 3))
    check_grads(lambda x: np.sum(grad(fun)(x)))(npr.randn(1, 3))
 
-@raises(TypeError)
 def test_assignment_raises_error():
     def fun(A, b):
         A[1] = b
         return A
     A = npr.randn(5)
-    check_grads(fun)(A, 3.0)
+    with pytest.raises(TypeError):
+        check_grads(fun)(A, 3.0)
 
-# @raises(TypeError)
 # def test_nonscalar_output_1():
-#     grad(lambda x: x * 2)(np.zeros(2))
+#     with pytest.raises(TypeError):
+#         grad(lambda x: x * 2)(np.zeros(2))
 
-# @raises(TypeError)
 # def test_nonscalar_output_2():
-#     grad(lambda x: x * 2)(np.zeros(2))
+#     with pytest.raises(TypeError):
+#         grad(lambda x: x * 2)(np.zeros(2))
 
 # TODO:
 # Diamond patterns

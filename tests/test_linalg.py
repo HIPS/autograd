@@ -7,6 +7,7 @@ from autograd.test_util import check_grads
 from autograd import tuple
 from autograd import grad
 from functools import partial
+import pytest
 
 npr.seed(1)
 
@@ -147,21 +148,19 @@ def test_frobenius_norm_axis():
     mat = npr.randn(D, D-1, D-2)
     check_grads(fun)(mat)
 
-def test_vector_norm_ord():
-    def helper(size, ord):
-        def fun(x): return np.linalg.norm(x, ord=ord)
-        vec = npr.randn(size)
-        check_grads(fun)(vec)
-    for ord in range(2,5):
-        yield helper, 6, ord
+@pytest.mark.parametrize("ord", range(2, 5))
+@pytest.mark.parametrize("size", [6])
+def test_vector_norm_ord(size, ord):
+    def fun(x): return np.linalg.norm(x, ord=ord)
+    vec = npr.randn(size)
+    check_grads(fun)(vec)
 
-def test_norm_axis():
-    def helper(shape, axis):
-        def fun(x): return np.linalg.norm(x, axis=axis)
-        arr = npr.randn(*shape)
-        check_grads(fun)(arr)
-    for axis in range(3):
-        yield helper, (6,5,4), axis
+@pytest.mark.parametrize("axis", range(3))
+@pytest.mark.parametrize("shape", [(6, 5, 4)])
+def test_norm_axis(shape, axis):
+    def fun(x): return np.linalg.norm(x, axis=axis)
+    arr = npr.randn(*shape)
+    check_grads(fun)(arr)
 
 def test_norm_nuclear():
     def fun(x): return np.linalg.norm(x, ord='nuc')
