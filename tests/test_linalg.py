@@ -174,6 +174,26 @@ def test_norm_nuclear_axis():
     mat = npr.randn(D, D-1, D-2)
     check_grads(fun)(mat)
 
+def test_vector_zero_norm():
+    def helper(size, ord):
+        def fun(x): return np.linalg.norm(x, ord=ord)
+        vec = np.zeros(size)
+        check_grads(fun, order=1)(vec)
+    for ord in [1.1, 2, 3]:
+        for size in [1, 2]:
+            yield helper, size, ord
+
+def test_vector_mix_zero_norm_axis():
+    def helper(axis, ord):
+        def fun(x): return np.linalg.norm(x, ord=ord, axis=axis)
+        size = (2,2)
+        vecs = np.zeros(size)
+        vecs[0,0] = npr.randn(1)
+        check_grads(fun, order=1)(vecs)
+    for axis in [0, 1]:
+        for ord in [1.1, 2]:
+            yield helper, axis, ord
+
 def test_eigvalh_lower():
     def fun(x):
         w, v = np.linalg.eigh(x)
