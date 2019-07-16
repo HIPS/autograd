@@ -85,7 +85,7 @@ def grad_norm(ans, x, ord=None, axis=None):
 
     check_implemented()
     def vjp(g):
-        if ord is None or ord == 2 or ord is 'fro':
+        if ord in (None, 2, 'fro'):
             return expand(g / ans) * x
         elif ord == 'nuc':
             x_rolled = roll(x)
