@@ -117,7 +117,7 @@ def grad_eigh(ans, x, UPLO='L'):
         # Add eigenvector part only if non-zero backward signal is present.
         # This can avoid NaN results for degenerate cases if the function depends
         # on the eigenvalues only.
-        if anp.sum(anp.abs(vg)) > 1e-10:
+        if anp.any(vg):
             off_diag = anp.ones((N, N)) - anp.eye(N)
             F = off_diag / (T(w_repeated) - w_repeated + anp.eye(N))
             vjp_temp += _dot(_dot(vc, F * _dot(T(v), vg)), T(v))
