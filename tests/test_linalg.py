@@ -210,7 +210,9 @@ def test_eigvalh_upper_broadcasting():
     hmat = broadcast_dot_transpose(mat, mat)
     check_grads(fun)(hmat)
 
-# For complex-valued matrices, the gradient only works for the eigenvalues, but not for the eigenvectors
+# For complex-valued matrices, the eigenvectors could have arbitrary phases (gauge)
+# which makes it impossible to compare to numerical derivatives. So we take the 
+# absolute value to get rid of that phase. 
 def test_eigvalh_lower_complex():
     def fun(x):
         w, v = np.linalg.eigh(x)
