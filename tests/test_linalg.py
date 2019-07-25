@@ -214,7 +214,7 @@ def test_eigvalh_upper_broadcasting():
 def test_eigvalh_lower_complex():
     def fun(x):
         w, v = np.linalg.eigh(x)
-        return w
+        return tuple((w, np.abs(v)))
     D = 6
     mat = npr.randn(D, D) + 1j*npr.randn(D, D)
     check_grads(fun)(mat)
@@ -222,7 +222,7 @@ def test_eigvalh_lower_complex():
 def test_eigvalh_upper_complex():
     def fun(x):
         w, v = np.linalg.eigh(x, 'U')
-        return w
+        return tuple((w, np.abs(v)))
     D = 6
     mat = npr.randn(D, D) + 1j*npr.randn(D, D)
     check_grads(fun)(mat)
