@@ -180,8 +180,7 @@ def test_eigvalh_lower():
         return tuple((w, v))
     D = 6
     mat = npr.randn(D, D)
-    hmat = np.dot(mat.T, mat)
-    check_symmetric_matrix_grads(fun)(hmat)
+    check_grads(fun)(mat)
 
 def test_eigvalh_upper():
     def fun(x):
@@ -189,8 +188,7 @@ def test_eigvalh_upper():
         return tuple((w, v))
     D = 6
     mat = npr.randn(D, D)
-    hmat = np.dot(mat.T, mat)
-    check_symmetric_matrix_grads(fun)(hmat)
+    check_grads(fun)(mat)
 
 broadcast_dot_transpose = partial(np.einsum, '...ij,...kj->...ik')
 def test_eigvalh_lower_broadcasting():
@@ -200,7 +198,7 @@ def test_eigvalh_lower_broadcasting():
     D = 6
     mat = npr.randn(2, 3, D, D) + 10 * np.eye(D)[None,None,...]
     hmat = broadcast_dot_transpose(mat, mat)
-    check_symmetric_matrix_grads(fun)(hmat)
+    check_grads(fun)(hmat)
 
 def test_eigvalh_upper_broadcasting():
     def fun(x):
@@ -209,7 +207,26 @@ def test_eigvalh_upper_broadcasting():
     D = 6
     mat = npr.randn(2, 3, D, D) + 10 * np.eye(D)[None,None,...]
     hmat = broadcast_dot_transpose(mat, mat)
-    check_symmetric_matrix_grads(fun)(hmat)
+    check_grads(fun)(hmat)
+
+# For complex-valued matrices, the eigenvectors could have arbitrary phases (gauge)
+# which makes it impossible to compare to numerical derivatives. So we take the 
+# absolute value to get rid of that phase. 
+def test_eigvalh_lower_complex():
+    def fun(x):
+        w, v = np.linalg.eigh(x)
+        return tuple((w, np.abs(v)))
+    D = 6
+    mat = npr.randn(D, D) + 1j*npr.randn(D, D)
+    check_grads(fun)(mat)
+
+def test_eigvalh_upper_complex():
+    def fun(x):
+        w, v = np.linalg.eigh(x, 'U')
+        return tuple((w, np.abs(v)))
+    D = 6
+    mat = npr.randn(D, D) + 1j*npr.randn(D, D)
+    check_grads(fun)(mat)
 
 def test_cholesky():
     fun = lambda A: np.linalg.cholesky(A)

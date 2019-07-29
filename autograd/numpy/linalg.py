@@ -105,12 +105,36 @@ def grad_eigh(ans, x, UPLO='L'):
     """Gradient for eigenvalues and vectors of a symmetric matrix."""
     N = x.shape[-1]
     w, v = ans              # Eigenvalues, eigenvectors.
+    vc = anp.conj(v)
+    
     def vjp(g):
         wg, vg = g          # Gradient w.r.t. eigenvalues, eigenvectors.
         w_repeated = anp.repeat(w[..., anp.newaxis], N, axis=-1)
-        off_diag = anp.ones((N, N)) - anp.eye(N)
-        F = off_diag / (T(w_repeated) - w_repeated + anp.eye(N))
-        return _dot(v * wg[..., anp.newaxis, :] + _dot(v, F * _dot(T(v), vg)), T(v))
+
+        # Eigenvalue part
+        vjp_temp = _dot(vc * wg[..., anp.newaxis, :], T(v)) 
+
+        # Add eigenvector part only if non-zero backward signal is present.
+        # This can avoid NaN results for degenerate cases if the function depends
+        # on the eigenvalues only.
+        if anp.any(vg):
+            off_diag = anp.ones((N, N)) - anp.eye(N)
+            F = off_diag / (T(w_repeated) - w_repeated + anp.eye(N))
+            vjp_temp += _dot(_dot(vc, F * _dot(T(v), vg)), T(v))
+
+        # eigh always uses only the lower or the upper part of the matrix
+        # we also have to make sure broadcasting works
+        reps = anp.array(x.shape)
+        reps[-2:] = 1
+
+        if UPLO == 'L':
+            tri = anp.tile(anp.tril(anp.ones(N), -1), reps)
+        elif UPLO == 'U':
+            tri = anp.tile(anp.triu(anp.ones(N), 1), reps)
+        
+        return anp.real(vjp_temp)*anp.eye(vjp_temp.shape[-1]) + \
+            (vjp_temp + anp.conj(T(vjp_temp))) * tri
+
     return vjp
 defvjp(eigh, grad_eigh)
 
