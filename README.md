@@ -1,3 +1,9 @@
+__Note:__ Autograd is still being maintained but is no longer actively developed.
+Two of Autograd's authors, [Dougal Maclaurin](https://dougalmaclaurin.com) and
+[Matt Johnson](http://people.csail.mit.edu/mattjj/), are now working full time 
+on [JAX](github.com/google/jax), which combines a new version of Autograd with
+extra features such as jit compilation.
+
 # Autograd  [![Test status](https://travis-ci.org/HIPS/autograd.svg?branch=master)](https://travis-ci.org/HIPS/autograd) [![asv](http://img.shields.io/badge/benchmarked%20by-asv-green.svg?style=flat)](#)
 
 Autograd can automatically differentiate native Python and Numpy code. It can
@@ -77,11 +83,10 @@ Autograd was written by [Dougal Maclaurin](https://dougalmaclaurin.com),
 [David Duvenaud](https://www.cs.toronto.edu/~duvenaud/),
 [Matt Johnson](http://people.csail.mit.edu/mattjj/),
 [Jamie Townsend](https://github.com/j-towns)
-and many other contributors,
-and we're actively developing it.
-Please feel free to submit any bugs or feature requests.
-We'd also love to hear about your experiences with autograd in general.
-Drop us an email!
+and many other contributors. The package is currently still being maintained,
+but is no longer actively developed. Please feel free to submit any bugs or
+feature requests. We'd also love to hear about your experiences with autograd
+in general. Drop us an email!
 
 We want to thank Jasper Snoek and the rest of the HIPS group (led by Prof. Ryan
 P. Adams) for helpful contributions and advice; Barak Pearlmutter for
