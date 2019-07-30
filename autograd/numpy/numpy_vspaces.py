@@ -13,6 +13,10 @@ class ArrayVSpace(VSpace):
     def ndim(self): return len(self.shape)
     def zeros(self): return np.zeros(self.shape, dtype=self.dtype)
     def ones(self):  return np.ones( self.shape, dtype=self.dtype)
+    def one_ind(self, ind):
+      out = np.zeros(self.shape, dtype=self.dtype)
+      out[np.unravel_index(ind, shape=self.shape)] = np.array([1.]).astype(dtype=self.dtype)
+      return out
 
     def standard_basis(self):
       for idxs in np.ndindex(*self.shape):
