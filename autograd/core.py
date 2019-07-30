@@ -3,7 +3,6 @@ from functools import reduce
 from .tracer import trace, primitive, toposort, Node, Box, isbox, getval
 from .util import func, subval
 
-import numpy as np
 
 # -------------------- reverse mode --------------------
 
