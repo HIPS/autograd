@@ -1,6 +1,6 @@
 __Note: Autograd is still being maintained but is no longer actively developed.
 The main developers (Dougal Maclaurin, David Duvenaud, Matt Johnson, and Jamie
-Townsend) are now working on [JAX](github.com/google/jax), with Dougal and Matt
+Townsend) are now working on [JAX](https://github.com/google/jax), with Dougal and Matt
 working on it full-time. JAX combines a new version of Autograd with extra
 features such as jit compilation.__
 
