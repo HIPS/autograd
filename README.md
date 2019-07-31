@@ -1,8 +1,8 @@
-__Note:__ Autograd is still being maintained but is no longer actively developed.
-Two of Autograd's authors, [Dougal Maclaurin](https://dougalmaclaurin.com) and
-[Matt Johnson](http://people.csail.mit.edu/mattjj/), are now working full time 
-on [JAX](github.com/google/jax), which combines a new version of Autograd with
-extra features such as jit compilation.
+__Note: Autograd is still being maintained but is no longer actively developed.
+The main developers (Dougal Maclaurin, David Duvenaud, Matt Johnson, and Jamie
+Townsend) are now working on [JAX](github.com/google/jax), with Dougal and Matt
+working on it full-time. JAX combines a new version of Autograd with extra
+features such as jit compilation.__
 
 # Autograd  [![Test status](https://travis-ci.org/HIPS/autograd.svg?branch=master)](https://travis-ci.org/HIPS/autograd) [![asv](http://img.shields.io/badge/benchmarked%20by-asv-green.svg?style=flat)](#)
 
