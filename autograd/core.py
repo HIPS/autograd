@@ -90,7 +90,7 @@ def translate_vjp(vjpfun, fun, argnum):
     else:
         raise Exception("Bad VJP '{}' for '{}'".format(vjpfun, fun.__name__))
 
-def vjp_numeric(fun, argnum, step=1e-6, mode='centered'):
+def vjp_numeric(fun, argnum=0, step=1e-6, mode='centered'):
     """ Evaluatest the vector-jacobian product numerically, using a step size
     `step` to evaluate the jacobian. """
 
