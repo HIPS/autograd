@@ -165,9 +165,9 @@ def grad_svd(usv_, a, full_matrices=True, compute_uv=True):
             # Need U and V so do the whole svd anyway...
             usv = svd(a, full_matrices=False)
             u = usv[0]
-            v = T(usv[2])
+            v = anp.conj(T(usv[2]))
 
-            return _dot(u * g[..., anp.newaxis, :], T(v))
+            return _dot(anp.conj(u) * g[..., anp.newaxis, :], T(v))
 
         elif full_matrices:
             raise NotImplementedError(
@@ -176,7 +176,7 @@ def grad_svd(usv_, a, full_matrices=True, compute_uv=True):
         else:
             u = usv[0]
             s = usv[1]
-            v = T(usv[2])
+            v = anp.conj(T(usv[2]))
 
             m, n = a.shape[-2:]
 
@@ -186,60 +186,54 @@ def grad_svd(usv_, a, full_matrices=True, compute_uv=True):
 
             f = 1 / (s[..., anp.newaxis, :]**2 - s[..., :, anp.newaxis]**2 + i)
 
+            gu = g[0]
+            gs = g[1]
+            gv = anp.conj(T(g[2]))
+
+            """
+            utgu = _dot(T(u), gu)
+            vtgv = _dot(T(v), gv)
+            t1 = (f * (utgu - T(utgu))) * s[..., anp.newaxis, :]
+            t1 = t1 + i * gs[..., :, anp.newaxis]
+            t1 = t1 + s[..., :, anp.newaxis] * (f * (vtgv - T(vtgv)))
+
+            t1 = _dot(_dot(u, t1), T(v))
+            """
+            utgu = _dot(T(u), gu)
+            vtgv = _dot(T(v), gv)
+            t1 = (f * (utgu - anp.conj(T(utgu)))) * s[..., anp.newaxis, :]
+            t1 = t1 + i * gs[..., :, anp.newaxis]
+            t1 = t1 + s[..., :, anp.newaxis] * (f * (vtgv - anp.conj(T(vtgv)))) 
+
+            """
+            utgu = _dot(T(u), gu)
+            J = f*utgu
+            J = J + anp.conj(T(J))
+            K = f*_dot(T(v), gv)
+            K = K + anp.conj(T(K))
+  
+            t1 = J * s[..., anp.newaxis, :]
+            t1 = t1 + i * gs[..., :, anp.newaxis]
+            t1 = t1 + s[..., :, anp.newaxis] * K
+            """
+            if anp.iscomplexobj(u):
+                t1 = t1 + anp.diag(1j*anp.imag(anp.diag(utgu)) / s)
+            t1 = _dot(_dot(anp.conj(u), t1), T(v))
+
+
             if m < n:
-                gu = g[0]
-                gs = g[1]
-                gv = T(g[2])
-
-                utgu = _dot(T(u), gu)
-                vtgv = _dot(T(v), gv)
-
                 i_minus_vvt = (anp.reshape(anp.eye(n), anp.concatenate((anp.ones(a.ndim - 2, dtype=int), (n, n)))) -
                                 _dot(v, T(v)))
-
-                t1 = (f * (utgu - T(utgu))) * s[..., anp.newaxis, :]
-                t1 = t1 + i * gs[..., :, anp.newaxis]
-                t1 = t1 + s[..., :, anp.newaxis] * (f * (vtgv - T(vtgv)))
-
-                t1 = _dot(_dot(u, t1), T(v))
-
                 t1 = t1 + _dot(_dot(u / s[..., anp.newaxis, :], T(gv)), i_minus_vvt)
 
                 return t1
 
             elif m == n:
-                gu = g[0]
-                gs = g[1]
-                gv = T(g[2])
-
-                utgu = _dot(T(u), gu)
-                vtgv = _dot(T(v), gv)
-
-                t1 = (f * (utgu - T(utgu))) * s[..., anp.newaxis, :]
-                t1 = t1 + i * gs[..., :, anp.newaxis]
-                t1 = t1 + s[..., :, anp.newaxis] * (f * (vtgv - T(vtgv)))
-
-                t1 = _dot(_dot(u, t1), T(v))
-
                 return t1
 
             elif m > n:
-                gu = g[0]
-                gs = g[1]
-                gv = T(g[2])
-
-                utgu = _dot(T(u), gu)
-                vtgv = _dot(T(v), gv)
-
                 i_minus_uut = (anp.reshape(anp.eye(m), anp.concatenate((anp.ones(a.ndim - 2, dtype=int), (m, m)))) -
                                 _dot(u, T(u)))
-
-                t1 = (f * (utgu - T(utgu))) * s[..., anp.newaxis, :]
-                t1 = t1 + i * gs[..., :, anp.newaxis]
-                t1 = t1 + s[..., :, anp.newaxis] * (f * (vtgv - T(vtgv)))
-
-                t1 = _dot(_dot(u, t1), T(v))
-
                 t1 = t1 + _dot(i_minus_uut, _dot(gu, T(v) / s[..., :, anp.newaxis]))
 
                 return t1
