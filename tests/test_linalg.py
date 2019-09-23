@@ -254,6 +254,16 @@ def test_svd_wide_2d():
     mat = npr.randn(m, n)
     check_grads(fun)(mat)
 
+def test_svd_wide_2d_complex():
+    def fun(x):
+        u, s, v = np.linalg.svd(x, full_matrices=False)
+        return tuple((np.abs(u), s, np.abs(v)))
+        return grad(fun)(x)
+    m = 3
+    n = 5
+    mat = npr.randn(m, n) + 1j * npr.randn(m, n)
+    check_grads(fun)(mat)
+
 def test_svd_wide_3d():
     def fun(x):
         u, s, v = np.linalg.svd(x, full_matrices=False)
@@ -263,8 +273,19 @@ def test_svd_wide_3d():
     k = 4
     m = 3
     n = 5
-
     mat = npr.randn(k, m, n)
+    check_grads(fun)(mat)
+
+def test_svd_wide_3d_complex():
+    def fun(x):
+        u, s, v = np.linalg.svd(x, full_matrices=False)
+        return tuple((np.abs(u), s, np.abs(v)))
+        return grad(fun)(x)
+
+    k = 4
+    m = 3
+    n = 5
+    mat = npr.randn(k, m, n) + 1j* npr.randn(k, m, n)
     check_grads(fun)(mat)
 
 def test_svd_square_2d():
@@ -277,6 +298,16 @@ def test_svd_square_2d():
     mat = npr.randn(m, n)
     check_grads(fun)(mat)
 
+def test_svd_square_2d_complex():
+    def fun(x):
+        u, s, v = np.linalg.svd(x, full_matrices=False)
+        return tuple((np.abs(u), s, np.abs(v)))
+        return grad(fun)(x)
+    m = 4
+    n = 4
+    mat = npr.randn(m, n) + 1j * npr.randn(m, n)
+    check_grads(fun)(mat)
+
 def test_svd_square_3d():
     def fun(x):
         u, s, v = np.linalg.svd(x, full_matrices=False)
@@ -286,8 +317,19 @@ def test_svd_square_3d():
     k = 3
     m = 4
     n = 4
-
     mat = npr.randn(k, m, n)
+    check_grads(fun)(mat)
+
+def test_svd_square_3d_complex():
+    def fun(x):
+        u, s, v = np.linalg.svd(x, full_matrices=False)
+        return tuple((np.abs(u), s, np.abs(v)))
+        return grad(fun)(x)
+
+    k = 3
+    m = 4
+    n = 4
+    mat = npr.randn(k, m, n) + 1j * npr.randn(k, m, n)
     check_grads(fun)(mat)
 
 def test_svd_tall_2d():
@@ -300,6 +342,16 @@ def test_svd_tall_2d():
     mat = npr.randn(m, n)
     check_grads(fun)(mat)
 
+def test_svd_tall_2d_complex():
+    def fun(x):
+        u, s, v = np.linalg.svd(x, full_matrices=False)
+        return tuple((np.abs(u), s, np.abs(v)))
+        return grad(fun)(x)
+    m = 5
+    n = 3
+    mat = npr.randn(m, n) + 1j * npr.randn(m, n)
+    check_grads(fun)(mat)
+
 def test_svd_tall_3d():
     def fun(x):
         u, s, v = np.linalg.svd(x, full_matrices=False)
@@ -309,8 +361,19 @@ def test_svd_tall_3d():
     k = 4
     m = 5
     n = 3
-
     mat = npr.randn(k, m, n)
+    check_grads(fun)(mat)
+
+def test_svd_tall_3d_complex():
+    def fun(x):
+        u, s, v = np.linalg.svd(x, full_matrices=False)
+        return tuple((np.abs(u), s, np.abs(v)))
+        return grad(fun)(x)
+
+    k = 4
+    m = 5
+    n = 3
+    mat = npr.randn(k, m, n) + 1j* npr.randn(k, m, n)
     check_grads(fun)(mat)
 
 def test_svd_only_s_2d():
@@ -324,6 +387,17 @@ def test_svd_only_s_2d():
     mat = npr.randn(m, n)
     check_grads(fun)(mat)
 
+def test_svd_only_s_2d_complex():
+    def fun(x):
+        s = np.linalg.svd(x, full_matrices=False, compute_uv=False)
+        return s
+        return grad(fun)(x)
+
+    m = 5
+    n = 3
+    mat = npr.randn(m, n) + 1j* npr.randn(m, n)
+    check_grads(fun)(mat)
+
 def test_svd_only_s_3d():
     def fun(x):
         s = np.linalg.svd(x, full_matrices=False, compute_uv=False)
@@ -333,6 +407,17 @@ def test_svd_only_s_3d():
     k = 4
     m = 5
     n = 3
-
     mat = npr.randn(k, m, n)
+    check_grads(fun)(mat)
+
+def test_svd_only_s_3d_complex():
+    def fun(x):
+        s = np.linalg.svd(x, full_matrices=False, compute_uv=False)
+        return s
+        return grad(fun)(x)
+
+    k = 4
+    m = 5
+    n = 3
+    mat = npr.randn(k, m, n) + 1j* npr.randn(k, m, n)
     check_grads(fun)(mat)
