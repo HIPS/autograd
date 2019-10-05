@@ -57,7 +57,7 @@ defvjp(anp.remainder,   lambda ans, x, y : unbroadcast_f(x, lambda g: g),
                         lambda ans, x, y : unbroadcast_f(y, lambda g: -g * anp.floor(x/y)))
 defvjp(anp.power,
     lambda ans, x, y : unbroadcast_f(x, lambda g: g * y * x ** anp.where(y, y - 1, 1.)),
-    lambda ans, x, y : unbroadcast_f(y, lambda g: g * anp.log(replace_zero(x, 1.)) * x ** y))
+    lambda ans, x, y : unbroadcast_f(y, lambda g: g * anp.log(replace_zero(x, 1.)) * ans))
 defvjp(anp.arctan2,     lambda ans, x, y : unbroadcast_f(x, lambda g: g * y / (x**2 + y**2)),
                         lambda ans, x, y : unbroadcast_f(y, lambda g: g * -x / (x**2 + y**2)))
 defvjp(anp.hypot,
