@@ -161,7 +161,9 @@ def grad_eig(ans, x):
         f = 1/(e[..., anp.newaxis, :] - e[..., :, anp.newaxis] + 1.e-20)
         f -= _diag(f)
         ut = anp.swapaxes(u, -1, -2)
-        r = inv(ut)@(ge+f*(ut@gu) - f*(ut@anp.conj(u)@(anp.real(ut@gu)*anp.eye(n))))@ut
+        r1 = f * _dot(ut, gu)
+        r2 = -f * (_dot(_dot(ut, anp.conj(u)), anp.real(_dot(ut,gu)) * anp.eye(n)))
+        r = _dot(_dot(inv(ut), ge + r1 + r2), ut)
         if not anp.iscomplexobj(x):
             r = anp.real(r)
             # the derivative is still complex for real input (imaginary delta is allowed), real output
