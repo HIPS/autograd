@@ -228,6 +228,32 @@ def test_eigvalh_upper_complex():
     mat = npr.randn(D, D) + 1j*npr.randn(D, D)
     check_grads(fun)(mat)
 
+# Note eigenvalues and eigenvectors for real matrix can still be complex
+def test_eig_real():
+    def fun(x):
+        w, v = np.linalg.eig(x)
+        return tuple((np.abs(w), np.abs(v)))
+    D = 8
+    mat = npr.randn(D, D)
+    check_grads(fun)(mat)
+
+def test_eig_complex():
+    def fun(x):
+        w, v = np.linalg.eig(x)
+        return tuple((w, np.abs(v)))
+    D = 8
+    mat = npr.randn(D, D) + 1.j * npr.randn(D, D)
+    check_grads(fun)(mat)
+
+def test_eig_batched():
+    def fun(x):
+        w, v = np.linalg.eig(x)
+        return tuple((w, np.abs(v)))
+    D = 8
+    b = 5
+    mat = npr.randn(b, D, D) + 1.j * npr.randn(b, D, D)
+    check_grads(fun)(mat)
+
 def test_cholesky():
     fun = lambda A: np.linalg.cholesky(A)
     check_symmetric_matrix_grads(fun)(rand_psd(6))
@@ -248,7 +274,7 @@ def test_svd_wide_2d():
     def fun(x):
         u, s, v = np.linalg.svd(x, full_matrices=False)
         return tuple((u, s, v))
-        return grad(fun)(x)
+
     m = 3
     n = 5
     mat = npr.randn(m, n)
@@ -258,7 +284,7 @@ def test_svd_wide_2d_complex():
     def fun(x):
         u, s, v = np.linalg.svd(x, full_matrices=False)
         return tuple((np.abs(u), s, np.abs(v)))
-        return grad(fun)(x)
+
     m = 3
     n = 5
     mat = npr.randn(m, n) + 1j * npr.randn(m, n)
@@ -268,7 +294,6 @@ def test_svd_wide_3d():
     def fun(x):
         u, s, v = np.linalg.svd(x, full_matrices=False)
         return tuple((u, s, v))
-        return grad(fun)(x)
 
     k = 4
     m = 3
@@ -280,7 +305,6 @@ def test_svd_wide_3d_complex():
     def fun(x):
         u, s, v = np.linalg.svd(x, full_matrices=False)
         return tuple((np.abs(u), s, np.abs(v)))
-        return grad(fun)(x)
 
     k = 4
     m = 3
@@ -292,7 +316,7 @@ def test_svd_square_2d():
     def fun(x):
         u, s, v = np.linalg.svd(x, full_matrices=False)
         return tuple((u, s, v))
-        return grad(fun)(x)
+
     m = 4
     n = 4
     mat = npr.randn(m, n)
@@ -302,7 +326,7 @@ def test_svd_square_2d_complex():
     def fun(x):
         u, s, v = np.linalg.svd(x, full_matrices=False)
         return tuple((np.abs(u), s, np.abs(v)))
-        return grad(fun)(x)
+
     m = 4
     n = 4
     mat = npr.randn(m, n) + 1j * npr.randn(m, n)
@@ -312,7 +336,6 @@ def test_svd_square_3d():
     def fun(x):
         u, s, v = np.linalg.svd(x, full_matrices=False)
         return tuple((u, s, v))
-        return grad(fun)(x)
 
     k = 3
     m = 4
@@ -324,7 +347,6 @@ def test_svd_square_3d_complex():
     def fun(x):
         u, s, v = np.linalg.svd(x, full_matrices=False)
         return tuple((np.abs(u), s, np.abs(v)))
-        return grad(fun)(x)
 
     k = 3
     m = 4
@@ -336,7 +358,7 @@ def test_svd_tall_2d():
     def fun(x):
         u, s, v = np.linalg.svd(x, full_matrices=False)
         return tuple((u, s, v))
-        return grad(fun)(x)
+
     m = 5
     n = 3
     mat = npr.randn(m, n)
@@ -346,7 +368,7 @@ def test_svd_tall_2d_complex():
     def fun(x):
         u, s, v = np.linalg.svd(x, full_matrices=False)
         return tuple((np.abs(u), s, np.abs(v)))
-        return grad(fun)(x)
+
     m = 5
     n = 3
     mat = npr.randn(m, n) + 1j * npr.randn(m, n)
@@ -356,7 +378,6 @@ def test_svd_tall_3d():
     def fun(x):
         u, s, v = np.linalg.svd(x, full_matrices=False)
         return tuple((u, s, v))
-        return grad(fun)(x)
 
     k = 4
     m = 5
@@ -368,7 +389,6 @@ def test_svd_tall_3d_complex():
     def fun(x):
         u, s, v = np.linalg.svd(x, full_matrices=False)
         return tuple((np.abs(u), s, np.abs(v)))
-        return grad(fun)(x)
 
     k = 4
     m = 5
@@ -380,7 +400,6 @@ def test_svd_only_s_2d():
     def fun(x):
         s = np.linalg.svd(x, full_matrices=False, compute_uv=False)
         return s
-        return grad(fun)(x)
 
     m = 5
     n = 3
@@ -391,7 +410,6 @@ def test_svd_only_s_2d_complex():
     def fun(x):
         s = np.linalg.svd(x, full_matrices=False, compute_uv=False)
         return s
-        return grad(fun)(x)
 
     m = 5
     n = 3
@@ -402,7 +420,6 @@ def test_svd_only_s_3d():
     def fun(x):
         s = np.linalg.svd(x, full_matrices=False, compute_uv=False)
         return s
-        return grad(fun)(x)
 
     k = 4
     m = 5
@@ -414,7 +431,6 @@ def test_svd_only_s_3d_complex():
     def fun(x):
         s = np.linalg.svd(x, full_matrices=False, compute_uv=False)
         return s
-        return grad(fun)(x)
 
     k = 4
     m = 5
