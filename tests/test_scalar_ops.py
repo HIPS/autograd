@@ -86,7 +86,7 @@ def test_arctan():
 
 def test_arccosh():
     fun = lambda x : 3.0 * np.arccosh(x)
-    check_grads(fun)(npr.randn()**2 + 1)
+    check_grads(fun)(npr.randn()**2 + 1.2)
 
 def test_arcsinh():
     fun = lambda x : 3.0 * np.arcsinh(x)
