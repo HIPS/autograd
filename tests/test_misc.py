@@ -102,3 +102,8 @@ def test_flatten_complex():
     val = 1 + 1j
     flat, unflatten = flatten(val)
     assert np.all(val == unflatten(flat))
+
+def test_object_array():
+    x = object()
+    a = np.array([x])
+    assert a.item() is x

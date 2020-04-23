@@ -12,6 +12,8 @@ class ArrayBox(Box):
     @primitive
     def __getitem__(A, idx): return A[idx]
 
+    def item(self): return self[(0,) * len(self.shape)]
+
     # Constants w.r.t float data just pass though
     shape = property(lambda self: self._value.shape)
     ndim  = property(lambda self: self._value.ndim)
@@ -20,7 +22,7 @@ class ArrayBox(Box):
     T = property(lambda self: anp.transpose(self))
     def __len__(self): return len(self._value)
     def astype(self, *args, **kwargs): return anp._astype(self, *args, **kwargs)
-
+    
     def __neg__(self): return anp.negative(self)
     def __add__(self, other): return anp.add(     self, other)
     def __sub__(self, other): return anp.subtract(self, other)
