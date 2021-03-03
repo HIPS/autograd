@@ -17,7 +17,7 @@ def wrap_intdtype(cls):
 
 def wrap_namespace(old, new):
     unchanged_types = {float, int, type(None), type}
-    int_types = {_np.int, _np.int8, _np.int16, _np.int32, _np.int64, _np.integer}
+    int_types = {_np.int8, _np.int16, _np.int32, _np.int64, _np.integer}
     for name, obj in old.items():
         if obj in notrace_functions:
             new[name] = notrace_primitive(obj)
