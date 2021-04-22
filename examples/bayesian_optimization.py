@@ -9,7 +9,7 @@ import autograd.numpy as np
 import autograd.numpy.random as npr
 from autograd import value_and_grad
 from scipy.optimize import minimize
-from gaussian_process import make_gp_funs, rbf_covariance
+from autograd.examples.gaussian_process import make_gp_funs, rbf_covariance
 from autograd.scipy.stats import norm
 
 def probability_of_improvement(mean, std, max_so_far):
