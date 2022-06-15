@@ -3,7 +3,7 @@ from functools import partial
 import numpy.linalg as npla
 from .numpy_wrapper import wrap_namespace
 from . import numpy_wrapper as anp
-from autograd.extend import defvjp
+from autograd.extend import defvjp, defjvp
 
 wrap_namespace(npla.__dict__, globals())
 
@@ -18,8 +18,8 @@ def T(x): return anp.swapaxes(x, -1, -2)
 
 _dot = partial(anp.einsum, '...ij,...jk->...ik')
 
-# batched diag 
-_diag = lambda a: anp.eye(a.shape[-1])*a 
+# batched diag
+_diag = lambda a: anp.eye(a.shape[-1])*a
 
 # batched diagonal, similar to matrix_diag in tensorflow
 def _matrix_diag(a):
@@ -56,7 +56,7 @@ def grad_solve(argnum, ans, a, b):
         return lambda g: solve(T(a), g)
 defvjp(solve, partial(grad_solve, 0), partial(grad_solve, 1))
 
-def grad_norm(ans, x, ord=None, axis=None):
+def norm_vjp(ans, x, ord=None, axis=None):
     def check_implemented():
         matrix_norm = (x.ndim == 2 and axis is None) or isinstance(axis, tuple)
 
@@ -110,20 +110,67 @@ def grad_norm(ans, x, ord=None, axis=None):
             # see https://en.wikipedia.org/wiki/Norm_(mathematics)#p-norm
             return expand(g / ans**(ord-1)) * x * anp.abs(x)**(ord-2)
     return vjp
-defvjp(norm, grad_norm)
+defvjp(norm, norm_vjp)
+
+def norm_jvp(g, ans, x, ord=None, axis=None):
+    def check_implemented():
+        matrix_norm = (x.ndim == 2 and axis is None) or isinstance(axis, tuple)
+
+        if matrix_norm:
+            if not (ord is None or ord == 'fro' or ord == 'nuc'):
+                raise NotImplementedError('Gradient of matrix norm not '
+                                          'implemented for ord={}'.format(ord))
+        elif not (ord is None or ord > 1):
+            raise NotImplementedError('Gradient of norm not '
+                                      'implemented for ord={}'.format(ord))
+
+    if axis is None:
+        contract = lambda a: anp.sum(a)
+    else:
+        contract = partial(anp.sum, axis=axis)
+
+    if ord == 'nuc':
+        if axis is None:
+            roll = lambda a: a
+            unroll = lambda a: a
+        else:
+            row_axis, col_axis = axis
+            if row_axis > col_axis:
+                row_axis = row_axis - 1
+            # Roll matrix axes to the back
+            roll = lambda a: anp.rollaxis(anp.rollaxis(a, col_axis, a.ndim),
+                                          row_axis, a.ndim-1)
+            # Roll matrix axes to their original position
+            unroll = lambda a: anp.rollaxis(anp.rollaxis(a, a.ndim-2, row_axis),
+                                            a.ndim-1, col_axis)
+
+    check_implemented()
+    if ord in (None, 2, 'fro'):
+        return contract(g * x) / ans
+    elif ord == 'nuc':
+        x_rolled = roll(x)
+        u, s, vt = svd(x_rolled, full_matrices=False)
+        uvt_rolled = _dot(u, vt)
+        # Roll the matrix axes back to their correct positions
+        uvt = unroll(uvt_rolled)
+        return contract(g * uvt)
+    else:
+        # see https://en.wikipedia.org/wiki/Norm_(mathematics)#p-norm
+        return contract(g * x * anp.abs(x)**(ord-2)) / ans**(ord-1)
+defjvp(norm, norm_jvp)
 
 def grad_eigh(ans, x, UPLO='L'):
     """Gradient for eigenvalues and vectors of a symmetric matrix."""
     N = x.shape[-1]
     w, v = ans              # Eigenvalues, eigenvectors.
     vc = anp.conj(v)
-    
+
     def vjp(g):
         wg, vg = g          # Gradient w.r.t. eigenvalues, eigenvectors.
         w_repeated = anp.repeat(w[..., anp.newaxis], N, axis=-1)
 
         # Eigenvalue part
-        vjp_temp = _dot(vc * wg[..., anp.newaxis, :], T(v)) 
+        vjp_temp = _dot(vc * wg[..., anp.newaxis, :], T(v))
 
         # Add eigenvector part only if non-zero backward signal is present.
         # This can avoid NaN results for degenerate cases if the function depends
@@ -142,7 +189,7 @@ def grad_eigh(ans, x, UPLO='L'):
             tri = anp.tile(anp.tril(anp.ones(N), -1), reps)
         elif UPLO == 'U':
             tri = anp.tile(anp.triu(anp.ones(N), 1), reps)
-        
+
         return anp.real(vjp_temp)*anp.eye(vjp_temp.shape[-1]) + \
             (vjp_temp + anp.conj(T(vjp_temp))) * tri
 
@@ -230,7 +277,7 @@ def grad_svd(usv_, a, full_matrices=True, compute_uv=True):
             vtgv = _dot(T(v), gv)
             t1 = (f * (utgu - anp.conj(T(utgu)))) * s[..., anp.newaxis, :]
             t1 = t1 + i * gs[..., :, anp.newaxis]
-            t1 = t1 + s[..., :, anp.newaxis] * (f * (vtgv - anp.conj(T(vtgv)))) 
+            t1 = t1 + s[..., :, anp.newaxis] * (f * (vtgv - anp.conj(T(vtgv))))
 
             if anp.iscomplexobj(u):
                 t1 = t1 + 1j*anp.imag(_diag(utgu)) / s[..., anp.newaxis, :]
