@@ -2,7 +2,10 @@
 from __future__ import absolute_import
 from functools import partial
 from collections import OrderedDict
-from inspect import getargspec
+try:
+    from inspect import getfullargspec as _getargspec  # Python 3
+except ImportError:
+    from inspect import getargspec as _getargspec  # Python 2
 import warnings
 
 from .wrap_util import unary_to_nary
@@ -69,7 +72,7 @@ def holomorphic_grad(fun, x):
 def grad_named(fun, argname):
     '''Takes gradients with respect to a named argument.
        Doesn't work on *args or **kwargs.'''
-    arg_index = getargspec(fun).args.index(argname)
+    arg_index = _getargspec(fun).args.index(argname)
     return grad(fun, arg_index)
 
 @unary_to_nary
