@@ -134,45 +134,47 @@ def test_vector_2norm():
     def fun(x): return np.linalg.norm(x)
     D = 6
     vec = npr.randn(D)
-    check_grads(fun)(vec)
+    check_grads(fun, modes=['fwd', 'rev'])(vec)
 
 def test_frobenius_norm():
     def fun(x): return np.linalg.norm(x)
     D = 6
     mat = npr.randn(D, D-1)
-    check_grads(fun)(mat)
+    check_grads(fun, modes=['fwd', 'rev'])(mat)
 
 def test_frobenius_norm_axis():
     def fun(x): return np.linalg.norm(x, axis=(0, 1))
     D = 6
     mat = npr.randn(D, D-1, D-2)
-    check_grads(fun)(mat)
+    check_grads(fun, modes=['fwd', 'rev'])(mat)
 
 @pytest.mark.parametrize("ord", range(2, 5))
 @pytest.mark.parametrize("size", [6])
 def test_vector_norm_ord(size, ord):
     def fun(x): return np.linalg.norm(x, ord=ord)
     vec = npr.randn(size)
-    check_grads(fun)(vec)
+    check_grads(fun, modes=['fwd', 'rev'])(vec)
 
 @pytest.mark.parametrize("axis", range(3))
 @pytest.mark.parametrize("shape", [(6, 5, 4)])
 def test_norm_axis(shape, axis):
     def fun(x): return np.linalg.norm(x, axis=axis)
     arr = npr.randn(*shape)
-    check_grads(fun)(arr)
+    check_grads(fun, modes=['fwd', 'rev'])(arr)
 
 def test_norm_nuclear():
     def fun(x): return np.linalg.norm(x, ord='nuc')
     D = 6
     mat = npr.randn(D, D-1)
-    check_grads(fun)(mat)
+    # Order 1 because the jvp of the svd is not implemented
+    check_grads(fun, modes=['fwd', 'rev'], order=1)(mat)
 
 def test_norm_nuclear_axis():
     def fun(x): return np.linalg.norm(x, ord='nuc', axis=(0, 1))
     D = 6
     mat = npr.randn(D, D-1, D-2)
-    check_grads(fun)(mat)
+    # Order 1 because the jvp of the svd is not implemented
+    check_grads(fun, modes=['fwd', 'rev'], order=1)(mat)
 
 def test_eigvalh_lower():
     def fun(x):
@@ -210,8 +212,8 @@ def test_eigvalh_upper_broadcasting():
     check_grads(fun)(hmat)
 
 # For complex-valued matrices, the eigenvectors could have arbitrary phases (gauge)
-# which makes it impossible to compare to numerical derivatives. So we take the 
-# absolute value to get rid of that phase. 
+# which makes it impossible to compare to numerical derivatives. So we take the
+# absolute value to get rid of that phase.
 def test_eigvalh_lower_complex():
     def fun(x):
         w, v = np.linalg.eigh(x)
