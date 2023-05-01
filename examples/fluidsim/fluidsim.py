@@ -13,7 +13,7 @@ import os
 
 # Fluid simulation code based on
 # "Real-Time Fluid Dynamics for Games" by Jos Stam
-# http://www.intpowertechcorp.com/GDC03.pdf
+# https://www.josstam.com/_files/ugd/cf1fd6_9989229efbd34a26ba5ccd913721a2ac.pdf
 
 def project(vx, vy):
     """Project the velocity field to be approximately mass-conserving,
