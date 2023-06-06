@@ -9,15 +9,14 @@ import autograd.numpy as np
 import autograd.numpy.random as npr
 from autograd import value_and_grad
 from scipy.optimize import minimize
-from gaussian_process import make_gp_funs, rbf_covariance
+from autograd.examples.gaussian_process import make_gp_funs, rbf_covariance
 from autograd.scipy.stats import norm
 
 def probability_of_improvement(mean, std, max_so_far):
     return norm.cdf(max_so_far, mean, std)
 
 def expected_new_max(mean, std, max_so_far):
-    return max_so_far - \
-           (mean - max_so_far) * norm.cdf(mean, max_so_far, std) \
+    return (mean - max_so_far) * norm.cdf(mean, max_so_far, std) \
                          + std * norm.pdf(mean, max_so_far, std)
 
 def init_covariance_params(num_params):
@@ -28,7 +27,12 @@ def defaultmax(x, default=-np.inf):
         return default
     return np.max(x)
 
-def bayesian_optimize(func, domain_min, domain_max, num_iters=20, callback=None):
+def bayesian_optimize(func, domain_min, domain_max, num_iters=20, callback=None, exploration_constant=0.01):
+    """
+    Args:
+        exploration_constant: A higher exploration constant leads to more exploration and less exploitation,
+        i.e., weighing the uncertainty more over the predicted mean.
+    """
 
     D = len(domain_min)
 
@@ -61,13 +65,25 @@ def bayesian_optimize(func, domain_min, domain_max, num_iters=20, callback=None)
     # Start by evaluating once in the middle of the domain.
     X = np.zeros((0, D))
     y = np.zeros((0))
-    X = np.concatenate((X, np.reshape((domain_max - domain_min) / 2.0, (D, 1))))
+    X = np.concatenate((X, np.reshape((domain_max - domain_min) / 2.0, (1, D))))
     y = np.concatenate((y, np.reshape(np.array(func(X)), (1,))))
 
     for i in range(num_iters):
         if i > 1:
             print("Optimizing model parameters...")
-            model_params = optimize_gp_params(model_params, X, y)
+            try:
+                model_params = optimize_gp_params(model_params, X, y)
+            except np.linalg.LinAlgError as err:
+                # Rather than crashing the program, suppresses the
+                # rank-deficiency issue in the kernel matrix by reusing the
+                # model parameters in the previous iteration.
+                # A more principled way is to not directly use GP likelihood
+                # for parameter optimization, but to follow Algorithm 3.1 in
+                # Rasmussen & Williams 2006, Gaussian Processes for Machine Learning,
+                print('Due to rank-deficiency issue when calling '
+                      'bayesian_optimize.optimize_gp_params(), the model'
+                      'parameters are not updated in iteration {}.'.format(i))
+                pass
 
         print("Choosing where to look next", end='')
         def predict_func(xstar):
@@ -77,7 +93,7 @@ def bayesian_optimize(func, domain_min, domain_max, num_iters=20, callback=None)
         def acquisition_function(xstar):
             xstar = np.atleast_2d(xstar)  # To work around a bug in scipy.minimize
             mean, std = predict_func(xstar)
-            return expected_new_max(mean, std, defaultmax(y))
+            return expected_new_max(mean - exploration_constant, std, defaultmax(y))
         next_point = choose_next_point(domain_min, domain_max, acquisition_function)
 
         print("Evaluating expensive function...")
@@ -130,4 +146,3 @@ if __name__ == '__main__':
         plt.pause(1)
 
     best_x, best_y = bayesian_optimize(example_function, domain_min, domain_max, callback=callback)
-
