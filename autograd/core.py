@@ -228,9 +228,16 @@ class VSpace(object):
         else:
             VSpace.mappings[value_type] = cls
 
+def VSpace_mappings(obj):
+    for key in VSpace.mappings:
+        if isinstance(obj, key):
+            return VSpace.mappings[key]
+    else:
+        raise KeyError("Can't differentiate w.r.t. type {}".format(type(obj)))
+
 def vspace(value):
     try:
-        return VSpace.mappings[type(value)](value)
+        return VSpace_mappings(value)(value)
     except KeyError:
         if isbox(value):
             return vspace(getval(value))

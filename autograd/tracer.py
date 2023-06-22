@@ -112,10 +112,16 @@ class Box(object):
         Box.type_mappings[value_type] = cls
         Box.type_mappings[cls] = cls
 
-box_type_mappings = Box.type_mappings
+def box_type_mappings(obj):
+    for key in Box.type_mappings:
+        if isinstance(obj, key):
+            return Box.type_mappings[key]
+    else:
+        raise KeyError("Can't differentiate w.r.t. type {}".format(type(obj)))
+
 def new_box(value, trace, node):
     try:
-        return box_type_mappings[type(value)](value, trace, node)
+        return box_type_mappings(value)(value, trace, node)
     except KeyError:
         raise TypeError("Can't differentiate w.r.t. type {}".format(type(value)))
 
