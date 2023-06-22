@@ -167,3 +167,9 @@ class DictVSpace(ContainerVSpace):
 ListVSpace.register(list_)
 TupleVSpace.register(tuple_)
 DictVSpace.register(dict_)
+
+class NamedTupleVSpace(SequenceVSpace):
+    def _map(self, f, *args):
+        return self.seq_type(*map(f, self.shape, *args))
+    def _subval(self, xs, idx, x):
+        return self.seq_type(*subvals(xs, [(idx, x)]))
