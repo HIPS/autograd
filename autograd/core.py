@@ -228,23 +228,20 @@ class VSpace(object):
         else:
             VSpace.mappings[value_type] = cls
 
-def VSpace_mappings(obj):
-    for key in VSpace.mappings:
-        if isinstance(obj, key):
-            return VSpace.mappings[key]
-    else:
-        raise KeyError("Can't differentiate w.r.t. type {}".format(type(obj)))
-
 def vspace(value):
     try:
-        return VSpace_mappings(value)(value)
+        return VSpace.mappings[type(value)](value)
     except KeyError:
         if isbox(value):
             return vspace(getval(value))
         else:
-            raise TypeError("Can't find vector space for value {} of type {}. "
-                            "Valid types are {}".format(
-                                value, type(value), VSpace.mappings.keys()))
+            for key in VSpace.mappings:
+                if isinstance(value, key):
+                    return VSpace.mappings[key](value)
+            else:
+                raise TypeError("Can't find vector space for value {} of type {}. "
+                                "Valid types are {}".format(
+                                    value, type(value), VSpace.mappings.keys()))
 
 class SparseBox(Box):
     __slots__ = []
