@@ -49,8 +49,8 @@ class ArrayBox(Box):
     def __hash__(self): return id(self)
 
 ArrayBox.register(np.ndarray)
-for type_ in [float, np.float128, np.float64, np.float32, np.float16,
-              complex, np.complex64, np.complex128, np.complex256]:
+for type_ in [float, np.float64, np.float32, np.float16,
+              complex, np.complex64, np.complex128]:
     ArrayBox.register(type_)
 
 # These numpy.ndarray methods are just refs to an equivalent numpy function

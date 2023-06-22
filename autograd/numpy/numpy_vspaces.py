@@ -59,10 +59,10 @@ VSpace.register(np.ndarray,
                 if np.iscomplexobj(x)
                 else ArrayVSpace(x))
 
-for type_ in [float, np.float128, np.float64, np.float32, np.float16]:
+for type_ in [float, np.float64, np.float32, np.float16]:
     ArrayVSpace.register(type_)
 
-for type_ in [complex, np.complex64, np.complex128, np.complex256]:
+for type_ in [complex, np.complex64, np.complex128]:
     ComplexArrayVSpace.register(type_)
 
 
