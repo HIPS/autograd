@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 import numpy as np
 from autograd.extend import Box, primitive
+from autograd.builtins import SequenceBox
 from . import numpy_wrapper as anp
 
 Box.__array_priority__ = 90.0
@@ -64,3 +65,10 @@ for method_name in nondiff_methods + diff_methods:
 
 # Flatten has no function, only a method.
 setattr(ArrayBox, 'flatten', anp.__dict__['ravel'])
+
+if np.__version__ >= '1.25':
+    SequenceBox.register(np.linalg.linalg.EigResult)
+    SequenceBox.register(np.linalg.linalg.EighResult)
+    SequenceBox.register(np.linalg.linalg.QRResult)
+    SequenceBox.register(np.linalg.linalg.SlogdetResult)
+    SequenceBox.register(np.linalg.linalg.SVDResult)
