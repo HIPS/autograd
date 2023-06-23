@@ -226,7 +226,7 @@ def test_partial():
 
 def test_dtypes():
     def f(x):
-        return np.sum(x**2)
+        return np.real(np.sum(x**2))
 
     # Array y with dtype np.float32
     y = np.random.randn(10, 10).astype(np.float32)
@@ -234,6 +234,12 @@ def test_dtypes():
 
     y = np.random.randn(10, 10).astype(np.float16)
     assert grad(f)(y).dtype.type is np.float16
+
+    y = np.random.randn(10, 10).astype(np.longdouble)
+    grad(f)(y)
+
+    y = np.random.randn(10, 10).astype(np.clongdouble)
+    grad(f)(y)
 
 def test_checkpoint_correctness():
     bar = lambda x, y: 2*x + y + 5
