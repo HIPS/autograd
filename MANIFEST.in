@@ -1,1 +1,2 @@
 recursive-include autograd *.c *.h *.pyx
+prune tests

@@ -1,15 +1,69 @@
-*.pyc
-scratch/
-examples/data
-.idea/
-.DS_Store
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+.Python
 build/
-data/
+develop-eggs/
 dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 MANIFEST
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+coverage.*
+*.cover
+.hypothesis/
+nosetests.xml
+.pytest_cache/
+junit-report.xml
+
+# pyenv
+.python-version
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# mypy
+.mypy_cache/
+
+# OS and IDE config files
+.DS_Store
+.idea/
+
+# project-specific
+data/
 *.so
 *.c
+scratch/
+examples/data
+
 .asv/
-autograd.egg-info/
 asv.conf.json
 benchmarks/asv.conf.js

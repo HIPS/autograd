@@ -1,7 +1,9 @@
 from __future__ import absolute_import
 from __future__ import print_function
-from future.standard_library import install_aliases
-install_aliases()
+import sys
+if sys.version < "3":
+    from future.standard_library import install_aliases
+    install_aliases()
 
 import os
 import gzip
