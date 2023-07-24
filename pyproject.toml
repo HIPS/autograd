@@ -63,6 +63,12 @@ show_missing = true
 [tool.pytest.ini_options]
 addopts = "--color=yes --junitxml=junit-report.xml"
 
+[tool.ruff]
+extend-exclude = []
+extend-ignore = ["E731"]
+extend-select = ["I", "W"]
+line-length = 109
+
 [tool.setuptools]
 packages=[
   "autograd",
