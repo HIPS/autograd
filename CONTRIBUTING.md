@@ -10,7 +10,7 @@ pip install tox
 
 ```shell
 tox list                # list all Tox environments
-tox run -e black,ruff   # run code style checks
+tox run -e ruff         # run code style checks
 tox run -e py           # run tests with your default Python
 tox run -e package      # verify packaging
 tox                     # run all Tox environments
@@ -23,11 +23,6 @@ GH Actions will run the tests across all supported Python versions.
 
 You can use additional arguments for the tools called by Tox by
 separating them from the Tox arguments by a double-dash `--`, e.g.
-
-```shell
-tox run -e black -- autograd/core.py --check --diff
-tox run -e black -- autograd/core.py
-```
 
 ```shell
 tox run -e ruff -- autograd/core.py --show-source
