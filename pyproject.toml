@@ -12,9 +12,10 @@ authors = [
   {name = "Dougal Maclaurin", email = "maclaurin@physics.harvard.edu"},
   {name = "David Duvenaud", email = "duvenaud@cs.toronto.edu"},
   {name = "Matthew Johnson", email = "mattjj@csail.mit.edu"},
+  {name = "Jamie Townsend", email = "j.h.n.townsend@uva.nl"},
 ]
 maintainers = [
-  {name = "Jamie Townsend", email = "jamiehntownsend@gmail.com"},
+  {name = "Jamie Townsend", email = "j.h.n.townsend@uva.nl"},
 ]
 classifiers = [
   "Development Status :: 4 - Beta",
