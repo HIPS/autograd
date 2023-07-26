@@ -6,7 +6,7 @@ import numpy as npo # original numpy
 from autograd.extend import primitive, defvjp
 
 from numpy.lib.stride_tricks import as_strided
-from future.utils import iteritems
+from six import iteritems
 
 @primitive
 def convolve(A, B, axes=None, dot_axes=[(),()], mode='full'):

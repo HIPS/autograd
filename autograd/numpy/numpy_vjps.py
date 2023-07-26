@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-from future.utils import string_types
+from six import string_types
 from functools import partial
 import numpy as onp
 from ..util import func

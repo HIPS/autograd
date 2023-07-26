@@ -4,7 +4,15 @@ Townsend) are now working on [JAX](https://github.com/google/jax), with Dougal a
 working on it full-time. JAX combines a new version of Autograd with extra
 features such as jit compilation.__
 
-# Autograd  [![Test status](https://travis-ci.org/HIPS/autograd.svg?branch=master)](https://travis-ci.org/HIPS/autograd) [![asv](http://img.shields.io/badge/benchmarked%20by-asv-green.svg?style=flat)](#)
+# Autograd  [![Checks status][checks-badge]][checks-url] [![Tests status][tests-badge]][tests-url] [![Publish status][publish-badge]][publish-url] [![asv][asv-badge]](#)
+
+[publish-badge]: https://github.com/HIPS/autograd/actions/workflows/publish.yml/badge.svg
+[checks-badge]: https://github.com/HIPS/autograd/actions/workflows/check.yml/badge.svg
+[tests-badge]: https://github.com/HIPS/autograd/actions/workflows/test.yml/badge.svg
+[asv-badge]: http://img.shields.io/badge/benchmarked%20by-asv-green.svg?style=flat
+[publish-url]: https://github.com/HIPS/autograd/actions/workflows/publish.yml
+[checks-url]: https://github.com/HIPS/autograd/actions/workflows/check.yml
+[tests-url]: https://github.com/HIPS/autograd/actions/workflows/test.yml
 
 Autograd can automatically differentiate native Python and Numpy code. It can
 handle a large subset of Python's features, including loops, ifs, recursion and
@@ -75,7 +83,18 @@ You can find a tutorial [here.](docs/tutorial.md)
 
 ## How to install
 
-Just run `pip install autograd`
+Install _autograd_ using Pip, e.g.
+
+```shell
+pip install autograd
+```
+
+Some features require _scipy_, which you can install separately or as an
+optional dependency along with _autograd_ , e.g.
+
+```shell
+pip install "autograd[scipy]"
+```
 
 ## Authors
 

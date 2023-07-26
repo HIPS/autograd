@@ -1,0 +1,80 @@
+[build-system]
+requires = ["setuptools>=63"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "autograd"
+version = "1.6.3"
+description = "Efficiently computes derivatives of numpy code."
+readme = "README.md"
+license = {file = "license.txt"}
+authors = [
+  {name = "Dougal Maclaurin", email = "maclaurin@physics.harvard.edu"},
+  {name = "David Duvenaud", email = "duvenaud@cs.toronto.edu"},
+  {name = "Matthew Johnson", email = "mattjj@csail.mit.edu"},
+  {name = "Jamie Townsend", email = "j.h.n.townsend@uva.nl"},
+]
+maintainers = [
+  {name = "Jamie Townsend", email = "j.h.n.townsend@uva.nl"},
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Information Technology",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 2",
+  "Programming Language :: Python :: 2.7",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.5",
+  "Programming Language :: Python :: 3.6",
+  "Programming Language :: Python :: 3.7",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+]
+keywords = [
+  "Automatic differentiation",
+  "backpropagation",
+  "gradients",
+  "machine learning",
+  "optimization",
+  "neural networks",
+  "Python",
+  "Numpy",
+  "Scipy",
+]
+dependencies = [
+  "numpy>=1.12",
+  "six",
+  "future>=0.15.2; python_version < '3'",
+]
+
+[project.optional-dependencies]
+scipy = [
+  "scipy",
+]
+
+[tool.coverage.run]
+source = ["autograd"]
+
+[tool.coverage.report]
+show_missing = true
+
+[tool.pytest.ini_options]
+addopts = "--color=yes --junitxml=junit-report.xml"
+
+[tool.ruff]
+extend-exclude = []
+extend-ignore = ["E731"]
+extend-select = ["I", "W"]
+line-length = 109
+
+[tool.setuptools]
+packages=[
+  "autograd",
+  "autograd.numpy",
+  "autograd.scipy",
+  "autograd.scipy.stats",
+  "autograd.misc",
+]
