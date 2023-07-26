@@ -49,8 +49,3 @@ jobs:
       if: ${{ matrix.dependencies != 'none' }}
     - name: Run tests
       run: tox
-    - name: Upload coverage report
-      uses: codacy/codacy-coverage-reporter-action@v1
-      with:
-        project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
-        coverage-reports: coverage.xml
