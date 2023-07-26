@@ -83,14 +83,14 @@ You can find a tutorial [here.](docs/tutorial.md)
 
 ## How to install
 
-Install _autograd_ using Pip, e.g.
+Install Autograd using Pip:
 
 ```shell
 pip install autograd
 ```
 
-Some features require _scipy_, which you can install separately or as an
-optional dependency along with _autograd_ , e.g.
+Some features require SciPy, which you can install separately or as an
+optional dependency along with Autograd:
 
 ```shell
 pip install "autograd[scipy]"
