@@ -41,8 +41,11 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install build tools
       run: python -m pip install tox-gh-actions wheel
-    - name: Install optional dependencies (extras)
+    - name: Install optional dependencies (extras) on Linux/macOS
+      if: ${{ matrix.extras != 'none' && matrix.platform != 'windows-latest' }}
       run: conda install -c anaconda ${{ matrix.extras }}
-      if: ${{ matrix.extras != 'none' }}
+    - name: Install optional dependencies (extras) on Windows
+      if: ${{ matrix.extras != 'none' && matrix.platform == 'windows-latest' }}
+      run: . ${env:CONDA}\scripts\conda.exe install -c anaconda ${{ matrix.extras }}
     - name: Run tests
       run: tox
