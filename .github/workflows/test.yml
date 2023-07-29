@@ -46,10 +46,10 @@ jobs:
       if: matrix.python-version == 'pypy-3.7' && matrix.platform == 'windows-latest'
       run: python -m pip install tox-conda tox-gh-actions wheel
     - name: Install optional dependencies (extras) on Linux/macOS
-      if: ${{ matrix.extras != 'none' && matrix.platform != 'windows-latest' }}
+      if: matrix.extras != 'none' && matrix.platform != 'windows-latest'
       run: conda install -c anaconda ${{ matrix.extras }}
     - name: Install optional dependencies (extras) on Windows
-      if: ${{ matrix.extras != 'none' && matrix.platform == 'windows-latest' }}
+      if: matrix.extras != 'none' && matrix.platform == 'windows-latest'
       run: . ${env:CONDA}\scripts\conda.exe install -c anaconda ${{ matrix.extras }}
     - name: Run tests
       run: tox
