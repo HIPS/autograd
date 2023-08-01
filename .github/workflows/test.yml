@@ -32,6 +32,8 @@ jobs:
         - pypy-3.8
         - pypy-3.9
         - pypy-3.10
+        exclude:
+        - { platform: windows-latest, python-version: pypy-3.7 }
     steps:
     - uses: actions/checkout@v3
     - uses: actions/setup-python@v4
@@ -45,4 +47,5 @@ jobs:
       if: startsWith(matrix.platform, 'ubuntu')
       run: sudo apt-get install libopenblas-dev
     - name: Run tests with scipy
+      if: startsWith(matrix.platform, 'ubuntu') || startsWith(matrix.python-version, 'pypy') != true
       run: tox run -e py-scipy
