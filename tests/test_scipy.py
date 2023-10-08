@@ -10,6 +10,7 @@ except:
     warn('Skipping scipy tests.')
 else:
     import autograd.numpy as np
+    import autograd.numpy.linalg as npla
     import autograd.numpy.random as npr
     import autograd.scipy.signal
     import autograd.scipy.stats as stats
@@ -189,12 +190,12 @@ else:
     def test_jn():        combo_check(special.jn,        [1])([2], R(4)**2 + 1.3)
     def test_yn():        combo_check(special.yn,        [1])([2], R(4)**2 + 1.3)
 
-    def test_psi():       unary_ufunc_check(special.psi,     lims=[0.3, 2.0], test_complex=False)
-    def test_digamma():   unary_ufunc_check(special.digamma, lims=[0.3, 2.0], test_complex=False)
-    def test_gamma():     unary_ufunc_check(special.gamma,   lims=[0.3, 2.0], test_complex=False)
-    def test_gammaln():   unary_ufunc_check(special.gammaln, lims=[0.3, 2.0], test_complex=False)
-    def test_gammasgn():  unary_ufunc_check(special.gammasgn,lims=[0.3, 2.0], test_complex=False)
-    def test_rgamma()  :  unary_ufunc_check(special.rgamma,  lims=[0.3, 2.0], test_complex=False)
+    def test_psi():       unary_ufunc_check(special.psi,      lims=[0.3, 2.0], test_complex=False)
+    def test_digamma():   unary_ufunc_check(special.digamma,  lims=[0.3, 2.0], test_complex=False)
+    def test_gamma():     unary_ufunc_check(special.gamma,    lims=[0.3, 2.0], test_complex=False)
+    def test_gammaln():   unary_ufunc_check(special.gammaln,  lims=[0.3, 2.0], test_complex=False)
+    def test_gammasgn():  unary_ufunc_check(special.gammasgn, lims=[0.3, 2.0], test_complex=False)
+    def test_rgamma():    unary_ufunc_check(special.rgamma,   lims=[0.3, 2.0], test_complex=False)
     def test_multigammaln(): combo_check(special.multigammaln, [0])([U(4., 5.), U(4., 5., (2,3))],
                                         [1, 2, 3])
 
@@ -228,3 +229,4 @@ else:
     def test_sqrtm(): combo_check(spla.sqrtm, modes=['fwd'], order=2)([R(3, 3)])
     def test_sqrtm(): combo_check(symmetrize_matrix_arg(spla.sqrtm, 0), modes=['fwd', 'rev'], order=2)([R(3, 3)])
     def test_solve_sylvester(): combo_check(spla.solve_sylvester, [0, 1, 2], modes=['rev', 'fwd'], order=2)([R(3, 3)], [R(3, 3)], [R(3, 3)])
+    def test_solve_banded(): combo_check(spla.solve_banded, [1, 2], modes=['rev'], order=1)([(1, 1)], [R(3,5)], [R(5)])
