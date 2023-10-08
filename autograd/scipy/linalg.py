@@ -52,7 +52,7 @@ def grad_solve_banded(argnum, ans, l_and_u, a, b):
         T_a = anp.roll(a[:1, :], shifts[0])
         for rr in range(1, num_rows):
             T_a = anp.vstack([T_a, anp.flipud(anp.roll(a[rr:rr+1, :], shifts[rr]))])
-            T_a = anp.flipud(T_a)
+        T_a = anp.flipud(T_a)
 
         T_l_and_u = anp.flip(l_and_u)
 
