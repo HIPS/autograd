@@ -2,4 +2,4 @@
 from .tracer import Box, primitive, register_notrace, notrace_primitive
 from .core import (SparseObject, VSpace, vspace, VJPNode, JVPNode,
                    defvjp_argnums, defvjp_argnum, defvjp,
-                   defjvp_argnums, defjvp_argnum, defjvp, def_linear)
+                   defjvp_argnums, defjvp_argnum, defjvp, def_linear, vjp_numeric)
