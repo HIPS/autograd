@@ -36,3 +36,4 @@ about:
   home: https://github.com/HIPS/autograd
   license: MIT
   summary: 'Efficiently computes derivatives of numpy code.'
+conda_recipe/conda.yaml
