@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+import numpy as onp
 import autograd.numpy.random as npr
 import autograd.numpy as np
 import operator as op
@@ -155,7 +156,8 @@ def test_fmin(): combo_check(np.fmin, [0, 1])(
                             [R(1), R(1,4), R(3, 4)])
 
 def test_sort():       combo_check(np.sort, [0])([R(1), R(7)])
-def test_msort():     combo_check(np.msort, [0])([R(1), R(7)])
+if onp.lib.NumpyVersion(onp.__version__) < '2.0.0b1':
+    def test_msort():     combo_check(np.msort, [0])([R(1), R(7)])
 def test_partition(): combo_check(np.partition, [0])(
                                   [R(7), R(14)], kth=[0, 3, 6])
 
