@@ -55,7 +55,7 @@ def column_stack(tup):
 def array(A, *args, **kwargs):
     t = builtins.type(A)
     if t in (list, tuple):
-        return array_from_args(args, kwargs, *map(array, A))
+        return array_from_args(args, kwargs, *map(lambda a: a if a.shape else a.item(), map(array, A)))
     else:
         return _array_from_scalar_or_array(args, kwargs, A)
 
