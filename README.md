@@ -1,8 +1,8 @@
-__Note: Autograd is still being maintained but is no longer actively developed.
-The main developers (Dougal Maclaurin, David Duvenaud, Matt Johnson, and Jamie
-Townsend) are now working on [JAX](https://github.com/google/jax), with Dougal and Matt
-working on it full-time. JAX combines a new version of Autograd with extra
-features such as jit compilation.__
+__Note (updated May 2024): Autograd is not currently maintained, and the
+authors do not plan to respond to future issues or pull requests. Those looking
+for a similar user experience (with powerful additional features) can consider
+using [JAX](https://github.com/google/jax), a successor to Autograd designed by
+the same authors.__
 
 # Autograd  [![Checks status][checks-badge]][checks-url] [![Tests status][tests-badge]][tests-url] [![Publish status][publish-badge]][publish-url] [![asv][asv-badge]](#)
 
