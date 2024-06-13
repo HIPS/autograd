@@ -30,6 +30,16 @@ def unflatten_optimizer(optimize):
     return _optimize
 
 @unflatten_optimizer
+def simple_gd(grad, x, callback=None, num_iters=2000, step_size=0.01):
+    """A simple gradient descent without momentum.
+    grad() must have signature grad(x, i), where i is the iteration number."""
+    for i in range(num_iters):
+        g = - grad(x, i)
+        if callback: callback(x, i, g)
+        x = x + step_size * g
+    return x
+
+@unflatten_optimizer
 def sgd(grad, x, callback=None, num_iters=200, step_size=0.1, mass=0.9):
     """Stochastic gradient descent with momentum.
     grad() must have signature grad(x, i), where i is the iteration number."""
@@ -40,6 +50,19 @@ def sgd(grad, x, callback=None, num_iters=200, step_size=0.1, mass=0.9):
         velocity = mass * velocity - (1.0 - mass) * g
         x = x + step_size * velocity
     return x
+
+def Newton_Raphson(grad, hess, x, optimizerFunc=None, *args, **kwargs):
+    """A second order optimization method. `hess` is a function with the same signature as `grad`. `optimizerFunc` is a function from this module - this optimizer will use them passing them not gradient, but the step computed by Newton-Raphson method."""
+    if optimizerFunc is None:
+        optimizerFunc = simple_gd
+    
+    def pseudograd(x, i):
+        g = grad(x, i)
+        h = hess(x, i)
+        invH = np.linalg.inv(h)
+        return np.einsum('ijk,ik->ik', invH, g)
+    return optimizerFunc(pseudoGrad, x, *args, **kwargs)
+
 
 @unflatten_optimizer
 def rmsprop(grad, x, callback=None, num_iters=100,
