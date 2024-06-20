@@ -6,7 +6,7 @@ from autograd import grad
 from autograd.test_util import check_grads
 
 def sigmoid(x):
-    return 0.5*(np.tanh(x) + 1)
+    return 0.5*(np.tanh(x / 2.) + 1)
 
 def logistic_predictions(weights, inputs):
     # Outputs probability of a label being true according to logistic model.
