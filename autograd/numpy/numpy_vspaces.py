@@ -66,7 +66,7 @@ for type_ in [complex, np.clongdouble, np.complex64, np.complex128]:
     ComplexArrayVSpace.register(type_)
 
 
-if np.lib.NumpyVersion(np.__version__) >= '2.0.0b1':
+if np.lib.NumpyVersion(np.__version__) >= '2.0.0':
     class EigResultVSpace(NamedTupleVSpace):     seq_type = np.linalg._linalg.EigResult
     class EighResultVSpace(NamedTupleVSpace):    seq_type = np.linalg._linalg.EighResult
     class QRResultVSpace(NamedTupleVSpace):      seq_type = np.linalg._linalg.QRResult
