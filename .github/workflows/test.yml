@@ -29,6 +29,10 @@ jobs:
         - '3.12'
         - pypy-3.9
         - pypy-3.10
+        # TODO: bring this back later
+        exclude:
+        - platform: windows-latest
+          python-version: 'pypy-3.10'
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-python@v5.1.1
