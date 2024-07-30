@@ -1,4 +1,3 @@
-from six import with_metaclass
 from .util import subvals
 from .extend import (Box, primitive, notrace_primitive, VSpace, vspace,
                      SparseObject, defvjp, defvjp_argnum, defjvp, defjvp_argnum)
@@ -86,24 +85,25 @@ def fwd_grad_make_sequence(argnum, g, ans, seq_type, *args, **kwargs):
 defjvp_argnum(make_sequence, fwd_grad_make_sequence)
 
 
-class TupleMeta(type_):
+class TupleMeta(type(tuple_)):
     def __instancecheck__(self, instance):
         return isinstance(instance, tuple_)
-class tuple(with_metaclass(TupleMeta, tuple_)):
+
+class tuple(tuple_, metaclass=TupleMeta):
     def __new__(cls, xs):
         return make_sequence(tuple_, *xs)
 
 class ListMeta(type_):
     def __instancecheck__(self, instance):
         return isinstance(instance, list_)
-class list(with_metaclass(ListMeta, list_)):
+class list(list_, metaclass=ListMeta):
     def __new__(cls, xs):
-        return make_sequence(list_,  *xs)
+        return make_sequence(list_, *xs)
 
 class DictMeta(type_):
     def __instancecheck__(self, instance):
         return isinstance(instance, dict_)
-class dict(with_metaclass(DictMeta, dict_)):
+class dict(dict_, metaclass=DictMeta):
     def __new__(cls, *args, **kwargs):
         result = dict_(*args, **kwargs)
         if result:

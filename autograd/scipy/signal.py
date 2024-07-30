@@ -6,7 +6,7 @@ import numpy as npo # original numpy
 from autograd.extend import primitive, defvjp
 
 from numpy.lib.stride_tricks import as_strided
-from six import iteritems
+
 
 @primitive
 def convolve(A, B, axes=None, dot_axes=[(),()], mode='full'):
@@ -79,8 +79,8 @@ def parse_axes(A_shape, B_shape, conv_axes, dot_axes, mode):
                    'conv'     : tuple(range(i2, i3))}
     conv_shape = (compute_conv_size(A_shape[i], B_shape[j], mode)
                   for i, j in zip(axes['A']['conv'], axes['B']['conv']))
-    shapes = {'A'   : {s : (A_shape[i] for i in ax) for s, ax in iteritems(axes['A'])},
-              'B'   : {s : (B_shape[i] for i in ax) for s, ax in iteritems(axes['B'])}}
+    shapes = {'A': {s: tuple(A_shape[i] for i in ax) for s, ax in axes['A'].items()},
+              'B': {s: tuple(B_shape[i] for i in ax) for s, ax in axes['B'].items()}}
     shapes['out'] = {'ignore_A' : shapes['A']['ignore'],
                      'ignore_B' : shapes['B']['ignore'],
                      'conv'     : conv_shape}
