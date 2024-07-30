@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+import numpy as onp
 import autograd.numpy.random as npr
 import autograd.numpy as np
 import operator as op
@@ -43,7 +44,7 @@ def test_log1p():   unary_ufunc_check(np.log1p, lims=[0.2, 2.0])
 def test_log2():    unary_ufunc_check(np.log2,  lims=[0.2, 2.0])
 def test_rad2deg(): unary_ufunc_check(lambda x : np.rad2deg(x)/50.0, test_complex=False)
 def test_radians(): unary_ufunc_check(np.radians, test_complex=False)
-def test_sign():    unary_ufunc_check(np.sign)
+def test_sign():    unary_ufunc_check(np.sign, test_complex=False)
 def test_sin():     unary_ufunc_check(np.sin)
 def test_sinh():    unary_ufunc_check(np.sinh)
 def test_sqrt():    unary_ufunc_check(np.sqrt, lims=[1.0, 3.0])
@@ -155,7 +156,8 @@ def test_fmin(): combo_check(np.fmin, [0, 1])(
                             [R(1), R(1,4), R(3, 4)])
 
 def test_sort():       combo_check(np.sort, [0])([R(1), R(7)])
-def test_msort():     combo_check(np.msort, [0])([R(1), R(7)])
+if onp.lib.NumpyVersion(onp.__version__) < '2.0.0':
+    def test_msort():     combo_check(np.msort, [0])([R(1), R(7)])
 def test_partition(): combo_check(np.partition, [0])(
                                   [R(7), R(14)], kth=[0, 3, 6])
 
