@@ -30,4 +30,4 @@ jobs:
       run: |
         python -m pip install tox wheel
     - name: Run ${{ matrix.env }}
-      run: tox -e ${{ matrix.env }}
+      run: python -m tox -e ${{ matrix.env }}

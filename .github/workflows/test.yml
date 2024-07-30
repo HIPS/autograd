@@ -37,10 +37,10 @@ jobs:
     - name: Install Python build tools
       run: python -m pip install tox wheel
     - name: Run tests
-      run: tox run -e py
+      run: python -m tox run -e py
     - name: Install Scipy prerequisites for Ubuntu
       if: startsWith(matrix.platform, 'ubuntu')
       run: sudo apt-get install libopenblas-dev
     - name: Run tests with scipy
       if: startsWith(matrix.platform, 'ubuntu') || startsWith(matrix.python-version, 'pypy') != true
-      run: tox run -e py-scipy
+      run: python -m tox run -e py-scipy
