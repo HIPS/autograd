@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-from six import string_types
 from functools import partial
 import numpy as onp
 from ..util import func
@@ -589,7 +588,7 @@ def grad_einsum(argnum, ans, operands_, kwargs):
     result_meta = anp.metadata(operands_[argnum])
     def vjp(g):
         operands = operands_
-        if isinstance(operands[0], string_types):  # using "ijk" convention.
+        if isinstance(operands[0], str):  # using "ijk" convention.
             in_subs, out_subs, _ = anp.parse_einsum_input(*operands)
             string, operands = operands[0], operands[1:]
 
