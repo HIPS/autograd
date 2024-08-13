@@ -1,11 +1,12 @@
 [build-system]
-requires = ["setuptools>=44"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "autograd"
 version = "1.6.3"
-description = "Efficiently computes derivatives of numpy code."
+requires-python = ">=3.8"
+description = "Efficiently computes derivatives of NumPy code."
 readme = "README.md"
 license = {file = "license.txt"}
 authors = [
@@ -16,22 +17,20 @@ authors = [
 ]
 maintainers = [
   {name = "Jamie Townsend", email = "j.h.n.townsend@uva.nl"},
+  {name = "Fabian Joswig", email = "fabian.joswig@uni-muenster.de"},
+  {name = "Agriya Khetarpal", email = "agriyakhetarpal@outlook.com"},
 ]
 classifiers = [
   "Development Status :: 4 - Beta",
   "Intended Audience :: Information Technology",
   "Intended Audience :: Science/Research",
   "License :: OSI Approved :: MIT License",
-  "Programming Language :: Python :: 2",
-  "Programming Language :: Python :: 2.7",
-  "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.5",
-  "Programming Language :: Python :: 3.6",
-  "Programming Language :: Python :: 3.7",
   "Programming Language :: Python :: 3.8",
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Scientific/Engineering",
 ]
 keywords = [
   "Automatic differentiation",
@@ -41,14 +40,16 @@ keywords = [
   "optimization",
   "neural networks",
   "Python",
-  "Numpy",
-  "Scipy",
+  "NumPy",
+  "SciPy",
 ]
 dependencies = [
-  "numpy>=1.12",
-  "six",
-  "future>=0.15.2; python_version < '3'",
+  "numpy<2",
 ]
+# dynamic = ["version"]
+
+[project.urls]
+Source = "https://github.com/HIPS/autograd"
 
 [project.optional-dependencies]
 scipy = [
@@ -69,12 +70,3 @@ extend-exclude = []
 extend-ignore = ["E731"]
 extend-select = ["I", "W"]
 line-length = 109
-
-[tool.setuptools]
-packages=[
-  "autograd",
-  "autograd.numpy",
-  "autograd.scipy",
-  "autograd.scipy.stats",
-  "autograd.misc",
-]
