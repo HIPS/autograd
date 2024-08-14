@@ -44,7 +44,7 @@ keywords = [
   "SciPy",
 ]
 dependencies = [
-  "numpy<2",
+  "numpy",
 ]
 # dynamic = ["version"]
 
