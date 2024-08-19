@@ -352,6 +352,10 @@ def test_grad_and_aux():
 def test_wrapped_name_and_docs():
     def foo(x): pass
     assert grad.__name__ == 'grad'
-    assert grad.__doc__.startswith("\n    Returns a function which")
+    # Python 3.13: Compiler now strip indents from docstrings.
+    # https://docs.python.org/3.13/whatsnew/3.13.html#other-language-changes
+    assert grad.__doc__.startswith(tuple(
+        "\n{}Returns a function which".format(indent) for indent in ("    ", "")
+    ))
     assert grad(foo, 1).__name__ == 'grad_of_foo_wrt_argnum_1'
     assert grad(foo, 1).__doc__.startswith("    grad of function foo with")
