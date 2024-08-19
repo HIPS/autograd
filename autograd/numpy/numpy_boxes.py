@@ -66,7 +66,13 @@ for method_name in nondiff_methods + diff_methods:
 # Flatten has no function, only a method.
 setattr(ArrayBox, 'flatten', anp.__dict__['ravel'])
 
-if np.__version__ >= '1.25':
+if np.lib.NumpyVersion(np.__version__) >= '2.0.0':
+    SequenceBox.register(np.linalg._linalg.EigResult)
+    SequenceBox.register(np.linalg._linalg.EighResult)
+    SequenceBox.register(np.linalg._linalg.QRResult)
+    SequenceBox.register(np.linalg._linalg.SlogdetResult)
+    SequenceBox.register(np.linalg._linalg.SVDResult)
+elif np.__version__ >= '1.25':
     SequenceBox.register(np.linalg.linalg.EigResult)
     SequenceBox.register(np.linalg.linalg.EighResult)
     SequenceBox.register(np.linalg.linalg.QRResult)

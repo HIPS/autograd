@@ -4,7 +4,7 @@ from autograd.builtins import NamedTupleVSpace
 
 class ArrayVSpace(VSpace):
     def __init__(self, value):
-        value = np.array(value, copy=False)
+        value = np.asarray(value)
         self.shape = value.shape
         self.dtype = value.dtype
 
@@ -66,7 +66,19 @@ for type_ in [complex, np.clongdouble, np.complex64, np.complex128]:
     ComplexArrayVSpace.register(type_)
 
 
-if np.__version__ >= '1.25':
+if np.lib.NumpyVersion(np.__version__) >= '2.0.0':
+    class EigResultVSpace(NamedTupleVSpace):     seq_type = np.linalg._linalg.EigResult
+    class EighResultVSpace(NamedTupleVSpace):    seq_type = np.linalg._linalg.EighResult
+    class QRResultVSpace(NamedTupleVSpace):      seq_type = np.linalg._linalg.QRResult
+    class SlogdetResultVSpace(NamedTupleVSpace): seq_type = np.linalg._linalg.SlogdetResult
+    class SVDResultVSpace(NamedTupleVSpace):     seq_type = np.linalg._linalg.SVDResult
+
+    EigResultVSpace.register(np.linalg._linalg.EigResult)
+    EighResultVSpace.register(np.linalg._linalg.EighResult)
+    QRResultVSpace.register(np.linalg._linalg.QRResult)
+    SlogdetResultVSpace.register(np.linalg._linalg.SlogdetResult)
+    SVDResultVSpace.register(np.linalg._linalg.SVDResult)
+elif np.__version__ >= '1.25':
     class EigResultVSpace(NamedTupleVSpace):     seq_type = np.linalg.linalg.EigResult
     class EighResultVSpace(NamedTupleVSpace):    seq_type = np.linalg.linalg.EighResult
     class QRResultVSpace(NamedTupleVSpace):      seq_type = np.linalg.linalg.QRResult

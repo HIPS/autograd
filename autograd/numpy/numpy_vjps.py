@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-from six import string_types
 from functools import partial
 import numpy as onp
 from ..util import func
@@ -560,7 +559,8 @@ def grad_sort(ans, x, axis=-1, kind='quicksort', order=None):
     sort_perm = anp.argsort(x, axis, kind, order)
     return lambda g: unpermuter(g, sort_perm)
 defvjp(anp.sort, grad_sort)
-defvjp(anp.msort, grad_sort)  # Until multi-D is allowed, these are the same.
+if onp.lib.NumpyVersion(onp.__version__) < '2.0.0':
+    defvjp(anp.msort, grad_sort)  # Until multi-D is allowed, these are the same.
 
 def grad_partition(ans, x, kth, axis=-1, kind='introselect', order=None):
     #TODO: Cast input with np.asanyarray()
@@ -588,7 +588,7 @@ def grad_einsum(argnum, ans, operands_, kwargs):
     result_meta = anp.metadata(operands_[argnum])
     def vjp(g):
         operands = operands_
-        if isinstance(operands[0], string_types):  # using "ijk" convention.
+        if isinstance(operands[0], str):  # using "ijk" convention.
             in_subs, out_subs, _ = anp.parse_einsum_input(*operands)
             string, operands = operands[0], operands[1:]
 

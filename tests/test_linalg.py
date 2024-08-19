@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 from builtins import range
 import itertools
+import numpy as onp
 import autograd.numpy as np
 import autograd.numpy.random as npr
 from autograd.test_util import check_grads
@@ -94,7 +95,10 @@ def test_solve_arg1_3d():
     D = 4
     A = npr.randn(D+1, D, D) + 5*np.eye(D)
     B = npr.randn(D+1, D)
-    fun = lambda A: np.linalg.solve(A, B)
+    if onp.lib.NumpyVersion(onp.__version__) < '2.0.0':
+        fun = lambda A: np.linalg.solve(A, B)
+    else:
+        fun = lambda A: np.linalg.solve(A, B[..., None])[..., 0]
     check_grads(fun)(A)
 
 def test_solve_arg1_3d_3d():
