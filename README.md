@@ -1,9 +1,3 @@
-__Note (updated May 2024): Autograd is not currently maintained, and the
-authors do not plan to respond to future issues or pull requests. Those looking
-for a similar user experience (with powerful additional features) can consider
-using [JAX](https://github.com/google/jax), a successor to Autograd designed by
-the same authors.__
-
 # Autograd  [![Checks status][checks-badge]][checks-url] [![Tests status][tests-badge]][tests-url] [![Publish status][publish-badge]][publish-url] [![asv][asv-badge]](#)
 
 [publish-badge]: https://github.com/HIPS/autograd/actions/workflows/publish.yml/badge.svg
@@ -96,15 +90,18 @@ optional dependency along with Autograd:
 pip install "autograd[scipy]"
 ```
 
-## Authors
+## Authors and maintainers
 
 Autograd was written by [Dougal Maclaurin](https://dougalmaclaurin.com),
 [David Duvenaud](https://www.cs.toronto.edu/~duvenaud/),
 [Matt Johnson](http://people.csail.mit.edu/mattjj/),
 [Jamie Townsend](https://github.com/j-towns)
-and many other contributors. The package is currently still being maintained,
-but is no longer actively developed. Please feel free to submit any bugs or
-feature requests. We'd also love to hear about your experiences with autograd
+and many other contributors. The package is currently being maintained by
+[Agriya Khetarpal](https://github.com/agriyakhetarpal),
+[Fabian Joswig](https://github.com/fjosw) and
+[Jamie Townsend](https://github.com/j-towns).
+Please feel free to submit any bugs or
+feature requests. We'd also love to hear about your experiences with Autograd
 in general. Drop us an email!
 
 We want to thank Jasper Snoek and the rest of the HIPS group (led by Prof. Ryan
