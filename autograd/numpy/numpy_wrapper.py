@@ -4,7 +4,7 @@ import warnings
 from autograd.extend import primitive, notrace_primitive
 import numpy as _np
 import autograd.builtins as builtins
-from numpy.core.einsumfunc import _parse_einsum_input
+from numpy._core.einsumfunc import _parse_einsum_input
 
 notrace_functions = [
     _np.ndim, _np.shape, _np.iscomplexobj, _np.result_type
