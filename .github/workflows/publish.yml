@@ -37,7 +37,7 @@ jobs:
     name: Upload to PyPI
     runs-on: ubuntu-latest
     environment:
-      name: pypi
+      name: release
       url: https://pypi.org/p/autograd
     permissions:
       id-token: write # mandatory for trusted publishing
