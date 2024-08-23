@@ -9,7 +9,7 @@ on:
     - master
   workflow_dispatch:
   schedule:
-    - cron: '0 4 1 * *'
+    - cron: '0 4 * * *'
 
 env:
   PIP_DISABLE_PIP_VERSION_CHECK: '1'
