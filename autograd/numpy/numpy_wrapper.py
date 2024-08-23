@@ -5,7 +5,7 @@ from autograd.extend import primitive, notrace_primitive
 import numpy as _np
 import autograd.builtins as builtins
 
-if np_.lib.NumpyVersion(np_.__version__) >= '2.0.0':
+if _np.lib.NumpyVersion(_np.__version__) >= '2.0.0':
     from numpy._core.einsumfunc import _parse_einsum_input
 else:
     from numpy.core.einsumfunc import _parse_einsum_input
