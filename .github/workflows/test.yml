@@ -42,5 +42,11 @@ jobs:
       if: matrix.platform == 'ubuntu-latest' && startsWith(matrix.python-version, 'pypy')
       run: sudo apt-get install libopenblas-dev
 
+    - name: Install SciPy prerequisites for macOS with PyPy
+      if: startsWith(matrix.platform, 'macos') && startsWith(matrix.python-version, 'pypy')
+      run: |
+        brew install openblas
+        brew reintall gcc
+
     - name: Run tests with SciPy
       run: uvx nox -s tests-scipy
