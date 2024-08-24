@@ -17,9 +17,16 @@ def check(session):
 
 
 @nox.session(name="tests")
-def py27(session):
+def run_tests(session):
     """Run unit tests and generate a coverage report"""
-    session.install("-e", ".[scipy,test]")
+    session.install("-e", ".[test]")
+    session.run("pytest", "--cov=autograd", "--cov-report=xml")
+
+
+@nox.session(name="tests-scipy")
+def run_tests_scipy(session):
+    """Run additional unit tests with SciPy installed"""
+    session.install("-e", ".[test,scipy]")
     session.run("pytest", "--cov=autograd", "--cov-report=xml")
 
 
@@ -31,4 +38,5 @@ def ruff(session):
     session.install("ruff")
     session.run('ruff', 'check', '.')
     session.notify("tests")
+    session.notify("tests-scipy")
 
