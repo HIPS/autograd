@@ -35,13 +35,12 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - uses: yezz123/setup-uv@v4
 
-    # Not sure why these are needed, probably removed
-    # - name: Install Scipy prerequisites for Ubuntu
-    #   if: startsWith(matrix.platform, 'ubuntu')
-    #   run: sudo apt-get install libopenblas-dev
-    # - name: Run tests with scipy
-    #   if: startsWith(matrix.platform, 'ubuntu') || startsWith(matrix.python-version, 'pypy') != true
-    #   run: python -m tox run -e py-scipy
-    
     - name: Run tests
       run: uvx nox -s tests
+
+    - name: Install SciPy prerequisites for Linux with PyPy
+      if: matrix.platform == 'ubuntu-latest' && startsWith(matrix.python-version, 'pypy')
+      run: sudo apt-get install libopenblas-dev
+
+    - name: Run tests with SciPy
+      run: uvx nox -s tests-scipy
