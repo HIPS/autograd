@@ -47,7 +47,7 @@ jobs:
       if: startsWith(matrix.platform, 'macos') && startsWith(matrix.python-version, 'pypy')
       run: |
         brew install openblas
-        brew reintall gcc
+        brew reinstall gcc
 
     - name: Run tests
       run: uvx nox -s tests
