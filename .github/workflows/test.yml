@@ -12,7 +12,7 @@ on:
     - cron: '0 4 * * *'
 
 env:
-  PIP_DISABLE_PIP_VERSION_CHECK: "3"
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
   FORCE_COLOR: "3"
 
 jobs:
