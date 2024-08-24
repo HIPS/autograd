@@ -46,7 +46,7 @@ jobs:
     - name: Install SciPy prerequisites for macOS with PyPy
       if: startsWith(matrix.platform, 'macos') && startsWith(matrix.python-version, 'pypy')
       run: |
-        brew install openblas
+        brew install openblas pkg-config
         brew reinstall gcc
 
     - name: Run tests
