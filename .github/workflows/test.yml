@@ -35,9 +35,6 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - uses: yezz123/setup-uv@v4
 
-    - name: Install build tools
-      run: uv pip install nox
-
     # Not sure why these are needed, probably removed
     # - name: Install Scipy prerequisites for Ubuntu
     #   if: startsWith(matrix.platform, 'ubuntu')
@@ -47,4 +44,4 @@ jobs:
     #   run: python -m tox run -e py-scipy
     
     - name: Run tests
-      run: python -m nox -s tests
+      run: uvx nox -s tests
