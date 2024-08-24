@@ -90,6 +90,41 @@ def translate_vjp(vjpfun, fun, argnum):
     else:
         raise Exception("Bad VJP '{}' for '{}'".format(vjpfun, fun.__name__))
 
+def vjp_numeric(fun, argnum=0, step=1e-6, mode='centered'):
+    """ Evaluatest the vector-jacobian product numerically, using a step size
+    `step` to evaluate the jacobian. """
+
+    def vjpfun(ans, *args, **kwargs):
+        arg = args[argnum]
+        arg_vs = vspace(arg)
+        shape = arg_vs.shape
+        num_p = arg_vs.size
+        fn_vs = vspace(ans)
+
+        def vjp(v):
+            vjp_num = arg_vs.zeros()
+            for ip in range(int(num_p)):
+                if mode == 'forward':
+                    args_for = list(args)
+                    args_for[argnum] = arg_vs.add(arg, arg_vs.scalar_mul(arg_vs.one_ind(ip), step))
+                    fn_for = fun(*args_for, **kwargs)
+                    neg_ans = fn_vs.scalar_mul(ans, -1.0)  
+                    dfn_dp = fn_vs.scalar_mul(fn_vs.add(fn_for, neg_ans), 1.0/step)
+                elif mode == 'centered':
+                    args_for = list(args)
+                    args_for[argnum] = arg_vs.add(arg, arg_vs.scalar_mul(arg_vs.one_ind(ip), step/2))
+                    fn_for = fun(*args_for, **kwargs)
+                    args_back = list(args)
+                    args_back[argnum] = arg_vs.add(arg, arg_vs.scalar_mul(arg_vs.one_ind(ip), -step/2))
+                    fn_back = fun(*args_back, **kwargs)
+                    neg_fn_back = fn_vs.scalar_mul(fn_back, -1.0)                
+                    dfn_dp = fn_vs.scalar_mul(fn_vs.add(fn_for, neg_fn_back), 1.0/step)
+                
+                vjp_num[arg_vs.one_ind(ip)==1.] = arg_vs.inner_prod(v, dfn_dp)
+            return vjp_num
+        return vjp
+    return vjpfun
+
 # -------------------- forward mode --------------------
 
 def make_jvp(fun, x):
