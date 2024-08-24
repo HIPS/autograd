@@ -70,7 +70,7 @@ show_missing = true
 [tool.pytest.ini_options]
 required_plugins = ["pytest-cov", "pytest-xdist"]
 # TODO: generate HTML report, upload to CodeCov
-addopts = "--color=yes -n auto --cov=autograd --cov-report=xml --cov-report=term"
+addopts = "--color=yes -sra -n auto --cov=autograd --cov-report=xml --cov-report=term"
 
 [tool.ruff]
 extend-exclude = []
