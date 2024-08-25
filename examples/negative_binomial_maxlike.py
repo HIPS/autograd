@@ -1,4 +1,3 @@
-from __future__ import division, print_function
 import autograd.numpy as np
 import autograd.numpy.random as npr
 from autograd.scipy.special import gammaln
@@ -47,7 +46,7 @@ if __name__ == "__main__":
 
     # report fit
     print("Fit parameters:")
-    print("r={r}, p={p}".format(r=r, p=p))
+    print(f"r={r}, p={p}")
 
     print("Check that we are at a local stationary point:")
     loglike = lambda r, p: np.sum(negbin_loglike(r, p, data))

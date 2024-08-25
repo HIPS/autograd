@@ -2,9 +2,6 @@
 This version vectorizes over multiple examples, but each string
 has a fixed length."""
 
-from __future__ import absolute_import
-from __future__ import print_function
-from builtins import range
 import autograd.numpy as np
 import autograd.numpy.random as npr
 from autograd import grad

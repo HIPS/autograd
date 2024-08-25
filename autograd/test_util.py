@@ -55,11 +55,11 @@ def check_jvp(f, x):
 
 def check_equivalent(x, y):
     x_vs, y_vs = vspace(x), vspace(y)
-    assert x_vs == y_vs, "VSpace mismatch:\nx: {}\ny: {}".format(x_vs, y_vs)
+    assert x_vs == y_vs, f"VSpace mismatch:\nx: {x_vs}\ny: {y_vs}"
     v = x_vs.randn()
     assert scalar_close(
         x_vs.inner_prod(x, v), x_vs.inner_prod(y, v)
-    ), "Value mismatch:\nx: {}\ny: {}".format(x, y)
+    ), f"Value mismatch:\nx: {x}\ny: {y}"
 
 
 @unary_to_nary
@@ -69,14 +69,14 @@ def check_grads(f, x, modes=["fwd", "rev"], order=2):
         check_jvp(f, x)
         if order > 1:
             grad_f = lambda x, v: make_jvp(f, x)(v)[1]
-            grad_f.__name__ = "jvp_{}".format(get_name(f))
+            grad_f.__name__ = f"jvp_{get_name(f)}"
             v = vspace(x).randn()
             check_grads(grad_f, (0, 1), modes, order=order - 1)(x, v)
     if "rev" in modes:
         check_vjp(f, x)
         if order > 1:
             grad_f = lambda x, v: make_vjp(f, x)[0](v)
-            grad_f.__name__ = "vjp_{}".format(get_name(f))
+            grad_f.__name__ = f"vjp_{get_name(f)}"
             v = vspace(f(x)).randn()
             check_grads(grad_f, (0, 1), modes, order=order - 1)(x, v)
 

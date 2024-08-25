@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-from builtins import zip
 import numpy.fft as ffto
 from .numpy_wrapper import wrap_namespace
 from .numpy_vjps import match_complex

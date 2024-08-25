@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-from builtins import range
 import warnings
 from functools import partial
 import autograd.numpy as np
@@ -411,7 +409,7 @@ def test_wrapped_name_and_docs():
     # Python 3.13: Compiler now strip indents from docstrings.
     # https://docs.python.org/3.13/whatsnew/3.13.html#other-language-changes
     assert grad.__doc__.startswith(
-        tuple("\n{}Returns a function which".format(indent) for indent in ("    ", ""))
+        tuple(f"\n{indent}Returns a function which" for indent in ("    ", ""))
     )
     assert grad(foo, 1).__name__ == "grad_of_foo_wrt_argnum_1"
     assert grad(foo, 1).__doc__.startswith("    grad of function foo with")

@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-from __future__ import print_function
 import matplotlib.pyplot as plt
 
 import autograd.numpy as np
@@ -63,7 +61,7 @@ if __name__ == "__main__":
             elbo_val = -objective(params, t)
             elbos.append(elbo_val)
             if t % 50 == 0:
-                print("Iteration {} lower bound {}".format(t, elbo_val))
+                print(f"Iteration {t} lower bound {elbo_val}")
 
         init_mean = -1 * np.ones(D)
         init_log_std = -5 * np.ones(D)

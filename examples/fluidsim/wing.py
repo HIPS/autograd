@@ -1,6 +1,3 @@
-from __future__ import absolute_import
-from __future__ import print_function
-from builtins import range
 import autograd.numpy as np
 from autograd import value_and_grad
 
@@ -130,7 +127,7 @@ def plot_matrix(ax, r, g, b, t, render=False):
         ax.set_yticks([])
         plt.draw()
         if render:
-            plt.savefig("step{0:03d}.png".format(t), bbox_inches="tight")
+            plt.savefig(f"step{t:03d}.png", bbox_inches="tight")
         plt.pause(0.001)
 
 
@@ -186,7 +183,7 @@ if __name__ == "__main__":
 
     print("Converting frames to an animated GIF...")  # Using imagemagick.
     os.system(
-        "convert -delay 5 -loop 0 step*.png " "-delay 250 step{0:03d}.png wing.gif".format(
+        "convert -delay 5 -loop 0 step*.png " "-delay 250 step{:03d}.png wing.gif".format(
             simulation_timesteps
         )
     )

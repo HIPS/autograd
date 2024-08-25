@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division
-
 import autograd.numpy as np
 import scipy.stats
 from autograd.extend import primitive, defvjp

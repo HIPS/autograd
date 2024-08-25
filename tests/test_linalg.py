@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-from builtins import range
 import itertools
 import numpy as onp
 import autograd.numpy as np

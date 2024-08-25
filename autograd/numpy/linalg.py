@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 from functools import partial
 import numpy.linalg as npla
 from .numpy_wrapper import wrap_namespace

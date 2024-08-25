@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 import scipy.stats
 
 import autograd.numpy as np

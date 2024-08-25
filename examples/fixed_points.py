@@ -1,4 +1,3 @@
-from __future__ import print_function
 import autograd.numpy as np
 from autograd import grad
 from autograd.misc.fixed_points import fixed_point

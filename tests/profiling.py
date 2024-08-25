@@ -1,6 +1,3 @@
-from __future__ import absolute_import
-from __future__ import print_function
-from builtins import range
 from autograd import grad
 import autograd.numpy as np
 import autograd.numpy.random as npr
@@ -14,7 +11,7 @@ def tictoc(text=""):
     t1 = time()
     yield
     dt = time() - t1
-    print("--- Stop clock {0}: {1} seconds elapsed ---".format(text, dt))
+    print(f"--- Stop clock {text}: {dt} seconds elapsed ---")
 
 
 def fan_out_fan_in():

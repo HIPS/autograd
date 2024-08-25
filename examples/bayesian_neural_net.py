@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-from __future__ import print_function
 import matplotlib.pyplot as plt
 
 import autograd.numpy as np
@@ -76,7 +74,7 @@ if __name__ == "__main__":
     plt.show(block=False)
 
     def callback(params, t, g):
-        print("Iteration {} lower bound {}".format(t, -objective(params, t)))
+        print(f"Iteration {t} lower bound {-objective(params, t)}")
 
         # Sample functions from posterior.
         rs = npr.RandomState(0)

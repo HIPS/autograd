@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-from builtins import range, zip
 from functools import partial
 import autograd.numpy as np
 import numpy as npo  # original numpy
@@ -10,7 +8,7 @@ from numpy.lib.stride_tricks import as_strided
 
 @primitive
 def convolve(A, B, axes=None, dot_axes=[(), ()], mode="full"):
-    assert mode in ["valid", "full"], "Mode {0} not yet implemented".format(mode)
+    assert mode in ["valid", "full"], f"Mode {mode} not yet implemented"
     if axes is None:
         axes = [list(range(A.ndim)), list(range(A.ndim))]
     wrong_order = any([B.shape[ax_B] < A.shape[ax_A] for ax_A, ax_B in zip(*axes)])
@@ -114,7 +112,7 @@ def compute_conv_size(A_size, B_size, mode):
     elif mode == "valid":
         return abs(A_size - B_size) + 1
     else:
-        raise Exception("Mode {0} not recognized".format(mode))
+        raise Exception(f"Mode {mode} not recognized")
 
 
 def flipped_idxs(ndim, axes):
@@ -125,7 +123,7 @@ def flipped_idxs(ndim, axes):
 
 
 def grad_convolve(argnum, ans, A, B, axes=None, dot_axes=[(), ()], mode="full"):
-    assert mode in ["valid", "full"], "Grad for mode {0} not yet implemented".format(mode)
+    assert mode in ["valid", "full"], f"Grad for mode {mode} not yet implemented"
     axes, shapes = parse_axes(A.shape, B.shape, axes, dot_axes, mode)
     if argnum == 0:
         X, Y = A, B
@@ -136,7 +134,7 @@ def grad_convolve(argnum, ans, A, B, axes=None, dot_axes=[(), ()], mode="full"):
         _X_, _Y_ = "B", "A"
         ignore_Y = "ignore_A"
     else:
-        raise NotImplementedError("Can't take grad of convolve w.r.t. arg {0}".format(argnum))
+        raise NotImplementedError(f"Can't take grad of convolve w.r.t. arg {argnum}")
 
     if mode == "full":
         new_mode = "valid"

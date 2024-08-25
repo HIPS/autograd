@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 import autograd.numpy as np
 import matplotlib.pyplot as plt
 from autograd import elementwise_grad as egrad

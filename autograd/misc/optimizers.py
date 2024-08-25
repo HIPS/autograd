@@ -7,8 +7,6 @@ to do meta-optimization.
 These routines can optimize functions whose inputs are structured
 objects, such as dicts of numpy arrays."""
 
-from __future__ import absolute_import
-from builtins import range
 
 import autograd.numpy as np
 from autograd.misc import flatten

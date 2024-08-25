@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 from functools import partial
 import autograd.numpy as np
 import autograd.numpy.random as npr

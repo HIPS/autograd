@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 import numpy as np
 from autograd.extend import Box, primitive
 from autograd.builtins import SequenceBox

@@ -1,8 +1,6 @@
 """This Bayesian optimization demo using gradient-based optimization
 to find the next query point."""
 
-from __future__ import absolute_import
-from __future__ import print_function
 import matplotlib.pyplot as plt
 
 import autograd.numpy as np
@@ -72,7 +70,7 @@ def bayesian_optimize(func, domain_min, domain_max, num_iters=20, callback=None)
 
     # Start by evaluating once in the middle of the domain.
     X = np.zeros((0, D))
-    y = np.zeros((0))
+    y = np.zeros(0)
     X = np.concatenate((X, np.reshape((domain_max - domain_min) / 2.0, (D, 1))))
     y = np.concatenate((y, np.reshape(np.array(func(X)), (1,))))
 

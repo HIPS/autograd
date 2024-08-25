@@ -41,7 +41,7 @@ class VJPNode(Node):
         except KeyError:
             fun_name = getattr(fun, "__name__", fun)
             raise NotImplementedError(
-                "VJP of {} wrt argnums {} not defined".format(fun_name, parent_argnums)
+                f"VJP of {fun_name} wrt argnums {parent_argnums} not defined"
             )
         self.vjp = vjpmaker(parent_argnums, value, args, kwargs)
 
@@ -79,7 +79,7 @@ def defvjp(fun, *vjpmakers, **kwargs):
             try:
                 vjpfun = vjps_dict[argnum]
             except KeyError:
-                raise NotImplementedError("VJP of {} wrt argnum 0 not defined".format(fun.__name__))
+                raise NotImplementedError(f"VJP of {fun.__name__} wrt argnum 0 not defined")
             vjp = vjpfun(ans, *args, **kwargs)
             return lambda g: (vjp(g),)
         elif L == 2:
@@ -88,7 +88,7 @@ def defvjp(fun, *vjpmakers, **kwargs):
                 vjp_0_fun = vjps_dict[argnum_0]
                 vjp_1_fun = vjps_dict[argnum_1]
             except KeyError:
-                raise NotImplementedError("VJP of {} wrt argnums 0, 1 not defined".format(fun.__name__))
+                raise NotImplementedError(f"VJP of {fun.__name__} wrt argnums 0, 1 not defined")
             vjp_0 = vjp_0_fun(ans, *args, **kwargs)
             vjp_1 = vjp_1_fun(ans, *args, **kwargs)
             return lambda g: (vjp_0(g), vjp_1(g))
@@ -105,7 +105,7 @@ def translate_vjp(vjpfun, fun, argnum):
     elif callable(vjpfun):
         return vjpfun
     else:
-        raise Exception("Bad VJP '{}' for '{}'".format(vjpfun, fun.__name__))
+        raise Exception(f"Bad VJP '{vjpfun}' for '{fun.__name__}'")
 
 
 # -------------------- forward mode --------------------
@@ -132,7 +132,7 @@ class JVPNode(Node):
             jvpmaker = primitive_jvps[fun]
         except KeyError:
             name = getattr(fun, "__name__", fun)
-            raise NotImplementedError("JVP of {} wrt argnums {} not defined".format(name, parent_argnums))
+            raise NotImplementedError(f"JVP of {name} wrt argnums {parent_argnums} not defined")
         self.g = jvpmaker(parent_argnums, parent_gs, value, args, kwargs)
 
     def initialize_root(self, g):
@@ -171,7 +171,7 @@ def translate_jvp(jvpfun, fun, argnum):
     elif callable(jvpfun):
         return jvpfun
     else:
-        raise Exception("Bad JVP '{}' for '{}'".format(jvpfun, fun.__name__))
+        raise Exception(f"Bad JVP '{jvpfun}' for '{fun.__name__}'")
 
 
 def def_linear(fun):
@@ -215,7 +215,7 @@ def sparse_add(vs, x_prev, x_new):
     return x_new.mut_add(x_prev)
 
 
-class VSpace(object):
+class VSpace:
     __slots__ = []
     mappings = {}
     iscomplex = False
@@ -276,7 +276,7 @@ class VSpace(object):
         return type(self) == type(other) and self.__dict__ == other.__dict__
 
     def __repr__(self):
-        return "{}_{}".format(type(self).__name__, self.__dict__)
+        return f"{type(self).__name__}_{self.__dict__}"
 
     @classmethod
     def register(cls, value_type, vspace_maker=None):
@@ -304,7 +304,7 @@ class SparseBox(Box):
     __slots__ = []
 
 
-class SparseObject(object):
+class SparseObject:
     __slots__ = ["vs", "mut_add"]
 
     def __init__(self, vs, mut_add):

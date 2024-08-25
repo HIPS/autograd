@@ -1,7 +1,5 @@
 # Implements auto-encoding variational Bayes.
 
-from __future__ import absolute_import, division
-from __future__ import print_function
 import autograd.numpy as np
 import autograd.numpy.random as npr
 import autograd.scipy.stats.norm as norm
@@ -145,10 +143,10 @@ if __name__ == "__main__":
         if iter % 10 == 0:
             gen_params, rec_params = combined_params
             bound = np.mean(objective(combined_params, iter))
-            message = "{:15}|{:20}|".format(iter // num_batches, bound)
+            message = f"{iter // num_batches:15}|{bound:20}|"
             if iter % 100 == 0:
                 test_bound = -vae_lower_bound(gen_params, rec_params, test_images, seed) / data_dim
-                message += "{:20}".format(test_bound)
+                message += f"{test_bound:20}"
             print(message)
 
             fake_data = generate_from_prior(gen_params, 20, latent_dim, seed)

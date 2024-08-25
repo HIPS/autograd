@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 import scipy.special
 import autograd.numpy as np
 from autograd.extend import primitive, defvjp, defjvp

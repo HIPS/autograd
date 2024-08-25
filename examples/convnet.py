@@ -1,9 +1,6 @@
 """Convolutional neural net on MNIST, modeled on 'LeNet-5',
 http://yann.lecun.com/exdb/publis/pdf/lecun-98.pdf"""
 
-from __future__ import absolute_import
-from __future__ import print_function
-from builtins import range
 
 import autograd.numpy as np
 import autograd.numpy.random as npr
@@ -14,7 +11,7 @@ import data_mnist
 convolve = autograd.scipy.signal.convolve
 
 
-class WeightsParser(object):
+class WeightsParser:
     """A helper class to index into a parameter vector."""
 
     def __init__(self):
@@ -72,7 +69,7 @@ def make_nn_funs(input_shape, layer_specs, L2_reg):
     return parser.N, predictions, loss, frac_err
 
 
-class conv_layer(object):
+class conv_layer:
     def __init__(self, kernel_shape, num_filters):
         self.kernel_shape = kernel_shape
         self.num_filters = num_filters
@@ -98,7 +95,7 @@ class conv_layer(object):
         return (A[0] - B[0] + 1, A[1] - B[1] + 1)
 
 
-class maxpool_layer(object):
+class maxpool_layer:
     def __init__(self, pool_shape):
         self.pool_shape = pool_shape
 
@@ -120,7 +117,7 @@ class maxpool_layer(object):
         return np.max(np.max(result, axis=3), axis=4)
 
 
-class full_layer(object):
+class full_layer:
     def __init__(self, size):
         self.size = size
 
@@ -198,7 +195,7 @@ if __name__ == "__main__":
     def print_perf(epoch, W):
         test_perf = frac_err(W, test_images, test_labels)
         train_perf = frac_err(W, train_images, train_labels)
-        print("{0:15}|{1:15}|{2:15}".format(epoch, train_perf, test_perf))
+        print(f"{epoch:15}|{train_perf:15}|{test_perf:15}")
 
     # Train with sgd
     batch_idxs = make_batches(N_data, batch_size)

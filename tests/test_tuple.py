@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-from __future__ import print_function
 import autograd.numpy as np
 import autograd.numpy.random as npr
 from autograd.test_util import check_grads

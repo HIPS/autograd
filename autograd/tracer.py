@@ -16,7 +16,7 @@ def trace(start_node, fun, x):
             return end_box, None
 
 
-class Node(object):
+class Node:
     __slots__ = []
 
     def __init__(self, value, fun, args, kwargs, parent_argnums, parents):
@@ -90,7 +90,7 @@ def find_top_boxed_args(args):
     return top_boxes, top_trace, top_node_type
 
 
-class TraceStack(object):
+class TraceStack:
     def __init__(self):
         self.top = -1
 
@@ -104,7 +104,7 @@ class TraceStack(object):
 trace_stack = TraceStack()
 
 
-class Box(object):
+class Box:
     type_mappings = {}
     types = set()
 
@@ -121,7 +121,7 @@ class Box(object):
     __nonzero__ = __bool__
 
     def __str__(self):
-        return "Autograd {0} with value {1}".format(type(self).__name__, str(self._value))
+        return f"Autograd {type(self).__name__} with value {str(self._value)}"
 
     @classmethod
     def register(cls, value_type):
@@ -137,7 +137,7 @@ def new_box(value, trace, node):
     try:
         return box_type_mappings[type(value)](value, trace, node)
     except KeyError:
-        raise TypeError("Can't differentiate w.r.t. type {}".format(type(value)))
+        raise TypeError(f"Can't differentiate w.r.t. type {type(value)}")
 
 
 box_types = Box.types

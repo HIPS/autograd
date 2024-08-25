@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-from __future__ import print_function
 import matplotlib.pyplot as plt
 
 import autograd.numpy as np
@@ -106,7 +104,7 @@ if __name__ == "__main__":
         ax.set_yticks([])
 
     def callback(params):
-        print("Log marginal likelihood {}".format(log_marginal_likelihood(params)))
+        print(f"Log marginal likelihood {log_marginal_likelihood(params)}")
 
         # Show posterior marginals.
         plot_xs = np.reshape(np.linspace(-5, 5, 300), (300, 1))

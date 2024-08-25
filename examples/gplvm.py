@@ -11,8 +11,6 @@
 # David Duvenaud (duvenaud@gmail.com)
 
 
-from __future__ import absolute_import
-from __future__ import print_function
 import matplotlib.pyplot as plt
 
 import autograd.numpy as np
@@ -59,7 +57,7 @@ if __name__ == "__main__":
     plt.show(block=False)
 
     def callback(params):
-        print("Log likelihood {}".format(-objective(params)))
+        print(f"Log likelihood {-objective(params)}")
         gp_params, latents = unpack_params(params)
 
         data_ax.cla()

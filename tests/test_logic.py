@@ -1,4 +1,3 @@
-from __future__ import division
 from contextlib import contextmanager
 import pytest
 import warnings

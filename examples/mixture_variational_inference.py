@@ -4,8 +4,6 @@
 # This trick was written up by Alex Graves in this note:
 # http://arxiv.org/abs/1607.05690
 
-from __future__ import absolute_import
-from __future__ import print_function
 import matplotlib.pyplot as plt
 
 import autograd.numpy as np
@@ -152,7 +150,7 @@ if __name__ == "__main__":
     num_plotting_samples = 51
 
     def callback(params, t, g):
-        print("Iteration {} lower bound {}".format(t, -objective(params, t)))
+        print(f"Iteration {t} lower bound {-objective(params, t)}")
 
         plt.cla()
         target_distribution = lambda x: np.exp(log_density(x, t))

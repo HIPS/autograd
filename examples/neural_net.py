@@ -1,7 +1,5 @@
 """A multi-layer perceptron for classification of MNIST handwritten digits."""
 
-from __future__ import absolute_import, division
-from __future__ import print_function
 import autograd.numpy as np
 import autograd.numpy.random as npr
 from autograd.scipy.special import logsumexp
@@ -88,7 +86,7 @@ if __name__ == "__main__":
         if iter % num_batches == 0:
             train_acc = accuracy(params, train_images, train_labels)
             test_acc = accuracy(params, test_images, test_labels)
-            print("{:15}|{:20}|{:20}".format(iter // num_batches, train_acc, test_acc))
+            print(f"{iter // num_batches:15}|{train_acc:20}|{test_acc:20}")
 
     # The optimizers provided can optimize lists, tuples, or dicts of parameters.
     optimized_params = adam(

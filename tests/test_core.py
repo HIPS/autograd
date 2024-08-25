@@ -1,7 +1,6 @@
 """This file doesn't import the numpy wrapper, to check if core works
 on basic operations even without numpy."""
 
-from __future__ import absolute_import
 import warnings
 from autograd.core import make_vjp
 from autograd.wrap_util import unary_to_nary
@@ -19,7 +18,7 @@ def nd(f, x, eps=1e-4):
 
 
 def check_close(a, b, atol=1e-4, rtol=1e-4):
-    assert abs(a - b) < atol + rtol * abs(b), "Diffs are: {0}".format(a - b)
+    assert abs(a - b) < atol + rtol * abs(b), f"Diffs are: {a - b}"
 
 
 def check_binary_func(fun, independent=False):

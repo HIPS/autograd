@@ -2,8 +2,6 @@
 gradient descent.  This example runs on 2-dimensional data, but the model
 works on arbitrarily-high dimension."""
 
-from __future__ import absolute_import
-from __future__ import print_function
 import matplotlib.pyplot as plt
 
 import autograd.numpy as np
@@ -70,7 +68,7 @@ if __name__ == "__main__":
 
     def callback(flattened_params):
         params = unflatten(flattened_params)
-        print("Log likelihood {}".format(-objective(params)))
+        print(f"Log likelihood {-objective(params)}")
         ax.cla()
         ax.plot(data[:, 0], data[:, 1], "k.")
         ax.set_xticks([])

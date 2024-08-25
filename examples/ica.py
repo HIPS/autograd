@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-from __future__ import print_function
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 
@@ -101,7 +99,7 @@ if __name__ == "__main__":
 
     def callback(params):
         weights, latents, noise_std = unpack_params(params)
-        print("Log likelihood {}, noise_std {}".format(-objective(params), noise_std))
+        print(f"Log likelihood {-objective(params)}, noise_std {noise_std}")
         ax_est_weights.cla()
         ax_est_weights.scatter(weights[:, 0], weights[:, 1])
         ax_est_weights.set_title("Estimated weights")

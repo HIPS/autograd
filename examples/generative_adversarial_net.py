@@ -3,8 +3,6 @@
 # but, it always collapses to generating a single image.
 # Let me know if you can get it to work! - David Duvenaud
 
-from __future__ import absolute_import, division
-from __future__ import print_function
 import autograd.numpy as np
 import autograd.numpy.random as npr
 from autograd import grad
@@ -166,7 +164,7 @@ if __name__ == "__main__":
             real_data = train_images[batch_indices(iter)]
             probs_fake = np.mean(sigmoid(neural_net_predict(dsc_params, fake_data)))
             probs_real = np.mean(sigmoid(neural_net_predict(dsc_params, real_data)))
-            print("{:15}|{:20}|{:20}|{:20}".format(iter // num_batches, ability, probs_fake, probs_real))
+            print(f"{iter // num_batches:15}|{ability:20}|{probs_fake:20}|{probs_real:20}")
             save_images(fake_data, "gan_samples.png", vmin=0, vmax=1)
 
     # The optimizers provided can optimize lists, tuples, or dicts of parameters.

@@ -14,8 +14,8 @@ def timefunction(f):
 def assert_linear_time(f):
     t = timefunction(lambda: f(1))
     t10 = timefunction(lambda: f(10))
-    assert t10 > 5 * t, "Too fast: f(1) takes {}, f(10) takes {}".format(t, t10)
-    assert t10 < 20 * t, "Too slow: f(1) takes {}, f(10) takes {}".format(t, t10)
+    assert t10 > 5 * t, f"Too fast: f(1) takes {t}, f(10) takes {t10}"
+    assert t10 < 20 * t, f"Too slow: f(1) takes {t}, f(10) takes {t10}"
     if not (8 * t < t10 < 12 * t):
         warnings.warn("Borderline linearity. May fail on different hardware")
 

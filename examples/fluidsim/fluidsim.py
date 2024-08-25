@@ -1,6 +1,3 @@
-from __future__ import absolute_import
-from __future__ import print_function
-from builtins import range
 import autograd.numpy as np
 from autograd import value_and_grad
 
@@ -92,7 +89,7 @@ def plot_matrix(ax, mat, t, render=False):
     ax.set_yticks([])
     plt.draw()
     if render:
-        matplotlib.image.imsave("step{0:03d}.png".format(t), mat)
+        matplotlib.image.imsave(f"step{t:03d}.png", mat)
     plt.pause(0.001)
 
 

@@ -4,7 +4,6 @@ Usage (need the dot binary, from the graphviz package, www.graphviz.org):
 python2 dot_graph.py | dot -Tpdf -o graph.pdf
 """
 
-from __future__ import print_function
 import autograd.numpy as np
 from autograd.tracer import trace, Node
 from autograd import grad
@@ -22,7 +21,7 @@ class GraphNode(Node):
         self.isroot = True
 
     def __repr__(self):
-        return "node_{}".format(id(self))
+        return f"node_{id(self)}"
 
 
 def trace_graph(f, x):
@@ -52,7 +51,7 @@ def graph_to_dotfile(graph):
                 if parent not in visited:
                     fragment += node_to_fragment(parent)
             else:
-                argnode = "{}_arg_{}".format(node, argnum)
+                argnode = f"{node}_arg_{argnum}"
                 fragment += dot_edge(argnode, node)
                 fragment += dot_variable_node(argnode, arg)
 

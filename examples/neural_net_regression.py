@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-from __future__ import print_function
 import matplotlib.pyplot as plt
 
 import autograd.numpy as np
@@ -67,7 +65,7 @@ if __name__ == "__main__":
     plt.show(block=False)
 
     def callback(params, t, g):
-        print("Iteration {} log likelihood {}".format(t, -objective(params, t)))
+        print(f"Iteration {t} log likelihood {-objective(params, t)}")
 
         # Plot data and functions.
         plt.cla()

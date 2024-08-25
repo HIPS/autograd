@@ -1,8 +1,6 @@
 # A demo of gradients through scipy.integrate.odeint,
 # estimating the dynamics of a system given a trajectory.
 
-from __future__ import absolute_import
-from __future__ import print_function
 
 import matplotlib.pyplot as plt
 import numpy as npo
@@ -74,7 +72,7 @@ if __name__ == "__main__":
     def callback(params, iter, g):
         pred = ode_pred(params, true_y0, t)
 
-        print("Iteration {:d} train loss {:.6f}".format(iter, L1_loss(pred, true_y)))
+        print(f"Iteration {iter:d} train loss {L1_loss(pred, true_y):.6f}")
 
         ax_traj.cla()
         ax_traj.set_title("Trajectories")

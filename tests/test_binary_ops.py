@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-from __future__ import print_function
 import warnings
 import autograd.numpy as np
 import autograd.numpy.random as npr
@@ -16,8 +14,7 @@ def arg_pairs():
     mat = rs.randn(3, 4)
     mat2 = rs.randn(1, 4)
     allargs = [scalar, vector, mat, mat2]
-    for arg1, arg2 in it.product(allargs, allargs):
-        yield arg1, arg2
+    yield from it.product(allargs, allargs)
 
 
 def test_mul():

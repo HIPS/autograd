@@ -2,7 +2,6 @@
 creating a trace that prints out functions and their arguments as they're being
 evaluated"""
 
-from __future__ import print_function
 import autograd.numpy as np  # autograd has already wrapped numpy for us
 from autograd.tracer import trace, Node
 
@@ -19,7 +18,7 @@ class PrintNode(Node):
     def initialize_root(self, x):
         self.varname_generator = make_varname_generator()
         self.varname = next(self.varname_generator)
-        print("{} = {}".format(self.varname, x))
+        print(f"{self.varname} = {x}")
 
 
 def make_varname_generator():
