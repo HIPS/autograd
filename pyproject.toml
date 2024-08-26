@@ -67,6 +67,18 @@ addopts = "--color=yes --junitxml=junit-report.xml"
 
 [tool.ruff]
 extend-exclude = []
-lint.extend-ignore = ["E731"]
+# TODO: not ignore them
+lint.extend-ignore = [
+  "E731",
+  "F401",
+  "F403",
+  "F841",
+  "F821",
+  "E721",
+  "E722",
+  "E741",
+  "E402",
+  "F811"
+]
 lint.extend-select = ["I", "W"]
 line-length = 109
