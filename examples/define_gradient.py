@@ -1,8 +1,7 @@
 """This example shows how to define the gradient of your own functions.
 This can be useful for speed, numerical stability, or in cases where
 your code depends on external library calls."""
-from __future__ import absolute_import
-from __future__ import print_function
+
 import autograd.numpy as np
 import autograd.numpy.random as npr
 
@@ -21,10 +20,12 @@ def logsumexp(x):
     max_x = np.max(x)
     return max_x + np.log(np.sum(np.exp(x - max_x)))
 
+
 # Next, we write a function that specifies the gradient with a closure.
 # The reason for the closure is so that the gradient can depend
 # on both the input to the original function (x), and the output of the
 # original function (ans).
+
 
 def logsumexp_vjp(ans, x):
     # If you want to be able to take higher-order derivatives, then all the
@@ -37,10 +38,11 @@ def logsumexp_vjp(ans, x):
     x_shape = x.shape
     return lambda g: np.full(x_shape, g) * np.exp(x - np.full(x_shape, ans))
 
+
 # Now we tell Autograd that logsumexmp has a gradient-making function.
 defvjp(logsumexp, logsumexp_vjp)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Now we can use logsumexp() inside a larger function that we want
     # to differentiate.
     def example_func(y):
@@ -52,4 +54,4 @@ if __name__ == '__main__':
     print("Gradient: \n", grad_of_example(npr.randn(10)))
 
     # Check the gradients numerically, just to be safe.
-    check_grads(example_func, modes=['rev'])(npr.randn(10))
+    check_grads(example_func, modes=["rev"])(npr.randn(10))
