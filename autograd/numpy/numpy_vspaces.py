@@ -1,6 +1,7 @@
 import numpy as np
-from autograd.extend import VSpace
+
 from autograd.builtins import NamedTupleVSpace
+from autograd.extend import VSpace
 
 
 class ArrayVSpace(VSpace):

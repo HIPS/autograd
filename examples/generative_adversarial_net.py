@@ -3,13 +3,12 @@
 # but, it always collapses to generating a single image.
 # Let me know if you can get it to work! - David Duvenaud
 
+from data import load_mnist, save_images
+
 import autograd.numpy as np
 import autograd.numpy.random as npr
 from autograd import grad
 from autograd.misc import flatten
-
-from data import load_mnist, save_images
-
 
 ### Define geneerator, discriminator, and objective ###
 

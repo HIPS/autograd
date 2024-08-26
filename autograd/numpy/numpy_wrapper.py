@@ -1,8 +1,9 @@
-import types
 import warnings
-from autograd.extend import primitive, notrace_primitive
+
 import numpy as _np
+
 import autograd.builtins as builtins
+from autograd.extend import notrace_primitive, primitive
 
 if _np.lib.NumpyVersion(_np.__version__) >= "2.0.0":
     from numpy._core.einsumfunc import _parse_einsum_input
@@ -75,9 +76,7 @@ def array(A, *args, **kwargs):
 def wrap_if_boxes_inside(raw_array, slow_op_name=None):
     if raw_array.dtype is _np.dtype("O"):
         if slow_op_name:
-            warnings.warn(
-                "{} is slow for array inputs. " "np.concatenate() is faster.".format(slow_op_name)
-            )
+            warnings.warn("{} is slow for array inputs. " "np.concatenate() is faster.".format(slow_op_name))
         return array_from_args((), {}, *raw_array.ravel()).reshape(raw_array.shape)
     else:
         return raw_array

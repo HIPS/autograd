@@ -1,6 +1,6 @@
-from autograd.extend import primitive, defvjp, vspace
-from autograd.builtins import tuple
 from autograd import make_vjp
+from autograd.builtins import tuple
+from autograd.extend import defvjp, primitive, vspace
 
 
 @primitive

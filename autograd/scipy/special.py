@@ -1,7 +1,8 @@
 import scipy.special
+
 import autograd.numpy as np
-from autograd.extend import primitive, defvjp, defjvp
-from autograd.numpy.numpy_vjps import unbroadcast_f, repeat_to_match_shape
+from autograd.extend import defjvp, defvjp, primitive
+from autograd.numpy.numpy_vjps import repeat_to_match_shape, unbroadcast_f
 
 ### Beta function ###
 beta = primitive(scipy.special.beta)

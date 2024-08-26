@@ -6,12 +6,11 @@ import matplotlib.pyplot as plt
 import numpy as npo
 
 import autograd.numpy as np
+import autograd.numpy.random as npr
 from autograd import grad
-from autograd.scipy.integrate import odeint
 from autograd.builtins import tuple
 from autograd.misc.optimizers import adam
-import autograd.numpy.random as npr
-
+from autograd.scipy.integrate import odeint
 
 N = 30  # Dataset size
 D = 2  # Data dimension

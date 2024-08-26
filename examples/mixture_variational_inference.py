@@ -9,10 +9,9 @@ import matplotlib.pyplot as plt
 import autograd.numpy as np
 import autograd.numpy.random as npr
 import autograd.scipy.stats.norm as norm
-from autograd.scipy.special import logsumexp
-
 from autograd import grad
 from autograd.misc.optimizers import adam
+from autograd.scipy.special import logsumexp
 
 
 def diag_gaussian_log_density(x, mu, log_std):

@@ -1,8 +1,10 @@
-import numpy as onp
-import autograd.numpy.random as npr
-import autograd.numpy as np
 import operator as op
-from numpy_utils import stat_check, unary_ufunc_check, binary_ufunc_check, binary_ufunc_check_no_same_args
+
+import numpy as onp
+from numpy_utils import binary_ufunc_check, binary_ufunc_check_no_same_args, stat_check, unary_ufunc_check
+
+import autograd.numpy as np
+import autograd.numpy.random as npr
 from autograd.test_util import combo_check
 
 npr.seed(0)

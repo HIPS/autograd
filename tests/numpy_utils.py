@@ -1,8 +1,5 @@
-import itertools as it
 import autograd.numpy.random as npr
-from autograd import grad
 from autograd.test_util import combo_check
-import warnings
 
 
 def stat_check(fun, test_complex=True, **kwargs):

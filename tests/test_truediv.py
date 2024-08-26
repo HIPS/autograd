@@ -1,9 +1,9 @@
 # This file is to check that future division works.
 
+from test_binary_ops import arg_pairs
+
 import autograd.numpy as np
 from autograd.test_util import check_grads
-from autograd import grad
-from test_binary_ops import arg_pairs
 
 
 def test_div():

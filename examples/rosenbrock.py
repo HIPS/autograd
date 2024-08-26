@@ -1,6 +1,7 @@
+from scipy.optimize import minimize
+
 import autograd.numpy as np
 from autograd import value_and_grad
-from scipy.optimize import minimize
 
 
 def rosenbrock(x):

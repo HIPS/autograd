@@ -1,7 +1,8 @@
-from autograd.tracer import primitive, getval
+from pytest import raises
+
 from autograd.extend import defvjp
 from autograd.test_util import check_grads
-from pytest import raises
+from autograd.tracer import primitive
 
 
 def test_check_vjp_1st_order_fail():

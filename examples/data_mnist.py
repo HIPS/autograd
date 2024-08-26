@@ -1,11 +1,10 @@
-import sys
-
-import os
-import gzip
-import struct
 import array
-import numpy as np
+import gzip
+import os
+import struct
 from urllib.request import urlretrieve
+
+import numpy as np
 
 
 def download(url, filename):

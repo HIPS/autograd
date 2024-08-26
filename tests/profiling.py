@@ -1,8 +1,9 @@
-from autograd import grad
+from contextlib import contextmanager
+from time import time
+
 import autograd.numpy as np
 import autograd.numpy.random as npr
-from time import time
-from contextlib import contextmanager
+from autograd import grad
 
 
 @contextmanager
@@ -39,7 +40,6 @@ def convolution():
 
 def dot_equivalent():
     # MNIST-scale convolution operation
-    import autograd.scipy.signal
 
     dat = npr.randn(256, 3, 24, 5, 24, 5)
     kernel = npr.randn(3, 5, 5)

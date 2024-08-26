@@ -1,23 +1,24 @@
 import warnings
 from functools import partial
+
 import autograd.numpy as np
 import autograd.numpy.random as npr
-from autograd.test_util import check_grads, check_equivalent  # , nd
-from autograd.tracer import primitive, isbox
 from autograd import (
-    grad,
-    elementwise_grad,
-    jacobian,
-    value_and_grad,
-    hessian_tensor_product,
-    hessian,
-    make_hvp,
-    tensor_jacobian_product,
     checkpoint,
-    make_jvp,
-    make_ggnvp,
+    elementwise_grad,
+    grad,
     grad_and_aux,
+    hessian,
+    hessian_tensor_product,
+    jacobian,
+    make_ggnvp,
+    make_hvp,
+    make_jvp,
+    tensor_jacobian_product,
+    value_and_grad,
 )
+from autograd.test_util import check_equivalent, check_grads  # , nd
+from autograd.tracer import isbox
 
 npr.seed(1)
 
@@ -158,7 +159,7 @@ def test_hessian_matrix_product():
     check_equivalent(np.tensordot(H, V), hessian_tensor_product(fun)(a, V))
 
 
-def test_hessian_tensor_product():
+def test_hessian_tensor_product_3d():
     fun = lambda a: np.sum(np.sin(a))
     a = npr.randn(5, 4, 3)
     V = npr.randn(5, 4, 3)
@@ -408,8 +409,6 @@ def test_wrapped_name_and_docs():
     assert grad.__name__ == "grad"
     # Python 3.13: Compiler now strip indents from docstrings.
     # https://docs.python.org/3.13/whatsnew/3.13.html#other-language-changes
-    assert grad.__doc__.startswith(
-        tuple(f"\n{indent}Returns a function which" for indent in ("    ", ""))
-    )
+    assert grad.__doc__.startswith(tuple(f"\n{indent}Returns a function which" for indent in ("    ", "")))
     assert grad(foo, 1).__name__ == "grad_of_foo_wrt_argnum_1"
     assert grad(foo, 1).__doc__.startswith("    grad of function foo with")

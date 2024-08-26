@@ -1,4 +1,5 @@
 from functools import partial
+
 import numpy as npo
 
 try:
@@ -8,19 +9,19 @@ except:
 
     warn("Skipping scipy tests.")
 else:
-    import autograd.numpy as np
-    import autograd.numpy.random as npr
-    import autograd.scipy.signal
-    import autograd.scipy.stats as stats
-    import autograd.scipy.stats.multivariate_normal as mvn
-    import autograd.scipy.special as special
-    import autograd.scipy.linalg as spla
-    import autograd.scipy.integrate as integrate
-    from autograd import grad
+    from numpy_utils import unary_ufunc_check
     from scipy.signal import convolve as sp_convolve
 
-    from autograd.test_util import combo_check, check_grads
-    from numpy_utils import unary_ufunc_check
+    import autograd.numpy as np
+    import autograd.numpy.random as npr
+    import autograd.scipy.integrate as integrate
+    import autograd.scipy.linalg as spla
+    import autograd.scipy.signal
+    import autograd.scipy.special as special
+    import autograd.scipy.stats as stats
+    import autograd.scipy.stats.multivariate_normal as mvn
+    from autograd import grad
+    from autograd.test_util import check_grads, combo_check
 
     npr.seed(1)
     R = npr.randn

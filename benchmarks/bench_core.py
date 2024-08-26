@@ -1,14 +1,15 @@
 import numpy as onp
+
 import autograd.numpy as np
 from autograd import grad
 
 try:
-    from autograd.core import vspace, VJPNode, backward_pass
-    from autograd.tracer import trace, new_box
+    from autograd.core import VJPNode, backward_pass, vspace
+    from autograd.tracer import new_box, trace
 
     MASTER_BRANCH = False
 except ImportError:
-    from autograd.core import vspace, forward_pass, backward_pass, new_progenitor
+    from autograd.core import backward_pass, forward_pass, new_progenitor, vspace
 
     MASTER_BRANCH = True
 

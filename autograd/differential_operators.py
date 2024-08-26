@@ -1,6 +1,5 @@
 """Convenience functions built on top of `make_vjp`."""
 
-from functools import partial
 from collections import OrderedDict
 
 try:
@@ -9,12 +8,13 @@ except ImportError:
     from inspect import getargspec as _getargspec  # Python 2
 import warnings
 
-from .wrap_util import unary_to_nary
-from .builtins import tuple as atuple
-from .core import make_vjp as _make_vjp, make_jvp as _make_jvp
-from .extend import primitive, defvjp_argnum, vspace
-
 import autograd.numpy as np
+
+from .builtins import tuple as atuple
+from .core import make_jvp as _make_jvp
+from .core import make_vjp as _make_vjp
+from .extend import defvjp_argnum, primitive, vspace
+from .wrap_util import unary_to_nary
 
 make_vjp = unary_to_nary(_make_vjp)
 make_jvp = unary_to_nary(_make_jvp)

@@ -1,8 +1,9 @@
 import autograd.numpy as np
 import autograd.numpy.random as npr
-from autograd.test_util import check_grads, check_vjp, check_jvp
 from autograd import grad
-from autograd import list as ag_list, isinstance as ag_isinstance
+from autograd import isinstance as ag_isinstance
+from autograd import list as ag_list
+from autograd.test_util import check_grads
 
 npr.seed(1)
 

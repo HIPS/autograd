@@ -1,12 +1,12 @@
-import autograd.numpy as np
-from autograd import value_and_grad
-
-from scipy.optimize import minimize
-from scipy.misc import imread
+import os
 
 import matplotlib
 import matplotlib.pyplot as plt
-import os
+from scipy.misc import imread
+from scipy.optimize import minimize
+
+import autograd.numpy as np
+from autograd import value_and_grad
 
 # Fluid simulation code based on
 # "Real-Time Fluid Dynamics for Games" by Jos Stam

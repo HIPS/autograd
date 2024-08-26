@@ -1,9 +1,10 @@
 from functools import partial
+
 import scipy.linalg
 
 import autograd.numpy as anp
+from autograd.extend import defjvp, defjvp_argnums, defvjp, defvjp_argnums
 from autograd.numpy.numpy_wrapper import wrap_namespace
-from autograd.extend import defvjp, defvjp_argnums, defjvp, defjvp_argnums
 
 wrap_namespace(scipy.linalg.__dict__, globals())  # populates module namespace
 

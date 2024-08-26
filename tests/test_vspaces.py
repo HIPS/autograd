@@ -1,9 +1,10 @@
-from functools import reduce
-from autograd.core import vspace
-from autograd.numpy.numpy_vspaces import ArrayVSpace
-from autograd.test_util import check_grads, scalar_close
-import numpy as np
 import itertools as it
+from functools import reduce
+
+import numpy as np
+
+from autograd.core import vspace
+from autograd.test_util import check_grads, scalar_close
 
 
 def check_vspace(value):

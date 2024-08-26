@@ -1,8 +1,9 @@
 """Gradients of the normal distribution."""
 
 import scipy.stats
+
 import autograd.numpy as anp
-from autograd.extend import primitive, defvjp
+from autograd.extend import defvjp, primitive
 from autograd.numpy.numpy_vjps import unbroadcast_f
 
 pdf = primitive(scipy.stats.norm.pdf)

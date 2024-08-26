@@ -1,7 +1,6 @@
-from autograd import make_vjp
-
 import autograd.numpy as np
 import autograd.numpy.random as npr
+from autograd import make_vjp
 
 dot_0 = lambda a, b, g: make_vjp(np.dot, argnum=0)(a, b)[0](g)
 dot_1 = lambda a, b, g: make_vjp(np.dot, argnum=1)(a, b)[0](g)

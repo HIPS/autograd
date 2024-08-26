@@ -1,6 +1,7 @@
 import warnings
-from contextlib import contextmanager
 from collections import defaultdict
+from contextlib import contextmanager
+
 from .util import subvals, toposort
 from .wrap_util import wraps
 

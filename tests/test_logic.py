@@ -1,11 +1,13 @@
-from contextlib import contextmanager
-import pytest
 import warnings
+from contextlib import contextmanager
+
+import pytest
+
 import autograd.numpy as np
-from autograd import grad, deriv
+from autograd import deriv, grad
+from autograd.core import primitive_vjps
 from autograd.extend import primitive
 from autograd.test_util import check_grads
-from autograd.core import primitive_vjps
 
 
 def test_assert():

@@ -1,9 +1,9 @@
-import matplotlib.pyplot as plt
+import data_mnist
 import matplotlib.image
+import matplotlib.pyplot as plt
 
 import autograd.numpy as np
 import autograd.numpy.random as npr
-import data_mnist
 
 
 def load_mnist():

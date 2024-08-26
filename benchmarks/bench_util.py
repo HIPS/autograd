@@ -1,5 +1,5 @@
-import autograd.numpy.random as npr
 import autograd.numpy as np
+import autograd.numpy.random as npr
 from autograd import grad
 
 try:

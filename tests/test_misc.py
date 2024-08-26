@@ -1,9 +1,9 @@
 import autograd.numpy as np
 import autograd.numpy.random as npr
-from autograd.test_util import scalar_close
-from autograd import make_vjp, grad
-from autograd.tracer import primitive
+from autograd import grad, make_vjp
 from autograd.misc import const_graph, flatten
+from autograd.test_util import scalar_close
+from autograd.tracer import primitive
 
 
 def test_const_graph():
