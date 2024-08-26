@@ -17,11 +17,11 @@ Example use:
 >>> from autograd import grad    # The only autograd function you may ever need
 >>>
 >>> def tanh(x):                 # Define a function
-...     return (1.0 - np.exp(-x))  / (1.0 + np.exp(-x))
+...     return (1.0 - np.exp(-x)) / (1.0 + np.exp(-x))
 ...
 >>> grad_tanh = grad(tanh)       # Obtain its gradient function
 >>> grad_tanh(1.0)               # Evaluate the gradient at x = 1.0
-0.41997434161402603
+np.float64(0.39322386648296376)
 >>> (tanh(1.0001) - tanh(0.9999)) / 0.0002  # Compare to finite differences
 0.41997434264973155
 ```
