@@ -7,10 +7,15 @@ on:
   push:
     branches:
     - master
+  workflow_dispatch:
 
 env:
-  PIP_DISABLE_PIP_VERSION_CHECK: '1'
-  PY_COLORS: '1'
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  FORCE_COLOR: "3"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
 
 jobs:
   check:
