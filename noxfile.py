@@ -1,3 +1,5 @@
+import platform
+
 import nox
 
 nox.needs_version = ">=2024.4.15"
@@ -19,7 +21,11 @@ def check(session):
 @nox.session(name="tests")
 def run_tests(session):
     """Run unit tests and generate a coverage report"""
-    session.install("-e", ".[test,scipy]")
+    # SciPy doesn't have wheels on PyPy
+    if platform.python_implementation() == "PyPy":
+        session.install("-e", ".[test]")
+    else:
+        session.install("-e", ".[test,scipy]")
     session.run("pytest", "--cov=autograd", "--cov-report=xml", "--cov-append", *session.posargs)
 
 

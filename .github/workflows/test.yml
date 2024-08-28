@@ -28,21 +28,6 @@ jobs:
       matrix:
         platform: [ubuntu-latest, macos-13, macos-latest, windows-latest]
         python-version: ["3.8", "3.9", "3.10", "3.11", "3.12", "pypy-3.9", "pypy-3.10"]
-        # TODO: bring these back someday when SciPy is easier to install
-        # via PyPy, and test just Ubuntu for it for now
-        exclude:
-          - platform: macos-13
-            python-version: "pypy-3.9"
-          - platform: macos-13
-            python-version: "pypy-3.10"
-          - platform: macos-latest
-            python-version: "pypy-3.10"
-          - platform: macos-latest
-            python-version: "pypy-3.9"
-          - platform: windows-latest
-            python-version: "pypy-3.9"
-          - platform: windows-latest
-            python-version: "pypy-3.10"
     steps:
     - uses: actions/checkout@v4.1.7
     - uses: actions/setup-python@v5.1.1
@@ -50,9 +35,10 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - uses: yezz123/setup-uv@v4
 
-    - name: Install SciPy prerequisites for Linux with PyPy
-      if: matrix.platform == 'ubuntu-latest' && startsWith(matrix.python-version, 'pypy')
-      run: sudo apt-get install libopenblas-dev
-
-    - name: Run tests
+    - name: Run CPython tests
+      if: ${{ !startsWith(matrix.python-version, 'pypy') }}
       run: uvx nox -s tests
+
+    - name: Run PyPy tests
+      if: ${{ startsWith(matrix.python-version, 'pypy') }}
+      run: nox -s tests -- k "not scipy"
