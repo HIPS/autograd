@@ -3,13 +3,13 @@ name: CI
 on:
   pull_request:
     branches:
-    - master
+      - master
   push:
     branches:
-    - master
+      - master
   workflow_dispatch:
   schedule:
-    - cron: '0 4 * * *'
+    - cron: "0 4 * * *"
 
 env:
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
@@ -21,24 +21,26 @@ concurrency:
 
 jobs:
   test:
-    name: Test / ${{ matrix.platform }} / Python ${{ matrix.python-version }}
+    name: Test / ${{ matrix.platform }} / Nightly ${{ matrix.nightly[0] }} / Python ${{ matrix.python-version }}
     runs-on: ${{ matrix.platform }}
     strategy:
       fail-fast: false
       matrix:
         platform: [ubuntu-latest, macos-13, macos-latest, windows-latest]
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12", "pypy-3.9", "pypy-3.10"]
+        python-version:
+          ["3.8", "3.9", "3.10", "3.11", "3.12", "pypy-3.9", "pypy-3.10"]
+        nightly: [[True, "nightly-"], [False, ""]]
     steps:
-    - uses: actions/checkout@v4.1.7
-    - uses: actions/setup-python@v5.1.1
-      with:
-        python-version: ${{ matrix.python-version }}
-    - uses: yezz123/setup-uv@v4
+      - uses: actions/checkout@v4.1.7
+      - uses: actions/setup-python@v5.1.1
+        with:
+          python-version: ${{ matrix.python-version }}
+      - uses: yezz123/setup-uv@v4
 
-    - name: Run CPython tests
-      if: ${{ !startsWith(matrix.python-version, 'pypy') }}
-      run: uvx nox -s tests
+      - name: Run CPython tests
+        if: ${{ !startsWith(matrix.python-version, 'pypy') }}
+        run: uvx nox -s ${{ matrix.nightly[1] }}tests
 
-    - name: Run PyPy tests
-      if: ${{ startsWith(matrix.python-version, 'pypy') }}
-      run: uvx nox -s tests -- -k "not scipy"
+      - name: Run PyPy tests
+        if: ${{ startsWith(matrix.python-version, 'pypy') }}
+        run: uvx nox -s ${{ matrix.nightly[1] }}tests
