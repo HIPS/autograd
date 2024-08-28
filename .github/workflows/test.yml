@@ -41,4 +41,4 @@ jobs:
 
     - name: Run PyPy tests
       if: ${{ startsWith(matrix.python-version, 'pypy') }}
-      run: uvx nox -s tests -- k "not scipy"
+      run: uvx nox -s tests -- -k "not scipy"
