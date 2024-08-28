@@ -27,7 +27,7 @@ jobs:
       fail-fast: false
       matrix:
         platform: [ubuntu-latest, macos-13, macos-latest, windows-latest]
-        python-version: ["3.9", "3.10", "3.11", "3.12", "pypy-3.9", "pypy-3.10"]
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12", "pypy-3.9", "pypy-3.10"]
         # TODO: bring these back someday when SciPy is easier to install
         # via PyPy, and test just Ubuntu for it for now
         exclude:
