@@ -13,7 +13,7 @@ nox.options.sessions = ["tests"]
 @nox.session(name="validate-package")
 def check(session):
     """Build source distribution, wheel, and check their metadata"""
-    session.install("build", "twine")
+    session.install("build", "twine", silent=False)
     session.run('python', '-m', 'build')
     session.run('twine', 'check', '--strict', "dist/*")
 
@@ -23,9 +23,9 @@ def run_tests(session):
     """Run unit tests and generate a coverage report"""
     # SciPy doesn't have wheels on PyPy
     if platform.python_implementation() == "PyPy":
-        session.install("-e", ".[test]")
+        session.install("-e", ".[test]", silent=False)
     else:
-        session.install("-e", ".[test,scipy]")
+        session.install("-e", ".[test,scipy]", silent=False)
     session.run("pytest", "--cov=autograd", "--cov-report=xml", "--cov-append", *session.posargs)
 
 
@@ -34,6 +34,6 @@ def run_tests(session):
 @nox.session(name="lint")
 def ruff(session):
     """Lightning-fast linting for Python"""
-    session.install("ruff")
+    session.install("ruff", silent=False)
     session.run('ruff', 'check', '.')
     session.notify("tests")
