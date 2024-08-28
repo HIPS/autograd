@@ -20,7 +20,7 @@ def check(session):
 def run_tests(session):
     """Run unit tests and generate a coverage report"""
     session.install("-e", ".[test,scipy]")
-    session.run("pytest", "--cov=autograd", "--cov-report=xml", *session.posargs)
+    session.run("pytest", "--cov=autograd", "--cov-report=xml", "--cov-append", *session.posargs)
 
 
 # TODO: Replace with pre-commit and pre-commit.ci once
