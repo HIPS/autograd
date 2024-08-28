@@ -4,7 +4,7 @@ nox.needs_version = ">=2024.4.15"
 nox.options.default_venv_backend = "uv|virtualenv"
 nox.options.reuse_existing_virtualenvs = True
 nox.options.error_on_external_run = True
-nox.options.sessions = ["lint", "validate-package", "tests"]
+# nox.options.sessions = ["lint", "validate-package", "tests"]
 nox.options.sessions = ["tests"]
 
 
@@ -23,8 +23,8 @@ def run_tests(session):
     session.run("pytest", "--cov=autograd", "--cov-report=xml", *session.posargs)
 
 
-# TODO: Replace with pre-commit and pre-commit.ci
-# TODO: Fix style failures
+# TODO: Replace with pre-commit and pre-commit.ci once
+# https://github.com/HIPS/autograd/pull/634 is merged
 @nox.session(name="lint")
 def ruff(session):
     """Lightning-fast linting for Python"""
