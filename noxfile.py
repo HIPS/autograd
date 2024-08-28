@@ -4,7 +4,7 @@ import nox
 
 nox.needs_version = ">=2024.4.15"
 nox.options.default_venv_backend = "uv|virtualenv"
-nox.options.reuse_existing_virtualenvs = True
+nox.options.reuse_existing_virtualenvs = False
 nox.options.error_on_external_run = True
 # nox.options.sessions = ["lint", "validate-package", "tests"]
 nox.options.sessions = ["tests"]
