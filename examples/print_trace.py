@@ -3,7 +3,7 @@ creating a trace that prints out functions and their arguments as they're being
 evaluated"""
 
 import autograd.numpy as np  # autograd has already wrapped numpy for us
-from autograd.tracer import trace, Node
+from autograd.tracer import Node, trace
 
 
 class PrintNode(Node):

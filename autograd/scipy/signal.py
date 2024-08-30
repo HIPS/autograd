@@ -1,9 +1,10 @@
 from functools import partial
-import autograd.numpy as np
-import numpy as npo  # original numpy
-from autograd.extend import primitive, defvjp
 
+import numpy as npo  # original numpy
 from numpy.lib.stride_tricks import as_strided
+
+import autograd.numpy as np
+from autograd.extend import defvjp, primitive
 
 
 @primitive

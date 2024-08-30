@@ -5,8 +5,7 @@ python2 dot_graph.py | dot -Tpdf -o graph.pdf
 """
 
 import autograd.numpy as np
-from autograd.tracer import trace, Node
-from autograd import grad
+from autograd.tracer import Node, trace
 
 
 class GraphNode(Node):

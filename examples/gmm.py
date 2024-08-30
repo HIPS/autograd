@@ -3,15 +3,15 @@ gradient descent.  This example runs on 2-dimensional data, but the model
 works on arbitrarily-high dimension."""
 
 import matplotlib.pyplot as plt
+from data import make_pinwheel
+from scipy.optimize import minimize
 
 import autograd.numpy as np
 import autograd.numpy.random as npr
-from autograd import grad, hessian_vector_product
-from scipy.optimize import minimize
-from autograd.scipy.special import logsumexp
 import autograd.scipy.stats.multivariate_normal as mvn
+from autograd import grad, hessian_vector_product
 from autograd.misc.flatten import flatten_func
-from data import make_pinwheel
+from autograd.scipy.special import logsumexp
 
 
 def init_gmm_params(num_components, D, scale, rs=npr.RandomState(0)):

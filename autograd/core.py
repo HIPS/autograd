@@ -1,6 +1,7 @@
-from itertools import count
 from functools import reduce
-from .tracer import trace, primitive, toposort, Node, Box, isbox, getval
+from itertools import count
+
+from .tracer import Box, Node, getval, isbox, primitive, toposort, trace
 from .util import func, subval
 
 # -------------------- reverse mode --------------------
@@ -40,9 +41,7 @@ class VJPNode(Node):
             vjpmaker = primitive_vjps[fun]
         except KeyError:
             fun_name = getattr(fun, "__name__", fun)
-            raise NotImplementedError(
-                f"VJP of {fun_name} wrt argnums {parent_argnums} not defined"
-            )
+            raise NotImplementedError(f"VJP of {fun_name} wrt argnums {parent_argnums} not defined")
         self.vjp = vjpmaker(parent_argnums, value, args, kwargs)
 
     def initialize_root(self):

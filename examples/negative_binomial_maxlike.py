@@ -1,10 +1,9 @@
-import autograd.numpy as np
-import autograd.numpy.random as npr
-from autograd.scipy.special import gammaln
-from autograd import grad
-
 import scipy.optimize
 
+import autograd.numpy as np
+import autograd.numpy.random as npr
+from autograd import grad
+from autograd.scipy.special import gammaln
 
 # The code in this example implements a method for finding a stationary point of
 # the negative binomial likelihood via Newton's method, described here:

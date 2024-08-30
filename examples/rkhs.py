@@ -5,9 +5,9 @@ gradients of eval with respect to the function-valued argument
 
 import autograd.numpy as np
 import autograd.numpy.random as npr
-from autograd.extend import primitive, defvjp, defjvp, VSpace, Box
-from autograd.util import func
 from autograd import grad
+from autograd.extend import Box, VSpace, defvjp, primitive
+from autograd.util import func
 
 
 class RKHSFun:

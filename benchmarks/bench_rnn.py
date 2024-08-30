@@ -1,8 +1,8 @@
 # Write the benchmarking functions here.
 # See "Writing benchmarks" in the asv docs for more information.
 # http://asv.readthedocs.io/en/latest/writing_benchmarks.html
-from autograd import grad
 import autograd.numpy as np
+from autograd import grad
 
 
 class RNNSuite:

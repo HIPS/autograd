@@ -1,8 +1,2 @@
+from . import fft, linalg, numpy_boxes, numpy_jvps, numpy_vjps, numpy_vspaces, random
 from .numpy_wrapper import *
-from . import numpy_boxes
-from . import numpy_vspaces
-from . import numpy_vjps
-from . import numpy_jvps
-from . import linalg
-from . import fft
-from . import random

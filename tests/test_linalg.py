@@ -1,12 +1,12 @@
-import itertools
+from functools import partial
+
 import numpy as onp
+import pytest
+
 import autograd.numpy as np
 import autograd.numpy.random as npr
-from autograd.test_util import check_grads
 from autograd import tuple
-from autograd import grad
-from functools import partial
-import pytest
+from autograd.test_util import check_grads
 
 npr.seed(1)
 

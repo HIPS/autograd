@@ -1,16 +1,16 @@
-from .util import subvals
 from .extend import (
     Box,
-    primitive,
-    notrace_primitive,
-    VSpace,
-    vspace,
     SparseObject,
-    defvjp,
-    defvjp_argnum,
+    VSpace,
     defjvp,
     defjvp_argnum,
+    defvjp,
+    defvjp_argnum,
+    notrace_primitive,
+    primitive,
+    vspace,
 )
+from .util import subvals
 
 isinstance_ = isinstance
 isinstance = notrace_primitive(isinstance)

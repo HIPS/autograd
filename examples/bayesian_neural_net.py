@@ -1,9 +1,8 @@
 import matplotlib.pyplot as plt
+from black_box_svi import black_box_variational_inference
 
 import autograd.numpy as np
 import autograd.numpy.random as npr
-
-from black_box_svi import black_box_variational_inference
 from autograd.misc.optimizers import adam
 
 

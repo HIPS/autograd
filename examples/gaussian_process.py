@@ -1,11 +1,11 @@
 import matplotlib.pyplot as plt
+from scipy.optimize import minimize
 
 import autograd.numpy as np
 import autograd.numpy.random as npr
-from autograd.numpy.linalg import solve
 import autograd.scipy.stats.multivariate_normal as mvn
 from autograd import value_and_grad
-from scipy.optimize import minimize
+from autograd.numpy.linalg import solve
 
 
 def make_gp_funs(cov_func, num_cov_params):

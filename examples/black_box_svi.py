@@ -4,7 +4,6 @@ import autograd.numpy as np
 import autograd.numpy.random as npr
 import autograd.scipy.stats.multivariate_normal as mvn
 import autograd.scipy.stats.norm as norm
-
 from autograd import grad
 from autograd.misc.optimizers import adam
 

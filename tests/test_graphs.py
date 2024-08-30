@@ -1,9 +1,11 @@
+import warnings
+
+import pytest
+
 import autograd.numpy as np
 import autograd.numpy.random as npr
-from autograd.test_util import check_grads
 from autograd import grad
-import warnings
-import pytest
+from autograd.test_util import check_grads
 
 npr.seed(1)
 

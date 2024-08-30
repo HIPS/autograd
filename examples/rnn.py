@@ -2,13 +2,13 @@
 This version vectorizes over multiple examples, but each string
 has a fixed length."""
 
+from os.path import dirname, join
+
 import autograd.numpy as np
 import autograd.numpy.random as npr
 from autograd import grad
-from autograd.scipy.special import logsumexp
-from os.path import dirname, join
 from autograd.misc.optimizers import adam
-
+from autograd.scipy.special import logsumexp
 
 ### Helper functions #################
 

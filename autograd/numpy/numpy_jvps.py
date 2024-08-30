@@ -1,19 +1,21 @@
 import numpy as onp
+
+from autograd.extend import JVPNode, def_linear, defjvp, defjvp_argnum, register_notrace, vspace
+
+from ..util import func
 from . import numpy_wrapper as anp
+from .numpy_boxes import ArrayBox
 from .numpy_vjps import (
-    untake,
     balanced_eq,
-    match_complex,
-    replace_zero,
     dot_adjoint_0,
     dot_adjoint_1,
+    match_complex,
+    nograd_functions,
+    replace_zero,
     tensordot_adjoint_0,
     tensordot_adjoint_1,
-    nograd_functions,
+    untake,
 )
-from autograd.extend import defjvp, defjvp_argnum, def_linear, vspace, JVPNode, register_notrace
-from ..util import func
-from .numpy_boxes import ArrayBox
 
 for fun in nograd_functions:
     register_notrace(JVPNode, fun)

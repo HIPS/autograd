@@ -1,6 +1,8 @@
 import numpy as np
-from autograd.extend import Box, primitive
+
 from autograd.builtins import SequenceBox
+from autograd.extend import Box, primitive
+
 from . import numpy_wrapper as anp
 
 Box.__array_priority__ = 90.0

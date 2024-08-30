@@ -1,8 +1,7 @@
-from functools import partial
 from itertools import product
-from .core import make_vjp, make_jvp, vspace
-from .util import subvals
-from .wrap_util import unary_to_nary, get_name
+
+from .core import make_jvp, make_vjp, vspace
+from .wrap_util import get_name, unary_to_nary
 
 TOL = 1e-6
 RTOL = 1e-6
@@ -57,9 +56,7 @@ def check_equivalent(x, y):
     x_vs, y_vs = vspace(x), vspace(y)
     assert x_vs == y_vs, f"VSpace mismatch:\nx: {x_vs}\ny: {y_vs}"
     v = x_vs.randn()
-    assert scalar_close(
-        x_vs.inner_prod(x, v), x_vs.inner_prod(y, v)
-    ), f"Value mismatch:\nx: {x}\ny: {y}"
+    assert scalar_close(x_vs.inner_prod(x, v), x_vs.inner_prod(y, v)), f"Value mismatch:\nx: {x}\ny: {y}"
 
 
 @unary_to_nary

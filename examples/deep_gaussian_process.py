@@ -1,11 +1,10 @@
 import matplotlib.pyplot as plt
+from gaussian_process import make_gp_funs, rbf_covariance
+from scipy.optimize import minimize
 
 import autograd.numpy as np
 import autograd.numpy.random as npr
 from autograd import value_and_grad
-from scipy.optimize import minimize
-
-from gaussian_process import make_gp_funs, rbf_covariance
 
 
 def build_step_function_dataset(D=1, n_data=40, noise_std=0.1):

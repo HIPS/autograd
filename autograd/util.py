@@ -1,5 +1,4 @@
 import operator
-import sys
 
 
 def subvals(x, ivs):
@@ -13,7 +12,6 @@ def subval(x, i, v):
     x_ = list(x)
     x_[i] = v
     return tuple(x_)
-
 
 
 def func(f):

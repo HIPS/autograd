@@ -2,12 +2,12 @@
 to find the next query point."""
 
 import matplotlib.pyplot as plt
+from gaussian_process import make_gp_funs, rbf_covariance
+from scipy.optimize import minimize
 
 import autograd.numpy as np
 import autograd.numpy.random as npr
 from autograd import value_and_grad
-from scipy.optimize import minimize
-from gaussian_process import make_gp_funs, rbf_covariance
 from autograd.scipy.stats import norm
 
 

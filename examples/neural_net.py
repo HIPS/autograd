@@ -1,12 +1,13 @@
 """A multi-layer perceptron for classification of MNIST handwritten digits."""
 
+from data import load_mnist
+
 import autograd.numpy as np
 import autograd.numpy.random as npr
-from autograd.scipy.special import logsumexp
 from autograd import grad
 from autograd.misc.flatten import flatten
 from autograd.misc.optimizers import adam
-from data import load_mnist
+from autograd.scipy.special import logsumexp
 
 
 def init_random_params(scale, layer_sizes, rs=npr.RandomState(0)):

@@ -1,10 +1,10 @@
-import autograd.numpy as np
-from autograd import value_and_grad
-
-from scipy.optimize import minimize
+import os
 
 import matplotlib.pyplot as plt
-import os
+from scipy.optimize import minimize
+
+import autograd.numpy as np
+from autograd import value_and_grad
 
 rows, cols = 40, 60
 

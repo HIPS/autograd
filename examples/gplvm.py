@@ -12,15 +12,14 @@
 
 
 import matplotlib.pyplot as plt
+from data import make_pinwheel
+from gaussian_process import make_gp_funs, rbf_covariance
+from scipy.optimize import minimize
 
 import autograd.numpy as np
 import autograd.numpy.random as npr
 from autograd import value_and_grad
-from scipy.optimize import minimize
 from autograd.scipy.stats import norm
-
-from gaussian_process import make_gp_funs, rbf_covariance
-from data import make_pinwheel
 
 if __name__ == "__main__":
     data_dimension = 2  # Normally the data dimension would be much higher.

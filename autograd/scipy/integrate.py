@@ -1,10 +1,10 @@
 import scipy.integrate
 
 import autograd.numpy as np
-from autograd.extend import primitive, defvjp_argnums
 from autograd import make_vjp
-from autograd.misc import flatten
 from autograd.builtins import tuple
+from autograd.extend import defvjp_argnums, primitive
+from autograd.misc import flatten
 
 odeint = primitive(scipy.integrate.odeint)
 

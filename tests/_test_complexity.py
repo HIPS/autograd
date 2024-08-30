@@ -1,7 +1,8 @@
 import time
 import warnings
-from autograd import grad, deriv
+
 import autograd.numpy as np
+from autograd import deriv, grad
 from autograd.builtins import list as make_list
 
 

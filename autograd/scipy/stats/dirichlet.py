@@ -1,8 +1,8 @@
 import scipy.stats
 
 import autograd.numpy as np
+from autograd.extend import defvjp, primitive
 from autograd.scipy.special import digamma
-from autograd.extend import primitive, defvjp
 
 rvs = primitive(scipy.stats.dirichlet.rvs)
 pdf = primitive(scipy.stats.dirichlet.pdf)

@@ -4,9 +4,8 @@ your code depends on external library calls."""
 
 import autograd.numpy as np
 import autograd.numpy.random as npr
-
 from autograd import grad
-from autograd.extend import primitive, defvjp
+from autograd.extend import defvjp, primitive
 from autograd.test_util import check_grads
 
 

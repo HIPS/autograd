@@ -3,9 +3,9 @@ Handy functions for flattening nested containers containing numpy
 arrays. The main purpose is to make examples and optimizers simpler.
 """
 
+import autograd.numpy as np
 from autograd import make_vjp
 from autograd.builtins import type
-import autograd.numpy as np
 
 
 def flatten(value):

@@ -4,9 +4,10 @@ autograd.test_util break and start letting everything pass
 """
 
 import numpy as onp
-import autograd.numpy as np
-from autograd import grad, deriv, holomorphic_grad
 import pytest
+
+import autograd.numpy as np
+from autograd import deriv, grad, holomorphic_grad
 
 
 def test_grad():

@@ -1,8 +1,11 @@
 from functools import partial
+
 import numpy.linalg as npla
-from .numpy_wrapper import wrap_namespace
+
+from autograd.extend import defjvp, defvjp
+
 from . import numpy_wrapper as anp
-from autograd.extend import defvjp, defjvp
+from .numpy_wrapper import wrap_namespace
 
 wrap_namespace(npla.__dict__, globals())
 

@@ -1,9 +1,12 @@
 from functools import partial
+
 import numpy as onp
+
+from autograd.extend import SparseObject, VJPNode, defvjp, defvjp_argnum, primitive, register_notrace, vspace
+
 from ..util import func
 from . import numpy_wrapper as anp
 from .numpy_boxes import ArrayBox
-from autograd.extend import primitive, vspace, defvjp, defvjp_argnum, SparseObject, VJPNode, register_notrace
 
 # ----- Non-differentiable functions -----
 

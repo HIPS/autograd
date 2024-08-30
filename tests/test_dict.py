@@ -1,9 +1,11 @@
+import operator as op
+
 import autograd.numpy as np
 import autograd.numpy.random as npr
-from autograd.test_util import check_grads
-from autograd import dict as ag_dict, isinstance as ag_isinstance
+from autograd import dict as ag_dict
 from autograd import grad
-import operator as op
+from autograd import isinstance as ag_isinstance
+from autograd.test_util import check_grads
 
 npr.seed(0)
 

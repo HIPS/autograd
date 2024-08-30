@@ -3,13 +3,14 @@ This version vectorizes over multiple examples, but each string
 has a fixed length."""
 
 from os.path import dirname, join
+
+from rnn import build_dataset, concat_and_multiply, one_hot_to_string, sigmoid, string_to_one_hot
+
 import autograd.numpy as np
 import autograd.numpy.random as npr
 from autograd import grad
-from autograd.scipy.special import logsumexp
-
 from autograd.misc.optimizers import adam
-from rnn import string_to_one_hot, one_hot_to_string, build_dataset, sigmoid, concat_and_multiply
+from autograd.scipy.special import logsumexp
 
 
 def init_lstm_params(input_size, state_size, output_size, param_scale=0.01, rs=npr.RandomState(0)):

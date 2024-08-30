@@ -7,7 +7,6 @@ to do meta-optimization.
 These routines can optimize functions whose inputs are structured
 objects, such as dicts of numpy arrays."""
 
-
 import autograd.numpy as np
 from autograd.misc import flatten
 from autograd.wrap_util import wraps

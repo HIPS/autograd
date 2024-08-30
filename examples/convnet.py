@@ -1,12 +1,12 @@
 """Convolutional neural net on MNIST, modeled on 'LeNet-5',
 http://yann.lecun.com/exdb/publis/pdf/lecun-98.pdf"""
 
+import data_mnist
 
 import autograd.numpy as np
 import autograd.numpy.random as npr
 import autograd.scipy.signal
 from autograd import grad
-import data_mnist
 
 convolve = autograd.scipy.signal.convolve
 

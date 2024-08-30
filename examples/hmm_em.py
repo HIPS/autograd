@@ -1,10 +1,11 @@
+import string
+from functools import partial
+from os.path import dirname, join
+
 import autograd.numpy as np
 import autograd.numpy.random as npr
-from autograd.scipy.special import logsumexp
 from autograd import value_and_grad as vgrad
-from functools import partial
-from os.path import join, dirname
-import string
+from autograd.scipy.special import logsumexp
 
 
 def EM(init_params, data, callback=None):
