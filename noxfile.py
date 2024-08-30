@@ -37,14 +37,11 @@ def run_tests(session):
     session.run("pytest", "--cov=autograd", "--cov-report=xml", "--cov-append", *session.posargs)
 
 
-# TODO: Replace with pre-commit and pre-commit.ci once
-# https://github.com/HIPS/autograd/pull/634 is merged
-@nox.session(name="lint")
+@nox.session(name="lint", reuse_venv=True)
 def ruff(session):
     """Lightning-fast linting for Python"""
-    session.install("ruff", silent=False)
-    session.run("ruff", "check", ".")
-    session.notify("tests")
+    session.install("pre-commit", silent=False)
+    session.run("pre-commit", "run", "--all-files", "--show-diff-on-failure")
 
 
 @nox.session(name="nightly-tests", tags=["tests"])
