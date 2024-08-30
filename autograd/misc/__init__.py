@@ -1,2 +1,2 @@
-from .tracers import const_graph
 from .flatten import flatten
+from .tracers import const_graph

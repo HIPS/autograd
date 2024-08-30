@@ -1,10 +1,4 @@
-from __future__ import absolute_import
-from . import chi2
-from . import beta
-from . import gamma
-from . import norm
-from . import poisson
-from . import t
+from . import beta, chi2, gamma, norm, poisson, t
 
 # Try block needed in case the user has an
 # old version of scipy without multivariate normal.

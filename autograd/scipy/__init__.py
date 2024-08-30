@@ -1,8 +1,4 @@
-from __future__ import absolute_import
-from . import integrate
-from . import signal
-from . import special
-from . import stats
+from . import integrate, signal, special, stats
 
 try:
     from . import misc

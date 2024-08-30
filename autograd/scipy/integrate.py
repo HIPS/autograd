@@ -1,13 +1,10 @@
-from __future__ import absolute_import
-from builtins import range
-
 import scipy.integrate
 
 import autograd.numpy as np
-from autograd.extend import primitive, defvjp_argnums
 from autograd import make_vjp
-from autograd.misc import flatten
 from autograd.builtins import tuple
+from autograd.extend import defvjp_argnums, primitive
+from autograd.misc import flatten
 
 odeint = primitive(scipy.integrate.odeint)
 
@@ -17,16 +14,16 @@ def grad_odeint(yt, func, y0, t, func_args, **kwargs):
     # Equation Models of Biochemical Processes", Sec. 2.4.2
     # Fabian Froehlich, Carolin Loos, Jan Hasenauer, 2017
     # https://arxiv.org/abs/1711.08079
-    
+
     T, D = np.shape(yt)
     flat_args, unflatten = flatten(func_args)
-    
+
     def flat_func(y, t, flat_args):
         return func(y, t, *unflatten(flat_args))
 
     def unpack(x):
         #      y,      vjp_y,      vjp_t,    vjp_args
-        return x[0:D], x[D:2 * D], x[2 * D], x[2 * D + 1:]
+        return x[0:D], x[D : 2 * D], x[2 * D], x[2 * D + 1 :]
 
     def augmented_dynamics(augmented_state, t, flat_args):
         # Orginal system augmented with vjp_y, vjp_t and vjp_args.
@@ -36,14 +33,12 @@ def grad_odeint(yt, func, y0, t, func_args, **kwargs):
         return np.hstack((dy_dt, vjp_y, vjp_t, vjp_args))
 
     def vjp_all(g):
-        
         vjp_y = g[-1, :]
         vjp_t0 = 0
         time_vjp_list = []
         vjp_args = np.zeros(np.size(flat_args))
-        
-        for i in range(T - 1, 0, -1):
 
+        for i in range(T - 1, 0, -1):
             # Compute effect of moving measurement time.
             vjp_cur_t = np.dot(func(yt[i, :], t[i], *func_args), g[i, :])
             time_vjp_list.append(vjp_cur_t)
@@ -51,8 +46,9 @@ def grad_odeint(yt, func, y0, t, func_args, **kwargs):
 
             # Run augmented system backwards to the previous observation.
             aug_y0 = np.hstack((yt[i, :], vjp_y, vjp_t0, vjp_args))
-            aug_ans = odeint(augmented_dynamics, aug_y0,
-                             np.array([t[i], t[i - 1]]), tuple((flat_args,)), **kwargs)
+            aug_ans = odeint(
+                augmented_dynamics, aug_y0, np.array([t[i], t[i - 1]]), tuple((flat_args,)), **kwargs
+            )
             _, vjp_y, vjp_t0, vjp_args = unpack(aug_ans[1])
 
             # Add gradient from current output.
@@ -62,6 +58,7 @@ def grad_odeint(yt, func, y0, t, func_args, **kwargs):
         vjp_times = np.hstack(time_vjp_list)[::-1]
 
         return None, vjp_y, vjp_times, unflatten(vjp_args)
+
     return vjp_all
 
 
@@ -74,7 +71,10 @@ def argnums_unpack(all_vjp_builder):
         def chosen_vjps(g):  # Returns whichever vjps were asked for.
             all_vjps = vjp_func(g)
             return [all_vjps[argnum] for argnum in argnums]
+
         return chosen_vjps
+
     return build_selected_vjps
+
 
 defvjp_argnums(odeint, argnums_unpack(grad_odeint))

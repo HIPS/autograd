@@ -25,14 +25,13 @@ Example use:
 >>> from autograd import grad    # The only autograd function you may ever need
 >>>
 >>> def tanh(x):                 # Define a function
-...     y = np.exp(-2.0 * x)
-...     return (1.0 - y) / (1.0 + y)
+...     return (1.0 - np.exp((-2 * x))) / (1.0 + np.exp(-(2 * x)))
 ...
 >>> grad_tanh = grad(tanh)       # Obtain its gradient function
 >>> grad_tanh(1.0)               # Evaluate the gradient at x = 1.0
-0.41997434161402603
+np.float64(0.419974341614026)
 >>> (tanh(1.0001) - tanh(0.9999)) / 0.0002  # Compare to finite differences
-0.41997434264973155
+np.float64(0.41997434264973155)
 ```
 
 We can continue to differentiate as many times as we like, and use numpy's
@@ -41,14 +40,12 @@ vectorization of scalar-valued functions across many different input values:
 ```python
 >>> from autograd import elementwise_grad as egrad  # for functions that vectorize over inputs
 >>> import matplotlib.pyplot as plt
->>> x = np.linspace(-7, 7, 200)
+>>> x = np.linspace(-7, 7, 700)
 >>> plt.plot(x, tanh(x),
 ...          x, egrad(tanh)(x),                                     # first  derivative
 ...          x, egrad(egrad(tanh))(x),                              # second derivative
 ...          x, egrad(egrad(egrad(tanh)))(x),                       # third  derivative
 ...          x, egrad(egrad(egrad(egrad(tanh))))(x),                # fourth derivative
-...          x, egrad(egrad(egrad(egrad(egrad(tanh)))))(x),         # fifth  derivative
-...          x, egrad(egrad(egrad(egrad(egrad(egrad(tanh))))))(x))  # sixth  derivative
 >>> plt.show()
 ```
 
