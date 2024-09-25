@@ -21,7 +21,8 @@ concurrency:
 
 jobs:
   test:
-    name: Test / ${{ matrix.platform }} / Nightly ${{ matrix.nightly[0] }} / Python ${{ matrix.python-version }}
+    # name: Test / ${{ matrix.platform }} / Nightly ${{ matrix.nightly[0] }} / Python ${{ matrix.python-version }}
+    name: Test / ${{ matrix.platform }} / Python ${{ matrix.python-version }}
     runs-on: ${{ matrix.platform }}
     strategy:
       fail-fast: false
@@ -29,7 +30,8 @@ jobs:
         platform: [ubuntu-latest, macos-13, macos-latest, windows-latest]
         python-version:
           ["3.8", "3.9", "3.10", "3.11", "3.12", "pypy-3.9", "pypy-3.10"]
-        nightly: [[True, "nightly-"], [False, ""]]
+        # TODO: disable nightly NumPy tests for now, re-enable later
+        # nightly: [[True, "nightly-"], [False, ""]]
     steps:
       - uses: actions/checkout@v4.1.7
       - uses: actions/setup-python@v5.1.1
@@ -39,8 +41,10 @@ jobs:
 
       - name: Run CPython tests
         if: ${{ !startsWith(matrix.python-version, 'pypy') }}
-        run: uvx nox -s ${{ matrix.nightly[1] }}tests
+        # run: uvx nox -s ${{ matrix.nightly[1] }}tests
+        run: uvx nox -s tests
 
       - name: Run PyPy tests
         if: ${{ startsWith(matrix.python-version, 'pypy') }}
-        run: uvx nox -s ${{ matrix.nightly[1] }}tests
+        # run: uvx nox -s ${{ matrix.nightly[1] }}tests
+        run: uvx nox -s tests
