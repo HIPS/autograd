@@ -1,4 +1,4 @@
-name: Checks
+name: Style and package checks
 
 on:
   pull_request:
@@ -7,27 +7,31 @@ on:
   push:
     branches:
     - master
+  workflow_dispatch:
 
 env:
-  PIP_DISABLE_PIP_VERSION_CHECK: '1'
-  PY_COLORS: '1'
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  FORCE_COLOR: "3"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
 
 jobs:
   check:
+    name: ${{ matrix.env }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        env:
-        #- ruff
-        - package
+        session:
+      # - lint
+        - validate-package
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-python@v5.1.1
-      with:
-        python-version: '3.10'
-    - name: Install build tools
-      run: |
-        python -m pip install tox wheel
+
+    - uses: yezz123/setup-uv@v4
+
     - name: Run ${{ matrix.env }}
-      run: python -m tox -e ${{ matrix.env }}
+      run: uvx nox -s ${{ matrix.env }}

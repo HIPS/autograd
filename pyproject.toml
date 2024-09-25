@@ -55,6 +55,11 @@ Source = "https://github.com/HIPS/autograd"
 scipy = [
   "scipy",
 ]
+test = [
+  "pytest",
+  "pytest-cov",
+  "pytest-xdist",
+]
 
 [tool.coverage.run]
 source = ["autograd"]
@@ -63,7 +68,9 @@ source = ["autograd"]
 show_missing = true
 
 [tool.pytest.ini_options]
-addopts = "--color=yes --junitxml=junit-report.xml"
+required_plugins = ["pytest-cov", "pytest-xdist"]
+# TODO: generate HTML report, upload to CodeCov
+addopts = "--color=yes -sra -n auto --cov=autograd --cov-report=xml --cov-report=term"
 
 [tool.ruff]
 extend-exclude = []
