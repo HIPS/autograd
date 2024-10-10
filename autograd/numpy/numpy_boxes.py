@@ -23,6 +23,9 @@ class ArrayBox(Box):
     dtype = property(lambda self: self._value.dtype)
     T = property(lambda self: anp.transpose(self))
 
+    def __array_namespace__(self, *, api_version: str | None = None):
+        return anp
+
     def __len__(self):
         return len(self._value)
 
