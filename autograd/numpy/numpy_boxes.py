@@ -1,5 +1,6 @@
 import numpy as np
 
+from typing import Union
 from autograd.builtins import SequenceBox
 from autograd.extend import Box, primitive
 
@@ -23,7 +24,7 @@ class ArrayBox(Box):
     dtype = property(lambda self: self._value.dtype)
     T = property(lambda self: anp.transpose(self))
 
-    def __array_namespace__(self, *, api_version: str | None = None):
+    def __array_namespace__(self, *, api_version: Union[str, None] = None):
         return anp
 
     def __len__(self):
