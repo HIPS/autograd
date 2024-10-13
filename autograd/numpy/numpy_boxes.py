@@ -1,6 +1,7 @@
+from typing import Union
+
 import numpy as np
 
-from typing import Union
 from autograd.builtins import SequenceBox
 from autograd.extend import Box, primitive
 
