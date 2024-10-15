@@ -21,15 +21,23 @@ concurrency:
 
 jobs:
   test:
-    name: Test / ${{ matrix.platform }} / Nightly ${{ matrix.nightly[0] }} / Python ${{ matrix.python-version }}
+    name: Regular tests / ${{ matrix.platform }} / Python ${{ matrix.python-version }}
     runs-on: ${{ matrix.platform }}
     strategy:
       fail-fast: false
       matrix:
         platform: [ubuntu-latest, macos-13, macos-latest, windows-latest]
         python-version:
-          ["3.8", "3.9", "3.10", "3.11", "3.12", "pypy-3.9", "pypy-3.10"]
-        nightly: [[True, "nightly-"], [False, ""]]
+          [
+            "3.8",
+            "3.9",
+            "3.10",
+            "3.11",
+            "3.12",
+            "3.13",
+            "pypy-3.9",
+            "pypy-3.10",
+          ]
     steps:
       - uses: actions/checkout@v4.1.7
       - uses: actions/setup-python@v5.1.1
@@ -37,10 +45,36 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - uses: yezz123/setup-uv@v4
 
-      - name: Run CPython tests
-        if: ${{ !startsWith(matrix.python-version, 'pypy') }}
+      # On PyPy, we skip SciPy because we don't have wheels
+      # available, see noxfile.py for more details.
+      - name: Run tests
         run: uvx nox -s tests
 
-      - name: Run PyPy tests
-        if: ${{ startsWith(matrix.python-version, 'pypy') }}
-        run: uvx nox -s ${{ matrix.nightly[1] }}tests
+  # In this job, we test against the NumPy nightly wheels hosted on
+  # https://anaconda.org/scientific-python-nightly-wheels/numpy
+  # on the latest Python version available across platforms, instead of
+  # testing all Python versions and implementations on all platforms.
+  # We do not test on PyPy.
+  #
+  # However, "nox -s nightly-tests" can be used locally anywhere, on
+  # any Python version and implementation on any platform and we leave
+  # it to the user to decide what Python version to test against, which
+  # might or might not have a corresponding NumPy nightly wheel present.
+  nightlies:
+    name: Nightly tests / ${{ matrix.platform }} / Python ${{ matrix.python-version }}
+    runs-on: ${{ matrix.platform }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [ubuntu-latest, macos-13, macos-latest, windows-latest]
+        python-version: ["3.x"]
+
+    steps:
+      - uses: actions/checkout@v4.1.7
+      - uses: actions/setup-python@v5.1.1
+        with:
+          python-version: ${{ matrix.python-version }}
+          allow-prereleases: true
+      - uses: yezz123/setup-uv@v4
+      - name: Run tests against nightly wheels for NumPy and SciPy
+        run: uvx nox -s nightly-tests
