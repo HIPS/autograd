@@ -28,21 +28,15 @@ jobs:
       matrix:
         platform: [ubuntu-latest, macos-13, macos-latest, windows-latest]
         python-version:
-          [
-            "3.8",
-            "3.9",
-            "3.10",
-            "3.11",
-            "3.12",
-            "3.13",
-            "pypy-3.9",
-            "pypy-3.10",
-          ]
+          ["3.9", "3.10", "3.11", "3.12", "3.13", "pypy-3.9", "pypy-3.10"]
+        # TODO: disable nightly NumPy tests for now, re-enable later
+        # nightly: [[True, "nightly-"], [False, ""]]
     steps:
       - uses: actions/checkout@v4.1.7
       - uses: actions/setup-python@v5.1.1
         with:
           python-version: ${{ matrix.python-version }}
+          allow-prereleases: true
       - uses: yezz123/setup-uv@v4
 
       # On PyPy, we skip SciPy because we don't have wheels
