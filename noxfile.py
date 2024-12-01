@@ -50,7 +50,11 @@ def run_nightly_tests(session):
     session.install("-e", ".[test]", silent=False)
     # SciPy doesn't have wheels on PyPy
     if platform.python_implementation() == "PyPy":
-        session.install("numpy", "--upgrade", silent=False, env=UV_NIGHTLY_ENV_VARS)
+        session.install(
+            "numpy", "--upgrade", "--only-binary", ":all:", silent=False, env=UV_NIGHTLY_ENV_VARS
+        )
     else:
-        session.install("numpy", "scipy", "--upgrade", silent=False, env=UV_NIGHTLY_ENV_VARS)
+        session.install(
+            "numpy", "scipy", "--upgrade", "--only-binary", ":all:", silent=False, env=UV_NIGHTLY_ENV_VARS
+        )
     session.run("pytest", "--cov=autograd", "--cov-report=xml", "--cov-append", *session.posargs)
