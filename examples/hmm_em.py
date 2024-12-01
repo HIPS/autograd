@@ -1,19 +1,20 @@
-from __future__ import division, print_function
+import string
+from functools import partial
+from os.path import dirname, join
+
 import autograd.numpy as np
 import autograd.numpy.random as npr
-from autograd.scipy.special import logsumexp
 from autograd import value_and_grad as vgrad
-from functools import partial
-from os.path import join, dirname
-import string
+from autograd.scipy.special import logsumexp
 
 
 def EM(init_params, data, callback=None):
     def EM_update(params):
         natural_params = list(map(np.log, params))
         loglike, E_stats = vgrad(log_partition_function)(natural_params, data)  # E step
-        if callback: callback(loglike, params)
-        return list(map(normalize, E_stats))                                    # M step
+        if callback:
+            callback(loglike, params)
+        return list(map(normalize, E_stats))  # M step
 
     def fixed_point(f, x0):
         x1 = f(x0)
@@ -30,7 +31,8 @@ def EM(init_params, data, callback=None):
 
 def normalize(a):
     def replace_zeros(a):
-        return np.where(a > 0., a, 1.)
+        return np.where(a > 0.0, a, 1.0)
+
     return a / replace_zeros(a.sum(-1, keepdims=True))
 
 
@@ -42,7 +44,7 @@ def log_partition_function(natural_params, data):
 
     log_alpha = log_pi
     for y in data:
-        log_alpha = logsumexp(log_alpha[:,None] + log_A, axis=0) + log_B[:,y]
+        log_alpha = logsumexp(log_alpha[:, None] + log_A, axis=0) + log_B[:, y]
 
     return logsumexp(log_alpha)
 
@@ -70,15 +72,15 @@ def build_dataset(filename, max_lines=-1):
     return encoded_lines, num_outputs
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     np.random.seed(0)
-    np.seterr(divide='ignore')
+    np.seterr(divide="ignore")
 
     # callback to print log likelihoods during training
     print_loglike = lambda loglike, params: print(loglike)
 
     # load training data
-    lstm_filename = join(dirname(__file__), 'lstm.py')
+    lstm_filename = join(dirname(__file__), "lstm.py")
     train_inputs, num_outputs = build_dataset(lstm_filename, max_lines=60)
 
     # train with EM

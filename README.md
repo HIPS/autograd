@@ -1,10 +1,12 @@
-__Note: Autograd is still being maintained but is no longer actively developed.
-The main developers (Dougal Maclaurin, David Duvenaud, Matt Johnson, and Jamie
-Townsend) are now working on [JAX](https://github.com/google/jax), with Dougal and Matt
-working on it full-time. JAX combines a new version of Autograd with extra
-features such as jit compilation.__
+# Autograd  [![Checks status][checks-badge]][checks-url] [![Tests status][tests-badge]][tests-url] [![Publish status][publish-badge]][publish-url] [![asv][asv-badge]](#)
 
-# Autograd  [![Test status](https://travis-ci.org/HIPS/autograd.svg?branch=master)](https://travis-ci.org/HIPS/autograd) [![asv](http://img.shields.io/badge/benchmarked%20by-asv-green.svg?style=flat)](#)
+[publish-badge]: https://github.com/HIPS/autograd/actions/workflows/publish.yml/badge.svg
+[checks-badge]: https://github.com/HIPS/autograd/actions/workflows/check.yml/badge.svg
+[tests-badge]: https://github.com/HIPS/autograd/actions/workflows/test.yml/badge.svg
+[asv-badge]: http://img.shields.io/badge/benchmarked%20by-asv-green.svg?style=flat
+[publish-url]: https://github.com/HIPS/autograd/actions/workflows/publish.yml
+[checks-url]: https://github.com/HIPS/autograd/actions/workflows/check.yml
+[tests-url]: https://github.com/HIPS/autograd/actions/workflows/test.yml
 
 Autograd can automatically differentiate native Python and Numpy code. It can
 handle a large subset of Python's features, including loops, ifs, recursion and
@@ -23,14 +25,13 @@ Example use:
 >>> from autograd import grad    # The only autograd function you may ever need
 >>>
 >>> def tanh(x):                 # Define a function
-...     y = np.exp(-2.0 * x)
-...     return (1.0 - y) / (1.0 + y)
+...     return (1.0 - np.exp((-2 * x))) / (1.0 + np.exp(-(2 * x)))
 ...
 >>> grad_tanh = grad(tanh)       # Obtain its gradient function
 >>> grad_tanh(1.0)               # Evaluate the gradient at x = 1.0
-0.41997434161402603
+np.float64(0.419974341614026)
 >>> (tanh(1.0001) - tanh(0.9999)) / 0.0002  # Compare to finite differences
-0.41997434264973155
+np.float64(0.41997434264973155)
 ```
 
 We can continue to differentiate as many times as we like, and use numpy's
@@ -39,14 +40,12 @@ vectorization of scalar-valued functions across many different input values:
 ```python
 >>> from autograd import elementwise_grad as egrad  # for functions that vectorize over inputs
 >>> import matplotlib.pyplot as plt
->>> x = np.linspace(-7, 7, 200)
+>>> x = np.linspace(-7, 7, 700)
 >>> plt.plot(x, tanh(x),
 ...          x, egrad(tanh)(x),                                     # first  derivative
 ...          x, egrad(egrad(tanh))(x),                              # second derivative
 ...          x, egrad(egrad(egrad(tanh)))(x),                       # third  derivative
 ...          x, egrad(egrad(egrad(egrad(tanh))))(x),                # fourth derivative
-...          x, egrad(egrad(egrad(egrad(egrad(tanh)))))(x),         # fifth  derivative
-...          x, egrad(egrad(egrad(egrad(egrad(egrad(tanh))))))(x))  # sixth  derivative
 >>> plt.show()
 ```
 
@@ -75,17 +74,31 @@ You can find a tutorial [here.](docs/tutorial.md)
 
 ## How to install
 
-Just run `pip install autograd`
+Install Autograd using Pip:
 
-## Authors
+```shell
+pip install autograd
+```
+
+Some features require SciPy, which you can install separately or as an
+optional dependency along with Autograd:
+
+```shell
+pip install "autograd[scipy]"
+```
+
+## Authors and maintainers
 
 Autograd was written by [Dougal Maclaurin](https://dougalmaclaurin.com),
 [David Duvenaud](https://www.cs.toronto.edu/~duvenaud/),
 [Matt Johnson](http://people.csail.mit.edu/mattjj/),
 [Jamie Townsend](https://github.com/j-towns)
-and many other contributors. The package is currently still being maintained,
-but is no longer actively developed. Please feel free to submit any bugs or
-feature requests. We'd also love to hear about your experiences with autograd
+and many other contributors. The package is currently being maintained by
+[Agriya Khetarpal](https://github.com/agriyakhetarpal),
+[Fabian Joswig](https://github.com/fjosw) and
+[Jamie Townsend](https://github.com/j-towns).
+Please feel free to submit any bugs or
+feature requests. We'd also love to hear about your experiences with Autograd
 in general. Drop us an email!
 
 We want to thank Jasper Snoek and the rest of the HIPS group (led by Prof. Ryan

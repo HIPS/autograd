@@ -1,5 +1,16 @@
 # Exposes API for extending autograd
-from .tracer import Box, primitive, register_notrace, notrace_primitive
-from .core import (SparseObject, VSpace, vspace, VJPNode, JVPNode,
-                   defvjp_argnums, defvjp_argnum, defvjp,
-                   defjvp_argnums, defjvp_argnum, defjvp, def_linear)
+from .core import (
+    JVPNode,
+    SparseObject,
+    VJPNode,
+    VSpace,
+    def_linear,
+    defjvp,
+    defjvp_argnum,
+    defjvp_argnums,
+    defvjp,
+    defvjp_argnum,
+    defvjp_argnums,
+    vspace,
+)
+from .tracer import Box, notrace_primitive, primitive, register_notrace

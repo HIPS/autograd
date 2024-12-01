@@ -1,0 +1,37 @@
+name: Style and package checks
+
+on:
+  pull_request:
+    branches:
+    - master
+  push:
+    branches:
+    - master
+  workflow_dispatch:
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  FORCE_COLOR: "3"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: ${{ matrix.env }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        session:
+      # - lint
+        - validate-package
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5.1.1
+
+    - uses: yezz123/setup-uv@v4
+
+    - name: Run ${{ matrix.env }}
+      run: uvx nox -s ${{ matrix.env }}

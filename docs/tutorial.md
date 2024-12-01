@@ -109,7 +109,7 @@ To compute the derivative, we simply apply the rules of differentiation to each 
 Given a function made up of several nested function calls, there are several ways to compute its derivative.
 
 For example, given L(x) = F(G(H(x))), the chain rule says that its gradient is dL/dx = dF/dG * dG/dH * dH/dx.  If we evaluate this product from right-to-left: (dF/dG * (dG/dH * dH/dx)), the same order as the computations themselves were performed, this is called forward-mode differentiation.
-If we evaluate this product from left-to-right: (dF/dG * dG/dH) * dH/dx)), the reverse order as the computations themselves were performed, this is called reverse-mode differentiation.
+If we evaluate this product from left-to-right: ((dF/dG * dG/dH) * dH/dx), the reverse order as the computations themselves were performed, this is called reverse-mode differentiation.
 
 Compared to finite differences or forward-mode, reverse-mode differentiation is by far the more practical method for differentiating functions that take in a large vector and output a single number.
 In the machine learning community, reverse-mode differentiation is known as 'backpropagation', since the gradients propagate backwards through the function.

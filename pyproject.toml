@@ -1,0 +1,91 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "autograd"
+version = "1.7.0"
+requires-python = ">=3.9"
+description = "Efficiently computes derivatives of NumPy code."
+readme = "README.md"
+license = {file = "license.txt"}
+authors = [
+  {name = "Dougal Maclaurin", email = "maclaurin@physics.harvard.edu"},
+  {name = "David Duvenaud", email = "duvenaud@cs.toronto.edu"},
+  {name = "Matthew Johnson", email = "mattjj@csail.mit.edu"},
+  {name = "Jamie Townsend", email = "j.h.n.townsend@uva.nl"},
+]
+maintainers = [
+  {name = "Jamie Townsend", email = "j.h.n.townsend@uva.nl"},
+  {name = "Fabian Joswig", email = "fabian.joswig@uni-muenster.de"},
+  {name = "Agriya Khetarpal", email = "agriyakhetarpal@outlook.com"},
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Information Technology",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Scientific/Engineering",
+]
+keywords = [
+  "Automatic differentiation",
+  "backpropagation",
+  "gradients",
+  "machine learning",
+  "optimization",
+  "neural networks",
+  "Python",
+  "NumPy",
+  "SciPy",
+]
+dependencies = [
+  "numpy",
+]
+# dynamic = ["version"]
+
+[project.urls]
+Source = "https://github.com/HIPS/autograd"
+
+[project.optional-dependencies]
+scipy = [
+  "scipy",
+]
+test = [
+  "pytest",
+  "pytest-cov",
+  "pytest-xdist",
+]
+
+[tool.coverage.run]
+source = ["autograd"]
+
+[tool.coverage.report]
+show_missing = true
+
+[tool.pytest.ini_options]
+required_plugins = ["pytest-cov", "pytest-xdist"]
+# TODO: generate HTML report, upload to CodeCov
+addopts = "--color=yes -sra -n auto --cov=autograd --cov-report=xml --cov-report=term"
+
+[tool.ruff]
+extend-exclude = []
+# TODO: not ignore them
+lint.extend-ignore = [
+  "E731",
+  "F401",
+  "F403",
+  "F841",
+  "F821",
+  "E721",
+  "E722",
+  "E741",
+  "E402",
+  "F811"
+]
+lint.extend-select = ["I", "W"]
+line-length = 109

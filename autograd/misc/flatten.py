@@ -2,9 +2,11 @@
 Handy functions for flattening nested containers containing numpy
 arrays. The main purpose is to make examples and optimizers simpler.
 """
+
+import autograd.numpy as np
 from autograd import make_vjp
 from autograd.builtins import type
-import autograd.numpy as np
+
 
 def flatten(value):
     """Flattens any nesting of tuples, lists, or dicts, with numpy arrays or
@@ -13,6 +15,7 @@ def flatten(value):
     keys are sortable."""
     unflatten, flat_value = make_vjp(_flatten)(value)
     return flat_value, unflatten
+
 
 def _flatten(value):
     t = type(value)
@@ -23,9 +26,11 @@ def _flatten(value):
     else:
         return np.ravel(value)
 
+
 def _concatenate(lst):
     lst = list(lst)
     return np.concatenate(lst) if lst else np.array([])
+
 
 def flatten_func(func, example):
     _ex, unflatten = flatten(example)
