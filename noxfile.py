@@ -47,6 +47,7 @@ def ruff(session):
 @nox.session(name="nightly-tests", tags=["tests"])
 def run_nightly_tests(session):
     """Run tests against nightly versions of dependencies"""
+    session.run("python", "-VV")
     session.install("-e", ".[test]", silent=False)
     # SciPy doesn't have wheels on PyPy
     if platform.python_implementation() == "PyPy":
@@ -56,5 +57,30 @@ def run_nightly_tests(session):
     else:
         session.install(
             "numpy", "scipy", "--upgrade", "--only-binary", ":all:", silent=False, env=UV_NIGHTLY_ENV_VARS
+        )
+    session.run("pytest", "--cov=autograd", "--cov-report=xml", "--cov-append", *session.posargs)
+
+
+# Wheels for NumPy and SciPy are available as nightly builds, so we test
+# against them on Python 3.13t, which is the only version that supports
+# free-threaded Python.
+@nox.session(name="free-threading", python=["3.13t"])
+def run_with_free_threaded_python(session):
+    """Run tests with free threaded Python (no-GIL)"""
+    session.run("python", "-VV")
+    session.install("-e", ".[test]", silent=False)
+
+    # Add PYTHON_GIL=0 to UV_NIGHTLY_ENV_VARS
+    uv_nightly_env_vars_free_threading = UV_NIGHTLY_ENV_VARS.copy()
+    uv_nightly_env_vars_free_threading["PYTHON_GIL"] = "0"
+
+    # SciPy doesn't have wheels on PyPy
+    if platform.python_implementation() == "PyPy":
+        session.install(
+            "numpy", "--upgrade", "--only-binary", ":all:", silent=False, env=uv_nightly_env_vars_free_threading
+        )
+    else:
+        session.install(
+            "numpy", "scipy", "--upgrade", "--only-binary", ":all:", silent=False, env=uv_nightly_env_vars_free_threading
         )
     session.run("pytest", "--cov=autograd", "--cov-report=xml", "--cov-append", *session.posargs)
