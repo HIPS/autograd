@@ -83,8 +83,10 @@ jobs:
   free-threaded-testing:
     name: Free-threading tests / ${{ matrix.platform }} / Python ${{ matrix.python-version }}
     runs-on: ${{ matrix.platform }}
-    env:
-      PYTHON_GIL: "0"
+    # Temporarily disable this environment variable to see if this fixes the message as follows:
+    # "Fatal Python error: config_read_gil: Disabling the GIL is not supported by this build"
+    # env:
+    #   PYTHON_GIL: "0"
     strategy:
       fail-fast: false
       matrix:
