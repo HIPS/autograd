@@ -72,3 +72,29 @@ jobs:
       - uses: yezz123/setup-uv@v4
       - name: Run tests against nightly wheels for NumPy and SciPy
         run: uvx nox -s nightly-tests
+
+
+  # In this job, we test with the free-threaded (no-GIL) Python 3.13t
+  # interpreter on all platforms. This is a special job and uses the
+  # "free-threading" session in noxfile.py. This job is available only
+  # for Python 3.13t at the time of writing and uses the nightly wheels
+  # for NumPy and SciPy, since free-threaded builds for either of them
+  # are not available on PyPI yet.
+  free-threaded-testing:
+    name: Free-threading tests / ${{ matrix.platform }} / Python ${{ matrix.python-version }}
+    runs-on: ${{ matrix.platform }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [ubuntu-latest, macos-13, macos-latest, windows-latest]
+        python-version: ["3.13t"]
+    steps:
+      - uses: actions/checkout@v4.2.2
+      - uses: Quansight-Labs/setup-python@b9ab292c751a42bcd2bb465b7fa202ea2c3f5796 # v5.3.1
+        with:
+          python-version: ${{ matrix.python-version }}
+          allow-prereleases: true
+
+      - uses: yezz123/setup-uv@v4
+      - name: Run free-threaded tests on ${{ matrix.platform}}
+        run: uvx nox -s free-threading
