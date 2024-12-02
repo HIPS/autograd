@@ -83,6 +83,8 @@ jobs:
   free-threaded-testing:
     name: Free-threading tests / ${{ matrix.platform }} / Python ${{ matrix.python-version }}
     runs-on: ${{ matrix.platform }}
+    env:
+      PYTHON_GIL: "0"
     strategy:
       fail-fast: false
       matrix:
