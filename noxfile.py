@@ -63,24 +63,31 @@ def run_nightly_tests(session):
 
 # Wheels for NumPy and SciPy are available as nightly builds, so we test
 # against them on Python 3.13t, which is the only version that supports
-# free-threaded Python.
+# free-threaded Python. This session is similar to the "nightly-tests"
+# session, but it uses a free-threaded Python interpreter.
 @nox.session(name="free-threading", python=["3.13t"])
 def run_with_free_threaded_python(session):
     """Run tests with free threaded Python (no-GIL)"""
     session.run("python", "-VV")
     session.install("-e", ".[test]", silent=False)
 
-    # Add PYTHON_GIL=0 to UV_NIGHTLY_ENV_VARS
-    uv_nightly_env_vars_free_threading = UV_NIGHTLY_ENV_VARS.copy()
-    uv_nightly_env_vars_free_threading["PYTHON_GIL"] = "0"
-
     # SciPy doesn't have wheels on PyPy
     if platform.python_implementation() == "PyPy":
         session.install(
-            "numpy", "--upgrade", "--only-binary", ":all:", silent=False, env=uv_nightly_env_vars_free_threading
+            "numpy", "--upgrade", "--only-binary", ":all:", silent=False, env=UV_NIGHTLY_ENV_VARS
         )
     else:
         session.install(
-            "numpy", "scipy", "--upgrade", "--only-binary", ":all:", silent=False, env=uv_nightly_env_vars_free_threading
+            "numpy", "scipy", "--upgrade", "--only-binary", ":all:", silent=False, env=UV_NIGHTLY_ENV_VARS
         )
-    session.run("pytest", "--cov=autograd", "--cov-report=xml", "--cov-append", *session.posargs)
+    # The PYTHON_GIL environment variable is set to 0, which enforces that
+    # extension modules that haven't declared themselves as safe to not rely
+    # on the GIL are run with the GIL disabled.
+    session.run(
+        "pytest",
+        "--cov=autograd",
+        "--cov-report=xml",
+        "--cov-append",
+        *session.posargs,
+        env={"PYTHON_GIL": "0"},
+    )
