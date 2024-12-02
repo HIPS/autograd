@@ -18,7 +18,8 @@ class ArrayBox(Box):
     def __getitem__(A, idx):
         return A[idx]
 
-    def item(self): return self[(0,) * len(self.shape)]
+    def item(self):
+        return self[(0,) * len(self.shape)]
 
     # Constants w.r.t float data just pass though
     shape = property(lambda self: self._value.shape)
