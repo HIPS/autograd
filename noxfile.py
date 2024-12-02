@@ -47,10 +47,47 @@ def ruff(session):
 @nox.session(name="nightly-tests", tags=["tests"])
 def run_nightly_tests(session):
     """Run tests against nightly versions of dependencies"""
+    session.run("python", "-VV")
     session.install("-e", ".[test]", silent=False)
     # SciPy doesn't have wheels on PyPy
     if platform.python_implementation() == "PyPy":
-        session.install("numpy", "--upgrade", silent=False, env=UV_NIGHTLY_ENV_VARS)
+        session.install(
+            "numpy", "--upgrade", "--only-binary", ":all:", silent=False, env=UV_NIGHTLY_ENV_VARS
+        )
     else:
-        session.install("numpy", "scipy", "--upgrade", silent=False, env=UV_NIGHTLY_ENV_VARS)
+        session.install(
+            "numpy", "scipy", "--upgrade", "--only-binary", ":all:", silent=False, env=UV_NIGHTLY_ENV_VARS
+        )
     session.run("pytest", "--cov=autograd", "--cov-report=xml", "--cov-append", *session.posargs)
+
+
+# Wheels for NumPy and SciPy are available as nightly builds, so we test
+# against them on Python 3.13t, which is the only version that supports
+# free-threaded Python. This session is similar to the "nightly-tests"
+# session, but it uses a free-threaded Python interpreter.
+@nox.session(name="free-threading", python=["3.13t"])
+def run_with_free_threaded_python(session):
+    """Run tests with free threaded Python (no-GIL)"""
+    session.run("python", "-VV")
+    session.install("-e", ".[test]", silent=False)
+
+    # SciPy doesn't have wheels on PyPy
+    if platform.python_implementation() == "PyPy":
+        session.install(
+            "numpy", "--upgrade", "--only-binary", ":all:", silent=False, env=UV_NIGHTLY_ENV_VARS
+        )
+    else:
+        session.install(
+            "numpy", "scipy", "--upgrade", "--only-binary", ":all:", silent=False, env=UV_NIGHTLY_ENV_VARS
+        )
+    # The PYTHON_GIL environment variable is set to 0, which enforces that
+    # extension modules that haven't declared themselves as safe to not rely
+    # on the GIL are run with the GIL disabled.
+    session.run(
+        "pytest",
+        "--cov=autograd",
+        "--cov-report=xml",
+        "--cov-append",
+        *session.posargs,
+        env={"PYTHON_GIL": "0"},
+    )

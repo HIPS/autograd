@@ -228,7 +228,7 @@ else:
     ### Misc ###
     def test_logsumexp1():
         combo_check(special.logsumexp, [0], modes=["fwd", "rev"])(
-            [1.1, R(4), R(3, 4)], axis=[None, 0], keepdims=[True, False]
+            [np.array([1.1]), R(4), R(3, 4)], axis=[None, 0], keepdims=[True, False]
         )
 
     def test_logsumexp2():
