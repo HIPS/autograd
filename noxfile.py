@@ -102,7 +102,7 @@ def run_pytest_run_in_parallel_plugin(session):
     """Run stress tests with free threaded Python (no-GIL) using the pytest-run-in-parallel plugin"""
     session.run("python", "-VV")
     session.install("-e", ".", silent=False)
-    session.install("pytest", "pytest-run-in-parallel", silent=False)
+    session.install("pytest", "pytest-run-parallel", silent=False)
 
     # SciPy doesn't have wheels on PyPy
     if platform.python_implementation() == "PyPy":
