@@ -73,7 +73,6 @@ jobs:
       - name: Run tests against nightly wheels for NumPy and SciPy
         run: uvx nox -s nightly-tests
 
-
   # In this job, we test with the free-threaded (no-GIL) Python 3.13t
   # interpreter on all platforms. This is a special job and uses the
   # "free-threading" session in noxfile.py. This job is available only
