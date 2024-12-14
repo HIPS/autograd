@@ -34,7 +34,9 @@ def run_tests(session):
         session.install("-e", ".[test]", silent=False)
     else:
         session.install("-e", ".[test,scipy]", silent=False)
-    session.run("pytest", "--cov=autograd", "--cov-report=xml", "--cov-append", *session.posargs)
+    session.run(
+        "pytest", "-n", "auto" "--cov=autograd", "--cov-report=xml", "--cov-append", *session.posargs
+    )
 
 
 @nox.session(name="lint", reuse_venv=True)
@@ -58,18 +60,22 @@ def run_nightly_tests(session):
         session.install(
             "numpy", "scipy", "--upgrade", "--only-binary", ":all:", silent=False, env=UV_NIGHTLY_ENV_VARS
         )
-    session.run("pytest", "--cov=autograd", "--cov-report=xml", "--cov-append", *session.posargs)
+    session.run(
+        "pytest", "-n", "auto", "--cov=autograd", "--cov-report=xml", "--cov-append", *session.posargs
+    )
 
 
 # Wheels for NumPy and SciPy are available as nightly builds, so we test
 # against them on Python 3.13t, which is the only version that supports
 # free-threaded Python. This session is similar to the "nightly-tests"
-# session, but it uses a free-threaded Python interpreter.
+# session, but it uses a free-threaded Python interpreter. Also, we don't
+# the "test" extra but install the test dependencies manually.
 @nox.session(name="free-threading", python=["3.13t"])
 def run_with_free_threaded_python(session):
     """Run tests with free threaded Python (no-GIL)"""
     session.run("python", "-VV")
-    session.install("-e", ".[test]", silent=False)
+    session.install("-e", ".", silent=False)
+    session.install("pytest", silent=False)
 
     # SciPy doesn't have wheels on PyPy
     if platform.python_implementation() == "PyPy":
@@ -85,9 +91,6 @@ def run_with_free_threaded_python(session):
     # on the GIL are run with the GIL disabled.
     session.run(
         "pytest",
-        "--cov=autograd",
-        "--cov-report=xml",
-        "--cov-append",
         *session.posargs,
         env={"PYTHON_GIL": "0"},
     )
