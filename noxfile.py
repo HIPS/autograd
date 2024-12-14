@@ -70,6 +70,10 @@ def run_nightly_tests(session):
 # free-threaded Python. This session is similar to the "nightly-tests"
 # session, but it uses a free-threaded Python interpreter. Also, we don't
 # the "test" extra but install the test dependencies manually.
+#
+# When the PYTHON_GIL environment variable is set to 0, we enforce that
+# extension modules that haven't declared themselves as safe to not rely
+# on the GIL are run with the GIL disabled.
 @nox.session(name="free-threading", python=["3.13t"])
 def run_with_free_threaded_python(session):
     """Run tests with free threaded Python (no-GIL)"""
@@ -86,9 +90,51 @@ def run_with_free_threaded_python(session):
         session.install(
             "numpy", "scipy", "--upgrade", "--only-binary", ":all:", silent=False, env=UV_NIGHTLY_ENV_VARS
         )
-    # The PYTHON_GIL environment variable is set to 0, which enforces that
-    # extension modules that haven't declared themselves as safe to not rely
-    # on the GIL are run with the GIL disabled.
+    session.run(
+        "pytest",
+        *session.posargs,
+        env={"PYTHON_GIL": "0"},
+    )
+
+
+@nox.session(name="free-threading-pytest-run-parallel", python=["3.13t"])
+def run_pytest_run_in_parallel_plugin(session):
+    """Run stress tests with free threaded Python (no-GIL) using the pytest-run-in-parallel plugin"""
+    session.run("python", "-VV")
+    session.install("-e", ".", silent=False)
+    session.install("pytest", "pytest-run-in-parallel", silent=False)
+
+    # SciPy doesn't have wheels on PyPy
+    if platform.python_implementation() == "PyPy":
+        session.install(
+            "numpy", "--upgrade", "--only-binary", ":all:", silent=False, env=UV_NIGHTLY_ENV_VARS
+        )
+    else:
+        session.install(
+            "numpy", "scipy", "--upgrade", "--only-binary", ":all:", silent=False, env=UV_NIGHTLY_ENV_VARS
+        )
+    session.run(
+        "pytest" * session.posargs,
+        env={"PYTHON_GIL": "0"},
+    )
+
+
+@nox.session(name="free-threading-pytest-freethreaded", python=["3.13t"])
+def run_pytest_freethreaded(session):
+    """Run stress tests with free threaded Python (no-GIL) using the pytest-freethreaded plugin"""
+    session.run("python", "-VV")
+    session.install("-e", ".", silent=False)
+    session.install("pytest", "pytest-freethreaded", silent=False)
+
+    # SciPy doesn't have wheels on PyPy
+    if platform.python_implementation() == "PyPy":
+        session.install(
+            "numpy", "--upgrade", "--only-binary", ":all:", silent=False, env=UV_NIGHTLY_ENV_VARS
+        )
+    else:
+        session.install(
+            "numpy", "scipy", "--upgrade", "--only-binary", ":all:", silent=False, env=UV_NIGHTLY_ENV_VARS
+        )
     session.run(
         "pytest",
         *session.posargs,
