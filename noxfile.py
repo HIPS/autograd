@@ -114,7 +114,8 @@ def run_pytest_run_in_parallel_plugin(session):
             "numpy", "scipy", "--upgrade", "--only-binary", ":all:", silent=False, env=UV_NIGHTLY_ENV_VARS
         )
     session.run(
-        "pytest" * session.posargs,
+        "pytest",
+        *session.posargs,
         env={"PYTHON_GIL": "0"},
     )
 
