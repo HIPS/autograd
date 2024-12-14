@@ -100,18 +100,17 @@ jobs:
           allow-prereleases: true
       - uses: yezz123/setup-uv@ab6be5a42627f19dc36e57b548592a5e52cece4a # v4.1
 
-      # 1. Test suite with free-threading enabled, but no free-threading-specific plugins
+      # 1) Test suite with free-threading enabled, but no free-threading-specific plugins
       - name: Run free-threaded tests on ${{ matrix.platform}}
         if: ${{ matrix.plugin == 'none' }}
         run: uvx nox -s free-threading
 
-      # 2. Test suite with free-threading enabled, plus pytest-run-parallel plugin
+      # 2) Test suite with free-threading enabled, plus pytest-run-parallel plugin
       - name: Run free-threaded tests with ${{ matrix.plugin }} on ${{ matrix.platform}}
         if: ${{ matrix.plugin == 'pytest-run-parallel' }}
-        run: uvx nox -s free-threading-pytest-run-parallel -- --parallel-threads 5 --iterations 100
+        run: uvx nox -s free-threading-pytest-run-parallel -- -sra --parallel-threads 5 --iterations 10
 
-      # 3. Test suite with free-threading enabled, plus pytest-freethreaded plugin
-      # This runs with 200 iterations by default.
+      # 3) Test suite with free-threading enabled, plus pytest-freethreaded plugin
       - name: Run free-threaded tests with ${{ matrix.plugin }} on ${{ matrix.platform}}
         if: ${{ matrix.plugin == 'pytest-freethreaded' }}
-        run: uvx nox -s free-threading-pytest-freethreaded -- --threads 5 --iterations 100
+        run: uvx nox -s free-threading-pytest-freethreaded -- -sra --threads 5 --iterations 100
