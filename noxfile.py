@@ -7,7 +7,6 @@ UV_NIGHTLY_ENV_VARS = {
     "UV_INDEX_URL": NIGHTLY_INDEX_URL,
     "UV_PRERELEASE": "allow",
     "UV_INDEX_STRATEGY": "first-index",
-    "UV_NO_CACHE": "true",
 }
 
 nox.needs_version = ">=2024.4.15"
