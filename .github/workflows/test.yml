@@ -98,29 +98,19 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           allow-prereleases: true
-
-      - uses: yezz123/setup-uv@v4
+      - uses: yezz123/setup-uv@ab6be5a42627f19dc36e57b548592a5e52cece4a # v4.1
 
       # 1. Test suite with free-threading enabled, but no free-threading-specific plugins
       - name: Run free-threaded tests on ${{ matrix.platform}}
         if: ${{ matrix.plugin == 'none' }}
         run: uvx nox -s free-threading
 
-      # 2. Test suite with free-threading enabled, plus free-threading-specific plugins
+      # 2. Test suite with free-threading enabled, plus pytest-run-parallel plugin
       - name: Run free-threaded tests with ${{ matrix.plugin }} on ${{ matrix.platform}}
-        if: ${{ matrix.plugin != 'none' }}
-        env:
-          UV_INDEX_URL: "https://pypi.anaconda.org/scientific-python-nightly-wheels/simple"
-          UV_PRERELEASE: "allow"
-          UV_INDEX_STRATEGY: "first-index"
-          UV_NO_CACHE: "true"
-        run: |
-          python -VV
-          uv pip install --upgrade --only-binary :all: numpy scipy
-          uv pip install -e .
-          uv pip install pytest ${{ matrix.plugin }}
-          if [ "${{ matrix.plugin }}" == "pytest-run-parallel" ]; then
-            PYTHON_GIL="0" pytest --parallel-threads 5
-          elif [ "${{ matrix.plugin }}" == "pytest-freethreaded" ]; then
-            PYTHON_GIL="0" pytest --threads 5
-          fi
+        if: ${{ matrix.plugin == 'pytest-run-parallel' }}
+        run: uvx nox -s free-threading-pytest-run-parallel -- --parallel-threads 5
+
+      # 3. Test suite with free-threading enabled, plus pytest-freethreaded plugin
+      - name: Run free-threaded tests with ${{ matrix.plugin }} on ${{ matrix.platform}}
+        if: ${{ matrix.plugin == 'pytest-freethreaded' }}
+        run: uvx nox -s free-threading-pytest-freethreaded -- --threads 5
