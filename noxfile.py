@@ -35,7 +35,7 @@ def run_tests(session):
     else:
         session.install("-e", ".[test,scipy]", silent=False)
     session.run(
-        "pytest", "-n", "auto" "--cov=autograd", "--cov-report=xml", "--cov-append", *session.posargs
+        "pytest", "-n", "auto", "--cov=autograd", "--cov-report=xml", "--cov-append", *session.posargs
     )
 
 
