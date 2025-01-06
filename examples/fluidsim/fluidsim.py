@@ -2,7 +2,7 @@ import os
 
 import matplotlib
 import matplotlib.pyplot as plt
-from scipy.misc import imread
+from matplotlib.pyplot import imread
 from scipy.optimize import minimize
 
 import autograd.numpy as np
