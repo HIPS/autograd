@@ -183,8 +183,6 @@ if __name__ == "__main__":
 
     print("Converting frames to an animated GIF...")  # Using imagemagick.
     os.system(
-        "convert -delay 5 -loop 0 step*.png " "-delay 250 step{:03d}.png wing.gif".format(
-            simulation_timesteps
-        )
+        "convert -delay 5 -loop 0 step*.png -delay 250 step{:03d}.png wing.gif".format(simulation_timesteps)
     )
     os.system("rm step*.png")
