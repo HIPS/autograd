@@ -251,11 +251,11 @@ defvjp(
 def grad_rollaxis(ans, a, axis, start=0):
     if axis < 0:
         raise NotImplementedError(
-            "Gradient of rollaxis not implemented for axis < 0. " "Please use moveaxis instead."
+            "Gradient of rollaxis not implemented for axis < 0. Please use moveaxis instead."
         )
     elif start < 0:
         raise NotImplementedError(
-            "Gradient of rollaxis not implemented for start < 0. " "Please use moveaxis instead."
+            "Gradient of rollaxis not implemented for start < 0. Please use moveaxis instead."
         )
     return lambda g: anp.rollaxis(g, start - 1, axis) if start > axis else anp.rollaxis(g, start, axis + 1)
 
@@ -293,9 +293,7 @@ defvjp(anp.diff, grad_diff)
 def grad_gradient(ans, x, *vargs, **kwargs):
     axis = kwargs.pop("axis", None)
     if vargs or kwargs:
-        raise NotImplementedError(
-            "The only optional argument currently supported for np.gradient " "is axis."
-        )
+        raise NotImplementedError("The only optional argument currently supported for np.gradient is axis.")
     if axis is None:
         axis = range(x.ndim)
     elif type(axis) is int:

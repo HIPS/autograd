@@ -293,7 +293,7 @@ def vspace(value):
             return vspace(getval(value))
         else:
             raise TypeError(
-                "Can't find vector space for value {} of type {}. " "Valid types are {}".format(
+                "Can't find vector space for value {} of type {}. Valid types are {}".format(
                     value, type(value), VSpace.mappings.keys()
                 )
             )

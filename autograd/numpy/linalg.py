@@ -81,11 +81,9 @@ def norm_vjp(ans, x, ord=None, axis=None):
 
         if matrix_norm:
             if not (ord is None or ord == "fro" or ord == "nuc"):
-                raise NotImplementedError(
-                    "Gradient of matrix norm not " "implemented for ord={}".format(ord)
-                )
+                raise NotImplementedError("Gradient of matrix norm not implemented for ord={}".format(ord))
         elif not (ord is None or ord > 1):
-            raise NotImplementedError("Gradient of norm not " "implemented for ord={}".format(ord))
+            raise NotImplementedError("Gradient of norm not implemented for ord={}".format(ord))
 
     if axis is None:
         expand = lambda a: a
@@ -139,11 +137,9 @@ def norm_jvp(g, ans, x, ord=None, axis=None):
 
         if matrix_norm:
             if not (ord is None or ord == "fro" or ord == "nuc"):
-                raise NotImplementedError(
-                    "Gradient of matrix norm not " "implemented for ord={}".format(ord)
-                )
+                raise NotImplementedError("Gradient of matrix norm not implemented for ord={}".format(ord))
         elif not (ord is None or ord > 1):
-            raise NotImplementedError("Gradient of norm not " "implemented for ord={}".format(ord))
+            raise NotImplementedError("Gradient of norm not implemented for ord={}".format(ord))
 
     if axis is None:
         contract = lambda a: anp.sum(a)
