@@ -28,10 +28,10 @@ jobs:
       # - lint
         - validate-package
     steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-python@v5.1.1
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+    - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
 
-    - uses: yezz123/setup-uv@v4
+    - uses: yezz123/setup-uv@ab6be5a42627f19dc36e57b548592a5e52cece4a # v4.1
 
     - name: Run ${{ matrix.env }}
       run: uvx nox -s ${{ matrix.env }}
