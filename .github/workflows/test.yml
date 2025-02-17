@@ -26,18 +26,23 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [ubuntu-latest, macos-13, macos-latest, windows-latest]
+        platform: [ubuntu-latest, ubuntu-22.04-arm, macos-13, macos-latest, windows-latest]
         python-version:
           ["3.9", "3.10", "3.11", "3.12", "3.13", "pypy-3.9", "pypy-3.10"]
-        # TODO: disable nightly NumPy tests for now, re-enable later
-        # nightly: [[True, "nightly-"], [False, ""]]
+        # PyPy for Linux arm64 hasn't made it to a new release yet, see
+        # https://github.com/actions/setup-python/pull/1011
+        exclude:
+        - platform: ubuntu-22.04-arm
+          python-version: "pypy-3.9"
+        - platform: ubuntu-22.04-arm
+          python-version: "pypy-3.10"
     steps:
-      - uses: actions/checkout@v4.1.7
-      - uses: actions/setup-python@v5.1.1
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
         with:
           python-version: ${{ matrix.python-version }}
           allow-prereleases: true
-      - uses: yezz123/setup-uv@v4
+      - uses: yezz123/setup-uv@ab6be5a42627f19dc36e57b548592a5e52cece4a # v4.1
 
       # On PyPy, we skip SciPy because we don't have wheels
       # available, see noxfile.py for more details.
@@ -60,15 +65,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [ubuntu-latest, macos-13, macos-latest, windows-latest]
+        platform: [ubuntu-latest, ubuntu-22.04-arm, macos-13, macos-latest, windows-latest]
         python-version: ["3.x"]
 
     steps:
-      - uses: actions/checkout@v4.1.7
-      - uses: actions/setup-python@v5.1.1
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
         with:
           python-version: ${{ matrix.python-version }}
           allow-prereleases: true
-      - uses: yezz123/setup-uv@v4
+      - uses: yezz123/setup-uv@ab6be5a42627f19dc36e57b548592a5e52cece4a # v4.1
       - name: Run tests against nightly wheels for NumPy and SciPy
         run: uvx nox -s nightly-tests
