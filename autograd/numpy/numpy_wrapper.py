@@ -10,6 +10,8 @@ if _np.lib.NumpyVersion(_np.__version__) >= "2.0.0":
 else:
     from numpy.core.einsumfunc import _parse_einsum_input
 
+numpy_version = _np.__version__
+
 notrace_functions = [_np.ndim, _np.shape, _np.iscomplexobj, _np.result_type]
 
 
