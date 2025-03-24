@@ -10,6 +10,12 @@ from autograd.test_util import check_grads
 npr.seed(1)
 
 
+def test_numpy_version():
+    import numpy
+
+    assert np.__version__ == numpy.__version__
+
+
 def test_dot():
     def fun(x, y):
         return np.dot(x, y)
