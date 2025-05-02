@@ -67,10 +67,23 @@ def column_stack(tup):
     return concatenate(arrays, 1)
 
 
+def _maybe_unwrap(a):
+    """Unwrap scalar arrays that do not contain sequences."""
+    from autograd.numpy.numpy_boxes import ArrayBox
+
+    if not a.shape:  # it is a scalar array
+        if isinstance(a, ArrayBox):
+            if not isinstance(a._value, (list, tuple)):
+                return a.item()
+        else:
+            return a.item()
+    return a
+
+
 def array(A, *args, **kwargs):
     t = builtins.type(A)
     if t in (list, tuple):
-        return array_from_args(args, kwargs, *map(array, A))
+        return array_from_args(args, kwargs, *map(_maybe_unwrap, map(array, A)))
     else:
         return _array_from_scalar_or_array(args, kwargs, A)
 
