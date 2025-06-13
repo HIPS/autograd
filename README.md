@@ -45,7 +45,7 @@ vectorization of scalar-valued functions across many different input values:
 ...          x, egrad(tanh)(x),                                     # first  derivative
 ...          x, egrad(egrad(tanh))(x),                              # second derivative
 ...          x, egrad(egrad(egrad(tanh)))(x),                       # third  derivative
-...          x, egrad(egrad(egrad(egrad(tanh))))(x),                # fourth derivative
+...          x, egrad(egrad(egrad(egrad(tanh))))(x),)               # fourth derivative
 >>> plt.show()
 ```
 
