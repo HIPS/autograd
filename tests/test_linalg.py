@@ -175,6 +175,15 @@ def test_vector_2norm():
     check_grads(fun, modes=["fwd", "rev"])(vec)
 
 
+def test_vector_2norm_complex():
+    def fun(x):
+        return np.linalg.norm(x)
+
+    D = 6
+    vec = npr.randn(D) + 1j * npr.randn(D)
+    check_grads(fun)(vec)
+
+
 def test_frobenius_norm():
     def fun(x):
         return np.linalg.norm(x)
@@ -184,6 +193,15 @@ def test_frobenius_norm():
     check_grads(fun, modes=["fwd", "rev"])(mat)
 
 
+def test_frobenius_norm_complex():
+    def fun(x):
+        return np.linalg.norm(x)
+
+    D = 6
+    mat = npr.randn(D, D - 1) + 1j * npr.randn(D, D - 1)
+    check_grads(fun)(mat)
+
+
 def test_frobenius_norm_axis():
     def fun(x):
         return np.linalg.norm(x, axis=(0, 1))
@@ -191,6 +209,15 @@ def test_frobenius_norm_axis():
     D = 6
     mat = npr.randn(D, D - 1, D - 2)
     check_grads(fun, modes=["fwd", "rev"])(mat)
+
+
+def test_frobenius_norm_axis_complex():
+    def fun(x):
+        return np.linalg.norm(x, axis=(0, 1))
+
+    D = 6
+    mat = npr.randn(D, D - 1, D - 2) + 1j * npr.randn(D, D - 1, D - 2)
+    check_grads(fun)(mat)
 
 
 @pytest.mark.parametrize("ord", range(2, 5))
@@ -203,6 +230,16 @@ def test_vector_norm_ord(size, ord):
     check_grads(fun, modes=["fwd", "rev"])(vec)
 
 
+@pytest.mark.parametrize("ord", range(2, 5))
+@pytest.mark.parametrize("size", [6])
+def test_vector_norm_ord_complex(size, ord):
+    def fun(x):
+        return np.linalg.norm(x, ord=ord)
+
+    vec = npr.randn(size) + 1j * npr.randn(size)
+    check_grads(fun)(vec)
+
+
 @pytest.mark.parametrize("axis", range(3))
 @pytest.mark.parametrize("shape", [(6, 5, 4)])
 def test_norm_axis(shape, axis):
@@ -211,6 +248,16 @@ def test_norm_axis(shape, axis):
 
     arr = npr.randn(*shape)
     check_grads(fun, modes=["fwd", "rev"])(arr)
+
+
+@pytest.mark.parametrize("axis", range(3))
+@pytest.mark.parametrize("shape", [(6, 5, 4)])
+def test_norm_axis_complex(shape, axis):
+    def fun(x):
+        return np.linalg.norm(x, axis=axis)
+
+    arr = npr.randn(*shape) + 1j * npr.randn(*shape)
+    check_grads(fun)(arr)
 
 
 def test_norm_nuclear():
@@ -223,6 +270,15 @@ def test_norm_nuclear():
     check_grads(fun, modes=["fwd", "rev"], order=1)(mat)
 
 
+def test_norm_nuclear_complex():
+    def fun(x):
+        return np.linalg.norm(x, ord="nuc")
+
+    D = 6
+    mat = npr.randn(D, D - 1) + 1j * npr.randn(D, D - 1)
+    check_grads(fun)(mat)
+
+
 def test_norm_nuclear_axis():
     def fun(x):
         return np.linalg.norm(x, ord="nuc", axis=(0, 1))
@@ -231,6 +287,15 @@ def test_norm_nuclear_axis():
     mat = npr.randn(D, D - 1, D - 2)
     # Order 1 because the jvp of the svd is not implemented
     check_grads(fun, modes=["fwd", "rev"], order=1)(mat)
+
+
+def test_norm_nuclear_axis_complex():
+    def fun(x):
+        return np.linalg.norm(x, ord="nuc", axis=(0, 1))
+
+    D = 6
+    mat = npr.randn(D, D - 1, D - 2) + 1j * npr.randn(D, D - 1, D - 2)
+    check_grads(fun)(mat)
 
 
 def test_eigvalh_lower():

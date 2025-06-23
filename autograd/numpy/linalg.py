@@ -112,7 +112,7 @@ def norm_vjp(ans, x, ord=None, axis=None):
 
     def vjp(g):
         if ord in (None, 2, "fro"):
-            return expand(g / ans) * x
+            return expand(g / ans) * anp.conj(x)
         elif ord == "nuc":
             x_rolled = roll(x)
             u, s, vt = svd(x_rolled, full_matrices=False)
@@ -120,10 +120,10 @@ def norm_vjp(ans, x, ord=None, axis=None):
             # Roll the matrix axes back to their correct positions
             uvt = unroll(uvt_rolled)
             g = expand(g)
-            return g * uvt
+            return g * anp.conj(uvt)
         else:
             # see https://en.wikipedia.org/wiki/Norm_(mathematics)#p-norm
-            return expand(g / ans ** (ord - 1)) * x * anp.abs(x) ** (ord - 2)
+            return expand(g / ans ** (ord - 1)) * anp.conj(x) * anp.abs(x) ** (ord - 2)
 
     return vjp
 
@@ -161,17 +161,17 @@ def norm_jvp(g, ans, x, ord=None, axis=None):
 
     check_implemented()
     if ord in (None, 2, "fro"):
-        return contract(g * x) / ans
+        return contract(g * anp.conj(x)) / ans
     elif ord == "nuc":
         x_rolled = roll(x)
         u, s, vt = svd(x_rolled, full_matrices=False)
         uvt_rolled = _dot(u, vt)
         # Roll the matrix axes back to their correct positions
         uvt = unroll(uvt_rolled)
-        return contract(g * uvt)
+        return contract(g * anp.conj(uvt))
     else:
         # see https://en.wikipedia.org/wiki/Norm_(mathematics)#p-norm
-        return contract(g * x * anp.abs(x) ** (ord - 2)) / ans ** (ord - 1)
+        return contract(g * anp.conj(x) * anp.abs(x) ** (ord - 2)) / ans ** (ord - 1)
 
 
 defjvp(norm, norm_jvp)
