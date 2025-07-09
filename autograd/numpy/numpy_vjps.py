@@ -155,7 +155,7 @@ defvjp(
 defvjp(anp.negative, lambda ans, x: lambda g: -g)
 defvjp(anp.abs, lambda ans, x: lambda g: g * replace_zero(anp.conj(x), 0.0) / replace_zero(ans, 1.0))
 defvjp(anp.fabs, lambda ans, x: lambda g: anp.sign(x) * g)  # fabs doesn't take complex numbers.
-defvjp(anp.absolute, lambda ans, x: lambda g: g * anp.conj(x) / ans)
+defvjp(anp.absolute, lambda ans, x: lambda g: g * replace_zero(anp.conj(x), 0.0) / replace_zero(ans, 1.0))
 defvjp(anp.reciprocal, lambda ans, x: lambda g: -g / x**2)
 defvjp(anp.exp, lambda ans, x: lambda g: ans * g)
 defvjp(anp.exp2, lambda ans, x: lambda g: ans * anp.log(2) * g)
