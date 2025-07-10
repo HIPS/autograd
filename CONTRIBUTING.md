@@ -29,6 +29,6 @@ GH Actions will run the tests across all supported Python versions.
 You can use additional arguments for the tools (`pytest`, `pre-commit`, etc.) called by Nox by
 separating them from the Nox arguments by a double-hyphen `--`, e.g.,
 
-- `nox -s tests -- --tests/test_tuple.py` runs just the tests listed `tests/test_tuple.py`.
+- `nox -s tests -- tests/test_tuple.py` runs just the tests listed `tests/test_tuple.py`.
 - `nox -s lint -- --fix` runs the linter with the `--fix` flag.
 - and so on.
