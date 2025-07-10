@@ -25,15 +25,29 @@ def wrap_intdtype(cls):
 def wrap_namespace(old, new):
     unchanged_types = {float, int, type(None), type}
     int_types = {_np.int8, _np.int16, _np.int32, _np.int64, _np.integer}
+    obj_to_wrapped = []
     for name, obj in old.items():
-        if obj in notrace_functions:
-            new[name] = notrace_primitive(obj)
-        elif callable(obj) and type(obj) is not type:
-            new[name] = primitive(obj)
-        elif type(obj) is type and obj in int_types:
-            new[name] = wrap_intdtype(obj)
-        elif type(obj) in unchanged_types:
-            new[name] = obj
+        # Map multiple names of the same object (e.g. conj/conjugate)
+        # to the same wrapped object
+        for mapped_obj, wrapped in obj_to_wrapped:
+            if mapped_obj is obj:
+                new[name] = wrapped
+                break
+        else:
+            if obj in notrace_functions:
+                wrapped = notrace_primitive(obj)
+                new[name] = wrapped
+                obj_to_wrapped.append((obj, wrapped))
+            elif callable(obj) and type(obj) is not type:
+                wrapped = primitive(obj)
+                new[name] = wrapped
+                obj_to_wrapped.append((obj, wrapped))
+            elif type(obj) is type and obj in int_types:
+                wrapped = wrap_intdtype(obj)
+                new[name] = wrapped
+                obj_to_wrapped.append((obj, wrapped))
+            elif type(obj) in unchanged_types:
+                new[name] = obj
 
 
 wrap_namespace(_np.__dict__, globals())
