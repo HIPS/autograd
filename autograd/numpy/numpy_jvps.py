@@ -139,8 +139,9 @@ defjvp(anp.clip, lambda g, ans, x, a_min, a_max: g * anp.logical_and(ans != a_mi
 defjvp(anp.real_if_close, lambda g, ans, x: match_complex(ans, g))
 defjvp(anp.real, lambda g, ans, x: anp.real(g))
 defjvp(anp.imag, lambda g, ans, x: match_complex(ans, -1j * g))
-defjvp(anp.conj, lambda g, ans, x: anp.conj(g))
-defjvp(anp.conjugate, lambda g, ans, x: anp.conj(g))
+np_conj_jvp = lambda g, ans, x: anp.conj(g)
+defjvp(anp.conj, np_conj_jvp)
+defjvp(anp.conjugate, np_conj_jvp)
 defjvp(anp.angle, lambda g, ans, x: match_complex(ans, g * anp.conj(x * 1j) / anp.abs(x) ** 2))
 defjvp(
     anp.where,

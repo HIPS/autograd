@@ -215,8 +215,9 @@ defvjp(anp.moveaxis, lambda ans, a, source, destination: lambda g: anp.moveaxis(
 defvjp(anp.real_if_close, lambda ans, x: lambda g: match_complex(x, g))
 defvjp(anp.real, lambda ans, x: lambda g: match_complex(x, g))
 defvjp(anp.imag, lambda ans, x: lambda g: match_complex(x, -1j * g))
-defvjp(anp.conj, lambda ans, x: lambda g: anp.conj(g))
-defvjp(anp.conjugate, lambda ans, x: lambda g: anp.conj(g))
+np_conj_vjp = lambda ans, x: lambda g: anp.conj(g)
+defvjp(anp.conj, np_conj_vjp)
+defvjp(anp.conjugate, np_conj_vjp)
 defvjp(anp.angle, lambda ans, x: lambda g: match_complex(x, g * anp.conj(x * 1j) / anp.abs(x) ** 2))
 defvjp(
     anp.where,
