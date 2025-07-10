@@ -140,6 +140,7 @@ defjvp(anp.real_if_close, lambda g, ans, x: match_complex(ans, g))
 defjvp(anp.real, lambda g, ans, x: anp.real(g))
 defjvp(anp.imag, lambda g, ans, x: match_complex(ans, -1j * g))
 defjvp(anp.conj, lambda g, ans, x: anp.conj(g))
+defjvp(anp.conjugate, lambda g, ans, x: anp.conj(g))
 defjvp(anp.angle, lambda g, ans, x: match_complex(ans, g * anp.conj(x * 1j) / anp.abs(x) ** 2))
 defjvp(
     anp.where,
