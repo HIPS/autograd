@@ -18,11 +18,13 @@ class ArrayBox(Box):
     def __getitem__(A, idx):
         return A[idx]
 
-    # Constants w.r.t float data just pass though
-    shape = property(lambda self: self._value.shape)
-    ndim = property(lambda self: self._value.ndim)
-    size = property(lambda self: self._value.size)
-    dtype = property(lambda self: self._value.dtype)
+    # Basic array attributes just pass through
+    # Single wrapped scalars are presented as 0-dim, 1-size arrays.
+    shape = property(lambda self: anp.shape(self._value))
+    ndim = property(lambda self: anp.ndim(self._value))
+    size = property(lambda self: anp.size(self._value))
+    dtype = property(lambda self: anp.result_type(self._value))
+
     T = property(lambda self: anp.transpose(self))
 
     def __array_namespace__(self, *, api_version: Union[str, None] = None):
