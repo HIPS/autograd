@@ -106,9 +106,10 @@ defjvp(anp.broadcast_to, "same")
 def_linear(anp.cross)
 
 # ----- Simple grads -----
-defjvp(anp.abs, lambda g, ans, x: anp.real(g * replace_zero(anp.conj(x), 0.0)) / replace_zero(ans, 1.0))
+np_abs_jvp = lambda g, ans, x: anp.real(g * replace_zero(anp.conj(x), 0.0)) / replace_zero(ans, 1.0)
+defjvp(anp.abs, np_abs_jvp)
+defjvp(anp.absolute, np_abs_jvp)
 defjvp(anp.fabs, lambda g, ans, x: anp.sign(x) * g)  # fabs doesn't take complex numbers.
-defjvp(anp.absolute, lambda g, ans, x: anp.real(g * anp.conj(x)) / ans)
 defjvp(anp.reciprocal, lambda g, ans, x: -g / x**2)
 defjvp(anp.exp, lambda g, ans, x: ans * g)
 defjvp(anp.exp2, lambda g, ans, x: ans * anp.log(2) * g)
