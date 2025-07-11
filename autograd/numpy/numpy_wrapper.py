@@ -182,6 +182,11 @@ def parse_einsum_input(*args):
     return _parse_einsum_input(args)
 
 
-@primitive
-def _astype(A, dtype, order="K", casting="unsafe", subok=True, copy=True):
-    return A.astype(dtype, order, casting, subok, copy)
+if _np.lib.NumpyVersion(_np.__version__) >= "2.0.0":
+    # Wrapped above
+    _astype = astype
+else:
+
+    @primitive
+    def _astype(A, dtype, order="K", casting="unsafe", subok=True, copy=True):
+        return A.astype(dtype, order, casting, subok, copy)
