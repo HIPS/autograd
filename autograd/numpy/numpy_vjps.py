@@ -59,6 +59,8 @@ nograd_functions = [
     anp.isreal,
     anp.zeros_like,
     anp.ones_like,
+    anp.empty_like,
+    anp.full_like,
     anp.result_type,
 ]
 
