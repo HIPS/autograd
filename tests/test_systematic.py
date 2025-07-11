@@ -180,6 +180,10 @@ def test_conj():
     unary_ufunc_check(np.conj)
 
 
+def test_conjugate():
+    unary_ufunc_check(np.conjugate)
+
+
 def test_angle():
     unary_ufunc_check(np.angle)
 
