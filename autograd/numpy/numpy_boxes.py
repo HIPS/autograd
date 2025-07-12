@@ -4,6 +4,7 @@ import numpy as np
 
 from autograd.builtins import SequenceBox
 from autograd.extend import Box, primitive
+from autograd.tracer import trace_primitives_map
 
 from . import numpy_wrapper as anp
 
@@ -29,6 +30,28 @@ class ArrayBox(Box):
 
     def __array_namespace__(self, *, api_version: Union[str, None] = None):
         return anp
+
+    # Calls to wrapped ufuncs first forward further handling to the ufunc
+    # dispatching mechanism, which allows any other operands to also try
+    # handling the ufunc call. See also tracer.primitive.
+    #
+    # In addition, implementing __array_ufunc__ allows ufunc calls to propagate
+    # through non-differentiable array-like objects (e.g. xarray.DataArray) into
+    # ArrayBoxes which might be contained within, upon which __array_ufunc__
+    # below would call autograd's wrapper for the ufunc. For example, given a
+    # DataArray `a` containing an ArrayBox, this lets us write `np.abs(a)`
+    # instead of requiring the xarray-specific `xr.apply_func(np.abs, a)`.
+    def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
+        if method != "__call__":
+            return NotImplemented
+        if "out" in kwargs:
+            return NotImplemented
+        if ufunc_wrapper := trace_primitives_map.get(ufunc):
+            try:
+                return ufunc_wrapper(*inputs, called_by_autograd_dispatcher=True, **kwargs)
+            except NotImplementedError:
+                return NotImplemented
+        return NotImplemented
 
     def __len__(self):
         return len(self._value)

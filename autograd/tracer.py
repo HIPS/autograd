@@ -2,6 +2,10 @@ import warnings
 from collections import defaultdict
 from contextlib import contextmanager
 
+import numpy as np
+
+import autograd
+
 from .util import subvals, toposort
 from .wrap_util import wraps
 
@@ -33,28 +37,61 @@ class Node:
         return root
 
 
+trace_primitives_map = {}
+
+
 def primitive(f_raw):
     """
     Wraps a function so that its gradient can be specified and its invocation
     can be recorded. For examples, see the docs."""
 
     @wraps(f_raw)
-    def f_wrapped(*args, **kwargs):
+    def f_wrapped(*args, called_by_autograd_dispatcher=False, **kwargs):
         boxed_args, trace, node_constructor = find_top_boxed_args(args)
         if boxed_args:
+            # If we are a wrapper around a ufunc, first forward further handling to
+            # the ufunc dispatching mechanism (if we aren't already running inside it)
+            # by calling the ufunc. This allows other operands to also try to handle
+            # the call (it's still possible our handling attempt below will get the
+            # first shot; the handlers order is determined by the dispatch mechanism).
+            #
+            # For example, consider multiplying an ndarray wrapped inside an ArrayBox
+            # by an xarray.DataArray. The handling below will fail: The ndarray will
+            # be unboxed and multiplied by the DataArray resulting in a DataArray,
+            # for which `new_box` will raise an exception. In contrast, the DataArray's
+            # handling of the call might succeed: it might contain an ndarray, either
+            # plain or boxed in an ArrayBox, in which case it will be multiplied by
+            # the other ArrayBox yielding a new ArrayBox, which will be stored in a new
+            # DataArray.
+            if (
+                isinstance(f_raw, np.ufunc)
+                and not called_by_autograd_dispatcher
+                and any(isinstance(arg, autograd.numpy.numpy_boxes.ArrayBox) for arg in args)
+            ):
+                return f_raw(*args, **kwargs)
+
             argvals = subvals(args, [(argnum, box._value) for argnum, box in boxed_args])
             if f_wrapped in notrace_primitives[node_constructor]:
-                return f_wrapped(*argvals, **kwargs)
+                return f_wrapped(
+                    *argvals, called_by_autograd_dispatcher=called_by_autograd_dispatcher, **kwargs
+                )
             parents = tuple(box._node for _, box in boxed_args)
             argnums = tuple(argnum for argnum, _ in boxed_args)
-            ans = f_wrapped(*argvals, **kwargs)
+            ans = f_wrapped(*argvals, called_by_autograd_dispatcher=called_by_autograd_dispatcher, **kwargs)
             node = node_constructor(ans, f_wrapped, argvals, kwargs, argnums, parents)
-            return new_box(ans, trace, node)
+            try:
+                box = new_box(ans, trace, node)
+                return box
+            except:
+                if called_by_autograd_dispatcher:
+                    raise NotImplementedError
+                raise
         else:
             return f_raw(*args, **kwargs)
 
     f_wrapped.fun = f_raw
     f_wrapped._is_autograd_primitive = True
+    trace_primitives_map[f_raw] = f_wrapped
     return f_wrapped
 
 
