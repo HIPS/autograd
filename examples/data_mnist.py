@@ -16,7 +16,7 @@ def download(url, filename):
 
 
 def mnist():
-    base_url = "http://yann.lecun.com/exdb/mnist/"
+    base_url = "https://storage.googleapis.com/cvdf-datasets/mnist/"
 
     def parse_labels(filename):
         with gzip.open(filename, "rb") as fh:

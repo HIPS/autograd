@@ -48,7 +48,7 @@ def rbf_covariance(kernel_params, x, xp):
 
 def build_toy_dataset(D=1, n_data=20, noise_std=0.1):
     rs = npr.RandomState(0)
-    inputs = np.concatenate([np.linspace(0, 3, num=n_data / 2), np.linspace(6, 8, num=n_data / 2)])
+    inputs = np.concatenate([np.linspace(0, 3, num=n_data // 2), np.linspace(6, 8, num=n_data // 2)])
     targets = (np.cos(inputs) + rs.randn(n_data) * noise_std) / 2.0
     inputs = (inputs - 4.0) / 2.0
     inputs = inputs.reshape((len(inputs), D))

@@ -3,6 +3,8 @@ Inferring a function from a reproducing kernel Hilbert space (RKHS) by taking
 gradients of eval with respect to the function-valued argument
 """
 
+from itertools import chain
+
 import autograd.numpy as np
 import autograd.numpy.random as npr
 from autograd import grad
@@ -71,7 +73,7 @@ RKHSFunVSpace.register(RKHSFun)
 
 def add_dicts(d1, d2):
     d = {}
-    for k, v in d1.items() + d2.items():
+    for k, v in chain(d1.items(), d2.items()):
         d[k] = d[k] + v if k in d else v
     return d
 

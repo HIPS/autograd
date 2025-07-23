@@ -56,7 +56,7 @@ if __name__ == "__main__":
 
     xm = data.max()
     plt.figure()
-    plt.hist(data, bins=np.arange(xm + 1) - 0.5, normed=True, label="normed data counts")
+    plt.hist(data, bins=np.arange(xm + 1) - 0.5, density=True, label="normed data counts")
     plt.xlim(0, xm)
     plt.plot(np.arange(xm), np.exp(negbin_loglike(r, p, np.arange(xm))), label="maxlike fit")
     plt.xlabel("k")
