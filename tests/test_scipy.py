@@ -274,7 +274,7 @@ else:
         A_2543 = R(2, 5, 4, 3)
         A_24232 = R(2, 4, 2, 3, 2)
 
-        for mode in ["valid", "full"]:
+        for mode in ["valid", "full", "same"]:
             assert npo.allclose(
                 ag_convolve(A_35, A_34, axes=([1], [0]), mode=mode)[1, 2],
                 sp_convolve(A_35[1, :], A_34[:, 2], mode),
