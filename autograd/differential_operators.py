@@ -65,10 +65,22 @@ def jacobian(fun, x):
     (out1, out2, ...) then the Jacobian has shape (out1, out2, ..., in1, in2, ...).
     """
     vjp, ans = _make_vjp(fun, x)
+    x_vspace = vspace(x)
     ans_vspace = vspace(ans)
-    jacobian_shape = ans_vspace.shape + vspace(x).shape
+    jacobian_shape = ans_vspace.shape + x_vspace.shape
     grads = map(vjp, ans_vspace.standard_basis())
-    return np.reshape(np.stack(grads), jacobian_shape)
+    grads = np.stack(grads)
+
+    if (ans_vspace.iscomplex) and (not x_vspace.iscomplex):
+        # Reshape with doubled size of flattened grad (2*ans.size,x.size) due to complex fun and real x
+        jacobian_reshape = ans_vspace.shape + (2,) + x_vspace.shape
+        jacobian_moveaxis = (ans_vspace.ndim,0)
+        grads = np.moveaxis(np.reshape(grads, jacobian_reshape), *jacobian_moveaxis)
+
+        # Return complex components of jacobian
+        return grads[0] - 1j*grads[1]
+    else:
+        return np.reshape(grads, jacobian_shape)
 
 
 @unary_to_nary
