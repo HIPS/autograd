@@ -34,8 +34,7 @@ def wraps(fun, namestr="{fun}", docstr="{doc}", **kwargs):
             f.__doc__ = docstr.format(fun=get_name(fun), doc=get_doc(fun), **kwargs)
         except BaseException:
             pass
-        finally:
-            return f
+        return f
 
     return _wraps
 
