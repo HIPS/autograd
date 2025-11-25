@@ -976,6 +976,7 @@ defvjp(anp.pad, pad_vjp)
 
 # ----- VJP for numpy.take -----
 
+
 @primitive
 def untake_along_axis(x, indices, shape, axis):
     """Inverse of take along axis - scatters values back to original positions."""
@@ -996,10 +997,13 @@ def untake_along_axis(x, indices, shape, axis):
         return result
 
 
-def grad_take(ans, a, indices, axis=None, out=None, mode='raise'):
+def grad_take(ans, a, indices, axis=None, out=None, mode="raise"):
     shape = anp.shape(a)
+
     def vjp(g):
         return untake_along_axis(g, indices, shape, axis)
+
     return vjp
+
 
 defvjp(anp.take, grad_take)
