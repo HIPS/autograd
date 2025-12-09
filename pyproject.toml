@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "autograd"
 version = "1.8.0"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 description = "Efficiently computes derivatives of NumPy code."
 readme = "README.md"
 license = {file = "license.txt"}
