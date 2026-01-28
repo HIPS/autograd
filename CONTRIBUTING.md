@@ -10,14 +10,15 @@ pip install nox
 
 ## Run tests, linting, packaging checks
 
-| Command                   | Description                                                                                                                                                     |
-| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `nox --list`              | Lists all available Nox sessions, including selected ones                                                                                                       |
-| `nox -s lint`             | Runs code style checks with pre-commit and pre-commit hooks as listed in `.pre-commit-config.yaml`. Accepts posargs to pass additional arguments to the linter. |
-| `nox -s tests`            | Runs tests with your default Python interpreter. Accepts posargs to pass additional arguments and configuration to `pytest`.                                    |
-| `nox -s nightly-tests`    | Similar to `nox -s tests`, except that it runs tests with nightly versions of dependencies (NumPy, SciPy, etc.).                                                |
-| `nox -s validate-package` | Builds a source distribution and a wheel using `pypa/build` and checks the package with `twine` in strict mode.                                                 |
-| `nox`                     | Runs all selected sessions, as listed in `nox.options.sessions` in `noxfile.py`.                                                                                |
+| Command                   | Description                                                                                                                                                          |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `nox --list`              | Lists all available Nox sessions, including selected ones                                                                                                            |
+| `nox -s lint`             | Runs code style checks with pre-commit and pre-commit hooks as listed in `.pre-commit-config.yaml`. Accepts posargs to pass additional arguments to the linter.      |
+| `nox -s tests`            | Runs tests with your default Python interpreter. Accepts posargs to pass additional arguments and configuration to `pytest`.                                         |
+| `nox -s nightly-tests`    | Similar to `nox -s tests`, except that it runs tests with nightly versions of dependencies (NumPy, SciPy, etc.).                                                     |
+| `nox -s free-threading`   | Similar to `nox -s nightly-tests`, except that it runs tests with a free-threaded Python interpreter and corresponding builds for dependencies (NumPy, SciPy, etc.). |
+| `nox -s validate-package` | Builds a source distribution and a wheel using `pypa/build` and checks the package with `twine` in strict mode.                                                      |
+| `nox`                     | Runs all selected sessions, as listed in `nox.options.sessions` in `noxfile.py`.                                                                                     |
 
 Additionally, `nox` supports tags to run specific sessions, e.g., `nox --tags tests` runs all sessions tagged with `tests`.
 

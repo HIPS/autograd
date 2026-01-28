@@ -67,10 +67,9 @@ source = ["autograd"]
 [tool.coverage.report]
 show_missing = true
 
-[tool.pytest.ini_options]
-required_plugins = ["pytest-cov", "pytest-xdist"]
 # TODO: generate HTML report, upload to CodeCov
-addopts = "--color=yes -sra -n auto --cov=autograd --cov-report=xml --cov-report=term"
+[tool.pytest.ini_options]
+addopts = "--color=yes -sra"
 
 [tool.ruff]
 extend-exclude = []
