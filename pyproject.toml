@@ -60,6 +60,9 @@ test = [
   "pytest-cov",
   "pytest-xdist",
 ]
+examples = [
+  "matplotlib",
+]
 
 [tool.coverage.run]
 source = ["autograd"]
