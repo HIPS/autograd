@@ -28,11 +28,13 @@ def check(session):
 @nox.session(name="tests", tags=["tests"])
 def run_tests(session):
     """Run unit tests and generate a coverage report"""
+    pyproject = nox.project.load_toml("pyproject.toml")
+    session.install(*nox.project.dependency_groups(pyproject, "test"))
     # SciPy doesn't have wheels on PyPy
     if platform.python_implementation() == "PyPy":
-        session.install("-e", ".[test]", silent=False)
+        session.install("-e.", silent=False)
     else:
-        session.install("-e", ".[test,scipy]", silent=False)
+        session.install("-e", ".[scipy]", silent=False)
     session.run("pytest", "--cov=autograd", "--cov-report=xml", "--cov-append", *session.posargs)
 
 
@@ -46,7 +48,9 @@ def ruff(session):
 @nox.session(name="nightly-tests", tags=["tests"])
 def run_nightly_tests(session):
     """Run tests against nightly versions of dependencies"""
-    session.install("-e", ".[test]", silent=False)
+    session.install("-e.", silent=False)
+    pyproject = nox.project.load_toml("pyproject.toml")
+    session.install(*nox.project.dependency_groups(pyproject, "test"))
     # SciPy doesn't have wheels on PyPy
     if platform.python_implementation() == "PyPy":
         session.install(

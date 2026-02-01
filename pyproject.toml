@@ -55,11 +55,14 @@ Source = "https://github.com/HIPS/autograd"
 scipy = [
   "scipy",
 ]
+
+[dependency-groups]
 test = [
   "pytest",
   "pytest-cov",
   "pytest-xdist",
 ]
+examples = ["matplotlib"]
 
 [tool.coverage.run]
 source = ["autograd"]
