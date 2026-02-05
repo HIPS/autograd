@@ -301,12 +301,12 @@ else:
 
     def test_convolve():
         combo_check(autograd.scipy.signal.convolve, [0, 1])(
-            [R(4), R(5), R(6)], [R(2), R(3), R(4)], mode=["full", "valid"]
+            [R(4), R(5), R(6)], [R(2), R(3), R(4)], mode=["full", "valid", "same"]
         )
 
     def test_convolve_2d():
         combo_check(autograd.scipy.signal.convolve, [0, 1])(
-            [R(4, 3), R(5, 4), R(6, 7)], [R(2, 2), R(3, 2), R(4, 2), R(4, 1)], mode=["full", "valid"]
+            [R(4, 3), R(5, 4), R(6, 7)], [R(2, 2), R(3, 2), R(4, 2), R(4, 1)], mode=["full", "valid", "same"]
         )
 
     def test_convolve_ignore():
@@ -314,7 +314,7 @@ else:
             [R(4, 3)],
             [R(3, 2)],
             axes=[([0], [0]), ([1], [1]), ([0], [1]), ([1], [0]), ([0, 1], [0, 1]), ([1, 0], [1, 0])],
-            mode=["full", "valid"],
+            mode=["full", "valid", "same"],
         )
 
     def test_convolve_ignore_dot():
@@ -323,7 +323,7 @@ else:
             [R(3, 2, 3)],
             axes=[([1], [1])],
             dot_axes=[([0], [2]), ([0], [0])],
-            mode=["full", "valid"],
+            mode=["full", "valid", "same"],
         )
 
     ### Special ###
