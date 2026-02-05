@@ -190,3 +190,18 @@ else:
     @primitive
     def _astype(A, dtype, order="K", casting="unsafe", subok=True, copy=True):
         return A.astype(dtype, order, casting, subok, copy)
+
+
+# Store the primitive-wrapped mean for internal use
+_primitive_mean = mean
+
+
+def mean(a, *args, **kwargs):
+    """Wrapper that converts list/tuple to array before computing mean.
+
+    This is needed because numpy's internal mean implementation calls
+    float() on the result, which fails for ArrayBox objects.
+    """
+    if builtins.type(a) in (list, tuple):
+        a = array(a)
+    return _primitive_mean(a, *args, **kwargs)
