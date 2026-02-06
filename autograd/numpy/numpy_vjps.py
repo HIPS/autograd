@@ -772,33 +772,45 @@ setattr(ArrayBox, "reshape", wrapped_reshape)
 
 
 def grad_sort(ans, x, axis=-1, kind="quicksort", order=None):
-    # TODO: Cast input with np.asanyarray()
-    if len(x.shape) > 1:
-        raise NotImplementedError("Gradient of sort not implemented for multi-dimensional arrays.")
     sort_perm = anp.argsort(x, axis, kind, order)
-    return lambda g: unpermuter(g, sort_perm)
+    return lambda g: unpermuter(g, sort_perm, axis)
 
 
 defvjp(anp.sort, grad_sort)
 if onp.lib.NumpyVersion(onp.__version__) < "2.0.0":
-    defvjp(anp.msort, grad_sort)  # Until multi-D is allowed, these are the same.
+    defvjp(anp.msort, grad_sort)
 
 
 def grad_partition(ans, x, kth, axis=-1, kind="introselect", order=None):
-    # TODO: Cast input with np.asanyarray()
-    if len(x.shape) > 1:
-        raise NotImplementedError("Gradient of partition not implemented for multi-dimensional arrays.")
     partition_perm = anp.argpartition(x, kth, axis, kind, order)
-    return lambda g: unpermuter(g, partition_perm)
+    return lambda g: unpermuter(g, partition_perm, axis)
 
 
 defvjp(anp.partition, grad_partition)
 
 
-def unpermuter(g, permutation):
-    unsort = anp.zeros(len(permutation), dtype=int)
-    unsort[permutation] = list(range(len(permutation)))
-    return g[unsort]
+def unpermuter(g, permutation, axis=-1):
+    if anp.ndim(g) <= 1:
+        unsort = onp.zeros(len(permutation), dtype=int)
+        unsort[permutation] = list(range(len(permutation)))
+        return g[unsort]
+    nd = anp.ndim(g)
+    ax = axis if axis >= 0 else axis + nd
+    inverse = onp.zeros_like(permutation)
+    shape = [1] * nd
+    shape[ax] = g.shape[ax]
+    onp.put_along_axis(inverse, permutation,
+                        onp.broadcast_to(onp.arange(g.shape[ax]).reshape(shape), permutation.shape),
+                        axis=ax)
+    indices = []
+    for d in range(nd):
+        if d == ax:
+            indices.append(inverse)
+        else:
+            s = [1] * nd
+            s[d] = g.shape[d]
+            indices.append(onp.arange(g.shape[d]).reshape(s))
+    return g[tuple(indices)]
 
 
 def grad_reshape_list(ans, *arys):
