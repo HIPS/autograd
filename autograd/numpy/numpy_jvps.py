@@ -250,9 +250,25 @@ def fwd_grad_concatenate_args(argnum, g, ans, axis_args, kwargs):
 defjvp_argnum(anp.concatenate_args, fwd_grad_concatenate_args)
 
 
+def _gather_along_axis(g, perm, axis):
+    if anp.ndim(g) <= 1:
+        return g[perm]
+    nd = anp.ndim(g)
+    ax = axis if axis >= 0 else axis + nd
+    indices = []
+    for d in range(nd):
+        if d == ax:
+            indices.append(perm)
+        else:
+            s = [1] * nd
+            s[d] = g.shape[d]
+            indices.append(onp.arange(g.shape[d]).reshape(s))
+    return g[tuple(indices)]
+
+
 def fwd_grad_sort(g, ans, x, axis=-1, kind="quicksort", order=None):
     sort_perm = anp.argsort(x, axis, kind, order)
-    return g[sort_perm]
+    return _gather_along_axis(g, sort_perm, axis)
 
 
 defjvp(anp.sort, fwd_grad_sort)
@@ -262,7 +278,7 @@ if onp.lib.NumpyVersion(onp.__version__) < "2.0.0":
 
 def fwd_grad_partition(g, ans, x, kth, axis=-1, kind="introselect", order=None):
     partition_perm = anp.argpartition(x, kth, axis, kind, order)
-    return g[partition_perm]
+    return _gather_along_axis(g, partition_perm, axis)
 
 
 defjvp(anp.partition, fwd_grad_partition)
