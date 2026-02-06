@@ -799,9 +799,12 @@ def unpermuter(g, permutation, axis=-1):
     inverse = onp.zeros_like(permutation)
     shape = [1] * nd
     shape[ax] = g.shape[ax]
-    onp.put_along_axis(inverse, permutation,
-                        onp.broadcast_to(onp.arange(g.shape[ax]).reshape(shape), permutation.shape),
-                        axis=ax)
+    onp.put_along_axis(
+        inverse,
+        permutation,
+        onp.broadcast_to(onp.arange(g.shape[ax]).reshape(shape), permutation.shape),
+        axis=ax,
+    )
     indices = []
     for d in range(nd):
         if d == ax:
