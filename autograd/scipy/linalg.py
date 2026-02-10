@@ -44,8 +44,8 @@ def grad_solve_triangular(ans, a, b, trans=0, lower=False, **kwargs):
 defvjp(
     solve_triangular,
     grad_solve_triangular,
-    lambda ans, a, b, trans=0, lower=False, **kwargs: lambda g: solve_triangular(
-        a, g, trans=_flip(a, trans), lower=lower
+    lambda ans, a, b, trans=0, lower=False, **kwargs: (
+        lambda g: solve_triangular(a, g, trans=_flip(a, trans), lower=lower)
     ),
 )
 
@@ -94,8 +94,8 @@ def grad_solve_banded(argnum, ans, l_and_u, a, b):
     T_l_and_u, T_a = transpose_banded(l_and_u, a)
 
     if argnum == 1:
-        return lambda g: -banded_dot(
-            l_and_u, updim(solve_banded(T_l_and_u, T_a, g)), anp.transpose(updim(ans))
+        return lambda g: (
+            -banded_dot(l_and_u, updim(solve_banded(T_l_and_u, T_a, g)), anp.transpose(updim(ans)))
         )
     elif argnum == 2:
         return lambda g: solve_banded(T_l_and_u, T_a, g)

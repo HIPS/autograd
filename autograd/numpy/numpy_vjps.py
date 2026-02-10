@@ -205,8 +205,8 @@ defvjp(anp.fliplr, lambda ans, x,: lambda g: anp.fliplr(g))
 defvjp(anp.rot90, lambda ans, x, k=1: lambda g: anp.rot90(g, -k))
 defvjp(
     anp.trace,
-    lambda ans, x, offset=0: lambda g: anp.einsum(
-        "ij,...->ij...", anp.eye(x.shape[0], x.shape[1], k=offset), g
+    lambda ans, x, offset=0: (
+        lambda g: anp.einsum("ij,...->ij...", anp.eye(x.shape[0], x.shape[1], k=offset), g)
     ),
 )
 defvjp(anp.full, lambda ans, shape, fill_value, dtype=None: lambda g: anp.sum(g), argnums=(1,))
@@ -230,11 +230,11 @@ defvjp(
 )
 defvjp(
     anp.cross,
-    lambda ans, a, b, axisa=-1, axisb=-1, axisc=-1, axis=None: lambda g: anp.cross(
-        b, g, axisb, axisc, axisa, axis
+    lambda ans, a, b, axisa=-1, axisb=-1, axisc=-1, axis=None: (
+        lambda g: anp.cross(b, g, axisb, axisc, axisa, axis)
     ),
-    lambda ans, a, b, axisa=-1, axisb=-1, axisc=-1, axis=None: lambda g: anp.cross(
-        g, a, axisc, axisa, axisb, axis
+    lambda ans, a, b, axisa=-1, axisb=-1, axisc=-1, axis=None: (
+        lambda g: anp.cross(g, a, axisc, axisa, axisb, axis)
     ),
 )
 defvjp(
@@ -245,8 +245,8 @@ defvjp(
 
 defvjp(
     anp._astype,
-    lambda ans, A, dtype, order="K", casting="unsafe", subok=True, copy=True: lambda g: anp._astype(
-        g, A.dtype
+    lambda ans, A, dtype, order="K", casting="unsafe", subok=True, copy=True: (
+        lambda g: anp._astype(g, A.dtype)
     ),
 )
 
