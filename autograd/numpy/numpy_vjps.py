@@ -969,8 +969,8 @@ defvjp(
 )
 defvjp(
     anp.take,
-    lambda ans, A, indices, axis=None, out=None, mode="raise": lambda g: untake(
-        g, indices, vspace(A), axis=axis
+    lambda ans, A, indices, axis=None, out=None, mode="raise": (
+        lambda g: untake(g, indices, vspace(A), axis=axis)
     ),
     argnums=(0,),
 )
