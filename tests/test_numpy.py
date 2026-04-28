@@ -1,5 +1,6 @@
 import warnings
 
+import pytest
 from numpy_utils import combo_check
 
 import autograd.numpy as np
@@ -308,6 +309,65 @@ def test_index_multiple_slices():
         return z
 
     check_grads(fun)(A)
+
+
+def test_take_1d():
+    A = npr.randn(7)
+
+    def fun(x):
+        return np.take(x, [2, 5, 1])
+
+    check_grads(fun)(A)
+
+
+def test_take_axis():
+    A = npr.randn(3, 4, 5)
+    idx = npr.randint(0, 4, size=(6,))
+
+    def fun(x):
+        return np.take(x, idx, axis=1)
+
+    check_grads(fun)(A)
+
+
+def test_take_repeated_indices():
+    A = npr.randn(3, 4, 5)
+
+    def fun(x):
+        return np.take(x, [2, 2, 0], axis=1)
+
+    check_grads(fun)(A)
+
+
+def test_take_default_axis():
+    A = npr.randn(3, 4)
+
+    def fun(x):
+        return np.take(x, [7, 1, 5])
+
+    check_grads(fun)(A)
+
+
+def test_take_negative_indices():
+    A = npr.randn(3, 4, 5)
+
+    def fun(x):
+        return np.take(x, [-1, 1, -2], axis=1)
+
+    check_grads(fun)(A)
+
+
+def test_take_out_of_bounds_matches_numpy():
+    A = npr.randn(3, 4)
+
+    def fun(x):
+        return np.take(x, [12])
+
+    with pytest.raises(IndexError):
+        fun(A)
+
+    with pytest.raises(IndexError):
+        grad(lambda x: np.sum(fun(x)))(A)
 
 
 def test_reshape_method():
