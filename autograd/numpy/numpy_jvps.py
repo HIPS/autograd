@@ -159,7 +159,7 @@ defjvp(anp.repeat, "same")
 defjvp(anp.tile, "same")
 defjvp(anp.transpose, "same")
 defjvp(anp.sum, "same")
-defjvp(anp.mean, "same")
+defjvp(anp._primitive_mean, "same")
 defjvp(
     anp.prod, lambda g, ans, x, axis=None, keepdims=False: ans * anp.sum(g / x, axis=axis, keepdims=keepdims)
 )
