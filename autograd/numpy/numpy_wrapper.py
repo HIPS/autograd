@@ -78,7 +78,7 @@ def array(A, *args, **kwargs):
 def wrap_if_boxes_inside(raw_array, slow_op_name=None):
     if raw_array.dtype is _np.dtype("O"):
         if slow_op_name:
-            warnings.warn("{} is slow for array inputs. np.concatenate() is faster.".format(slow_op_name))
+            warnings.warn(f"{slow_op_name} is slow for array inputs. np.concatenate() is faster.")
         return array_from_args((), {}, *raw_array.ravel()).reshape(raw_array.shape)
     else:
         return raw_array
@@ -182,6 +182,11 @@ def parse_einsum_input(*args):
     return _parse_einsum_input(args)
 
 
-@primitive
-def _astype(A, dtype, order="K", casting="unsafe", subok=True, copy=True):
-    return A.astype(dtype, order, casting, subok, copy)
+if _np.lib.NumpyVersion(_np.__version__) >= "2.0.0":
+    # Wrapped above
+    _astype = astype
+else:
+
+    @primitive
+    def _astype(A, dtype, order="K", casting="unsafe", subok=True, copy=True):
+        return A.astype(dtype, order, casting, subok, copy)

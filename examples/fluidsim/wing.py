@@ -182,7 +182,5 @@ if __name__ == "__main__":
     simulate(init_vx, init_vy, simulation_timesteps, final_occlusion, ax, render=True)
 
     print("Converting frames to an animated GIF...")  # Using imagemagick.
-    os.system(
-        "convert -delay 5 -loop 0 step*.png -delay 250 step{:03d}.png wing.gif".format(simulation_timesteps)
-    )
+    os.system(f"convert -delay 5 -loop 0 step*.png -delay 250 step{simulation_timesteps:03d}.png wing.gif")
     os.system("rm step*.png")
