@@ -7,6 +7,9 @@ UV_NIGHTLY_ENV_VARS = {
     "UV_INDEX_URL": NIGHTLY_INDEX_URL,
     "UV_PRERELEASE": "allow",
     "UV_INDEX_STRATEGY": "first-index",
+    # Override the pyproject.toml `exclude-newer` supply-chain guard so the
+    # nightly session can resolve fresh dev wheels of numpy/scipy.
+    "UV_EXCLUDE_NEWER": "2099-12-31",
 }
 
 nox.needs_version = ">=2024.4.15"
