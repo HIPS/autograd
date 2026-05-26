@@ -16,9 +16,9 @@ UV_NIGHTLY_ENV_VARS = {
 # as suggested by uv's own hint, for numpy and scipy only.
 NIGHTLY_EXCLUDE_NEWER_OVERRIDES = [
     "--exclude-newer-package",
-    "numpy=9999-12-31",
+    "numpy=2099-12-31",
     "--exclude-newer-package",
-    "scipy=9999-12-31",
+    "scipy=2099-12-31",
 ]
 
 nox.needs_version = ">=2024.4.15"
