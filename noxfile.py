@@ -7,19 +7,8 @@ UV_NIGHTLY_ENV_VARS = {
     "UV_INDEX_URL": NIGHTLY_INDEX_URL,
     "UV_PRERELEASE": "allow",
     "UV_INDEX_STRATEGY": "first-index",
+    "UV_NO_CONFIG": "1",
 }
-
-# The nightly wheels at scientific-python-nightly-wheels are published without
-# upload-date metadata, so the pyproject.toml `exclude-newer` supply-chain guard
-# filters them out (raising the global cutoff doesn't help — uv treats dateless
-# wheels as at-the-cutoff). Override per-package via `--exclude-newer-package`,
-# as suggested by uv's own hint, for numpy and scipy only.
-NIGHTLY_EXCLUDE_NEWER_OVERRIDES = [
-    "--exclude-newer-package",
-    "numpy=2099-12-31",
-    "--exclude-newer-package",
-    "scipy=2099-12-31",
-]
 
 nox.needs_version = ">=2024.4.15"
 nox.options.default_venv_backend = "uv|virtualenv"
@@ -70,7 +59,6 @@ def run_nightly_tests(session):
             "--upgrade",
             "--only-binary",
             ":all:",
-            *NIGHTLY_EXCLUDE_NEWER_OVERRIDES,
             silent=False,
             env=UV_NIGHTLY_ENV_VARS,
         )
@@ -81,7 +69,6 @@ def run_nightly_tests(session):
             "--upgrade",
             "--only-binary",
             ":all:",
-            *NIGHTLY_EXCLUDE_NEWER_OVERRIDES,
             silent=False,
             env=UV_NIGHTLY_ENV_VARS,
         )
