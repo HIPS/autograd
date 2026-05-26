@@ -15,8 +15,10 @@ UV_NIGHTLY_ENV_VARS = {
 # wheels as at-the-cutoff). Override per-package via `--exclude-newer-package`,
 # as suggested by uv's own hint, for numpy and scipy only.
 NIGHTLY_EXCLUDE_NEWER_OVERRIDES = [
-    "--exclude-newer-package", "numpy=9999-12-31",
-    "--exclude-newer-package", "scipy=9999-12-31",
+    "--exclude-newer-package",
+    "numpy=9999-12-31",
+    "--exclude-newer-package",
+    "scipy=9999-12-31",
 ]
 
 nox.needs_version = ">=2024.4.15"
@@ -64,14 +66,23 @@ def run_nightly_tests(session):
     # SciPy doesn't have wheels on PyPy
     if platform.python_implementation() == "PyPy":
         session.install(
-            "numpy", "--upgrade", "--only-binary", ":all:",
+            "numpy",
+            "--upgrade",
+            "--only-binary",
+            ":all:",
             *NIGHTLY_EXCLUDE_NEWER_OVERRIDES,
-            silent=False, env=UV_NIGHTLY_ENV_VARS,
+            silent=False,
+            env=UV_NIGHTLY_ENV_VARS,
         )
     else:
         session.install(
-            "numpy", "scipy", "--upgrade", "--only-binary", ":all:",
+            "numpy",
+            "scipy",
+            "--upgrade",
+            "--only-binary",
+            ":all:",
             *NIGHTLY_EXCLUDE_NEWER_OVERRIDES,
-            silent=False, env=UV_NIGHTLY_ENV_VARS,
+            silent=False,
+            env=UV_NIGHTLY_ENV_VARS,
         )
     session.run("pytest", "--cov=autograd", "--cov-report=xml", "--cov-append", *session.posargs)
