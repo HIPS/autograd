@@ -88,7 +88,7 @@ def grad_solve(argnum, ans, a, b):
 defvjp(solve, partial(grad_solve, 0), partial(grad_solve, 1))
 
 
-def norm_vjp(ans, x, ord=None, axis=None):
+def norm_vjp(ans, x, ord=None, axis=None, **kwargs):
     def check_implemented():
         matrix_norm = (x.ndim == 2 and axis is None) or isinstance(axis, tuple)
 
@@ -144,7 +144,7 @@ def norm_vjp(ans, x, ord=None, axis=None):
 defvjp(_primitive_norm, norm_vjp)
 
 
-def norm_jvp(g, ans, x, ord=None, axis=None):
+def norm_jvp(g, ans, x, ord=None, axis=None, **kwargs):
     def check_implemented():
         matrix_norm = (x.ndim == 2 and axis is None) or isinstance(axis, tuple)
 

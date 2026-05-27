@@ -474,7 +474,7 @@ def grad_np_prod(ans, x, axis=None, keepdims=False):  # TODO: Support tuples of 
 defvjp(anp.prod, grad_np_prod)
 
 
-def grad_np_var(ans, x, axis=None, ddof=0, keepdims=False):
+def grad_np_var(ans, x, axis=None, ddof=0, keepdims=False, **kwargs):
     shape, _, dtype, iscomplex = anp.metadata(x)
 
     def vjp(g):
@@ -490,7 +490,7 @@ def grad_np_var(ans, x, axis=None, ddof=0, keepdims=False):
 defvjp(anp._primitive_var, grad_np_var)
 
 
-def grad_np_std(ans, x, axis=None, ddof=0, keepdims=False):
+def grad_np_std(ans, x, axis=None, ddof=0, keepdims=False, **kwargs):
     shape, _, dtype, iscomplex = anp.metadata(x)
 
     def vjp(g):

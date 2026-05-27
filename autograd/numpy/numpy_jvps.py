@@ -170,7 +170,7 @@ defjvp(
 )
 
 
-def forward_grad_np_var(g, ans, x, axis=None, ddof=0, keepdims=False):
+def forward_grad_np_var(g, ans, x, axis=None, ddof=0, keepdims=False, **kwargs):
     if axis is None:
         num_reps = anp.size(g)
     elif isinstance(axis, int):
@@ -185,7 +185,7 @@ def forward_grad_np_var(g, ans, x, axis=None, ddof=0, keepdims=False):
 defjvp(anp._primitive_var, forward_grad_np_var)
 
 
-def forward_grad_np_std(g, ans, x, axis=None, ddof=0, keepdims=False):
+def forward_grad_np_std(g, ans, x, axis=None, ddof=0, keepdims=False, **kwargs):
     if axis is None:
         num_reps = anp.size(g)
     elif isinstance(axis, int):
