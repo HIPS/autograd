@@ -487,7 +487,7 @@ def grad_np_var(ans, x, axis=None, ddof=0, keepdims=False):
     return vjp
 
 
-defvjp(anp.var, grad_np_var)
+defvjp(anp._primitive_var, grad_np_var)
 
 
 def grad_np_std(ans, x, axis=None, ddof=0, keepdims=False):
@@ -509,7 +509,7 @@ def grad_np_std(ans, x, axis=None, ddof=0, keepdims=False):
     return vjp
 
 
-defvjp(anp.std, grad_np_std)
+defvjp(anp._primitive_std, grad_np_std)
 
 
 def grad_chooser(ans, x, axis=None, keepdims=None):

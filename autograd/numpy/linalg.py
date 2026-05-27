@@ -2,12 +2,25 @@ from functools import partial
 
 import numpy.linalg as npla
 
+import autograd.builtins as builtins
 from autograd.extend import defjvp, defvjp
 
 from . import numpy_wrapper as anp
 from .numpy_wrapper import wrap_namespace
 
 wrap_namespace(npla.__dict__, globals())
+
+
+# Store the primitive-wrapped norm for internal use; see numpy_wrapper.mean
+# for the same list/tuple-of-ArrayBox workaround.
+_primitive_norm = norm
+
+
+def norm(x, *args, **kwargs):
+    if builtins.type(x) in (list, tuple):
+        x = anp.array(x)
+    return _primitive_norm(x, *args, **kwargs)
+
 
 # Some formulas are from
 # "An extended collection of matrix derivative results
@@ -128,7 +141,7 @@ def norm_vjp(ans, x, ord=None, axis=None):
     return vjp
 
 
-defvjp(norm, norm_vjp)
+defvjp(_primitive_norm, norm_vjp)
 
 
 def norm_jvp(g, ans, x, ord=None, axis=None):
@@ -174,7 +187,7 @@ def norm_jvp(g, ans, x, ord=None, axis=None):
         return contract(g * anp.conj(x) * anp.abs(x) ** (ord - 2)) / ans ** (ord - 1)
 
 
-defjvp(norm, norm_jvp)
+defjvp(_primitive_norm, norm_jvp)
 
 
 def grad_eigh(ans, x, UPLO="L"):

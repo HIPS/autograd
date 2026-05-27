@@ -205,3 +205,19 @@ def mean(a, *args, **kwargs):
     if builtins.type(a) in (list, tuple):
         a = array(a)
     return _primitive_mean(a, *args, **kwargs)
+
+
+_primitive_std = std
+_primitive_var = var
+
+
+def std(a, *args, **kwargs):
+    if builtins.type(a) in (list, tuple):
+        a = array(a)
+    return _primitive_std(a, *args, **kwargs)
+
+
+def var(a, *args, **kwargs):
+    if builtins.type(a) in (list, tuple):
+        a = array(a)
+    return _primitive_var(a, *args, **kwargs)
