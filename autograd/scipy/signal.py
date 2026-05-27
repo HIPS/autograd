@@ -34,7 +34,7 @@ def convolve(A, B, axes=None, dot_axes=[(), ()], mode="full"):
         axes = axes[::-1]
         dot_axes = dot_axes[::-1]
     if mode != "valid":
-        B = pad(B, A, axes[::-1], mode=mode)
+        B = _pad(B, A, axes[::-1], mode=mode)
     B_view_shape = list(B.shape)
     B_view_strides = list(B.strides)
     flipped_idxs = [slice(None)] * A.ndim
@@ -69,7 +69,7 @@ def einsum_tensordot(A, B, axes, reverse=False):
     return npo.einsum(A, A_axnums, B, B_axnums)
 
 
-def pad(A, B, axes, mode="full"):
+def _pad(A, B, axes, mode="full"):
     A_pad = [(0, 0)] * A.ndim
     if mode == "full":
         for ax_A, ax_B in zip(*axes):
