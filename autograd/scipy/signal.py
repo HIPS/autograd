@@ -187,7 +187,7 @@ def grad_convolve(argnum, ans, A, B, axes=None, dot_axes=[(), ()], mode="full"):
                 mode="valid",
             )
 
-            new_order = np.argsort(axes[_X_]["ignore"] + axes[_X_]["dot"] + axes[_X_]["conv"])
+            new_order = npo.argsort(axes[_X_]["ignore"] + axes[_X_]["dot"] + axes[_X_]["conv"])
             return np.transpose(result, new_order)
     else:
 
