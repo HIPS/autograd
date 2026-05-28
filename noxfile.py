@@ -7,6 +7,7 @@ UV_NIGHTLY_ENV_VARS = {
     "UV_INDEX_URL": NIGHTLY_INDEX_URL,
     "UV_PRERELEASE": "allow",
     "UV_INDEX_STRATEGY": "first-index",
+    "UV_NO_CONFIG": "1",
 }
 
 nox.needs_version = ">=2024.4.15"
@@ -54,10 +55,21 @@ def run_nightly_tests(session):
     # SciPy doesn't have wheels on PyPy
     if platform.python_implementation() == "PyPy":
         session.install(
-            "numpy", "--upgrade", "--only-binary", ":all:", silent=False, env=UV_NIGHTLY_ENV_VARS
+            "numpy",
+            "--upgrade",
+            "--only-binary",
+            ":all:",
+            silent=False,
+            env=UV_NIGHTLY_ENV_VARS,
         )
     else:
         session.install(
-            "numpy", "scipy", "--upgrade", "--only-binary", ":all:", silent=False, env=UV_NIGHTLY_ENV_VARS
+            "numpy",
+            "scipy",
+            "--upgrade",
+            "--only-binary",
+            ":all:",
+            silent=False,
+            env=UV_NIGHTLY_ENV_VARS,
         )
     session.run("pytest", "--cov=autograd", "--cov-report=xml", "--cov-append", *session.posargs)

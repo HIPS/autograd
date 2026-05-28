@@ -64,6 +64,9 @@ test = [
 ]
 examples = ["matplotlib"]
 
+[tool.uv]
+exclude-newer = "3 days ago"
+
 [tool.coverage.run]
 source = ["autograd"]
 
