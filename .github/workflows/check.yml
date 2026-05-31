@@ -37,5 +37,5 @@ jobs:
 
     - name: Run ${{ matrix.session }}
       run: |
-        uv sync --locked --all-extras --dev
+        uv sync --all-extras --dev
         uvx nox -s ${{ matrix.session }}
