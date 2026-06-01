@@ -22,7 +22,7 @@ nox.options.sessions = ["tests"]
 def check(session):
     """Build source distribution, wheel, and check their metadata"""
     session.install("build", "twine", silent=False)
-    session.run("python", "-m", "build")
+    session.run("uv", "build")
     session.run("twine", "check", "--strict", "dist/*")
 
 
@@ -42,8 +42,8 @@ def run_tests(session):
 @nox.session(name="lint", reuse_venv=True)
 def ruff(session):
     """Lightning-fast linting for Python"""
-    session.install("pre-commit", silent=False)
-    session.run("pre-commit", "run", "--all-files", "--show-diff-on-failure")
+    session.install("prek", silent=False)
+    session.run("prek", "-a")
 
 
 @nox.session(name="nightly-tests", tags=["tests"])
