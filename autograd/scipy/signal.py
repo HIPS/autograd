@@ -30,6 +30,11 @@ def convolve(A, B, axes=None, dot_axes=[(), ()], mode="full"):
             )
 
     if mode == "same":
+        # 'same' mode is non-commutative, so we can't reuse the full/valid
+        # path directly. We swap A and B here so the stride-tricks block below
+        # treats the original A (now B) as the array to be padded and slid
+        # over, and the original B (now A) as the filter to flip. The variable
+        # names below refer to the post-swap roles.
         B, A = A, B
         axes = axes[::-1]
         dot_axes = dot_axes[::-1]
