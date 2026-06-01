@@ -22,7 +22,7 @@ nox.options.sessions = ["tests"]
 def check(session):
     """Build source distribution, wheel, and check their metadata"""
     session.install("build", "twine", silent=False)
-    session.run("python", "-m", "build")
+    session.run("uv", "build")
     session.run("twine", "check", "--strict", "dist/*")
 
 
