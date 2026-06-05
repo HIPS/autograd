@@ -265,7 +265,6 @@ def test_partial():
     grad(partial(f, y=1))
 
 
-@pytest.mark.skip(reason="fails with NumPy nightlies")
 def test_dtypes():
     def f(x):
         return np.real(np.sum(x**2))
