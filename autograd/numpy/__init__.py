@@ -7,12 +7,16 @@ from . import fft, linalg, numpy_boxes, numpy_jvps, numpy_vjps, numpy_vspaces, n
 from .numpy_wrapper import *
 from .numpy_wrapper import numpy_version as __version__
 
-_original_where = where
+_original_where = getattr(numpy_wrapper, "where")
 
 
 def _is_np_or_autograd(x):
     if isinstance(x, Box) or isinstance(x, (_np.ndarray, _np.generic)):
         return True
+    if isinstance(x, (list, tuple)):
+        for item in x:
+            if _is_np_or_autograd(item):
+                return True
     return False
 
 
@@ -24,11 +28,11 @@ def custom_where(condition, *args):
     x, y = args
     if _is_np_or_autograd(condition) or _is_np_or_autograd(x) or _is_np_or_autograd(y):
         return _original_where(condition, x, y)
-    elif condition:
-        return x
-    else:
-        return y
+    res = _original_where(condition, x, y)
+    if isinstance(res, _np.ndarray):
+        return res.tolist()
+    return res
 
 
 where = custom_where
-numpy_wrapper.where = custom_where
+setattr(numpy_wrapper, "where", where)
