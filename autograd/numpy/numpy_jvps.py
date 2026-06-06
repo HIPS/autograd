@@ -159,7 +159,7 @@ defjvp(anp.repeat, "same")
 defjvp(anp.tile, "same")
 defjvp(anp.transpose, "same")
 defjvp(anp.sum, "same")
-defjvp(anp.mean, "same")
+defjvp(anp._primitive_mean, "same")
 defjvp(
     anp.prod, lambda g, ans, x, axis=None, keepdims=False: ans * anp.sum(g / x, axis=axis, keepdims=keepdims)
 )
@@ -170,7 +170,7 @@ defjvp(
 )
 
 
-def forward_grad_np_var(g, ans, x, axis=None, ddof=0, keepdims=False):
+def forward_grad_np_var(g, ans, x, axis=None, ddof=0, keepdims=False, **kwargs):
     if axis is None:
         num_reps = anp.size(g)
     elif isinstance(axis, int):
@@ -182,10 +182,10 @@ def forward_grad_np_var(g, ans, x, axis=None, ddof=0, keepdims=False):
     return 2.0 * anp.sum(anp.real(g * x_minus_mean), axis=axis, keepdims=keepdims) / (num_reps - ddof)
 
 
-defjvp(anp.var, forward_grad_np_var)
+defjvp(anp._primitive_var, forward_grad_np_var)
 
 
-def forward_grad_np_std(g, ans, x, axis=None, ddof=0, keepdims=False):
+def forward_grad_np_std(g, ans, x, axis=None, ddof=0, keepdims=False, **kwargs):
     if axis is None:
         num_reps = anp.size(g)
     elif isinstance(axis, int):
@@ -199,7 +199,7 @@ def forward_grad_np_std(g, ans, x, axis=None, ddof=0, keepdims=False):
     return anp.sum(anp.real(g * x_minus_mean), axis=axis, keepdims=keepdims) / ((num_reps - ddof) * ans)
 
 
-defjvp(anp.std, forward_grad_np_std)
+defjvp(anp._primitive_std, forward_grad_np_std)
 
 
 def fwd_grad_chooser(g, ans, x, axis=None, keepdims=False):

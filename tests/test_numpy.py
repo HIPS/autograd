@@ -243,6 +243,22 @@ def test_mean_3():
     check_grads(fun)(mat)
 
 
+def test_mean_list_of_boxes():
+    assert grad(lambda x: np.mean([x, x + 2]))(0.0) == 1.0
+    assert grad(lambda x: np.mean((x, x + 2)))(0.0) == 1.0
+
+
+def test_std_list_of_boxes():
+    # Symmetric around the mean, so grad w.r.t. x at x=0 is 0.
+    assert grad(lambda x: np.std([x, x + 2]))(0.0) == 0.0
+    assert grad(lambda x: np.std((x, x + 2)))(0.0) == 0.0
+
+
+def test_var_list_of_boxes():
+    assert grad(lambda x: np.var([x, x + 2]))(0.0) == 0.0
+    assert grad(lambda x: np.var((x, x + 2)))(0.0) == 0.0
+
+
 def test_index_ints():
     A = npr.randn(5, 6, 4)
 

@@ -175,6 +175,14 @@ def test_vector_2norm():
     check_grads(fun, modes=["fwd", "rev"])(vec)
 
 
+def test_norm_list_of_boxes():
+    from autograd import grad
+
+    # d/dx sqrt(x**2 + (x + 2)**2) at x=0 is 2/sqrt(4) = 1.
+    assert grad(lambda x: np.linalg.norm([x, x + 2]))(0.0) == 1.0
+    assert grad(lambda x: np.linalg.norm((x, x + 2)))(0.0) == 1.0
+
+
 def test_vector_2norm_complex():
     def fun(x):
         return np.linalg.norm(x)
