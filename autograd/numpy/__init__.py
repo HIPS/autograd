@@ -20,12 +20,13 @@ def _is_np_or_autograd(x):
     return False
 
 
-def custom_where(condition, *args):
-    if not args:
+def custom_where(condition, *args, **kwargs):
+    if not args and not kwargs:
         return _original_where(condition)
-    if len(args) != 2:
+    if len(args) + len(kwargs.keys()) != 2:
         raise ValueError("either both or neither of x and y should be given")
-    x, y = args
+    x = args[0] if len(args) > 0 else kwargs.get("x")
+    y = args[1] if len(args) > 1 else kwargs.get("y")
     if _is_np_or_autograd(condition) or _is_np_or_autograd(x) or _is_np_or_autograd(y):
         return _original_where(condition, x, y)
     res = _original_where(condition, x, y)
