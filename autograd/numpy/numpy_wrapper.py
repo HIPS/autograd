@@ -36,18 +36,17 @@ def wrap_namespace(old, new):
         else:
             if obj in notrace_functions:
                 wrapped = notrace_primitive(obj)
-                new[name] = wrapped
-                obj_to_wrapped.append((obj, wrapped))
             elif callable(obj) and type(obj) is not type:
                 wrapped = primitive(obj)
-                new[name] = wrapped
-                obj_to_wrapped.append((obj, wrapped))
             elif type(obj) is type and obj in int_types:
                 wrapped = wrap_intdtype(obj)
-                new[name] = wrapped
-                obj_to_wrapped.append((obj, wrapped))
             elif type(obj) in unchanged_types:
                 new[name] = obj
+                continue
+            else:
+                continue
+            new[name] = wrapped
+            obj_to_wrapped.append((obj, wrapped))
 
 
 wrap_namespace(_np.__dict__, globals())
