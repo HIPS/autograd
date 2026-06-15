@@ -21,7 +21,6 @@ from autograd import (
 )
 from autograd.test_util import check_equivalent, check_grads  # , nd
 from autograd.tracer import isbox
-from tests.test_linalg import T
 
 npr.seed(1)
 
