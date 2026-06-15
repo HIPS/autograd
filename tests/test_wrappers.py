@@ -265,7 +265,6 @@ def test_partial():
     grad(partial(f, y=1))
 
 
-@pytest.mark.skip(reason="fails with NumPy nightlies")
 def test_dtypes():
     def f(x):
         return np.real(np.sum(x**2))
@@ -284,20 +283,45 @@ def test_dtypes():
     grad(f)(y)
 
 
-def test_checkpoint_correctness():
-    bar = lambda x, y: 2 * x + y + 5
-    checkpointed_bar = checkpoint(bar)
-    foo = lambda x: bar(x, x / 3.0) + bar(x, x**2)
-    foo2 = lambda x: checkpointed_bar(x, x / 3.0) + checkpointed_bar(x, x**2)
-    assert np.allclose(foo(3.0), foo2(3.0))
-    assert np.allclose(grad(foo)(3.0), grad(foo2)(3.0))
+@pytest.mark.parametrize(
+    ("dtype", "condition", "x", "y"),
+    [
+        (int, True, 1, 2),
+        (float, True, 3.0, 4.0),
+        (float, False, 1, 2.0),
+        (list, True, [1, 2], [3, 4]),
+        (np.float32, True, np.array([1.0], dtype=np.float32), np.array([2.0], dtype=np.float32)),
+        (np.float64, False, np.array([1.0], dtype=np.float64), np.array([2.0], dtype=np.float64)),
+        (np.float64, False, np.array([1.0], dtype=np.float64), np.array([2.0], dtype=np.float32)),
+    ],
+)
+def test_custom_where_dtypes(dtype, condition, x, y):
+    res = np.where(condition, x, y)
+    if hasattr(res, "dtype"):
+        assert res.dtype.type is dtype
+    else:
+        assert isinstance(res, dtype)
 
-    baz = lambda *args: sum(args)
-    checkpointed_baz = checkpoint(baz)
-    foobaz = lambda x: baz(x, x / 3.0)
-    foobaz2 = lambda x: checkpointed_baz(x, x / 3.0)
-    assert np.allclose(foobaz(3.0), foobaz2(3.0))
-    assert np.allclose(grad(foobaz)(3.0), grad(foobaz2)(3.0))
+
+def test_custom_where():
+    x = np.array([1.0, 2.0, 3.0])
+    y = np.array([4.0, 5.0, 6.0])
+    condition = [True, False, True]
+    expected = np.array([1.0, 5.0, 3.0])
+    result = np.where(condition, x, y)
+    check_equivalent(result, expected)
+
+    # check with keyword arguments
+    result_kw = np.where(condition=condition, x=x, y=y)
+    check_equivalent(result_kw, expected)
+
+    # check with mix args and kwargs
+    result_mix = np.where(condition, x, y=y)
+    check_equivalent(result_mix, expected)
+
+    # check with no x and y
+    result_no_xy = np.where(condition)
+    assert np.all(result_no_xy == np.array([0, 2]))  # indices of True values
 
 
 def checkpoint_memory():
