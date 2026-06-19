@@ -602,6 +602,18 @@ def test_array_from_scalar():
     check_grads(fun)(3.0)
 
 
+def test_scalar_array_box_attributes():
+    # An ArrayBox-ed Python scalar is presented as a 0-dim, size-1 array
+    def fun(x):
+        assert x.shape == ()
+        assert x.ndim == 0
+        assert x.size == 1
+        assert x.dtype == np.float64
+        return x**2
+
+    assert grad(fun)(3.0) == 6.0
+
+
 def test_array_from_arrays():
     def fun(x):
         return np.array([x, x])
