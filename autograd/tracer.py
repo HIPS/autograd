@@ -1,3 +1,4 @@
+import threading
 import warnings
 from collections import defaultdict
 from contextlib import contextmanager
@@ -139,7 +140,7 @@ def find_top_boxed_args(args):
     return top_boxes, top_trace, top_node_type, ufunc_dispatch_needed
 
 
-class TraceStack:
+class TraceStack(threading.local):
     def __init__(self):
         self.top = -1
 
