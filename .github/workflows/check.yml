@@ -17,6 +17,8 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
+permissions: {}
+
 jobs:
   check:
     name: ${{ matrix.session == 'lint' && 'Style check' || 'Package check' }}
@@ -38,6 +40,8 @@ jobs:
         python-version: 3.11
 
     - name: Run ${{ matrix.session }}
+      env:
+        MATRIX_SESSION: ${{ matrix.session }}
       run: |
         uv sync --all-extras --dev
-        uvx nox -s ${{ matrix.session }}
+        uvx nox -s ${MATRIX_SESSION}
