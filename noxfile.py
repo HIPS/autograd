@@ -78,15 +78,15 @@ def run_nightly_tests(session):
 
 
 # Wheels for NumPy and SciPy are available as nightly builds, so we test
-# against them on Python 3.13t, which is the only version that supports
-# free-threaded Python. This session is similar to the "nightly-tests"
-# session, but it uses a free-threaded Python interpreter. Also, we don't
-# the "test" extra but install the test dependencies manually.
+# against them on Python 3.14t, a free-threaded (no-GIL) interpreter. This
+# session is similar to the "nightly-tests" session, but it uses a
+# free-threaded Python interpreter. Also, we don't use the "test" extra
+# but install the test dependencies manually.
 #
 # When the PYTHON_GIL environment variable is set to 0, we enforce that
 # extension modules that haven't declared themselves as safe to not rely
 # on the GIL are run with the GIL disabled.
-@nox.session(name="free-threading", python=["3.13t"])
+@nox.session(name="free-threading", python=["3.14t"])
 def run_with_free_threaded_python(session):
     """Run tests with free threaded Python (no-GIL)"""
     session.run("python", "-VV")
@@ -109,7 +109,7 @@ def run_with_free_threaded_python(session):
     )
 
 
-@nox.session(name="free-threading-pytest-run-parallel", python=["3.13t"])
+@nox.session(name="free-threading-pytest-run-parallel", python=["3.14t"])
 def run_pytest_run_in_parallel_plugin(session):
     """Run stress tests with free threaded Python (no-GIL) using the pytest-run-in-parallel plugin"""
     session.run("python", "-VV")
@@ -132,7 +132,7 @@ def run_pytest_run_in_parallel_plugin(session):
     )
 
 
-@nox.session(name="free-threading-pytest-freethreaded", python=["3.13t"])
+@nox.session(name="free-threading-pytest-freethreaded", python=["3.14t"])
 def run_pytest_freethreaded(session):
     """Run stress tests with free threaded Python (no-GIL) using the pytest-freethreaded plugin"""
     session.run("python", "-VV")
