@@ -231,7 +231,7 @@ class VSpace:
     def standard_basis(self):
         assert False, repr(self)
 
-    def randn(self):
+    def randn(self, rng=None):
         assert False, repr(self)
 
     @primitive

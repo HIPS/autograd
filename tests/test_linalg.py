@@ -64,10 +64,10 @@ def test_pinv():
         return np.linalg.pinv(np.linalg._dot(np.linalg.T(x), x))
 
     for M in range(N // 2, N + N // 2 + 1):
-        mat = npr.randn(N, M)
+        mat = rs.randn(N, M)
         check_grads(fun_low_rank)(mat)
         # Stacked
-        mat = npr.randn(D, N, M)
+        mat = rs.randn(D, N, M)
         check_grads(fun_low_rank)(mat)
 
 
