@@ -2,12 +2,25 @@ from functools import partial
 
 import numpy.linalg as npla
 
+import autograd.builtins as builtins
 from autograd.extend import defjvp, defvjp
 
 from . import numpy_wrapper as anp
 from .numpy_wrapper import wrap_namespace
 
 wrap_namespace(npla.__dict__, globals())
+
+
+# Store the primitive-wrapped norm for internal use; see numpy_wrapper.mean
+# for the same list/tuple-of-ArrayBox workaround.
+_primitive_norm = norm
+
+
+def norm(x, *args, **kwargs):
+    if builtins.type(x) in (list, tuple):
+        x = anp.array(x)
+    return _primitive_norm(x, *args, **kwargs)
+
 
 # Some formulas are from
 # "An extended collection of matrix derivative results
@@ -75,17 +88,15 @@ def grad_solve(argnum, ans, a, b):
 defvjp(solve, partial(grad_solve, 0), partial(grad_solve, 1))
 
 
-def norm_vjp(ans, x, ord=None, axis=None):
+def norm_vjp(ans, x, ord=None, axis=None, **kwargs):
     def check_implemented():
         matrix_norm = (x.ndim == 2 and axis is None) or isinstance(axis, tuple)
 
         if matrix_norm:
             if not (ord is None or ord == "fro" or ord == "nuc"):
-                raise NotImplementedError(
-                    "Gradient of matrix norm not " "implemented for ord={}".format(ord)
-                )
+                raise NotImplementedError(f"Gradient of matrix norm not implemented for ord={ord}")
         elif not (ord is None or ord > 1):
-            raise NotImplementedError("Gradient of norm not " "implemented for ord={}".format(ord))
+            raise NotImplementedError(f"Gradient of norm not implemented for ord={ord}")
 
     if axis is None:
         expand = lambda a: a
@@ -114,7 +125,7 @@ def norm_vjp(ans, x, ord=None, axis=None):
 
     def vjp(g):
         if ord in (None, 2, "fro"):
-            return expand(g / ans) * x
+            return expand(g / ans) * anp.conj(x)
         elif ord == "nuc":
             x_rolled = roll(x)
             u, s, vt = svd(x_rolled, full_matrices=False)
@@ -122,28 +133,26 @@ def norm_vjp(ans, x, ord=None, axis=None):
             # Roll the matrix axes back to their correct positions
             uvt = unroll(uvt_rolled)
             g = expand(g)
-            return g * uvt
+            return g * anp.conj(uvt)
         else:
             # see https://en.wikipedia.org/wiki/Norm_(mathematics)#p-norm
-            return expand(g / ans ** (ord - 1)) * x * anp.abs(x) ** (ord - 2)
+            return expand(g / ans ** (ord - 1)) * anp.conj(x) * anp.abs(x) ** (ord - 2)
 
     return vjp
 
 
-defvjp(norm, norm_vjp)
+defvjp(_primitive_norm, norm_vjp)
 
 
-def norm_jvp(g, ans, x, ord=None, axis=None):
+def norm_jvp(g, ans, x, ord=None, axis=None, **kwargs):
     def check_implemented():
         matrix_norm = (x.ndim == 2 and axis is None) or isinstance(axis, tuple)
 
         if matrix_norm:
             if not (ord is None or ord == "fro" or ord == "nuc"):
-                raise NotImplementedError(
-                    "Gradient of matrix norm not " "implemented for ord={}".format(ord)
-                )
+                raise NotImplementedError(f"Gradient of matrix norm not implemented for ord={ord}")
         elif not (ord is None or ord > 1):
-            raise NotImplementedError("Gradient of norm not " "implemented for ord={}".format(ord))
+            raise NotImplementedError(f"Gradient of norm not implemented for ord={ord}")
 
     if axis is None:
         contract = lambda a: anp.sum(a)
@@ -165,20 +174,20 @@ def norm_jvp(g, ans, x, ord=None, axis=None):
 
     check_implemented()
     if ord in (None, 2, "fro"):
-        return contract(g * x) / ans
+        return contract(g * anp.conj(x)) / ans
     elif ord == "nuc":
         x_rolled = roll(x)
         u, s, vt = svd(x_rolled, full_matrices=False)
         uvt_rolled = _dot(u, vt)
         # Roll the matrix axes back to their correct positions
         uvt = unroll(uvt_rolled)
-        return contract(g * uvt)
+        return contract(g * anp.conj(uvt))
     else:
         # see https://en.wikipedia.org/wiki/Norm_(mathematics)#p-norm
-        return contract(g * x * anp.abs(x) ** (ord - 2)) / ans ** (ord - 1)
+        return contract(g * anp.conj(x) * anp.abs(x) ** (ord - 2)) / ans ** (ord - 1)
 
 
-defjvp(norm, norm_jvp)
+defjvp(_primitive_norm, norm_jvp)
 
 
 def grad_eigh(ans, x, UPLO="L"):

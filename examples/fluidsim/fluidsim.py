@@ -2,7 +2,7 @@ import os
 
 import matplotlib
 import matplotlib.pyplot as plt
-from scipy.misc import imread
+from matplotlib.pyplot import imread
 from scipy.optimize import minimize
 
 import autograd.numpy as np
@@ -143,7 +143,5 @@ if __name__ == "__main__":
     simulate(init_vx, init_vy, init_smoke, simulation_timesteps, ax, render=True)
 
     print("Converting frames to an animated GIF...")
-    os.system(
-        "convert -delay 5 -loop 0 step*.png" " -delay 250 step100.png surprise.gif"
-    )  # Using imagemagick.
+    os.system("convert -delay 5 -loop 0 step*.png -delay 250 step100.png surprise.gif")  # Using imagemagick.
     os.system("rm step*.png")

@@ -13,6 +13,13 @@ def test_abs():
     check_grads(fun, order=1)(0.0)
 
 
+def test_absolute():
+    fun = lambda x: 3.0 * np.absolute(x)
+    check_grads(fun)(1.1)
+    check_grads(fun)(-1.1)
+    check_grads(fun, order=1)(0.0)
+
+
 def test_sin():
     fun = lambda x: 3.0 * np.sin(x)
     check_grads(fun)(npr.randn())

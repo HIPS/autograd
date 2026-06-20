@@ -19,6 +19,8 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
+permissions: {}
+
 jobs:
   test:
     name: Regular tests / ${{ matrix.platform }} / Python ${{ matrix.python-version }}
@@ -26,18 +28,18 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [ubuntu-latest, macos-13, macos-latest, windows-latest]
+        platform: [ubuntu-latest, ubuntu-22.04-arm, macos-15-intel, macos-latest, windows-latest]
         python-version:
-          ["3.9", "3.10", "3.11", "3.12", "3.13", "pypy-3.9", "pypy-3.10"]
-        # TODO: disable nightly NumPy tests for now, re-enable later
-        # nightly: [[True, "nightly-"], [False, ""]]
+          ["3.10", "3.11", "3.12", "3.13", "3.14", "pypy-3.10"]
     steps:
-      - uses: actions/checkout@v4.1.7
-      - uses: actions/setup-python@v5.1.1
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: ${{ matrix.python-version }}
           allow-prereleases: true
-      - uses: yezz123/setup-uv@v4
+      - uses: yezz123/setup-uv@ab6be5a42627f19dc36e57b548592a5e52cece4a # v4.1
 
       # On PyPy, we skip SciPy because we don't have wheels
       # available, see noxfile.py for more details.
@@ -60,16 +62,18 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [ubuntu-latest, macos-13, macos-latest, windows-latest]
+        platform: [ubuntu-latest, ubuntu-22.04-arm, macos-15-intel, macos-latest, windows-latest]
         python-version: ["3.x"]
 
     steps:
-      - uses: actions/checkout@v4.1.7
-      - uses: actions/setup-python@v5.1.1
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: ${{ matrix.python-version }}
           allow-prereleases: true
-      - uses: yezz123/setup-uv@v4
+      - uses: yezz123/setup-uv@ab6be5a42627f19dc36e57b548592a5e52cece4a # v4.1
       - name: Run tests against nightly wheels for NumPy and SciPy
         run: uvx nox -s nightly-tests
 

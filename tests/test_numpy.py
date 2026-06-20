@@ -10,6 +10,12 @@ from autograd.test_util import check_grads
 npr.seed(1)
 
 
+def test_numpy_version():
+    import numpy
+
+    assert np.__version__ == numpy.__version__
+
+
 def test_dot():
     def fun(x, y):
         return np.dot(x, y)
@@ -235,6 +241,22 @@ def test_mean_3():
 
     mat = npr.randn(10, 11)
     check_grads(fun)(mat)
+
+
+def test_mean_list_of_boxes():
+    assert grad(lambda x: np.mean([x, x + 2]))(0.0) == 1.0
+    assert grad(lambda x: np.mean((x, x + 2)))(0.0) == 1.0
+
+
+def test_std_list_of_boxes():
+    # Symmetric around the mean, so grad w.r.t. x at x=0 is 0.
+    assert grad(lambda x: np.std([x, x + 2]))(0.0) == 0.0
+    assert grad(lambda x: np.std((x, x + 2)))(0.0) == 0.0
+
+
+def test_var_list_of_boxes():
+    assert grad(lambda x: np.var([x, x + 2]))(0.0) == 0.0
+    assert grad(lambda x: np.var((x, x + 2)))(0.0) == 0.0
 
 
 def test_index_ints():
@@ -578,6 +600,18 @@ def test_array_from_scalar():
         return np.array(x)
 
     check_grads(fun)(3.0)
+
+
+def test_scalar_array_box_attributes():
+    # An ArrayBox-ed Python scalar is presented as a 0-dim, size-1 array
+    def fun(x):
+        assert x.shape == ()
+        assert x.ndim == 0
+        assert x.size == 1
+        assert x.dtype == np.float64
+        return x**2
+
+    assert grad(fun)(3.0) == 6.0
 
 
 def test_array_from_arrays():

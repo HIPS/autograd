@@ -7,6 +7,7 @@ UV_NIGHTLY_ENV_VARS = {
     "UV_INDEX_URL": NIGHTLY_INDEX_URL,
     "UV_PRERELEASE": "allow",
     "UV_INDEX_STRATEGY": "first-index",
+    "UV_NO_CONFIG": "1",
 }
 
 nox.needs_version = ">=2024.4.15"
@@ -21,43 +22,55 @@ nox.options.sessions = ["tests"]
 def check(session):
     """Build source distribution, wheel, and check their metadata"""
     session.install("build", "twine", silent=False)
-    session.run("python", "-m", "build")
+    session.run("uv", "build")
     session.run("twine", "check", "--strict", "dist/*")
 
 
 @nox.session(name="tests", tags=["tests"])
 def run_tests(session):
     """Run unit tests and generate a coverage report"""
+    pyproject = nox.project.load_toml("pyproject.toml")
+    session.install(*nox.project.dependency_groups(pyproject, "test"))
     # SciPy doesn't have wheels on PyPy
     if platform.python_implementation() == "PyPy":
-        session.install("-e", ".[test]", silent=False)
+        session.install("-e.", silent=False)
     else:
-        session.install("-e", ".[test,scipy]", silent=False)
-    session.run(
-        "pytest", "-n", "auto", "--cov=autograd", "--cov-report=xml", "--cov-append", *session.posargs
-    )
+        session.install("-e", ".[scipy]", silent=False)
+    session.run("pytest", "--cov=autograd", "--cov-report=xml", "--cov-append", *session.posargs)
 
 
 @nox.session(name="lint", reuse_venv=True)
 def ruff(session):
     """Lightning-fast linting for Python"""
-    session.install("pre-commit", silent=False)
-    session.run("pre-commit", "run", "--all-files", "--show-diff-on-failure")
+    session.install("prek", silent=False)
+    session.run("prek", "-a")
 
 
 @nox.session(name="nightly-tests", tags=["tests"])
 def run_nightly_tests(session):
     """Run tests against nightly versions of dependencies"""
-    session.run("python", "-VV")
-    session.install("-e", ".[test]", silent=False)
+    session.install("-e.", silent=False)
+    pyproject = nox.project.load_toml("pyproject.toml")
+    session.install(*nox.project.dependency_groups(pyproject, "test"))
     # SciPy doesn't have wheels on PyPy
     if platform.python_implementation() == "PyPy":
         session.install(
-            "numpy", "--upgrade", "--only-binary", ":all:", silent=False, env=UV_NIGHTLY_ENV_VARS
+            "numpy",
+            "--upgrade",
+            "--only-binary",
+            ":all:",
+            silent=False,
+            env=UV_NIGHTLY_ENV_VARS,
         )
     else:
         session.install(
-            "numpy", "scipy", "--upgrade", "--only-binary", ":all:", silent=False, env=UV_NIGHTLY_ENV_VARS
+            "numpy",
+            "scipy",
+            "--upgrade",
+            "--only-binary",
+            ":all:",
+            silent=False,
+            env=UV_NIGHTLY_ENV_VARS,
         )
     session.run(
         "pytest", "-n", "auto", "--cov=autograd", "--cov-report=xml", "--cov-append", *session.posargs

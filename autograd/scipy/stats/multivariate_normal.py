@@ -25,7 +25,7 @@ def generalized_outer_product(x):
 def covgrad(x, mean, cov, allow_singular=False):
     if allow_singular:
         raise NotImplementedError(
-            "The multivariate normal pdf is not " "differentiable w.r.t. a singular covariance matix"
+            "The multivariate normal pdf is not differentiable w.r.t. a singular covariance matix"
         )
     J = np.linalg.inv(cov)
     solved = np.matmul(J, np.expand_dims(x - mean, -1))

@@ -59,6 +59,8 @@ nograd_functions = [
     anp.isreal,
     anp.zeros_like,
     anp.ones_like,
+    anp.empty_like,
+    anp.full_like,
     anp.result_type,
 ]
 
@@ -153,9 +155,10 @@ defvjp(
 # ----- Simple grads -----
 
 defvjp(anp.negative, lambda ans, x: lambda g: -g)
-defvjp(anp.abs, lambda ans, x: lambda g: g * replace_zero(anp.conj(x), 0.0) / replace_zero(ans, 1.0))
+np_abs_vjp = lambda ans, x: lambda g: g * replace_zero(anp.conj(x), 0.0) / replace_zero(ans, 1.0)
+defvjp(anp.abs, np_abs_vjp)
+defvjp(anp.absolute, np_abs_vjp)
 defvjp(anp.fabs, lambda ans, x: lambda g: anp.sign(x) * g)  # fabs doesn't take complex numbers.
-defvjp(anp.absolute, lambda ans, x: lambda g: g * anp.conj(x) / ans)
 defvjp(anp.reciprocal, lambda ans, x: lambda g: -g / x**2)
 defvjp(anp.exp, lambda ans, x: lambda g: ans * g)
 defvjp(anp.exp2, lambda ans, x: lambda g: ans * anp.log(2) * g)
@@ -202,8 +205,8 @@ defvjp(anp.fliplr, lambda ans, x,: lambda g: anp.fliplr(g))
 defvjp(anp.rot90, lambda ans, x, k=1: lambda g: anp.rot90(g, -k))
 defvjp(
     anp.trace,
-    lambda ans, x, offset=0: lambda g: anp.einsum(
-        "ij,...->ij...", anp.eye(x.shape[0], x.shape[1], k=offset), g
+    lambda ans, x, offset=0: (
+        lambda g: anp.einsum("ij,...->ij...", anp.eye(x.shape[0], x.shape[1], k=offset), g)
     ),
 )
 defvjp(anp.full, lambda ans, shape, fill_value, dtype=None: lambda g: anp.sum(g), argnums=(1,))
@@ -215,8 +218,9 @@ defvjp(anp.moveaxis, lambda ans, a, source, destination: lambda g: anp.moveaxis(
 defvjp(anp.real_if_close, lambda ans, x: lambda g: match_complex(x, g))
 defvjp(anp.real, lambda ans, x: lambda g: match_complex(x, g))
 defvjp(anp.imag, lambda ans, x: lambda g: match_complex(x, -1j * g))
-defvjp(anp.conj, lambda ans, x: lambda g: anp.conj(g))
-defvjp(anp.conjugate, lambda ans, x: lambda g: anp.conj(g))
+np_conj_vjp = lambda ans, x: lambda g: anp.conj(g)
+defvjp(anp.conj, np_conj_vjp)
+defvjp(anp.conjugate, np_conj_vjp)
 defvjp(anp.angle, lambda ans, x: lambda g: match_complex(x, g * anp.conj(x * 1j) / anp.abs(x) ** 2))
 defvjp(
     anp.where,
@@ -226,11 +230,11 @@ defvjp(
 )
 defvjp(
     anp.cross,
-    lambda ans, a, b, axisa=-1, axisb=-1, axisc=-1, axis=None: lambda g: anp.cross(
-        b, g, axisb, axisc, axisa, axis
+    lambda ans, a, b, axisa=-1, axisb=-1, axisc=-1, axis=None: (
+        lambda g: anp.cross(b, g, axisb, axisc, axisa, axis)
     ),
-    lambda ans, a, b, axisa=-1, axisb=-1, axisc=-1, axis=None: lambda g: anp.cross(
-        g, a, axisc, axisa, axisb, axis
+    lambda ans, a, b, axisa=-1, axisb=-1, axisc=-1, axis=None: (
+        lambda g: anp.cross(g, a, axisc, axisa, axisb, axis)
     ),
 )
 defvjp(
@@ -241,8 +245,8 @@ defvjp(
 
 defvjp(
     anp._astype,
-    lambda ans, A, dtype, order="K", casting="unsafe", subok=True, copy=True: lambda g: anp._astype(
-        g, A.dtype
+    lambda ans, A, dtype, order="K", casting="unsafe", subok=True, copy=True: (
+        lambda g: anp._astype(g, A.dtype)
     ),
 )
 
@@ -251,11 +255,11 @@ defvjp(
 def grad_rollaxis(ans, a, axis, start=0):
     if axis < 0:
         raise NotImplementedError(
-            "Gradient of rollaxis not implemented for axis < 0. " "Please use moveaxis instead."
+            "Gradient of rollaxis not implemented for axis < 0. Please use moveaxis instead."
         )
     elif start < 0:
         raise NotImplementedError(
-            "Gradient of rollaxis not implemented for start < 0. " "Please use moveaxis instead."
+            "Gradient of rollaxis not implemented for start < 0. Please use moveaxis instead."
         )
     return lambda g: anp.rollaxis(g, start - 1, axis) if start > axis else anp.rollaxis(g, start, axis + 1)
 
@@ -293,9 +297,7 @@ defvjp(anp.diff, grad_diff)
 def grad_gradient(ans, x, *vargs, **kwargs):
     axis = kwargs.pop("axis", None)
     if vargs or kwargs:
-        raise NotImplementedError(
-            "The only optional argument currently supported for np.gradient " "is axis."
-        )
+        raise NotImplementedError("The only optional argument currently supported for np.gradient is axis.")
     if axis is None:
         axis = range(x.ndim)
     elif type(axis) is int:
@@ -446,7 +448,7 @@ def grad_np_sum(ans, x, axis=None, keepdims=False, dtype=None):
 defvjp(anp.sum, grad_np_sum)
 
 
-def grad_np_mean(ans, x, axis=None, keepdims=False):
+def grad_np_mean(ans, x, axis=None, keepdims=False, **kwargs):
     shape, dtype = anp.shape(x), anp.result_type(x)
 
     def vjp(g):
@@ -456,7 +458,7 @@ def grad_np_mean(ans, x, axis=None, keepdims=False):
     return vjp
 
 
-defvjp(anp.mean, grad_np_mean)
+defvjp(anp._primitive_mean, grad_np_mean)
 
 
 def grad_np_prod(ans, x, axis=None, keepdims=False):  # TODO: Support tuples of axes.
@@ -472,7 +474,7 @@ def grad_np_prod(ans, x, axis=None, keepdims=False):  # TODO: Support tuples of 
 defvjp(anp.prod, grad_np_prod)
 
 
-def grad_np_var(ans, x, axis=None, ddof=0, keepdims=False):
+def grad_np_var(ans, x, axis=None, ddof=0, keepdims=False, **kwargs):
     shape, _, dtype, iscomplex = anp.metadata(x)
 
     def vjp(g):
@@ -485,10 +487,10 @@ def grad_np_var(ans, x, axis=None, ddof=0, keepdims=False):
     return vjp
 
 
-defvjp(anp.var, grad_np_var)
+defvjp(anp._primitive_var, grad_np_var)
 
 
-def grad_np_std(ans, x, axis=None, ddof=0, keepdims=False):
+def grad_np_std(ans, x, axis=None, ddof=0, keepdims=False, **kwargs):
     shape, _, dtype, iscomplex = anp.metadata(x)
 
     def vjp(g):
@@ -507,7 +509,7 @@ def grad_np_std(ans, x, axis=None, ddof=0, keepdims=False):
     return vjp
 
 
-defvjp(anp.std, grad_np_std)
+defvjp(anp._primitive_std, grad_np_std)
 
 
 def grad_chooser(ans, x, axis=None, keepdims=None):

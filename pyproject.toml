@@ -4,11 +4,12 @@ build-backend = "hatchling.build"
 
 [project]
 name = "autograd"
-version = "1.7.0"
-requires-python = ">=3.9"
+version = "1.8.0"
+requires-python = ">=3.10"
 description = "Efficiently computes derivatives of NumPy code."
 readme = "README.md"
-license = {file = "license.txt"}
+license = "MIT"
+license-files = ["license.txt"]
 authors = [
   {name = "Dougal Maclaurin", email = "maclaurin@physics.harvard.edu"},
   {name = "David Duvenaud", email = "duvenaud@cs.toronto.edu"},
@@ -25,11 +26,11 @@ classifiers = [
   "Intended Audience :: Information Technology",
   "Intended Audience :: Science/Research",
   "License :: OSI Approved :: MIT License",
-  "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
   "Topic :: Scientific/Engineering",
 ]
 keywords = [
@@ -55,11 +56,18 @@ Source = "https://github.com/HIPS/autograd"
 scipy = [
   "scipy",
 ]
+
+[dependency-groups]
 test = [
   "pytest",
   "pytest-cov",
   "pytest-xdist",
+  "xarray",
 ]
+examples = ["matplotlib"]
+
+[tool.uv]
+exclude-newer = "3 days ago"
 
 [tool.coverage.run]
 source = ["autograd"]

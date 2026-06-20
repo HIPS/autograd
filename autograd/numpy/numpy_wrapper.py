@@ -10,6 +10,8 @@ if _np.lib.NumpyVersion(_np.__version__) >= "2.0.0":
 else:
     from numpy.core.einsumfunc import _parse_einsum_input
 
+numpy_version = _np.__version__
+
 notrace_functions = [_np.ndim, _np.shape, _np.iscomplexobj, _np.result_type]
 
 
@@ -23,15 +25,28 @@ def wrap_intdtype(cls):
 def wrap_namespace(old, new):
     unchanged_types = {float, int, type(None), type}
     int_types = {_np.int8, _np.int16, _np.int32, _np.int64, _np.integer}
+    obj_to_wrapped = []
     for name, obj in old.items():
-        if obj in notrace_functions:
-            new[name] = notrace_primitive(obj)
-        elif callable(obj) and type(obj) is not type:
-            new[name] = primitive(obj)
-        elif type(obj) is type and obj in int_types:
-            new[name] = wrap_intdtype(obj)
-        elif type(obj) in unchanged_types:
-            new[name] = obj
+        # Map multiple names of the same object (e.g. conj/conjugate)
+        # to the same wrapped object
+        for mapped_obj, wrapped in obj_to_wrapped:
+            if mapped_obj is obj:
+                new[name] = wrapped
+                break
+        else:
+            if obj in notrace_functions:
+                wrapped = notrace_primitive(obj)
+            elif callable(obj) and type(obj) is not type:
+                wrapped = primitive(obj)
+            elif type(obj) is type and obj in int_types:
+                wrapped = wrap_intdtype(obj)
+            elif type(obj) in unchanged_types:
+                new[name] = obj
+                continue
+            else:
+                continue
+            new[name] = wrapped
+            obj_to_wrapped.append((obj, wrapped))
 
 
 wrap_namespace(_np.__dict__, globals())
@@ -76,7 +91,7 @@ def array(A, *args, **kwargs):
 def wrap_if_boxes_inside(raw_array, slow_op_name=None):
     if raw_array.dtype is _np.dtype("O"):
         if slow_op_name:
-            warnings.warn("{} is slow for array inputs. " "np.concatenate() is faster.".format(slow_op_name))
+            warnings.warn(f"{slow_op_name} is slow for array inputs. np.concatenate() is faster.")
         return array_from_args((), {}, *raw_array.ravel()).reshape(raw_array.shape)
     else:
         return raw_array
@@ -180,6 +195,42 @@ def parse_einsum_input(*args):
     return _parse_einsum_input(args)
 
 
-@primitive
-def _astype(A, dtype, order="K", casting="unsafe", subok=True, copy=True):
-    return A.astype(dtype, order, casting, subok, copy)
+if _np.lib.NumpyVersion(_np.__version__) >= "2.0.0":
+    # Wrapped above
+    _astype = astype
+else:
+
+    @primitive
+    def _astype(A, dtype, order="K", casting="unsafe", subok=True, copy=True):
+        return A.astype(dtype, order, casting, subok, copy)
+
+
+# Store the primitive-wrapped mean for internal use
+_primitive_mean = mean
+
+
+def mean(a, *args, **kwargs):
+    """Wrapper that converts list/tuple to array before computing mean.
+
+    This is needed because numpy's internal mean implementation calls
+    float() on the result, which fails for ArrayBox objects.
+    """
+    if builtins.type(a) in (list, tuple):
+        a = array(a)
+    return _primitive_mean(a, *args, **kwargs)
+
+
+_primitive_std = std
+_primitive_var = var
+
+
+def std(a, *args, **kwargs):
+    if builtins.type(a) in (list, tuple):
+        a = array(a)
+    return _primitive_std(a, *args, **kwargs)
+
+
+def var(a, *args, **kwargs):
+    if builtins.type(a) in (list, tuple):
+        a = array(a)
+    return _primitive_var(a, *args, **kwargs)

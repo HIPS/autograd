@@ -301,7 +301,7 @@ Chapter 4 of [Dougal's PhD thesis](https://dougalmaclaurin.com/phd-thesis.pdf)
 goes into a bit more detail about how we define the primitive vector-Jacobian products.
 
 ## Autograd Lecture
-For more information on automatic differentiation, autograd's implementation, and advanced automatic differentiation techniques, see a [talk by Matt at the Deep Learning Summer School, Montreal 2017](http://videolectures.net/deeplearning2017_johnson_automatic_differentiation/).
+For more information on automatic differentiation, autograd's implementation, and advanced automatic differentiation techniques, see a [talk by Matt at the Deep Learning Summer School, Montreal 2017](https://videolectures.net/videos/deeplearning2017_johnson_automatic_differentiation/).
 
 ## Support
 

@@ -20,7 +20,7 @@ function is vectorized.
 
 
 def tanh(x):
-    return (1.0 - np.exp((-2 * x))) / (1.0 + np.exp(-(2 * x)))
+    return (1.0 - np.exp(-2 * x)) / (1.0 + np.exp(-(2 * x)))
 
 
 ### Plotting
