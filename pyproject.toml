@@ -8,7 +8,8 @@ version = "1.8.0"
 requires-python = ">=3.10"
 description = "Efficiently computes derivatives of NumPy code."
 readme = "README.md"
-license = {file = "license.txt"}
+license = "MIT"
+license-files = ["license.txt"]
 authors = [
   {name = "Dougal Maclaurin", email = "maclaurin@physics.harvard.edu"},
   {name = "David Duvenaud", email = "duvenaud@cs.toronto.edu"},
