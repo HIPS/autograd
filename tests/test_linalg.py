@@ -50,12 +50,13 @@ def test_pinv():
 
     N = 5
     D = 2
+    rs = npr.RandomState(0)
     ## Non-square matrices:
     for M in range(N // 2, N + N // 2 + 1):
-        mat = npr.randn(N, M)
+        mat = rs.randn(N, M)
         check_grads(fun)(mat)
         # Stacked
-        mat = npr.randn(D, N, M)
+        mat = rs.randn(D, N, M)
         check_grads(fun)(mat)
 
     ## Square, low (fixed) rank matrices

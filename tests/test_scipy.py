@@ -419,7 +419,10 @@ else:
         return -np.sqrt(t) - y + arg1 - np.mean((y + arg2) ** 2)
 
     def test_odeint():
-        combo_check(integrate.odeint, [1, 2, 3])([func], [R(3)], [np.linspace(0.1, 0.2, 4)], [(R(3), R(3))])
+        rs = npr.RandomState(0)
+        combo_check(integrate.odeint, [1, 2, 3])(
+            [func], [rs.randn(3)], [np.linspace(0.1, 0.2, 4)], [(rs.randn(3), rs.randn(3))]
+        )
 
     ## Linalg
     def test_sqrtm():

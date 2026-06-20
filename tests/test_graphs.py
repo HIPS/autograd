@@ -113,7 +113,8 @@ def test_complex_separate_real_and_imaginary():
         return np.sum(np.sin(a))
 
     d_fun = lambda x: grad(fun)(x)
-    A = npr.randn(5, 3) + 0.1j * npr.randn(5, 3)
+    rs = npr.RandomState(0)
+    A = rs.randn(5, 3) + 0.1j * rs.randn(5, 3)
     check_grads(fun)(A)
     check_grads(d_fun)(A)
 
