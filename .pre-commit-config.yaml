@@ -10,7 +10,6 @@ repos:
       - id: check-case-conflict
       - id: check-merge-conflict
       - id: check-yaml
-        exclude: conda_recipe/conda.yaml
       - id: debug-statements
       - id: end-of-file-fixer
       - id: mixed-line-ending
