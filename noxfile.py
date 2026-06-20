@@ -130,26 +130,3 @@ def run_pytest_run_in_parallel_plugin(session):
         *session.posargs,
         env={"PYTHON_GIL": "0"},
     )
-
-
-@nox.session(name="free-threading-pytest-freethreaded", python=["3.14t"])
-def run_pytest_freethreaded(session):
-    """Run stress tests with free threaded Python (no-GIL) using the pytest-freethreaded plugin"""
-    session.run("python", "-VV")
-    session.install("-e", ".", silent=False)
-    session.install("pytest", "pytest-freethreaded", silent=False)
-
-    # SciPy doesn't have wheels on PyPy
-    if platform.python_implementation() == "PyPy":
-        session.install(
-            "numpy", "--upgrade", "--only-binary", ":all:", silent=False, env=UV_NIGHTLY_ENV_VARS
-        )
-    else:
-        session.install(
-            "numpy", "scipy", "--upgrade", "--only-binary", ":all:", silent=False, env=UV_NIGHTLY_ENV_VARS
-        )
-    session.run(
-        "pytest",
-        *session.posargs,
-        env={"PYTHON_GIL": "0"},
-    )

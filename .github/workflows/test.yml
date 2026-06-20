@@ -78,7 +78,7 @@ jobs:
         run: uvx nox -s nightly-tests
 
   free-threaded-testing:
-    name: "Free-threading tests / ${{ matrix.platform }} / Python ${{ matrix.python-version }} / Plugin ${{ matrix.plugin }}"
+    name: "Free-threading tests / ${{ matrix.platform }} / Python ${{ matrix.python-version }} / Plugin ${{ matrix.pytest-plugin }}"
     runs-on: ${{ matrix.platform }}
     env:
       PYTHON_GIL: "0"
@@ -94,7 +94,7 @@ jobs:
             windows-latest,
           ]
         python-version: ["3.14t"]
-        pytest-plugin: ["none", "pytest-run-parallel", "pytest-freethreaded"]
+        pytest-plugin: ["none", "pytest-run-parallel"]
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
@@ -114,8 +114,3 @@ jobs:
       - name: Run free-threaded tests with ${{ matrix.pytest-plugin }} on ${{ matrix.platform}}
         if: ${{ matrix.pytest-plugin == 'pytest-run-parallel' }}
         run: uvx nox -s free-threading-pytest-run-parallel -- -sra --parallel-threads 5 --iterations 10
-
-      # 3) Test suite with free-threading enabled, plus pytest-freethreaded plugin
-      - name: Run free-threaded tests with ${{ matrix.pytest-plugin }} on ${{ matrix.platform}}
-        if: ${{ matrix.pytest-plugin == 'pytest-freethreaded' }}
-        run: uvx nox -s free-threading-pytest-freethreaded -- -sra --threads 5 --iterations 100
