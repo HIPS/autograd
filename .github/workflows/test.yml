@@ -77,28 +77,29 @@ jobs:
       - name: Run tests against nightly wheels for NumPy and SciPy
         run: uvx nox -s nightly-tests
 
-  # In this job, we test with the free-threaded (no-GIL) Python 3.13t
-  # interpreter on all platforms. This is a special job and uses the
-  # "free-threading" session in noxfile.py. This job is available only
-  # for Python 3.13t at the time of writing and uses the nightly wheels
-  # for NumPy and SciPy, since free-threaded builds for either of them
-  # are not available on PyPI yet.
   free-threaded-testing:
     name: "Free-threading tests / ${{ matrix.platform }} / Python ${{ matrix.python-version }} / Plugin ${{ matrix.plugin }}"
     runs-on: ${{ matrix.platform }}
-    # Temporarily disable this environment variable to see if this fixes the message as follows:
-    # "Fatal Python error: config_read_gil: Disabling the GIL is not supported by this build"
-    # env:
-    #   PYTHON_GIL: "0"
+    env:
+      PYTHON_GIL: "0"
     strategy:
       fail-fast: false
       matrix:
-        platform: [ubuntu-latest, macos-13, macos-latest, windows-latest]
-        python-version: ["3.13t"]
-        plugin: ["none", "pytest-run-parallel", "pytest-freethreaded"]
+        platform:
+          [
+            ubuntu-latest,
+            ubuntu-22.04-arm,
+            macos-15-intel,
+            macos-latest,
+            windows-latest,
+          ]
+        python-version: ["3.14t"]
+        pytest-plugin: ["none", "pytest-run-parallel", "pytest-freethreaded"]
     steps:
-      - uses: actions/checkout@v4.2.2
-      - uses: Quansight-Labs/setup-python@b9ab292c751a42bcd2bb465b7fa202ea2c3f5796 # v5.3.1
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - uses: Quansight-Labs/setup-python@869aeafb7eeb9dc48ba68acc0479e6fc3fd7ce5e # v5.4.0
         with:
           python-version: ${{ matrix.python-version }}
           allow-prereleases: true
@@ -106,15 +107,15 @@ jobs:
 
       # 1) Test suite with free-threading enabled, but no free-threading-specific plugins
       - name: Run free-threaded tests on ${{ matrix.platform}}
-        if: ${{ matrix.plugin == 'none' }}
+        if: ${{ matrix.pytest-plugin == 'none' }}
         run: uvx nox -s free-threading
 
       # 2) Test suite with free-threading enabled, plus pytest-run-parallel plugin
-      - name: Run free-threaded tests with ${{ matrix.plugin }} on ${{ matrix.platform}}
-        if: ${{ matrix.plugin == 'pytest-run-parallel' }}
+      - name: Run free-threaded tests with ${{ matrix.pytest-plugin }} on ${{ matrix.platform}}
+        if: ${{ matrix.pytest-plugin == 'pytest-run-parallel' }}
         run: uvx nox -s free-threading-pytest-run-parallel -- -sra --parallel-threads 5 --iterations 10
 
       # 3) Test suite with free-threading enabled, plus pytest-freethreaded plugin
-      - name: Run free-threaded tests with ${{ matrix.plugin }} on ${{ matrix.platform}}
-        if: ${{ matrix.plugin == 'pytest-freethreaded' }}
+      - name: Run free-threaded tests with ${{ matrix.pytest-plugin }} on ${{ matrix.platform}}
+        if: ${{ matrix.pytest-plugin == 'pytest-freethreaded' }}
         run: uvx nox -s free-threading-pytest-freethreaded -- -sra --threads 5 --iterations 100
