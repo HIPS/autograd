@@ -86,7 +86,7 @@ def run_nightly_tests(session):
 def run_with_free_threaded_python(session):
     """Run tests with free threaded Python (no-GIL)"""
     session.run("python", "-VV")
-    session.install("-e", ".[scipy]", silent=False)
+    session.install("-e", ".[scipy]", "xarray", silent=False)
     session.install("pytest", silent=False)
     session.run("pytest", *session.posargs, env={"PYTHON_GIL": "0"})
 
@@ -95,6 +95,6 @@ def run_with_free_threaded_python(session):
 def run_pytest_run_in_parallel_plugin(session):
     """Run stress tests with free threaded Python (no-GIL) using the pytest-run-parallel plugin"""
     session.run("python", "-VV")
-    session.install("-e", ".[scipy]", silent=False)
+    session.install("-e", ".[scipy]", "xarray", silent=False)
     session.install("pytest", "pytest-run-parallel", silent=False)
     session.run("pytest", *session.posargs, env={"PYTHON_GIL": "0"})
