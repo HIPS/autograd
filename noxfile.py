@@ -35,7 +35,9 @@ def run_tests(session):
         session.install("-e.", silent=False)
     else:
         session.install("-e", ".[scipy]", silent=False)
-    session.run("pytest", "--cov=autograd", "--cov-report=xml", "--cov-append", *session.posargs)
+    session.run(
+        "pytest", "-n", "auto", "--cov=autograd", "--cov-report=xml", "--cov-append", *session.posargs
+    )
 
 
 @nox.session(name="lint", reuse_venv=True)
