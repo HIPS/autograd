@@ -10,7 +10,7 @@ UV_NIGHTLY_ENV_VARS = {
     "UV_NO_CONFIG": "1",
 }
 
-nox.needs_version = ">=2024.4.15"
+nox.needs_version = ">=2026.4.10"
 nox.options.default_venv_backend = "uv|virtualenv"
 nox.options.reuse_existing_virtualenvs = False
 nox.options.error_on_external_run = True
