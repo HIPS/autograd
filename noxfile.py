@@ -29,8 +29,7 @@ def check(session):
 @nox.session(name="tests", tags=["tests"])
 def run_tests(session):
     """Run unit tests and generate a coverage report"""
-    pyproject = nox.project.load_toml("pyproject.toml")
-    session.install(*nox.project.dependency_groups(pyproject, "test"))
+    session.install("--group", "test")
     # SciPy doesn't have wheels on PyPy
     if platform.python_implementation() == "PyPy":
         session.install("-e.", silent=False)
@@ -50,8 +49,7 @@ def ruff(session):
 def run_nightly_tests(session):
     """Run tests against nightly versions of dependencies"""
     session.install("-e.", silent=False)
-    pyproject = nox.project.load_toml("pyproject.toml")
-    session.install(*nox.project.dependency_groups(pyproject, "test"))
+    session.install("--group", "test")
     # SciPy doesn't have wheels on PyPy
     if platform.python_implementation() == "PyPy":
         session.install(
@@ -86,8 +84,8 @@ def run_nightly_tests(session):
 def run_with_free_threaded_python(session):
     """Run tests with free threaded Python (no-GIL)"""
     session.run("python", "-VV")
-    session.install("-e", ".[scipy]", "xarray", silent=False)
-    session.install("pytest", silent=False)
+    session.install("--group", "test-core")
+    session.install("-e", ".[scipy]", silent=False)
     session.run("pytest", *session.posargs, env={"PYTHON_GIL": "0"})
 
 
@@ -95,6 +93,6 @@ def run_with_free_threaded_python(session):
 def run_pytest_run_in_parallel_plugin(session):
     """Run stress tests with free threaded Python (no-GIL) using the pytest-run-parallel plugin"""
     session.run("python", "-VV")
-    session.install("-e", ".[scipy]", "xarray", silent=False)
-    session.install("pytest", "pytest-run-parallel", silent=False)
+    session.install("--group", "test-core")
+    session.install("-e", ".[scipy]", "pytest-run-parallel", silent=False)
     session.run("pytest", *session.posargs, env={"PYTHON_GIL": "0"})

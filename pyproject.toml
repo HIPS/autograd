@@ -59,11 +59,14 @@ scipy = [
 ]
 
 [dependency-groups]
-test = [
+test-core = [
   "pytest",
+  "xarray",
+]
+test = [
+  {include-group = "test-core"},
   "pytest-cov",
   "pytest-xdist",
-  "xarray",
 ]
 examples = ["matplotlib"]
 
