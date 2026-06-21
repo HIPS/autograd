@@ -135,6 +135,46 @@ The input can be a scalar, complex number, vector, tuple, a tuple of vectors, a 
 When using the `grad` function, the output must be a scalar, but the functions `elementwise_grad` and `jacobian` allow gradients of vectors.
 
 
+## Working with array-like containers, such as Xarray
+
+Autograd interoperates with array-like containers that implement NumPy's [`__array_ufunc__`](https://numpy.org/doc/stable/reference/arrays.classes.html#numpy.class.__array_ufunc__) protocol, such as [`xarray.DataArray`](https://docs.xarray.dev/en/stable/generated/xarray.DataArray.html).
+You don't need to do anything special. When a NumPy ufunc is applied to such a container that holds (or is multiplied by) values you're differentiating with respect to, the operation propagates through the container down to Autograd's wrapped primitives.
+
+This means you can write a plain `np.sin(data_array)` rather than reaching for a container-specific `xr.apply_ufunc(np.sin, data_array)`.
+
+Autograd has no dependency on Xarray (or any other such library) – it relies solely on the standard protocol, so the same approach works for any container that implements it.
+
+Here's a small example which uses named axes. The only thing to remember here is that `grad` needs a plain scalar output, so pull the underlying array back out (with `.data` for an `xarray.DataArray`) before the final reduction:
+
+```python
+import autograd.numpy as np
+from autograd import grad
+import xarray as xr
+
+# A named-axis dataset, with three features measured at four time steps.
+measurements = xr.DataArray(
+    np.array([[0.5, 1.2, -0.3],
+              [0.1, 0.4,  0.9],
+              [-0.7, 0.2, 1.1],
+              [0.3, -0.5, 0.6]]),
+    dims=["time", "feature"],
+    coords={"feature": ["a", "b", "c"]},
+)
+
+def loss(weights):
+    # weights is what we differentiate with respect to. Broadcasting
+    # respects the named "feature" axis, and the boxed values ride
+    # along inside the DataArray.
+    scores = np.tanh(measurements * weights)
+    # Pull the plain array back out for the scalar reduction grad needs
+    return np.sum(scores.data ** 2)
+
+weights = np.array([0.5, -1.0, 2.0])
+print("loss:", loss(weights))
+print("grad:", grad(loss)(weights))
+```
+
+
 ## Supported and unsupported parts of numpy/scipy
 
 Numpy has [a lot of features](http://docs.scipy.org/doc/numpy/reference/). We've done our best to support most of them. So far, we've implemented gradients for:
