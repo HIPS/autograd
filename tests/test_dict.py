@@ -7,10 +7,10 @@ from autograd import grad
 from autograd import isinstance as ag_isinstance
 from autograd.test_util import check_grads
 
-npr.seed(0)
-
 
 def test_getter():
+    rng = npr.RandomState(42)
+
     def fun(input_dict):
         A = np.sum(input_dict["item_1"])
         B = np.sum(input_dict["item_2"])
@@ -18,7 +18,7 @@ def test_getter():
         return A + B + C
 
     d_fun = grad(fun)
-    input_dict = {"item_1": npr.randn(5, 6), "item_2": npr.randn(4, 3), "item_X": npr.randn(2, 4)}
+    input_dict = {"item_1": rng.randn(5, 6), "item_2": rng.randn(4, 3), "item_X": rng.randn(2, 4)}
 
     result = d_fun(input_dict)
     assert np.allclose(result["item_1"], np.ones((5, 6)))
@@ -27,6 +27,8 @@ def test_getter():
 
 
 def test_grads():
+    rng = npr.RandomState(42)
+
     def fun(input_dict):
         A = np.sum(np.sin(input_dict["item_1"]))
         B = np.sum(np.cos(input_dict["item_2"]))
@@ -39,13 +41,15 @@ def test_grads():
         C = np.sum(np.sin(g["item_2"]))
         return A + B + C
 
-    input_dict = {"item_1": npr.randn(5, 6), "item_2": npr.randn(4, 3), "item_X": npr.randn(2, 4)}
+    input_dict = {"item_1": rng.randn(5, 6), "item_2": rng.randn(4, 3), "item_X": rng.randn(2, 4)}
 
     check_grads(fun)(input_dict)
     check_grads(d_fun)(input_dict)
 
 
 def test_iter():
+    rng = npr.RandomState(42)
+
     def fun(input_dict):
         A = 0.0
         B = 0.0
@@ -61,13 +65,15 @@ def test_iter():
         C = np.sum(np.sin(g["item_2"]))
         return A + B + C
 
-    input_dict = {"item_1": npr.randn(5, 6), "item_2": npr.randn(4, 3), "item_X": npr.randn(2, 4)}
+    input_dict = {"item_1": rng.randn(5, 6), "item_2": rng.randn(4, 3), "item_X": rng.randn(2, 4)}
 
     check_grads(fun)(input_dict)
     check_grads(d_fun)(input_dict)
 
 
 def test_items_values_keys():
+    rng = npr.RandomState(42)
+
     def fun(input_dict):
         A = 0.0
         B = 0.0
@@ -87,7 +93,7 @@ def test_items_values_keys():
         C = np.sum(np.sin(g["item_2"]))
         return A + B + C
 
-    input_dict = {"item_1": npr.randn(5, 6), "item_2": npr.randn(4, 3), "item_X": npr.randn(2, 4)}
+    input_dict = {"item_1": rng.randn(5, 6), "item_2": rng.randn(4, 3), "item_X": rng.randn(2, 4)}
 
     check_grads(fun)(input_dict)
     check_grads(d_fun)(input_dict)
