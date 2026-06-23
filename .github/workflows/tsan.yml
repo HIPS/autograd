@@ -52,12 +52,12 @@ jobs:
           {
             curl -fsSL https://raw.githubusercontent.com/python/cpython/refs/heads/3.14/Tools/tsan/suppressions_free_threading.txt
             curl -fsSL https://raw.githubusercontent.com/numpy/numpy/refs/heads/main/tools/ci/tsan_suppressions.txt
-          } > "$GITHUB_WORKSPACE/tsan_suppressions.txt"
+          } > /tmp/tsan_suppressions.txt
 
       - name: Run explicitly multithreaded tests under TSan
         env:
           PYTHON_GIL: "0"
-          TSAN_OPTIONS: halt_on_error=0:allocator_may_return_null=1:suppressions=${{ github.workspace }}/tsan_suppressions.txt
+          TSAN_OPTIONS: halt_on_error=0:allocator_may_return_null=1:suppressions=/tmp/tsan_suppressions.txt
         run: |
           python -VV
           python -m pytest tests/test_thread_safety.py -sv --timeout=600 --durations=10
@@ -65,7 +65,7 @@ jobs:
       - name: Run pytest-run-parallel suite under
         env:
           PYTHON_GIL: "0"
-          TSAN_OPTIONS: halt_on_error=0:allocator_may_return_null=1:suppressions=${{ github.workspace }}/tsan_suppressions.txt
+          TSAN_OPTIONS: halt_on_error=0:allocator_may_return_null=1:suppressions=/tmp/tsan_suppressions.txt
         run: |
           python -m pytest tests --ignore=tests/test_scipy.py \
             -s --parallel-threads 4 --timeout=600 --durations=10
