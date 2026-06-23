@@ -4,6 +4,7 @@ import numpy as onp
 
 import autograd.numpy as np
 from autograd import grad, jacobian
+from autograd.misc import const_graph
 
 
 def run_threaded(worker, n_threads=8):
@@ -82,6 +83,27 @@ def test_concurrent_jacobian():
     def worker(i):
         for _ in range(50):
             results[i] = jac(inputs[i])
+
+    run_threaded(worker, n_threads=len(inputs))
+
+    for i, exp in enumerate(expected):
+        onp.testing.assert_allclose(results[i], exp, rtol=1e-12, atol=1e-12)
+
+
+def test_concurrent_const_graph():
+    """
+    Concurrent first calls on autograd.misc.const_graph, which memoizes a
+    traced graph in shared state, must not race on the one-time cache fill.
+    """
+    fun = lambda x: np.sum(np.sin(x) + x * 2)
+    wrapped = const_graph(fun)
+    inputs = [onp.linspace(0.1, 1.0, 5) + i for i in range(8)]
+    expected = [fun(x) for x in inputs]  # serial reference
+
+    results = [None] * len(inputs)
+
+    def worker(i):
+        results[i] = wrapped(inputs[i])
 
     run_threaded(worker, n_threads=len(inputs))
 
