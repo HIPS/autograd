@@ -1,0 +1,71 @@
+name: ThreadSanitizer CI
+
+# Runs the explicitly multithreaded tests and the pytest-run-parallel suite
+# under ThreadSanitizer (TSan), using these prebuilt cpython_sanity images:
+# https://github.com/nascheme/cpython_sanity. The image ships a free-threaded
+# CPython 3.14t and a TSan-instrumented NumPy.
+# We install autograd into the image's instrumented interpreter and run the tests.
+# A TSan data race in this configuration points at a race in a dependency (such as
+# CPython/NumPy or unsafe shared mutation of an ndarray
+#
+on:
+  pull_request:
+    branches:
+      - master
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+  schedule:
+    - cron: "0 5 * * 1"
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  tsan:
+    name: ThreadSanitizer tests / free-threaded 3.14t
+    runs-on: ubuntu-latest
+    # To test this workflow on a fork, comment out:
+    if: github.repository == 'HIPS/autograd'
+    timeout-minutes: 60
+    container:
+      image: ghcr.io/nascheme/numpy-tsan:3.14t@sha256:15533a98a6b0bb7a2caf3ad35b8a776b5a24e8ad12f43f54adb39b1619e42c11
+      options: --shm-size=2g
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Install autograd and test runner
+        run: |
+          python -m pip uninstall -y pytest-xdist || true
+          python -m pip install -e . pytest pytest-run-parallel pytest-timeout
+
+      - name: Fetch TSan suppressions for free-threaded CPython and NumPy
+        run: |
+          {
+            curl -fsSL https://raw.githubusercontent.com/python/cpython/refs/heads/3.14/Tools/tsan/suppressions_free_threading.txt
+            curl -fsSL https://raw.githubusercontent.com/numpy/numpy/refs/heads/main/tools/ci/tsan_suppressions.txt
+          } > "$GITHUB_WORKSPACE/tsan_suppressions.txt"
+
+      - name: Run explicitly multithreaded tests under TSan
+        env:
+          PYTHON_GIL: "0"
+          TSAN_OPTIONS: halt_on_error=0:allocator_may_return_null=1:suppressions=${{ github.workspace }}/tsan_suppressions.txt
+        run: |
+          python -VV
+          python -m pytest tests/test_thread_safety.py -sv --timeout=600 --durations=10
+
+      - name: Run pytest-run-parallel suite under
+        env:
+          PYTHON_GIL: "0"
+          TSAN_OPTIONS: halt_on_error=0:allocator_may_return_null=1:suppressions=${{ github.workspace }}/tsan_suppressions.txt
+        run: |
+          python -m pytest tests --ignore=tests/test_scipy.py \
+            -s --parallel-threads 4 --timeout=600 --durations=10
