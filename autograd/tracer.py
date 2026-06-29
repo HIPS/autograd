@@ -1,6 +1,7 @@
 import warnings
 from collections import defaultdict
 from contextlib import contextmanager
+from contextvars import ContextVar
 
 import numpy as np
 
@@ -139,15 +140,18 @@ def find_top_boxed_args(args):
     return top_boxes, top_trace, top_node_type, ufunc_dispatch_needed
 
 
-class TraceStack:
-    def __init__(self):
-        self.top = -1
+_trace_stack_top = ContextVar("trace_stack_top", default=-1)
 
+
+class TraceStack:
     @contextmanager
     def new_trace(self):
-        self.top += 1
-        yield self.top
-        self.top -= 1
+        top = _trace_stack_top.get() + 1
+        token = _trace_stack_top.set(top)
+        try:
+            yield top
+        finally:
+            _trace_stack_top.reset(token)
 
 
 trace_stack = TraceStack()

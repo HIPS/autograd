@@ -7,8 +7,6 @@ import autograd.numpy.random as npr
 from autograd import grad
 from autograd.test_util import check_grads
 
-npr.seed(1)
-
 
 def test_numpy_version():
     import numpy
@@ -17,14 +15,16 @@ def test_numpy_version():
 
 
 def test_dot():
+    rng = npr.RandomState(42)
+
     def fun(x, y):
         return np.dot(x, y)
 
-    mat1 = npr.randn(10, 11)
-    mat2 = npr.randn(10, 11)
-    vect1 = npr.randn(10)
-    vect2 = npr.randn(11)
-    vect3 = npr.randn(11)
+    mat1 = rng.randn(10, 11)
+    mat2 = rng.randn(10, 11)
+    vect1 = rng.randn(10)
+    vect2 = rng.randn(11)
+    vect3 = rng.randn(11)
 
     check_grads(fun)(mat1, vect2)
     check_grads(fun)(mat1, mat2.T)
@@ -33,12 +33,14 @@ def test_dot():
 
 
 def test_dot_with_floats():
+    rng = npr.RandomState(42)
+
     def fun(x, y):
         return np.dot(x, y)
 
-    mat1 = npr.randn(10, 11)
-    vect1 = npr.randn(10)
-    float1 = npr.randn()
+    mat1 = rng.randn(10, 11)
+    vect1 = rng.randn(10)
+    float1 = rng.randn()
 
     check_grads(fun)(mat1, float1)
     check_grads(fun)(float1, mat1)
@@ -63,11 +65,13 @@ def test_dot_with_floats():
 
 
 def test_outer():
+    rng = npr.RandomState(42)
+
     def fun(x, y):
         return np.outer(x, y)
 
-    vect2 = npr.randn(11)
-    vect3 = npr.randn(11)
+    vect2 = rng.randn(11)
+    vect3 = rng.randn(11)
 
     check_grads(fun)(vect2, vect3)
     check_grads(fun)(vect2.T, vect3)
@@ -75,82 +79,102 @@ def test_outer():
 
 
 def test_max():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.max(x)
 
-    mat = npr.randn(10, 11)
+    mat = rng.randn(10, 11)
     check_grads(fun)(mat)
 
 
 def test_max_axis():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.max(x, axis=1)
 
-    mat = npr.randn(3, 4, 5)
+    mat = rng.randn(3, 4, 5)
     check_grads(fun)(mat)
 
 
 def test_max_axis_keepdims():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.max(x, axis=1, keepdims=True)
 
-    mat = npr.randn(3, 4, 5)
+    mat = rng.randn(3, 4, 5)
     check_grads(fun)(mat)
 
 
 def test_min():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.min(x)
 
-    mat = npr.randn(10, 11)
+    mat = rng.randn(10, 11)
     check_grads(fun)(mat)
 
 
 def test_min_axis():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.min(x, axis=1)
 
-    mat = npr.randn(3, 4, 5)
+    mat = rng.randn(3, 4, 5)
     check_grads(fun)(mat)
 
 
 def test_min_axis_keepdims():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.min(x, axis=1, keepdims=True)
 
-    mat = npr.randn(3, 4, 5)
+    mat = rng.randn(3, 4, 5)
     check_grads(fun)(mat)
 
 
 def test_sum_1():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.sum(x)
 
-    mat = npr.randn(10, 11)
+    mat = rng.randn(10, 11)
     check_grads(fun)(mat)
 
 
 def test_sum_2():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.sum(x, axis=0)
 
-    mat = npr.randn(10, 11)
+    mat = rng.randn(10, 11)
     check_grads(fun)(mat)
 
 
 def test_sum_3():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.sum(x, axis=0, keepdims=True)
 
-    mat = npr.randn(10, 11)
+    mat = rng.randn(10, 11)
     check_grads(fun)(mat)
 
 
 def test_sum_with_axis_tuple():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.sum(x, axis=(1, 2))
 
-    mat = npr.randn(10, 11, 7)
+    mat = rng.randn(10, 11, 7)
     check_grads(fun)(mat)
 
 
@@ -181,91 +205,113 @@ def test_plain_numpy_reductions_on_box():
 
 
 def test_flipud():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.flipud(x)
 
-    mat = npr.randn(10, 11)
+    mat = rng.randn(10, 11)
     check_grads(fun)(mat)
 
 
 def test_fliplr():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.fliplr(x)
 
-    mat = npr.randn(10, 11)
+    mat = rng.randn(10, 11)
     check_grads(fun)(mat)
 
 
 def test_rot90():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.rot90(x)
 
-    mat = npr.randn(10, 11)
+    mat = rng.randn(10, 11)
     check_grads(fun)(mat)
 
 
 def test_cumsum_axis0():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.cumsum(x, axis=0)
 
-    mat = npr.randn(10, 11)
+    mat = rng.randn(10, 11)
     check_grads(fun)(mat)
 
 
 def test_cumsum_axis1():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.cumsum(x, axis=1)
 
-    mat = npr.randn(10, 11)
+    mat = rng.randn(10, 11)
     check_grads(fun)(mat)
 
 
 def test_cumsum_1d():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.cumsum(x)
 
-    mat = npr.randn(10)
+    mat = rng.randn(10)
     check_grads(fun)(mat)
 
 
 def test_cumsum_no_axis():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.cumsum(x)
 
-    mat = npr.randn(10, 11)
+    mat = rng.randn(10, 11)
     check_grads(fun)(mat)
 
 
 def test_non_numpy_sum():
+    rng = npr.RandomState(42)
+
     def fun(x, y):
         return sum([x, y])
 
-    mat1 = npr.randn(10, 11)
-    mat2 = npr.randn(10, 11)
+    mat1 = rng.randn(10, 11)
+    mat2 = rng.randn(10, 11)
     check_grads(fun)(mat1, mat2)
 
 
 def test_mean_1():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.mean(x)
 
-    mat = npr.randn(10, 11)
+    mat = rng.randn(10, 11)
     check_grads(fun)(mat)
 
 
 def test_mean_2():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.mean(x, axis=0)
 
-    mat = npr.randn(10, 11)
+    mat = rng.randn(10, 11)
     check_grads(fun)(mat)
 
 
 def test_mean_3():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.mean(x, axis=0, keepdims=True)
 
-    mat = npr.randn(10, 11)
+    mat = rng.randn(10, 11)
     check_grads(fun)(mat)
 
 
@@ -286,7 +332,8 @@ def test_var_list_of_boxes():
 
 
 def test_index_ints():
-    A = npr.randn(5, 6, 4)
+    rng = npr.RandomState(42)
+    A = rng.randn(5, 6, 4)
 
     def fun(x):
         return x[3, 0, 1]
@@ -295,7 +342,8 @@ def test_index_ints():
 
 
 def test_index_slice():
-    A = npr.randn(5, 6, 4)
+    rng = npr.RandomState(42)
+    A = rng.randn(5, 6, 4)
 
     def fun(x):
         return x[::-1, 2:4, :]
@@ -304,7 +352,8 @@ def test_index_slice():
 
 
 def test_index_lists():
-    A = npr.randn(5, 6, 4)
+    rng = npr.RandomState(42)
+    A = rng.randn(5, 6, 4)
 
     def fun(x):
         return x[[0, 1, 2], :, :]
@@ -313,7 +362,8 @@ def test_index_lists():
 
 
 def test_index_mixed():
-    A = npr.randn(5, 6, 4)
+    rng = npr.RandomState(42)
+    A = rng.randn(5, 6, 4)
 
     def fun(x):
         return x[3, 2:, [1, 3]]
@@ -322,7 +372,8 @@ def test_index_mixed():
 
 
 def test_vector_slice():
-    A = npr.randn(5)
+    rng = npr.RandomState(42)
+    A = rng.randn(5)
 
     def fun(x):
         return x[2:4]
@@ -331,7 +382,8 @@ def test_vector_slice():
 
 
 def test_index_slice_fanout():
-    A = npr.randn(5, 6, 4)
+    rng = npr.RandomState(42)
+    A = rng.randn(5, 6, 4)
 
     def fun(x):
         y = x[::-1, 2:4, :]
@@ -342,7 +394,8 @@ def test_index_slice_fanout():
 
 
 def test_index_multiple_slices():
-    A = npr.randn(7)
+    rng = npr.RandomState(42)
+    A = rng.randn(7)
 
     def fun(x):
         y = x[2:6]
@@ -353,7 +406,8 @@ def test_index_multiple_slices():
 
 
 def test_reshape_method():
-    A = npr.randn(5, 6, 4)
+    rng = npr.RandomState(42)
+    A = rng.randn(5, 6, 4)
 
     def fun(x):
         return x.reshape((5 * 4, 6))
@@ -362,7 +416,8 @@ def test_reshape_method():
 
 
 def test_reshape_call():
-    A = npr.randn(5, 6, 4)
+    rng = npr.RandomState(42)
+    A = rng.randn(5, 6, 4)
 
     def fun(x):
         return np.reshape(x, (5 * 4, 6))
@@ -371,10 +426,11 @@ def test_reshape_call():
 
 
 def test_reshape_method_nolist():
+    rng = npr.RandomState(42)
     # The reshape can be called in two different ways:
     # like A.reshape((5,4)) or A.reshape(5,4).
     # This test checks that we support the second way.
-    A = npr.randn(5, 6, 4)
+    A = rng.randn(5, 6, 4)
 
     def fun(x):
         return x.reshape(5 * 4, 6)
@@ -383,7 +439,8 @@ def test_reshape_method_nolist():
 
 
 def test_ravel_method():
-    A = npr.randn(5, 6, 4)
+    rng = npr.RandomState(42)
+    A = rng.randn(5, 6, 4)
 
     def fun(x):
         return x.ravel()
@@ -392,7 +449,8 @@ def test_ravel_method():
 
 
 def test_ravel_call():
-    A = npr.randn(5, 6, 4)
+    rng = npr.RandomState(42)
+    A = rng.randn(5, 6, 4)
 
     def fun(x):
         return np.ravel(x)
@@ -401,7 +459,8 @@ def test_ravel_call():
 
 
 def test_flatten_method():
-    A = npr.randn(5, 6, 4)
+    rng = npr.RandomState(42)
+    A = rng.randn(5, 6, 4)
 
     def fun(x):
         return x.flatten()
@@ -428,8 +487,9 @@ def test_simple_append_list_2D():
 
 
 def test_simple_concatenate():
-    A = npr.randn(5, 6, 4)
-    B = npr.randn(4, 6, 4)
+    rng = npr.RandomState(42)
+    A = rng.randn(5, 6, 4)
+    B = rng.randn(4, 6, 4)
 
     def fun(x):
         return np.concatenate((A, x))
@@ -438,8 +498,9 @@ def test_simple_concatenate():
 
 
 def test_concatenate_axis_0():
-    A = npr.randn(5, 6, 4)
-    B = npr.randn(5, 6, 4)
+    rng = npr.RandomState(42)
+    A = rng.randn(5, 6, 4)
+    B = rng.randn(5, 6, 4)
 
     def fun(x):
         return np.concatenate((B, x, B))
@@ -448,8 +509,9 @@ def test_concatenate_axis_0():
 
 
 def test_concatenate_axis_1():
-    A = npr.randn(5, 6, 4)
-    B = npr.randn(5, 6, 4)
+    rng = npr.RandomState(42)
+    A = rng.randn(5, 6, 4)
+    B = rng.randn(5, 6, 4)
 
     def fun(x):
         return np.concatenate((B, x, B), axis=1)
@@ -459,8 +521,9 @@ def test_concatenate_axis_1():
 
 def test_concatenate_axis_1_unnamed():
     """Tests whether you can specify the axis without saying "axis=1"."""
-    A = npr.randn(5, 6, 4)
-    B = npr.randn(5, 6, 4)
+    rng = npr.RandomState(42)
+    A = rng.randn(5, 6, 4)
+    B = rng.randn(5, 6, 4)
 
     def fun(x):
         return np.concatenate((B, x, B), 1)
@@ -469,29 +532,35 @@ def test_concatenate_axis_1_unnamed():
 
 
 def test_trace():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.trace(x, offset=offset)
 
-    mat = npr.randn(10, 11)
-    offset = npr.randint(-9, 11)
+    mat = rng.randn(10, 11)
+    offset = rng.randint(-9, 11)
     check_grads(fun)(mat)
 
 
 def test_trace2():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.trace(x, offset=offset)
 
-    mat = npr.randn(11, 10)
-    offset = npr.randint(-9, 11)
+    mat = rng.randn(11, 10)
+    offset = rng.randint(-9, 11)
     check_grads(fun)(mat)
 
 
 def test_trace_extradims():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.trace(x, offset=offset)
 
-    mat = npr.randn(5, 6, 4, 3)
-    offset = npr.randint(-5, 6)
+    mat = rng.randn(5, 6, 4, 3)
+    offset = rng.randint(-5, 6)
     check_grads(fun)(mat)
 
 
@@ -504,90 +573,112 @@ def test_trace_extradims():
 
 
 def test_diag():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.diag(x)
 
-    mat = npr.randn(10, 10)
+    mat = rng.randn(10, 10)
     check_grads(fun)(mat)
 
 
 def test_transpose():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return x.T
 
-    mat = npr.randn(8, 8)
+    mat = rng.randn(8, 8)
     check_grads(fun)(mat)
 
 
 def test_roll():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.roll(x, 2, axis=1)
 
-    mat = npr.randn(4, 5)
+    mat = rng.randn(4, 5)
     check_grads(fun)(mat)
 
 
 def test_roll_no_axis():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.roll(x, 2, axis=1)
 
-    mat = npr.randn(4, 5)
+    mat = rng.randn(4, 5)
     check_grads(fun)(mat)
 
 
 def test_triu():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.triu(x, k=2)
 
-    mat = npr.randn(5, 5)
+    mat = rng.randn(5, 5)
     check_grads(fun)(mat)
 
 
 def test_tril():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.tril(x, k=2)
 
-    mat = npr.randn(5, 5)
+    mat = rng.randn(5, 5)
     check_grads(fun)(mat)
 
 
 def test_clip():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.clip(x, a_min=0.1, a_max=1.1)
 
-    mat = npr.randn(5, 5)
+    mat = rng.randn(5, 5)
     check_grads(fun)(mat)
 
 
 def test_prod_1():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.prod(x)
 
-    mat = npr.randn(2, 3) ** 2 / 10.0 + 0.1  # Gradient unstable when zeros are present.
+    mat = rng.randn(2, 3) ** 2 / 10.0 + 0.1  # Gradient unstable when zeros are present.
     check_grads(fun)(mat)
 
 
 def test_prod_2():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.prod(x, axis=0)
 
-    mat = npr.randn(2, 3) ** 2 + 0.1
+    mat = rng.randn(2, 3) ** 2 + 0.1
     check_grads(fun)(mat)
 
 
 def test_prod_3():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.prod(x, axis=0, keepdims=True)
 
-    mat = npr.randn(2, 3) ** 2 + 0.1
+    mat = rng.randn(2, 3) ** 2 + 0.1
     check_grads(fun)(mat)
 
 
 def test_prod_4():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.prod(x)
 
-    mat = npr.randn(7) ** 2 + 0.1
+    mat = rng.randn(7) ** 2 + 0.1
     check_grads(fun)(mat)
 
 
@@ -641,166 +732,186 @@ def test_scalar_array_box_attributes():
 
 
 def test_array_from_arrays():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.array([x, x])
 
-    A = npr.randn(3, 2)
+    A = rng.randn(3, 2)
     check_grads(fun)(A)
 
 
 def test_array_from_arrays_2():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.array([[2 * x, x + 1], [x, x]])
 
-    A = npr.randn(3, 2)
+    A = rng.randn(3, 2)
     check_grads(fun)(A)
 
 
 def test_len():
+    rng = npr.RandomState(42)
+
     def fun(x):
         assert len(x) == 3
         return x
 
-    A = npr.randn(3, 2)
+    A = rng.randn(3, 2)
     check_grads(fun)(A)
 
 
 def test_r_basic():
+    rng = npr.RandomState(42)
     with warnings.catch_warnings(record=True) as w:
 
         def fun(x):
-            c = npr.randn(3, 2)
+            c = rng.randn(3, 2)
             b = np.r_[x]
             return b
 
-        A = npr.randn(3, 2)
+        A = rng.randn(3, 2)
         check_grads(fun)(A)
 
 
 def test_r_double():
+    rng = npr.RandomState(42)
     with warnings.catch_warnings(record=True) as w:
 
         def fun(x):
-            c = npr.randn(3, 2)
+            c = rng.randn(3, 2)
             b = np.r_[x, x]
             return b
 
-        A = npr.randn(3, 2)
+        A = rng.randn(3, 2)
         check_grads(fun)(A)
 
 
 def test_no_relation():
+    rng = npr.RandomState(42)
     with warnings.catch_warnings(record=True) as w:
-        c = npr.randn(3, 2)
+        c = rng.randn(3, 2)
 
         def fun(x):
             return c
 
-        A = npr.randn(3, 2)
+        A = rng.randn(3, 2)
         check_grads(fun)(A)
 
 
 def test_r_no_relation():
+    rng = npr.RandomState(42)
     with warnings.catch_warnings(record=True) as w:
-        c = npr.randn(3, 2)
+        c = rng.randn(3, 2)
 
         def fun(x):
             b = np.r_[c]
             return b
 
-        A = npr.randn(3, 2)
+        A = rng.randn(3, 2)
         check_grads(fun)(A)
 
 
 def test_r_node_and_const():
+    rng = npr.RandomState(42)
     with warnings.catch_warnings(record=True) as w:
-        c = npr.randn(3, 2)
+        c = rng.randn(3, 2)
 
         def fun(x):
             b = np.r_[x, c]
             return b
 
-        A = npr.randn(3, 2)
+        A = rng.randn(3, 2)
         check_grads(fun)(A)
 
 
 def test_r_mixed():
+    rng = npr.RandomState(42)
     with warnings.catch_warnings(record=True) as w:
-        c = npr.randn(3, 2)
+        c = rng.randn(3, 2)
 
         def fun(x):
             b = np.r_[x, c, x]
             return b
 
-        A = npr.randn(3, 2)
+        A = rng.randn(3, 2)
         check_grads(fun)(A)
 
 
 def test_r_slicing():
+    rng = npr.RandomState(42)
     with warnings.catch_warnings(record=True) as w:
-        c = npr.randn(10)
+        c = rng.randn(10)
 
         def fun(x):
             b = np.r_[x, c, 1:10]
             return b
 
-        A = npr.randn(10)
+        A = rng.randn(10)
         check_grads(fun)(A)
 
 
 def test_c_():
+    rng = npr.RandomState(42)
     with warnings.catch_warnings(record=True) as w:
-        c = npr.randn(3, 2)
+        c = rng.randn(3, 2)
 
         def fun(x):
             b = np.c_[x, c, x]
             return b
 
-        A = npr.randn(3, 2)
+        A = rng.randn(3, 2)
         check_grads(fun)(A)
 
 
 def test_c_mixed():
+    rng = npr.RandomState(42)
     with warnings.catch_warnings(record=True) as w:
-        c = npr.randn(3, 2)
+        c = rng.randn(3, 2)
 
         def fun(x):
             b = np.c_[x, c, x]
             return b
 
-        A = npr.randn(3, 2)
+        A = rng.randn(3, 2)
         check_grads(fun)(A)
 
 
 def test_var_ddof():
-    B = npr.randn(3)
-    C = npr.randn(3, 4)
-    D = npr.randn(1, 3)
+    rng = npr.RandomState(42)
+    B = rng.randn(3)
+    C = rng.randn(3, 4)
+    D = rng.randn(1, 3)
     combo_check(np.var, (0,))([B, C, D], axis=[None], keepdims=[True, False], ddof=[0, 1])
     combo_check(np.var, (0,))([C, D], axis=[None, 1], keepdims=[True, False], ddof=[2])
 
 
 def test_std_ddof():
-    B = npr.randn(3)
-    C = npr.randn(3, 4)
-    D = npr.randn(1, 3)
+    rng = npr.RandomState(42)
+    B = rng.randn(3)
+    C = rng.randn(3, 4)
+    D = rng.randn(1, 3)
     combo_check(np.std, (0,))([B, C, D], axis=[None], keepdims=[True, False], ddof=[0, 1])
     combo_check(np.std, (0,))([C, D], axis=[None, 1], keepdims=[True, False], ddof=[2])
 
 
 def test_where():
+    rng = npr.RandomState(42)
+
     def fun(x, y):
         b = np.where(C, x, y)
         return b
 
-    C = npr.randn(4, 5) > 0
-    A = npr.randn(4, 5)
-    B = npr.randn(4, 5)
+    C = rng.randn(4, 5) > 0
+    A = rng.randn(4, 5)
+    B = rng.randn(4, 5)
     check_grads(fun)(A, B)
 
 
 def test_squeeze_func():
-    A = npr.randn(5, 1, 4)
+    rng = npr.RandomState(42)
+    A = rng.randn(5, 1, 4)
 
     def fun(x):
         return np.squeeze(x)
@@ -809,7 +920,8 @@ def test_squeeze_func():
 
 
 def test_squeeze_method():
-    A = npr.randn(5, 1, 4)
+    rng = npr.RandomState(42)
+    A = rng.randn(5, 1, 4)
 
     def fun(x):
         return x.squeeze()
@@ -818,7 +930,8 @@ def test_squeeze_method():
 
 
 def test_repeat():
-    A = npr.randn(5, 3, 4)
+    rng = npr.RandomState(42)
+    A = rng.randn(5, 3, 4)
 
     def fun(x):
         return np.repeat(x, 2, axis=1)
@@ -827,7 +940,8 @@ def test_repeat():
 
 
 def test_repeat_axis1_rep1():
-    A = npr.randn(5, 3, 4)
+    rng = npr.RandomState(42)
+    A = rng.randn(5, 3, 4)
 
     def fun(x):
         return np.repeat(x, 1, axis=1)
@@ -836,7 +950,8 @@ def test_repeat_axis1_rep1():
 
 
 def test_repeat_axis0():
-    A = npr.randn(5, 3)
+    rng = npr.RandomState(42)
+    A = rng.randn(5, 3)
 
     def fun(x):
         return np.repeat(x, 2, axis=0)
@@ -845,7 +960,8 @@ def test_repeat_axis0():
 
 
 def test_repeat_1d_axis0():
-    A = npr.randn(5)
+    rng = npr.RandomState(42)
+    A = rng.randn(5)
 
     def fun(x):
         return np.repeat(x, 2, axis=0)
@@ -854,7 +970,8 @@ def test_repeat_1d_axis0():
 
 
 def test_repeat_axis0_rep1():
-    A = npr.randn(5, 1)
+    rng = npr.RandomState(42)
+    A = rng.randn(5, 1)
 
     def fun(x):
         return np.repeat(x, 1, axis=0)
@@ -863,7 +980,8 @@ def test_repeat_axis0_rep1():
 
 
 def test_expand_dims():
-    A = npr.randn(5, 1, 4)
+    rng = npr.RandomState(42)
+    A = rng.randn(5, 1, 4)
 
     def fun(x):
         return np.expand_dims(x, 2)
@@ -879,19 +997,22 @@ def test_tensordot_kwargs_by_position():
 
 
 def test_multi_index():
-    A = npr.randn(3)
+    rng = npr.RandomState(42)
+    A = rng.randn(3)
     fun = lambda x: np.sum(x[[0, 0]])
     check_grads(fun)(A)
 
 
 def test_multi_index2():
-    A = npr.randn(3)
+    rng = npr.RandomState(42)
+    A = rng.randn(3)
     fun = lambda x: np.sum(x[[0, 1, 0]])
     check_grads(fun)(A)
 
 
 def test_index_dot_slices():
-    A = npr.randn(4)
+    rng = npr.RandomState(42)
+    A = rng.randn(4)
 
     def fun(x):
         return np.dot(x[:2], x[2:])
@@ -918,6 +1039,7 @@ def test_index_dot_slices():
 
 
 def test_cast_to_int():
+    rng = npr.RandomState(42)
     inds = np.ones(5)[:, None]
 
     def fun(W):
@@ -931,43 +1053,48 @@ def test_cast_to_int():
         assert new_inds.dtype == np.int64
         return new_W[new_inds].sum()
 
-    W = np.random.randn(5, 10)
+    W = rng.randn(5, 10)
     check_grads(fun)(W)
 
 
 def test_make_diagonal():
+    rng = npr.RandomState(42)
+
     def fun(D):
         return np.make_diagonal(D, axis1=-1, axis2=-2)
 
-    D = np.random.randn(4)
+    D = rng.randn(4)
     A = np.make_diagonal(D, axis1=-1, axis2=-2)
     assert np.allclose(np.diag(A), D)
     check_grads(fun)(D)
 
-    D = np.random.randn(3, 4)
+    D = rng.randn(3, 4)
     A = np.make_diagonal(D, axis1=-1, axis2=-2)
     assert all([np.allclose(np.diag(A[i]), D[i]) for i in range(3)])
     check_grads(fun)(D)
 
 
 def test_diagonal():
+    rng = npr.RandomState(42)
+
     def fun(D):
         return np.diagonal(D, axis1=-1, axis2=-2)
 
-    D = np.random.randn(4, 4)
+    D = rng.randn(4, 4)
     A = np.make_diagonal(D, axis1=-1, axis2=-2)
     check_grads(fun)(D)
 
-    D = np.random.randn(3, 4, 4)
+    D = rng.randn(3, 4, 4)
     A = np.make_diagonal(D, axis1=-1, axis2=-2)
     check_grads(fun)(D)
 
 
 def test_nan_to_num():
+    rng = npr.RandomState(42)
     y = np.array([0.0, np.nan, np.inf, -np.inf])
     fun = lambda x: np.sum(np.sin(np.nan_to_num(x + y)))
 
-    x = np.random.randn(4)
+    x = rng.randn(4)
     check_grads(fun)(x)
 
 
@@ -1039,9 +1166,10 @@ def test_astype():
 
 
 def test_gradient():
-    check_grads(np.gradient, 0)(npr.randn(10))
-    check_grads(np.gradient, 0)(npr.randn(10, 10))
-    check_grads(np.gradient, 0)(npr.randn(10, 10, 10))
+    rng = npr.RandomState(42)
+    check_grads(np.gradient, 0)(rng.randn(10))
+    check_grads(np.gradient, 0)(rng.randn(10, 10))
+    check_grads(np.gradient, 0)(rng.randn(10, 10, 10))
 
     for a in [None, 0, 1, -1, (0, 1), (0, -1)]:
-        check_grads(np.gradient, 0)(npr.randn(10, 10, 10), axis=a)
+        check_grads(np.gradient, 0)(rng.randn(10, 10, 10), axis=a)

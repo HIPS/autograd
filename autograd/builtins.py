@@ -210,8 +210,8 @@ class ContainerVSpace(VSpace):
     def ones(self):
         return self._map(lambda vs: vs.ones())
 
-    def randn(self):
-        return self._map(lambda vs: vs.randn())
+    def randn(self, rng=None):
+        return self._map(lambda vs: vs.randn(rng))
 
     def standard_basis(self):
         zero = self.zeros()

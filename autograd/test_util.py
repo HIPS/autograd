@@ -1,5 +1,7 @@
 from itertools import product
 
+import numpy as np
+
 from .core import make_jvp, make_vjp, vspace
 from .wrap_util import get_name, unary_to_nary
 
@@ -32,7 +34,8 @@ def check_vjp(f, x):
     vjp, y = make_vjp(f, x)
     jvp = make_numerical_jvp(f, x)
     x_vs, y_vs = vspace(x), vspace(y)
-    x_v, y_v = x_vs.randn(), y_vs.randn()
+    rng = np.random.RandomState(0)
+    x_v, y_v = x_vs.randn(rng), y_vs.randn(rng)
 
     vjp_y = x_vs.covector(vjp(y_vs.covector(y_v)))
     assert vspace(vjp_y) == x_vs
@@ -48,14 +51,14 @@ def check_vjp(f, x):
 def check_jvp(f, x):
     jvp = make_jvp(f, x)
     jvp_numeric = make_numerical_jvp(f, x)
-    x_v = vspace(x).randn()
+    x_v = vspace(x).randn(np.random.RandomState(0))
     check_equivalent(jvp(x_v)[1], jvp_numeric(x_v))
 
 
 def check_equivalent(x, y):
     x_vs, y_vs = vspace(x), vspace(y)
     assert x_vs == y_vs, f"VSpace mismatch:\nx: {x_vs}\ny: {y_vs}"
-    v = x_vs.randn()
+    v = x_vs.randn(np.random.RandomState(0))
     assert scalar_close(x_vs.inner_prod(x, v), x_vs.inner_prod(y, v)), f"Value mismatch:\nx: {x}\ny: {y}"
 
 
@@ -67,14 +70,14 @@ def check_grads(f, x, modes=["fwd", "rev"], order=2):
         if order > 1:
             grad_f = lambda x, v: make_jvp(f, x)(v)[1]
             grad_f.__name__ = f"jvp_{get_name(f)}"
-            v = vspace(x).randn()
+            v = vspace(x).randn(np.random.RandomState(0))
             check_grads(grad_f, (0, 1), modes, order=order - 1)(x, v)
     if "rev" in modes:
         check_vjp(f, x)
         if order > 1:
             grad_f = lambda x, v: make_vjp(f, x)[0](v)
             grad_f.__name__ = f"vjp_{get_name(f)}"
-            v = vspace(f(x)).randn()
+            v = vspace(f(x)).randn(np.random.RandomState(0))
             check_grads(grad_f, (0, 1), modes, order=order - 1)(x, v)
 
 
