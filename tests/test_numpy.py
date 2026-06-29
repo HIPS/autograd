@@ -154,6 +154,32 @@ def test_sum_with_axis_tuple():
     check_grads(fun)(mat)
 
 
+def test_plain_numpy_reductions_on_box():
+    # Regression test: calling a *plain* numpy reduction (numpy.sum/prod/max/min)
+    # on an ArrayBox routes through numpy's _wrapreduction, which forwards an
+    # ``out=None`` keyword to the wrapped primitive (and thus to its VJP). The
+    # reduction VJPs must tolerate this extra keyword argument.
+    import numpy as onp
+
+    base = onp.abs(npr.randn(5)) + 0.5
+
+    for onp_reduction, anp_reduction in [
+        (onp.sum, np.sum),
+        (onp.prod, np.prod),
+        (onp.max, np.max),
+        (onp.min, np.min),
+    ]:
+
+        def fun_plain(a, _r=onp_reduction):
+            return _r(np.exp(a) * base)
+
+        def fun_autograd(a, _r=anp_reduction):
+            return _r(np.exp(a) * base)
+
+        check_grads(fun_plain)(0.7)
+        assert onp.isclose(grad(fun_plain)(0.7), grad(fun_autograd)(0.7))
+
+
 def test_flipud():
     def fun(x):
         return np.flipud(x)

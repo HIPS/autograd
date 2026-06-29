@@ -161,7 +161,10 @@ defjvp(anp.transpose, "same")
 defjvp(anp.sum, "same")
 defjvp(anp._primitive_mean, "same")
 defjvp(
-    anp.prod, lambda g, ans, x, axis=None, keepdims=False: ans * anp.sum(g / x, axis=axis, keepdims=keepdims)
+    anp.prod,
+    lambda g, ans, x, axis=None, keepdims=False, **kwargs: (
+        ans * anp.sum(g / x, axis=axis, keepdims=keepdims)
+    ),
 )
 defjvp(
     anp.linspace,
@@ -202,7 +205,7 @@ def forward_grad_np_std(g, ans, x, axis=None, ddof=0, keepdims=False, **kwargs):
 defjvp(anp._primitive_std, forward_grad_np_std)
 
 
-def fwd_grad_chooser(g, ans, x, axis=None, keepdims=False):
+def fwd_grad_chooser(g, ans, x, axis=None, keepdims=False, **kwargs):
     if anp.isscalar(x):
         return g
     if not keepdims:
