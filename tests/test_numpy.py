@@ -169,6 +169,7 @@ def test_plain_numpy_reductions_on_box():
         (onp.max, np.max),
         (onp.min, np.min),
     ]:
+
         def fun_plain(a, _r=onp_reduction):
             return _r(np.exp(a) * base)
 

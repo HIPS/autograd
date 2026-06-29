@@ -162,7 +162,9 @@ defjvp(anp.sum, "same")
 defjvp(anp._primitive_mean, "same")
 defjvp(
     anp.prod,
-    lambda g, ans, x, axis=None, keepdims=False, **kwargs: ans * anp.sum(g / x, axis=axis, keepdims=keepdims),
+    lambda g, ans, x, axis=None, keepdims=False, **kwargs: (
+        ans * anp.sum(g / x, axis=axis, keepdims=keepdims)
+    ),
 )
 defjvp(
     anp.linspace,
