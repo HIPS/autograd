@@ -440,7 +440,7 @@ def grad_broadcast_to(ans, x, new_shape):
 defvjp(anp.broadcast_to, grad_broadcast_to)
 
 
-def grad_np_sum(ans, x, axis=None, keepdims=False, dtype=None):
+def grad_np_sum(ans, x, axis=None, keepdims=False, dtype=None, **kwargs):
     shape, dtype = anp.shape(x), anp.result_type(x)
     return lambda g: repeat_to_match_shape(g, shape, dtype, axis, keepdims)[0]
 
@@ -461,7 +461,7 @@ def grad_np_mean(ans, x, axis=None, keepdims=False, **kwargs):
 defvjp(anp._primitive_mean, grad_np_mean)
 
 
-def grad_np_prod(ans, x, axis=None, keepdims=False):  # TODO: Support tuples of axes.
+def grad_np_prod(ans, x, axis=None, keepdims=False, **kwargs):  # TODO: Support tuples of axes.
     shape, dtype = anp.shape(x), anp.result_type(x)
 
     def vjp(g):
@@ -512,7 +512,7 @@ def grad_np_std(ans, x, axis=None, ddof=0, keepdims=False, **kwargs):
 defvjp(anp._primitive_std, grad_np_std)
 
 
-def grad_chooser(ans, x, axis=None, keepdims=None):
+def grad_chooser(ans, x, axis=None, keepdims=None, **kwargs):
     shape, dtype = anp.shape(x), anp.result_type(x)
 
     def vjp(g):
