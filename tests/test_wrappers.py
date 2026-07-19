@@ -34,8 +34,7 @@ def test_return_both():
     assert d == d_fun(test_x)
 
 
-def test_value_and_grad():
-    rng = npr.RandomState(42)
+def test_value_and_grad(rng):
     fun = lambda x: np.sum(np.sin(x) ** 2)
     dfun = grad(fun)
     dfun_both = value_and_grad(fun)
@@ -50,8 +49,7 @@ def test_value_and_grad():
     check_grads(fun2)(x)
 
 
-def test_hessian():
-    rng = npr.RandomState(42)
+def test_hessian(rng):
     # Check Hessian of a quadratic function.
     D = 5
     H = rng.randn(D, D)
@@ -105,17 +103,14 @@ def test_value_and_multigrad():
     check_equivalent(dfun(A, B, C, D, E, f=F, g=G), dfun_both(A, B, C, D, E, f=F, g=G)[1])
 
 
-def test_multigrad_onearg():
-    rng = npr.RandomState(42)
+def test_multigrad_onearg(rng):
     fun = lambda x, y: np.sum(x + np.sin(y))
     packed_fun = lambda xy: np.sum(xy[0] + np.sin(xy[1]))
     A, B = rng.randn(3), rng.randn(3)
     check_equivalent(grad(fun, argnum=[0])(A, B), (grad(packed_fun)((A, B))[0],))
 
 
-def test_elementwise_grad():
-    rng = npr.RandomState(42)
-
+def test_elementwise_grad(rng):
     def simple_fun(a):
         return a + np.sin(a) + np.cosh(a)
 
@@ -126,9 +121,7 @@ def test_elementwise_grad():
     check_equivalent(wrapped, explicit)
 
 
-def test_elementwise_grad_multiple_args():
-    rng = npr.RandomState(42)
-
+def test_elementwise_grad_multiple_args(rng):
     def simple_fun(a, b):
         return a + np.sin(a) + np.cosh(b)
 
@@ -141,8 +134,7 @@ def test_elementwise_grad_multiple_args():
     check_equivalent(wrapped, explicit)
 
 
-def test_hessian_tensor_product():
-    rng = npr.RandomState(42)
+def test_hessian_tensor_product(rng):
     fun = lambda a: np.sum(np.sin(a))
     a = rng.randn(5)
     v = rng.randn(5)
@@ -150,8 +142,7 @@ def test_hessian_tensor_product():
     check_equivalent(np.dot(H, v), hessian_tensor_product(fun)(a, v))
 
 
-def test_hvp():
-    rng = npr.RandomState(42)
+def test_hvp(rng):
     fun = lambda a: np.sum(np.sin(a))
     a = rng.randn(5)
     v = rng.randn(5)
@@ -160,8 +151,7 @@ def test_hvp():
     check_equivalent(np.dot(H, v), hvp(v))
 
 
-def test_hessian_matrix_product():
-    rng = npr.RandomState(42)
+def test_hessian_matrix_product(rng):
     fun = lambda a: np.sum(np.sin(a))
     a = rng.randn(5, 4)
     V = rng.randn(5, 4)
@@ -169,8 +159,7 @@ def test_hessian_matrix_product():
     check_equivalent(np.tensordot(H, V), hessian_tensor_product(fun)(a, V))
 
 
-def test_hessian_tensor_product_3d():
-    rng = npr.RandomState(42)
+def test_hessian_tensor_product_3d(rng):
     fun = lambda a: np.sum(np.sin(a))
     a = rng.randn(5, 4, 3)
     V = rng.randn(5, 4, 3)
@@ -178,8 +167,7 @@ def test_hessian_tensor_product_3d():
     check_equivalent(np.tensordot(H, V, axes=np.ndim(V)), hessian_tensor_product(fun)(a, V))
 
 
-def test_tensor_jacobian_product():
-    rng = npr.RandomState(42)
+def test_tensor_jacobian_product(rng):
     # This function will have an asymmetric jacobian matrix.
     fun = lambda a: np.roll(np.sin(a), 1)
     a = rng.randn(5)
@@ -188,8 +176,7 @@ def test_tensor_jacobian_product():
     check_equivalent(np.dot(V.T, J), tensor_jacobian_product(fun)(a, V))
 
 
-def test_matrix_jacobian_product():
-    rng = npr.RandomState(42)
+def test_matrix_jacobian_product(rng):
     fun = lambda a: np.roll(np.sin(a), 1)
     a = rng.randn(5, 4)
     V = rng.randn(5, 4)
@@ -197,8 +184,7 @@ def test_matrix_jacobian_product():
     check_equivalent(np.tensordot(V, J), tensor_jacobian_product(fun)(a, V))
 
 
-def test_tensor_jacobian_product():
-    rng = npr.RandomState(42)
+def test_tensor_jacobian_product(rng):
     fun = lambda a: np.roll(np.sin(a), 1)
     a = rng.randn(5, 4, 3)
     V = rng.randn(5, 4)
@@ -206,8 +192,7 @@ def test_tensor_jacobian_product():
     check_equivalent(np.tensordot(V, J, axes=np.ndim(V)), tensor_jacobian_product(fun)(a, V))
 
 
-def test_deprecated_defgrad_wrapper():
-    rng = npr.RandomState(42)
+def test_deprecated_defgrad_wrapper(rng):
     from autograd.core import primitive
 
     @primitive
@@ -226,8 +211,7 @@ def test_deprecated_defgrad_wrapper():
     check_grads(fun, modes=["rev"])(mat1, mat2)
 
 
-def test_deprecated_defvjp_wrapper():
-    rng = npr.RandomState(42)
+def test_deprecated_defvjp_wrapper(rng):
     from autograd.core import primitive
 
     @primitive
@@ -246,8 +230,7 @@ def test_deprecated_defvjp_wrapper():
     check_grads(fun, modes=["rev"])(mat1, mat2)
 
 
-def test_deprecated_defvjp_is_zero_wrapper():
-    rng = npr.RandomState(42)
+def test_deprecated_defvjp_is_zero_wrapper(rng):
     from autograd.core import primitive
 
     @primitive
@@ -280,9 +263,7 @@ def test_partial():
     grad(partial(f, y=1))
 
 
-def test_dtypes():
-    rng = npr.RandomState(42)
-
+def test_dtypes(rng):
     def f(x):
         return np.real(np.sum(x**2))
 
@@ -370,8 +351,7 @@ def checkpoint_memory():
     assert max_checkpointed_usage < max_usage / 2.0
 
 
-def test_make_jvp():
-    rng = npr.RandomState(42)
+def test_make_jvp(rng):
     A = rng.randn(3, 5)
     x = rng.randn(5)
     v = rng.randn(5)
@@ -396,8 +376,7 @@ def _make_explicit_ggnvp(f, g=lambda x: 1.0 / 2 * np.dot(x, x)):
     return ggnvp_maker
 
 
-def test_make_ggnvp():
-    rng = npr.RandomState(42)
+def test_make_ggnvp(rng):
     A = rng.randn(5, 4)
     x = rng.randn(4)
     v = rng.randn(4)
@@ -409,8 +388,7 @@ def test_make_ggnvp():
     check_equivalent(make_ggnvp(fun2)(x)(v), _make_explicit_ggnvp(fun2)(x)(v))
 
 
-def test_make_ggnvp_nondefault_g():
-    rng = npr.RandomState(42)
+def test_make_ggnvp_nondefault_g(rng):
     A = rng.randn(5, 4)
     x = rng.randn(4)
     v = rng.randn(4)
@@ -424,8 +402,7 @@ def test_make_ggnvp_nondefault_g():
     check_equivalent(make_ggnvp(fun2, g)(x)(v), _make_explicit_ggnvp(fun2, g)(x)(v))
 
 
-def test_grad_and_aux():
-    rng = npr.RandomState(42)
+def test_grad_and_aux(rng):
     A = rng.randn(5, 4)
     x = rng.randn(4)
 

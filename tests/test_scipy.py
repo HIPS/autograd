@@ -43,212 +43,173 @@ else:
         return symmetrized_fun
 
     ### Stats ###
-    def test_chi2_pdf():
-        rng = npr.RandomState(42)
+    def test_chi2_pdf(rng):
         R = rng.randn
         combo_check(stats.chi2.pdf, [0])([R(4) ** 2 + 1.1], [1, 2, 3])
 
-    def test_chi2_cdf():
-        rng = npr.RandomState(42)
+    def test_chi2_cdf(rng):
         R = rng.randn
         combo_check(stats.chi2.cdf, [0])([R(4) ** 2 + 1.1], [1, 2, 3])
 
-    def test_chi2_logpdf():
-        rng = npr.RandomState(42)
+    def test_chi2_logpdf(rng):
         R = rng.randn
         combo_check(stats.chi2.logpdf, [0])([R(4) ** 2 + 1.1], [1, 2, 3])
 
-    def test_beta_cdf():
-        rng = npr.RandomState(42)
+    def test_beta_cdf(rng):
         R = rng.randn
         U = rng.uniform
         combo_check(stats.beta.cdf, [0])([U(0.0, 1.0, 4)], [R(4) ** 2 + 1.1], [R(4) ** 2 + 1.1])
 
-    def test_beta_pdf():
-        rng = npr.RandomState(42)
+    def test_beta_pdf(rng):
         R = rng.randn
         U = rng.uniform
         combo_check(stats.beta.pdf, [0, 1, 2])([U(0.0, 1.0, 4)], [R(4) ** 2 + 1.1], [R(4) ** 2 + 1.1])
 
-    def test_beta_logpdf():
-        rng = npr.RandomState(42)
+    def test_beta_logpdf(rng):
         R = rng.randn
         U = rng.uniform
         combo_check(stats.beta.logpdf, [0, 1, 2])([U(0.0, 1.0, 4)], [R(4) ** 2 + 1.1], [R(4) ** 2 + 1.1])
 
-    def test_gamma_cdf():
-        rng = npr.RandomState(42)
+    def test_gamma_cdf(rng):
         R = rng.randn
         combo_check(stats.gamma.cdf, [0])([R(4) ** 2 + 1.1], [R(4) ** 2 + 1.1])
 
-    def test_gamma_pdf():
-        rng = npr.RandomState(42)
+    def test_gamma_pdf(rng):
         R = rng.randn
         combo_check(stats.gamma.pdf, [0, 1])([R(4) ** 2 + 1.1], [R(4) ** 2 + 1.1])
 
-    def test_gamma_logpdf():
-        rng = npr.RandomState(42)
+    def test_gamma_logpdf(rng):
         R = rng.randn
         combo_check(stats.gamma.logpdf, [0, 1])([R(4) ** 2 + 1.1], [R(4) ** 2 + 1.1])
 
-    def test_norm_pdf():
-        rng = npr.RandomState(42)
+    def test_norm_pdf(rng):
         R = rng.randn
         combo_check(stats.norm.pdf, [0, 1, 2])([R(4)], [R(4)], [R(4) ** 2 + 1.1])
 
-    def test_norm_cdf():
-        rng = npr.RandomState(42)
+    def test_norm_cdf(rng):
         R = rng.randn
         combo_check(stats.norm.cdf, [0, 1, 2])([R(4)], [R(4)], [R(4) ** 2 + 1.1])
 
-    def test_norm_sf():
-        rng = npr.RandomState(42)
+    def test_norm_sf(rng):
         R = rng.randn
         combo_check(stats.norm.sf, [0, 1, 2])([R(4)], [R(4)], [R(4) ** 2 + 1.1])
 
-    def test_norm_logpdf():
-        rng = npr.RandomState(42)
+    def test_norm_logpdf(rng):
         R = rng.randn
         combo_check(stats.norm.logpdf, [0, 1, 2])([R(4)], [R(4)], [R(4) ** 2 + 1.1])
 
-    def test_norm_logcdf():
-        rng = npr.RandomState(42)
+    def test_norm_logcdf(rng):
         R = rng.randn
         combo_check(stats.norm.logcdf, [0, 1, 2])([R(4)], [R(4)], [R(4) ** 2 + 1.1])
 
-    def test_norm_logsf():
-        rng = npr.RandomState(42)
+    def test_norm_logsf(rng):
         R = rng.randn
         combo_check(stats.norm.logsf, [0, 1, 2])([R(4)], [R(4)], [R(4) ** 2 + 1.1])
 
-    def test_norm_pdf_broadcast():
-        rng = npr.RandomState(42)
+    def test_norm_pdf_broadcast(rng):
         R = rng.randn
         combo_check(stats.norm.pdf, [0, 1, 2])([R(4, 3)], [R(1, 3)], [R(4, 1) ** 2 + 1.1])
 
-    def test_norm_cdf_broadcast():
-        rng = npr.RandomState(42)
+    def test_norm_cdf_broadcast(rng):
         R = rng.randn
         combo_check(stats.norm.cdf, [0, 1, 2])([R(4, 3)], [R(1, 3)], [R(4, 1) ** 2 + 1.1])
 
-    def test_norm_sf_broadcast():
-        rng = npr.RandomState(42)
+    def test_norm_sf_broadcast(rng):
         R = rng.randn
         combo_check(stats.norm.cdf, [0, 1, 2])([R(4, 3)], [R(1, 3)], [R(4, 1) ** 2 + 1.1])
 
-    def test_norm_logpdf_broadcast():
-        rng = npr.RandomState(42)
+    def test_norm_logpdf_broadcast(rng):
         R = rng.randn
         combo_check(stats.norm.logpdf, [0, 1, 2])([R(4, 3)], [R(1, 3)], [R(4, 1) ** 2 + 1.1])
 
-    def test_norm_logcdf_broadcast():
-        rng = npr.RandomState(42)
+    def test_norm_logcdf_broadcast(rng):
         R = rng.randn
         combo_check(stats.norm.logcdf, [0, 1, 2])([R(4, 3)], [R(1, 3)], [R(4, 1) ** 2 + 1.1])
 
-    def test_norm_logsf_broadcast():
-        rng = npr.RandomState(42)
+    def test_norm_logsf_broadcast(rng):
         R = rng.randn
         combo_check(stats.norm.logcdf, [0, 1, 2])([R(4, 3)], [R(1, 3)], [R(4, 1) ** 2 + 1.1])
 
-    def test_poisson_cdf():
-        rng = npr.RandomState(42)
+    def test_poisson_cdf(rng):
         R = rng.randn
         combo_check(stats.poisson.cdf, [1])([np.round(R(4) ** 2)], [R(4) ** 2 + 1.1])
 
-    def test_poisson_logpmf():
-        rng = npr.RandomState(42)
+    def test_poisson_logpmf(rng):
         R = rng.randn
         combo_check(stats.poisson.logpmf, [1])([np.round(R(4) ** 2)], [R(4) ** 2 + 1.1])
 
-    def test_poisson_pmf():
-        rng = npr.RandomState(42)
+    def test_poisson_pmf(rng):
         R = rng.randn
         combo_check(stats.poisson.pmf, [1])([np.round(R(4) ** 2)], [R(4) ** 2 + 1.1])
 
-    def test_poisson_cdf_broadcast():
-        rng = npr.RandomState(42)
+    def test_poisson_cdf_broadcast(rng):
         R = rng.randn
         combo_check(stats.poisson.cdf, [1])([np.round(R(4, 3) ** 2)], [R(4, 1) ** 2 + 1.1])
 
-    def test_poisson_logpmf_broadcast():
-        rng = npr.RandomState(42)
+    def test_poisson_logpmf_broadcast(rng):
         R = rng.randn
         combo_check(stats.poisson.logpmf, [1])([np.round(R(4, 3) ** 2)], [R(4, 1) ** 2 + 1.1])
 
-    def test_poisson_pmf_broadcast():
-        rng = npr.RandomState(42)
+    def test_poisson_pmf_broadcast(rng):
         R = rng.randn
         combo_check(stats.poisson.pmf, [1])([np.round(R(4, 3) ** 2)], [R(4, 1) ** 2 + 1.1])
 
-    def test_t_pdf():
-        rng = npr.RandomState(42)
+    def test_t_pdf(rng):
         R = rng.randn
         combo_check(stats.t.pdf, [0, 1, 2, 3])([R(4)], [R(4) ** 2 + 2.1], [R(4)], [R(4) ** 2 + 2.1])
 
-    def test_t_cdf():
-        rng = npr.RandomState(42)
+    def test_t_cdf(rng):
         R = rng.randn
         combo_check(stats.t.cdf, [0, 2])([R(4)], [R(4) ** 2 + 2.1], [R(4)], [R(4) ** 2 + 2.1])
 
-    def test_t_logpdf():
-        rng = npr.RandomState(42)
+    def test_t_logpdf(rng):
         R = rng.randn
         combo_check(stats.t.logpdf, [0, 1, 2, 3])([R(4)], [R(4) ** 2 + 2.1], [R(4)], [R(4) ** 2 + 2.1])
 
-    def test_t_logcdf():
-        rng = npr.RandomState(42)
+    def test_t_logcdf(rng):
         R = rng.randn
         combo_check(stats.t.logcdf, [0, 2])([R(4)], [R(4) ** 2 + 2.1], [R(4)], [R(4) ** 2 + 2.1])
 
-    def test_t_pdf_broadcast():
-        rng = npr.RandomState(42)
+    def test_t_pdf_broadcast(rng):
         R = rng.randn
         combo_check(stats.t.pdf, [0, 1, 2, 3])(
             [R(4, 3)], [R(1, 3) ** 2 + 2.1], [R(4, 3)], [R(4, 1) ** 2 + 2.1]
         )
 
-    def test_t_cdf_broadcast():
-        rng = npr.RandomState(42)
+    def test_t_cdf_broadcast(rng):
         R = rng.randn
         combo_check(stats.t.cdf, [0, 2])([R(4, 3)], [R(1, 3) ** 2 + 2.1], [R(4, 3)], [R(4, 1) ** 2 + 2.1])
 
-    def test_t_logpdf_broadcast():
-        rng = npr.RandomState(42)
+    def test_t_logpdf_broadcast(rng):
         R = rng.randn
         combo_check(stats.t.logpdf, [0, 1, 2, 3])(
             [R(4, 3)], [R(1, 3) ** 2 + 2.1], [R(4, 3)], [R(4, 1) ** 2 + 2.1]
         )
 
-    def test_t_logcdf_broadcast():
-        rng = npr.RandomState(42)
+    def test_t_logcdf_broadcast(rng):
         R = rng.randn
         combo_check(stats.t.logcdf, [0, 2])([R(4, 3)], [R(1, 3) ** 2 + 2.1], [R(4, 3)], [R(4, 1) ** 2 + 2.1])
 
     def make_psd(mat):
         return np.dot(mat.T, mat) + np.eye(mat.shape[0])
 
-    def test_mvn_pdf():
-        rng = npr.RandomState(42)
+    def test_mvn_pdf(rng):
         R = rng.randn
         combo_check(symmetrize_matrix_arg(mvn.pdf, 2), [0, 1, 2])(
             [R(4)], [R(4)], [make_psd(R(4, 4))], allow_singular=[False]
         )
 
-    def test_mvn_logpdf():
-        rng = npr.RandomState(42)
+    def test_mvn_logpdf(rng):
         R = rng.randn
         combo_check(symmetrize_matrix_arg(mvn.logpdf, 2), [0, 1, 2])(
             [R(4)], [R(4)], [make_psd(R(4, 4))], allow_singular=[False]
         )
 
-    def test_mvn_entropy():
-        rng = npr.RandomState(42)
+    def test_mvn_entropy(rng):
         R = rng.randn
         combo_check(symmetrize_matrix_arg(mvn.entropy, 1), [0, 1])([10 * R(4)], [make_psd(R(4, 4))])
 
-    def test_mvn_sing_cov():
-        rng = npr.RandomState(42)
+    def test_mvn_sing_cov(rng):
         R = rng.randn
         cov = np.zeros((4, 4))
         cov[0, 0] = cov[1, 1] = 1
@@ -271,13 +232,11 @@ else:
             [np.concatenate((R(2), np.zeros(2)))], [np.concatenate((R(2), np.zeros(2)))], [cov]
         )
 
-    def test_mvn_pdf_broadcast():
-        rng = npr.RandomState(42)
+    def test_mvn_pdf_broadcast(rng):
         R = rng.randn
         combo_check(symmetrize_matrix_arg(mvn.pdf, 2), [0, 1, 2])([R(5, 4)], [R(4)], [make_psd(R(4, 4))])
 
-    def test_mvn_logpdf_broadcast():
-        rng = npr.RandomState(42)
+    def test_mvn_logpdf_broadcast(rng):
         R = rng.randn
         combo_check(symmetrize_matrix_arg(mvn.logpdf, 2), [0, 1, 2])([R(5, 4)], [R(4)], [make_psd(R(4, 4))])
 
@@ -308,29 +267,25 @@ else:
         combo_check(stats.dirichlet.logpdf, [1])([x], [alpha])
 
     ### Misc ###
-    def test_logsumexp1():
-        rng = npr.RandomState(42)
+    def test_logsumexp1(rng):
         R = rng.randn
         combo_check(special.logsumexp, [0], modes=["fwd", "rev"])(
             [np.array([1.1]), R(4), R(3, 4)], axis=[None, 0], keepdims=[True, False]
         )
 
-    def test_logsumexp2():
-        rng = npr.RandomState(42)
+    def test_logsumexp2(rng):
         R = rng.randn
         combo_check(special.logsumexp, [0], modes=["fwd", "rev"])(
             [R(3, 4), R(4, 5, 6), R(1, 5)], axis=[None, 0, 1], keepdims=[True, False]
         )
 
-    def test_logsumexp3():
-        rng = npr.RandomState(42)
+    def test_logsumexp3(rng):
         R = rng.randn
         combo_check(special.logsumexp, [0], modes=["fwd", "rev"])(
             [R(4)], b=[np.exp(R(4))], axis=[None, 0], keepdims=[True, False]
         )
 
-    def test_logsumexp4():
-        rng = npr.RandomState(42)
+    def test_logsumexp4(rng):
         R = rng.randn
         combo_check(special.logsumexp, [0], modes=["fwd", "rev"])(
             [
@@ -341,15 +296,13 @@ else:
             keepdims=[True, False],
         )
 
-    def test_logsumexp5():
-        rng = npr.RandomState(42)
+    def test_logsumexp5(rng):
         R = rng.randn
         combo_check(special.logsumexp, [0], modes=["fwd", "rev"])(
             [R(2, 3, 4)], b=[np.exp(R(2, 3, 4))], axis=[None, 0, 1], keepdims=[True, False]
         )
 
-    def test_logsumexp6():
-        rng = npr.RandomState(42)
+    def test_logsumexp6(rng):
         x = rng.randn(1, 5)
 
         def f(a):
@@ -359,8 +312,7 @@ else:
         check_grads(lambda a: grad(f)(a), modes=["fwd", "rev"])(x)
 
     ### Signal ###
-    def test_convolve_generalization():
-        rng = npr.RandomState(42)
+    def test_convolve_generalization(rng):
         R = rng.randn
         ag_convolve = autograd.scipy.signal.convolve
         A_35 = R(3, 5)
@@ -394,22 +346,19 @@ else:
                 ),
             )
 
-    def test_convolve():
-        rng = npr.RandomState(42)
+    def test_convolve(rng):
         R = rng.randn
         combo_check(autograd.scipy.signal.convolve, [0, 1])(
             [R(4), R(5), R(6)], [R(2), R(3), R(4)], mode=["full", "valid", "same"]
         )
 
-    def test_convolve_2d():
-        rng = npr.RandomState(42)
+    def test_convolve_2d(rng):
         R = rng.randn
         combo_check(autograd.scipy.signal.convolve, [0, 1])(
             [R(4, 3), R(5, 4), R(6, 7)], [R(2, 2), R(3, 2), R(4, 2), R(4, 1)], mode=["full", "valid", "same"]
         )
 
-    def test_convolve_ignore():
-        rng = npr.RandomState(42)
+    def test_convolve_ignore(rng):
         R = rng.randn
         combo_check(autograd.scipy.signal.convolve, [0, 1])(
             [R(4, 3)],
@@ -418,8 +367,7 @@ else:
             mode=["full", "valid", "same"],
         )
 
-    def test_convolve_ignore_dot():
-        rng = npr.RandomState(42)
+    def test_convolve_ignore_dot(rng):
         R = rng.randn
         combo_check(autograd.scipy.signal.convolve, [0, 1])(
             [R(3, 3, 2)],
@@ -430,44 +378,36 @@ else:
         )
 
     ### Special ###
-    def test_beta():
-        rng = npr.RandomState(42)
+    def test_beta(rng):
         R = rng.randn
         combo_check(special.beta, [0, 1])([R(4) ** 2 + 1.1], [R(4) ** 2 + 1.1])
 
-    def test_betainc():
-        rng = npr.RandomState(42)
+    def test_betainc(rng):
         R = rng.randn
         U = rng.uniform
         combo_check(special.betainc, [2])([R(4) ** 2 + 1.1], [R(4) ** 2 + 1.1], [U(0.0, 1.0, 4)])
 
-    def test_betaln():
-        rng = npr.RandomState(42)
+    def test_betaln(rng):
         R = rng.randn
         combo_check(special.betaln, [0, 1])([R(4) ** 2 + 1.1], [R(4) ** 2 + 1.1])
 
-    def test_gammainc():
-        rng = npr.RandomState(42)
+    def test_gammainc(rng):
         R = rng.randn
         combo_check(special.gammainc, [1])([1], R(4) ** 2 + 1.3)
 
-    def test_gammaincc():
-        rng = npr.RandomState(42)
+    def test_gammaincc(rng):
         R = rng.randn
         combo_check(special.gammaincc, [1])([1], R(4) ** 2 + 1.3)
 
-    def test_polygamma():
-        rng = npr.RandomState(42)
+    def test_polygamma(rng):
         R = rng.randn
         combo_check(special.polygamma, [1])([0], R(4) ** 2 + 1.3)
 
-    def test_jn():
-        rng = npr.RandomState(42)
+    def test_jn(rng):
         R = rng.randn
         combo_check(special.jn, [1])([2], R(4) ** 2 + 1.3)
 
-    def test_yn():
-        rng = npr.RandomState(42)
+    def test_yn(rng):
         R = rng.randn
         combo_check(special.yn, [1])([2], R(4) ** 2 + 1.3)
 
@@ -489,8 +429,7 @@ else:
     def test_rgamma():
         unary_ufunc_check(special.rgamma, lims=[0.3, 2.0], test_complex=False)
 
-    def test_multigammaln():
-        rng = npr.RandomState(42)
+    def test_multigammaln(rng):
         U = rng.uniform
         combo_check(special.multigammaln, [0])([U(4.0, 5.0), U(4.0, 5.0, (2, 3))], [1, 2, 3])
 
@@ -512,14 +451,12 @@ else:
     def test_i1():
         unary_ufunc_check(special.i1, lims=[0.2, 20.0], test_complex=False)
 
-    def test_iv():
-        rng = npr.RandomState(42)
+    def test_iv(rng):
         R = rng.randn
         U = rng.uniform
         combo_check(special.iv, [1])(U(1.0, 50.0, 4), R(4) ** 2 + 1.3)
 
-    def test_ive():
-        rng = npr.RandomState(42)
+    def test_ive(rng):
         R = rng.randn
         U = rng.uniform
         combo_check(special.ive, [1])(U(1.0, 50.0, 4), R(4) ** 2 + 1.3)
@@ -553,24 +490,20 @@ else:
         )
 
     ## Linalg
-    def test_sqrtm():
-        rng = npr.RandomState(42)
+    def test_sqrtm(rng):
         R = rng.randn
         combo_check(spla.sqrtm, modes=["fwd"], order=2)([R(3, 3)])
 
-    def test_sqrtm():
-        rng = npr.RandomState(42)
+    def test_sqrtm(rng):
         R = rng.randn
         combo_check(symmetrize_matrix_arg(spla.sqrtm, 0), modes=["fwd", "rev"], order=2)([R(3, 3)])
 
-    def test_solve_sylvester():
-        rng = npr.RandomState(42)
+    def test_solve_sylvester(rng):
         R = rng.randn
         combo_check(spla.solve_sylvester, [0, 1, 2], modes=["rev", "fwd"], order=2)(
             [R(3, 3)], [R(3, 3)], [R(3, 3)]
         )
 
-    def test_solve_banded():
-        rng = npr.RandomState(42)
+    def test_solve_banded(rng):
         R = rng.randn
         combo_check(spla.solve_banded, [1, 2], modes=["rev"], order=1)([(1, 1)], [R(3, 5)], [R(5)])

@@ -8,9 +8,7 @@ from autograd import isinstance as ag_isinstance
 from autograd.test_util import check_grads
 
 
-def test_getter():
-    rng = npr.RandomState(42)
-
+def test_getter(rng):
     def fun(input_dict):
         A = np.sum(input_dict["item_1"])
         B = np.sum(input_dict["item_2"])
@@ -26,9 +24,7 @@ def test_getter():
     assert np.allclose(result["item_X"], np.zeros((2, 4)))
 
 
-def test_grads():
-    rng = npr.RandomState(42)
-
+def test_grads(rng):
     def fun(input_dict):
         A = np.sum(np.sin(input_dict["item_1"]))
         B = np.sum(np.cos(input_dict["item_2"]))
@@ -47,9 +43,7 @@ def test_grads():
     check_grads(d_fun)(input_dict)
 
 
-def test_iter():
-    rng = npr.RandomState(42)
-
+def test_iter(rng):
     def fun(input_dict):
         A = 0.0
         B = 0.0
@@ -71,9 +65,7 @@ def test_iter():
     check_grads(d_fun)(input_dict)
 
 
-def test_items_values_keys():
-    rng = npr.RandomState(42)
-
+def test_items_values_keys(rng):
     def fun(input_dict):
         A = 0.0
         B = 0.0

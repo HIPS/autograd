@@ -33,9 +33,7 @@ def rand_psd(D):
     return np.dot(mat, mat.T)
 
 
-def test_inv():
-    rng = npr.RandomState(42)
-
+def test_inv(rng):
     def fun(x):
         return np.linalg.inv(x)
 
@@ -72,8 +70,7 @@ def test_pinv():
         check_grads(fun_low_rank)(mat)
 
 
-def test_inv_3d():
-    rng = npr.RandomState(42)
+def test_inv_3d(rng):
     fun = lambda x: np.linalg.inv(x)
 
     D = 4
@@ -84,8 +81,7 @@ def test_inv_3d():
     check_grads(fun)(mat)
 
 
-def test_solve_arg1():
-    rng = npr.RandomState(42)
+def test_solve_arg1(rng):
     D = 8
     A = rng.randn(D, D) + 10.0 * np.eye(D)
     B = rng.randn(D, D - 1)
@@ -96,8 +92,7 @@ def test_solve_arg1():
     check_grads(fun)(A)
 
 
-def test_solve_arg1_1d():
-    rng = npr.RandomState(42)
+def test_solve_arg1_1d(rng):
     D = 8
     A = rng.randn(D, D) + 10.0 * np.eye(D)
     B = rng.randn(D)
@@ -108,8 +103,7 @@ def test_solve_arg1_1d():
     check_grads(fun)(A)
 
 
-def test_solve_arg2():
-    rng = npr.RandomState(42)
+def test_solve_arg2(rng):
     D = 6
     A = rng.randn(D, D) + 1.0 * np.eye(D)
     B = rng.randn(D, D - 1)
@@ -120,8 +114,7 @@ def test_solve_arg2():
     check_grads(fun)(B)
 
 
-def test_solve_arg1_3d():
-    rng = npr.RandomState(42)
+def test_solve_arg1_3d(rng):
     D = 4
     A = rng.randn(D + 1, D, D) + 5 * np.eye(D)
     B = rng.randn(D + 1, D)
@@ -132,8 +125,7 @@ def test_solve_arg1_3d():
     check_grads(fun)(A)
 
 
-def test_solve_arg1_3d_3d():
-    rng = npr.RandomState(42)
+def test_solve_arg1_3d_3d(rng):
     D = 4
     A = rng.randn(D + 1, D, D) + 5 * np.eye(D)
     B = rng.randn(D + 1, D, D + 2)
@@ -141,9 +133,7 @@ def test_solve_arg1_3d_3d():
     check_grads(fun)(A)
 
 
-def test_det():
-    rng = npr.RandomState(42)
-
+def test_det(rng):
     def fun(x):
         return np.linalg.det(x)
 
@@ -152,17 +142,14 @@ def test_det():
     check_grads(fun)(mat)
 
 
-def test_det_3d():
-    rng = npr.RandomState(42)
+def test_det_3d(rng):
     fun = lambda x: np.linalg.det(x)
     D = 3
     mat = rng.randn(D, D, D)
     check_grads(fun)(mat)
 
 
-def test_slogdet():
-    rng = npr.RandomState(42)
-
+def test_slogdet(rng):
     def fun(x):
         sign, logdet = np.linalg.slogdet(x)
         return logdet
@@ -179,9 +166,7 @@ def test_slogdet_3d():
     check_grads(fun)(mat)
 
 
-def test_vector_2norm():
-    rng = npr.RandomState(42)
-
+def test_vector_2norm(rng):
     def fun(x):
         return np.linalg.norm(x)
 
@@ -198,9 +183,7 @@ def test_norm_list_of_boxes():
     assert grad(lambda x: np.linalg.norm((x, x + 2)))(0.0) == 1.0
 
 
-def test_vector_2norm_complex():
-    rng = npr.RandomState(42)
-
+def test_vector_2norm_complex(rng):
     def fun(x):
         return np.linalg.norm(x)
 
@@ -209,9 +192,7 @@ def test_vector_2norm_complex():
     check_grads(fun)(vec)
 
 
-def test_frobenius_norm():
-    rng = npr.RandomState(42)
-
+def test_frobenius_norm(rng):
     def fun(x):
         return np.linalg.norm(x)
 
@@ -220,9 +201,7 @@ def test_frobenius_norm():
     check_grads(fun, modes=["fwd", "rev"])(mat)
 
 
-def test_frobenius_norm_complex():
-    rng = npr.RandomState(42)
-
+def test_frobenius_norm_complex(rng):
     def fun(x):
         return np.linalg.norm(x)
 
@@ -231,9 +210,7 @@ def test_frobenius_norm_complex():
     check_grads(fun)(mat)
 
 
-def test_frobenius_norm_axis():
-    rng = npr.RandomState(42)
-
+def test_frobenius_norm_axis(rng):
     def fun(x):
         return np.linalg.norm(x, axis=(0, 1))
 
@@ -242,9 +219,7 @@ def test_frobenius_norm_axis():
     check_grads(fun, modes=["fwd", "rev"])(mat)
 
 
-def test_frobenius_norm_axis_complex():
-    rng = npr.RandomState(42)
-
+def test_frobenius_norm_axis_complex(rng):
     def fun(x):
         return np.linalg.norm(x, axis=(0, 1))
 
@@ -255,9 +230,7 @@ def test_frobenius_norm_axis_complex():
 
 @pytest.mark.parametrize("ord", range(2, 5))
 @pytest.mark.parametrize("size", [6])
-def test_vector_norm_ord(size, ord):
-    rng = npr.RandomState(42)
-
+def test_vector_norm_ord(size, ord, rng):
     def fun(x):
         return np.linalg.norm(x, ord=ord)
 
@@ -267,9 +240,7 @@ def test_vector_norm_ord(size, ord):
 
 @pytest.mark.parametrize("ord", range(2, 5))
 @pytest.mark.parametrize("size", [6])
-def test_vector_norm_ord_complex(size, ord):
-    rng = npr.RandomState(42)
-
+def test_vector_norm_ord_complex(size, ord, rng):
     def fun(x):
         return np.linalg.norm(x, ord=ord)
 
@@ -279,9 +250,7 @@ def test_vector_norm_ord_complex(size, ord):
 
 @pytest.mark.parametrize("axis", range(3))
 @pytest.mark.parametrize("shape", [(6, 5, 4)])
-def test_norm_axis(shape, axis):
-    rng = npr.RandomState(42)
-
+def test_norm_axis(shape, axis, rng):
     def fun(x):
         return np.linalg.norm(x, axis=axis)
 
@@ -291,9 +260,7 @@ def test_norm_axis(shape, axis):
 
 @pytest.mark.parametrize("axis", range(3))
 @pytest.mark.parametrize("shape", [(6, 5, 4)])
-def test_norm_axis_complex(shape, axis):
-    rng = npr.RandomState(42)
-
+def test_norm_axis_complex(shape, axis, rng):
     def fun(x):
         return np.linalg.norm(x, axis=axis)
 
@@ -301,9 +268,7 @@ def test_norm_axis_complex(shape, axis):
     check_grads(fun)(arr)
 
 
-def test_norm_nuclear():
-    rng = npr.RandomState(42)
-
+def test_norm_nuclear(rng):
     def fun(x):
         return np.linalg.norm(x, ord="nuc")
 
@@ -313,9 +278,7 @@ def test_norm_nuclear():
     check_grads(fun, modes=["fwd", "rev"], order=1)(mat)
 
 
-def test_norm_nuclear_complex():
-    rng = npr.RandomState(42)
-
+def test_norm_nuclear_complex(rng):
     def fun(x):
         return np.linalg.norm(x, ord="nuc")
 
@@ -324,9 +287,7 @@ def test_norm_nuclear_complex():
     check_grads(fun)(mat)
 
 
-def test_norm_nuclear_axis():
-    rng = npr.RandomState(42)
-
+def test_norm_nuclear_axis(rng):
     def fun(x):
         return np.linalg.norm(x, ord="nuc", axis=(0, 1))
 
@@ -336,9 +297,7 @@ def test_norm_nuclear_axis():
     check_grads(fun, modes=["fwd", "rev"], order=1)(mat)
 
 
-def test_norm_nuclear_axis_complex():
-    rng = npr.RandomState(42)
-
+def test_norm_nuclear_axis_complex(rng):
     def fun(x):
         return np.linalg.norm(x, ord="nuc", axis=(0, 1))
 
@@ -347,9 +306,7 @@ def test_norm_nuclear_axis_complex():
     check_grads(fun)(mat)
 
 
-def test_eigvalh_lower():
-    rng = npr.RandomState(42)
-
+def test_eigvalh_lower(rng):
     def fun(x):
         w, v = np.linalg.eigh(x)
         return tuple((w, v))
@@ -359,9 +316,7 @@ def test_eigvalh_lower():
     check_grads(fun)(mat)
 
 
-def test_eigvalh_upper():
-    rng = npr.RandomState(42)
-
+def test_eigvalh_upper(rng):
     def fun(x):
         w, v = np.linalg.eigh(x, "U")
         return tuple((w, v))
@@ -374,9 +329,7 @@ def test_eigvalh_upper():
 broadcast_dot_transpose = partial(np.einsum, "...ij,...kj->...ik")
 
 
-def test_eigvalh_lower_broadcasting():
-    rng = npr.RandomState(42)
-
+def test_eigvalh_lower_broadcasting(rng):
     def fun(x):
         w, v = np.linalg.eigh(x)
         return tuple((w, v))
@@ -387,9 +340,7 @@ def test_eigvalh_lower_broadcasting():
     check_grads(fun)(hmat)
 
 
-def test_eigvalh_upper_broadcasting():
-    rng = npr.RandomState(42)
-
+def test_eigvalh_upper_broadcasting(rng):
     def fun(x):
         w, v = np.linalg.eigh(x, "U")
         return tuple((w, v))
@@ -403,9 +354,7 @@ def test_eigvalh_upper_broadcasting():
 # For complex-valued matrices, the eigenvectors could have arbitrary phases (gauge)
 # which makes it impossible to compare to numerical derivatives. So we take the
 # absolute value to get rid of that phase.
-def test_eigvalh_lower_complex():
-    rng = npr.RandomState(42)
-
+def test_eigvalh_lower_complex(rng):
     def fun(x):
         w, v = np.linalg.eigh(x)
         return tuple((w, np.abs(v)))
@@ -415,9 +364,7 @@ def test_eigvalh_lower_complex():
     check_grads(fun)(mat)
 
 
-def test_eigvalh_upper_complex():
-    rng = npr.RandomState(42)
-
+def test_eigvalh_upper_complex(rng):
     def fun(x):
         w, v = np.linalg.eigh(x, "U")
         return tuple((w, np.abs(v)))
@@ -428,9 +375,7 @@ def test_eigvalh_upper_complex():
 
 
 # Note eigenvalues and eigenvectors for real matrix can still be complex
-def test_eig_real():
-    rng = npr.RandomState(42)
-
+def test_eig_real(rng):
     def fun(x):
         w, v = np.linalg.eig(x)
         return tuple((np.abs(w), np.abs(v)))
@@ -440,9 +385,7 @@ def test_eig_real():
     check_grads(fun)(mat)
 
 
-def test_eig_complex():
-    rng = npr.RandomState(42)
-
+def test_eig_complex(rng):
     def fun(x):
         w, v = np.linalg.eig(x)
         return tuple((w, np.abs(v)))
@@ -452,9 +395,7 @@ def test_eig_complex():
     check_grads(fun)(mat)
 
 
-def test_eig_batched():
-    rng = npr.RandomState(42)
-
+def test_eig_batched(rng):
     def fun(x):
         w, v = np.linalg.eig(x)
         return tuple((w, np.abs(v)))
@@ -485,9 +426,7 @@ def test_cholesky_reparameterization_trick():
     check_symmetric_matrix_grads(fun)(rand_psd(6))
 
 
-def test_svd_wide_2d():
-    rng = npr.RandomState(42)
-
+def test_svd_wide_2d(rng):
     def fun(x):
         u, s, v = np.linalg.svd(x, full_matrices=False)
         return tuple((u, s, v))
@@ -498,9 +437,7 @@ def test_svd_wide_2d():
     check_grads(fun)(mat)
 
 
-def test_svd_wide_2d_complex():
-    rng = npr.RandomState(42)
-
+def test_svd_wide_2d_complex(rng):
     def fun(x):
         u, s, v = np.linalg.svd(x, full_matrices=False)
         return tuple((np.abs(u), s, np.abs(v)))
@@ -511,9 +448,7 @@ def test_svd_wide_2d_complex():
     check_grads(fun)(mat)
 
 
-def test_svd_wide_3d():
-    rng = npr.RandomState(42)
-
+def test_svd_wide_3d(rng):
     def fun(x):
         u, s, v = np.linalg.svd(x, full_matrices=False)
         return tuple((u, s, v))
@@ -525,9 +460,7 @@ def test_svd_wide_3d():
     check_grads(fun)(mat)
 
 
-def test_svd_wide_3d_complex():
-    rng = npr.RandomState(42)
-
+def test_svd_wide_3d_complex(rng):
     def fun(x):
         u, s, v = np.linalg.svd(x, full_matrices=False)
         return tuple((np.abs(u), s, np.abs(v)))
@@ -539,9 +472,7 @@ def test_svd_wide_3d_complex():
     check_grads(fun)(mat)
 
 
-def test_svd_square_2d():
-    rng = npr.RandomState(42)
-
+def test_svd_square_2d(rng):
     def fun(x):
         u, s, v = np.linalg.svd(x, full_matrices=False)
         return tuple((u, s, v))
@@ -552,9 +483,7 @@ def test_svd_square_2d():
     check_grads(fun)(mat)
 
 
-def test_svd_square_2d_complex():
-    rng = npr.RandomState(42)
-
+def test_svd_square_2d_complex(rng):
     def fun(x):
         u, s, v = np.linalg.svd(x, full_matrices=False)
         return tuple((np.abs(u), s, np.abs(v)))
@@ -565,9 +494,7 @@ def test_svd_square_2d_complex():
     check_grads(fun)(mat)
 
 
-def test_svd_square_3d():
-    rng = npr.RandomState(42)
-
+def test_svd_square_3d(rng):
     def fun(x):
         u, s, v = np.linalg.svd(x, full_matrices=False)
         return tuple((u, s, v))
@@ -579,9 +506,7 @@ def test_svd_square_3d():
     check_grads(fun)(mat)
 
 
-def test_svd_square_3d_complex():
-    rng = npr.RandomState(42)
-
+def test_svd_square_3d_complex(rng):
     def fun(x):
         u, s, v = np.linalg.svd(x, full_matrices=False)
         return tuple((np.abs(u), s, np.abs(v)))
@@ -593,9 +518,7 @@ def test_svd_square_3d_complex():
     check_grads(fun)(mat)
 
 
-def test_svd_tall_2d():
-    rng = npr.RandomState(42)
-
+def test_svd_tall_2d(rng):
     def fun(x):
         u, s, v = np.linalg.svd(x, full_matrices=False)
         return tuple((u, s, v))
@@ -606,9 +529,7 @@ def test_svd_tall_2d():
     check_grads(fun)(mat)
 
 
-def test_svd_tall_2d_complex():
-    rng = npr.RandomState(42)
-
+def test_svd_tall_2d_complex(rng):
     def fun(x):
         u, s, v = np.linalg.svd(x, full_matrices=False)
         return tuple((np.abs(u), s, np.abs(v)))
@@ -619,9 +540,7 @@ def test_svd_tall_2d_complex():
     check_grads(fun)(mat)
 
 
-def test_svd_tall_3d():
-    rng = npr.RandomState(42)
-
+def test_svd_tall_3d(rng):
     def fun(x):
         u, s, v = np.linalg.svd(x, full_matrices=False)
         return tuple((u, s, v))
@@ -633,9 +552,7 @@ def test_svd_tall_3d():
     check_grads(fun)(mat)
 
 
-def test_svd_tall_3d_complex():
-    rng = npr.RandomState(42)
-
+def test_svd_tall_3d_complex(rng):
     def fun(x):
         u, s, v = np.linalg.svd(x, full_matrices=False)
         return tuple((np.abs(u), s, np.abs(v)))
@@ -647,9 +564,7 @@ def test_svd_tall_3d_complex():
     check_grads(fun)(mat)
 
 
-def test_svd_only_s_2d():
-    rng = npr.RandomState(42)
-
+def test_svd_only_s_2d(rng):
     def fun(x):
         s = np.linalg.svd(x, full_matrices=False, compute_uv=False)
         return s
@@ -660,9 +575,7 @@ def test_svd_only_s_2d():
     check_grads(fun)(mat)
 
 
-def test_svd_only_s_2d_complex():
-    rng = npr.RandomState(42)
-
+def test_svd_only_s_2d_complex(rng):
     def fun(x):
         s = np.linalg.svd(x, full_matrices=False, compute_uv=False)
         return s
@@ -673,9 +586,7 @@ def test_svd_only_s_2d_complex():
     check_grads(fun)(mat)
 
 
-def test_svd_only_s_3d():
-    rng = npr.RandomState(42)
-
+def test_svd_only_s_3d(rng):
     def fun(x):
         s = np.linalg.svd(x, full_matrices=False, compute_uv=False)
         return s
@@ -687,9 +598,7 @@ def test_svd_only_s_3d():
     check_grads(fun)(mat)
 
 
-def test_svd_only_s_3d_complex():
-    rng = npr.RandomState(42)
-
+def test_svd_only_s_3d_complex(rng):
     def fun(x):
         s = np.linalg.svd(x, full_matrices=False, compute_uv=False)
         return s

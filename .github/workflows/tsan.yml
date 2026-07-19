@@ -45,7 +45,7 @@ jobs:
       - name: Install autograd and test runner
         run: |
           python -m pip uninstall -y pytest-xdist || true
-          python -m pip install -e . pytest pytest-run-parallel pytest-timeout
+          python -m pip install -e . pytest "pytest-run-parallel @ git+https://github.com/seberg/pytest-run-parallel.git@feature/prepare-args-hook" pytest-timeout
 
       - name: Fetch TSan suppressions for free-threaded CPython and NumPy
         run: |
