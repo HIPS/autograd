@@ -8,6 +8,10 @@ name: ThreadSanitizer CI
 # A TSan data race in this configuration points at a race in a dependency (such as
 # CPython/NumPy or unsafe shared mutation of an ndarray
 #
+# To update pinned container digests (not handled by Dependabot): change the tag and
+# get new digest with:
+# docker pull <image>:<tag> && docker inspect --format='{{index .RepoDigests 0}}' <image>:<tag>
+
 on:
   pull_request:
     branches:
@@ -33,7 +37,7 @@ jobs:
     if: github.repository == 'HIPS/autograd'
     timeout-minutes: 60
     container:
-      image: ghcr.io/nascheme/numpy-tsan:3.14t@sha256:15533a98a6b0bb7a2caf3ad35b8a776b5a24e8ad12f43f54adb39b1619e42c11
+      image: ghcr.io/nascheme/numpy-tsan:3.14t@sha256:1ec427e2e480cc373d0fecbf21b8ac590fb94119fb81d18489945cd0afd04dd3
       options: --shm-size=2g
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
