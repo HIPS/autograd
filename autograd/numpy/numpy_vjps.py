@@ -202,6 +202,7 @@ defvjp(anp.squeeze, lambda ans, x, axis=None: lambda g: anp.reshape(g, anp.shape
 defvjp(anp.diag, lambda ans, x, k=0: lambda g: anp.diag(g, k))
 defvjp(anp.flipud, lambda ans, x,: lambda g: anp.flipud(g))
 defvjp(anp.fliplr, lambda ans, x,: lambda g: anp.fliplr(g))
+defvjp(anp.flip, lambda ans, x, axis=None: lambda g: anp.flip(g, axis))
 defvjp(anp.rot90, lambda ans, x, k=1: lambda g: anp.rot90(g, -k))
 defvjp(
     anp.trace,

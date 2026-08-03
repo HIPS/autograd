@@ -204,6 +204,30 @@ def test_rot90():
     check_grads(fun)(mat)
 
 
+def test_flip():
+    def fun(x):
+        return np.flip(x)
+
+    mat = npr.randn(10, 11)
+    check_grads(fun)(mat)
+
+
+def test_flip_axis():
+    def fun(x):
+        return np.flip(x, axis=1)
+
+    mat = npr.randn(10, 11)
+    check_grads(fun)(mat)
+
+
+def test_flip_axis_tuple():
+    def fun(x):
+        return np.flip(x, axis=(0, 2))
+
+    mat = npr.randn(4, 5, 6)
+    check_grads(fun)(mat)
+
+
 def test_cumsum_axis0():
     def fun(x):
         return np.cumsum(x, axis=0)
