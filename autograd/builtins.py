@@ -90,7 +90,7 @@ class DictBox(Box):
         return (self[k] for k in self)
 
     def get(self, k, d=None):
-        return self[k] if k in self else d
+        return self[k] if k in self else d  # noqa: SIM401
 
 
 DictBox.register(dict_)

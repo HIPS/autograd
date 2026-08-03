@@ -25,7 +25,8 @@ def concat_and_multiply(weights, *args):
 ### Define recurrent neural net #######
 
 
-def create_rnn_params(input_size, state_size, output_size, param_scale=0.01, rs=npr.RandomState(0)):
+def create_rnn_params(input_size, state_size, output_size, param_scale=0.01, rs=None):
+    rs = rs if rs is not None else npr.RandomState(0)
     return {
         "init hiddens": rs.randn(1, state_size) * param_scale,
         "change": rs.randn(input_size + state_size + 1, state_size) * param_scale,

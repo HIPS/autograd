@@ -65,8 +65,9 @@ def save_images(images, filename, **kwargs):
     plt.savefig(filename)
 
 
-def make_pinwheel(radial_std, tangential_std, num_classes, num_per_class, rate, rs=npr.RandomState(0)):
+def make_pinwheel(radial_std, tangential_std, num_classes, num_per_class, rate, rs=None):
     """Based on code by Ryan P. Adams."""
+    rs = rs if rs is not None else npr.RandomState(0)
     rads = np.linspace(0, 2 * np.pi, num_classes, endpoint=False)
 
     features = rs.randn(num_classes * num_per_class, 2) * np.array([radial_std, tangential_std])

@@ -3,6 +3,8 @@
 # but, it always collapses to generating a single image.
 # Let me know if you can get it to work! - David Duvenaud
 
+import itertools
+
 from data import load_mnist, save_images
 
 import autograd.numpy as np
@@ -25,15 +27,16 @@ def logsigmoid(x):
     return x - np.logaddexp(0, x)
 
 
-def init_random_params(scale, layer_sizes, rs=npr.RandomState(0)):
+def init_random_params(scale, layer_sizes, rs=None):
     """Build a list of (weights, biases) tuples,
     one for each layer in the net."""
+    rs = rs if rs is not None else npr.RandomState(0)
     return [
         (
             scale * rs.randn(m, n),  # weight matrix
             scale * rs.randn(n),
         )  # bias vector
-        for m, n in zip(layer_sizes[:-1], layer_sizes[1:])
+        for m, n in itertools.pairwise(layer_sizes)
     ]
 
 

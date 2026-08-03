@@ -1,3 +1,5 @@
+import itertools
+
 import matplotlib.pyplot as plt
 from black_box_svi import black_box_variational_inference
 
@@ -9,7 +11,7 @@ from autograd.misc.optimizers import adam
 def make_nn_funs(layer_sizes, L2_reg, noise_variance, nonlinearity=np.tanh):
     """These functions implement a standard multi-layer perceptron,
     vectorized over both training examples and weight samples."""
-    shapes = list(zip(layer_sizes[:-1], layer_sizes[1:]))
+    shapes = list(itertools.pairwise(layer_sizes))
     num_weights = sum((m + 1) * n for m, n in shapes)
 
     def unpack_layers(weights):

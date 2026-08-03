@@ -1,13 +1,15 @@
 # Implements auto-encoding variational Bayes.
 
+import itertools
+
 from data import load_mnist, save_images
 
 import autograd.numpy as np
 import autograd.numpy.random as npr
-import autograd.scipy.stats.norm as norm
 from autograd import grad
 from autograd.misc.optimizers import adam
 from autograd.scipy.special import expit as sigmoid
+from autograd.scipy.stats import norm
 
 
 def diag_gaussian_log_density(x, mu, log_std):
@@ -36,14 +38,15 @@ def relu(x):
     return np.maximum(0, x)
 
 
-def init_net_params(scale, layer_sizes, rs=npr.RandomState(0)):
+def init_net_params(scale, layer_sizes, rs=None):
     """Build a (weights, biases) tuples for all layers."""
+    rs = rs if rs is not None else npr.RandomState(0)
     return [
         (
             scale * rs.randn(m, n),  # weight matrix
             scale * rs.randn(n),
         )  # bias vector
-        for m, n in zip(layer_sizes[:-1], layer_sizes[1:])
+        for m, n in itertools.pairwise(layer_sizes)
     ]
 
 

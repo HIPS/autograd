@@ -1,11 +1,11 @@
-import matplotlib.cm as cm
 import matplotlib.pyplot as plt
+from matplotlib import cm
 from scipy.optimize import minimize
 
 import autograd.numpy as np
 import autograd.numpy.random as npr
-import autograd.scipy.stats.t as t
 from autograd import value_and_grad
+from autograd.scipy.stats import t
 
 
 def make_ica_funs(observed_dimension, latent_dimension):

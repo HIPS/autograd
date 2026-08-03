@@ -22,9 +22,8 @@ def test_assert():
 def test_nograd():
     # we want this to raise non-differentiability error
     fun = lambda x: np.allclose(x, (x * 3.0) / 3.0)
-    with pytest.raises(TypeError):
-        with warnings.catch_warnings(record=True) as w:
-            grad(fun)(np.array([1.0, 2.0, 3.0]))
+    with pytest.raises(TypeError), warnings.catch_warnings(record=True) as w:
+        grad(fun)(np.array([1.0, 2.0, 3.0]))
 
 
 def test_no_vjp_def():

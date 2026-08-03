@@ -1,5 +1,6 @@
 from functools import reduce
 from itertools import count
+from typing import ClassVar
 
 from .tracer import Box, Node, getval, isbox, primitive, toposort, trace
 from .util import func, subval
@@ -104,7 +105,7 @@ def translate_vjp(vjpfun, fun, argnum):
     elif callable(vjpfun):
         return vjpfun
     else:
-        raise Exception(f"Bad VJP '{vjpfun}' for '{fun.__name__}'")
+        raise TypeError(f"Bad VJP '{vjpfun}' for '{fun.__name__}'")
 
 
 # -------------------- forward mode --------------------
@@ -170,7 +171,7 @@ def translate_jvp(jvpfun, fun, argnum):
     elif callable(jvpfun):
         return jvpfun
     else:
-        raise Exception(f"Bad JVP '{jvpfun}' for '{fun.__name__}'")
+        raise TypeError(f"Bad JVP '{jvpfun}' for '{fun.__name__}'")
 
 
 def def_linear(fun):
@@ -216,7 +217,7 @@ def sparse_add(vs, x_prev, x_new):
 
 class VSpace:
     __slots__ = []
-    mappings = {}
+    mappings: ClassVar[dict] = {}
     iscomplex = False
 
     def __init__(self, value):
@@ -293,9 +294,7 @@ def vspace(value):
             return vspace(getval(value))
         else:
             raise TypeError(
-                "Can't find vector space for value {} of type {}. Valid types are {}".format(
-                    value, type(value), VSpace.mappings.keys()
-                )
+                f"Can't find vector space for value {value} of type {type(value)}. Valid types are {VSpace.mappings.keys()}"
             )
 
 
@@ -304,7 +303,7 @@ class SparseBox(Box):
 
 
 class SparseObject:
-    __slots__ = ["vs", "mut_add"]
+    __slots__ = ["mut_add", "vs"]
 
     def __init__(self, vs, mut_add):
         self.vs = vs

@@ -8,16 +8,18 @@ from autograd.extend import defvjp, primitive
 
 
 @primitive
-def convolve(A, B, axes=None, dot_axes=[(), ()], mode="full"):
+def convolve(A, B, axes=None, dot_axes=None, mode="full"):
+    if dot_axes is None:
+        dot_axes = [(), ()]
     assert mode in ["valid", "full", "same"], (
         f"Mode {mode} undefined, it can be one of 'valid', 'full', and 'same'"
     )
     if axes is None:
         axes = [list(range(A.ndim)), list(range(A.ndim))]
-    wrong_order = any([B.shape[ax_B] < A.shape[ax_A] for ax_A, ax_B in zip(*axes)])
+    wrong_order = any(B.shape[ax_B] < A.shape[ax_A] for ax_A, ax_B in zip(*axes))
     if wrong_order:
-        if mode == "valid" and not all([B.shape[ax_B] <= A.shape[ax_A] for ax_A, ax_B in zip(*axes)]):
-            raise Exception("One array must be larger than the other along all convolved dimensions")
+        if mode == "valid" and not all(B.shape[ax_B] <= A.shape[ax_A] for ax_A, ax_B in zip(*axes)):
+            raise ValueError("One array must be larger than the other along all convolved dimensions")
         elif mode == "valid" or (mode == "full" and B.size <= A.size):  # Tie breaker
             i1 = B.ndim - len(dot_axes[1]) - len(axes[1])  # B ignore
             i2 = i1 + A.ndim - len(dot_axes[0]) - len(axes[0])  # A ignore
@@ -138,7 +140,7 @@ def compute_conv_size(A_size, B_size, mode):
     elif mode == "valid":
         return abs(A_size - B_size) + 1
     else:
-        raise Exception(f"Mode {mode} not recognized")
+        raise ValueError(f"Mode {mode} not recognized")
 
 
 def flipped_idxs(ndim, axes):
@@ -148,7 +150,9 @@ def flipped_idxs(ndim, axes):
     return tuple(new_idxs)
 
 
-def grad_convolve(argnum, ans, A, B, axes=None, dot_axes=[(), ()], mode="full"):
+def grad_convolve(argnum, ans, A, B, axes=None, dot_axes=None, mode="full"):
+    if dot_axes is None:
+        dot_axes = [(), ()]
     assert mode in ["valid", "full", "same"], (
         f"Mode {mode} undefined, it can be one of 'valid', 'full', and 'same'"
     )
@@ -167,7 +171,7 @@ def grad_convolve(argnum, ans, A, B, axes=None, dot_axes=[(), ()], mode="full"):
     if mode == "full":
         new_mode = "valid"
     elif mode == "valid":
-        if any([x_size > y_size for x_size, y_size in zip(shapes[_X_]["conv"], shapes[_Y_]["conv"])]):
+        if any(x_size > y_size for x_size, y_size in zip(shapes[_X_]["conv"], shapes[_Y_]["conv"])):
             new_mode = "full"
         else:
             new_mode = "valid"

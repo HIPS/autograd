@@ -45,8 +45,9 @@ def bayesian_optimize(func, domain_min, domain_max, num_iters=20, callback=None)
         objective = lambda params: -log_marginal_likelihood(params, X, y) - log_hyperprior(params)
         return minimize(value_and_grad(objective), init_params, jac=True, method="CG").x
 
-    def choose_next_point(domain_min, domain_max, acquisition_function, num_tries=15, rs=npr.RandomState(0)):
+    def choose_next_point(domain_min, domain_max, acquisition_function, num_tries=15, rs=None):
         """Uses gradient-based optimization to find next query point."""
+        rs = rs if rs is not None else npr.RandomState(0)
         init_points = rs.rand(num_tries, D) * (domain_max - domain_min) + domain_min
 
         grad_obj = value_and_grad(lambda x: -acquisition_function(x))
@@ -81,11 +82,11 @@ def bayesian_optimize(func, domain_min, domain_max, num_iters=20, callback=None)
 
         print("Choosing where to look next", end="")
 
-        def predict_func(xstar):
+        def predict_func(xstar, model_params=model_params, X=X, y=y):
             mean, cov = predict(model_params, X, y, xstar)
             return mean, np.sqrt(np.diag(cov))
 
-        def acquisition_function(xstar):
+        def acquisition_function(xstar, y=y):
             xstar = np.atleast_2d(xstar)  # To work around a bug in scipy.minimize
             mean, std = predict_func(xstar)
             return expected_new_max(mean, std, defaultmax(y))
