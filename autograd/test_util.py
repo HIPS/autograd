@@ -39,9 +39,7 @@ def check_vjp(f, x):
     vjv_exact = x_vs.inner_prod(x_v, vjp_y)
     vjv_numeric = y_vs.inner_prod(y_v, jvp(x_v))
     assert scalar_close(vjv_numeric, vjv_exact), (
-        "Derivative (VJP) check of {} failed with arg {}:\nanalytic: {}\nnumeric:  {}".format(
-            get_name(f), x, vjv_exact, vjv_numeric
-        )
+        f"Derivative (VJP) check of {get_name(f)} failed with arg {x}:\nanalytic: {vjv_exact}\nnumeric:  {vjv_numeric}"
     )
 
 

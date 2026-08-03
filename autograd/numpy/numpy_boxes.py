@@ -186,7 +186,7 @@ for method_name in nondiff_methods + diff_methods:
     setattr(ArrayBox, method_name, anp.__dict__[method_name])
 
 # Flatten has no function, only a method.
-setattr(ArrayBox, "flatten", anp.__dict__["ravel"])
+ArrayBox.flatten = anp.__dict__["ravel"]
 
 if np.lib.NumpyVersion(np.__version__) >= "2.0.0":
     SequenceBox.register(np.linalg._linalg.EigResult)

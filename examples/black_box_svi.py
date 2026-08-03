@@ -3,9 +3,9 @@ import matplotlib.pyplot as plt
 import autograd.numpy as np
 import autograd.numpy.random as npr
 import autograd.scipy.stats.multivariate_normal as mvn
-import autograd.scipy.stats.norm as norm
 from autograd import grad
 from autograd.misc.optimizers import adam
+from autograd.scipy.stats import norm
 
 
 def black_box_variational_inference(logprob, D, num_samples):

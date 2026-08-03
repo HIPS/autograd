@@ -768,7 +768,7 @@ def wrapped_reshape(x, *args, **kwargs):
         return anp.reshape(x, *args, **kwargs)
 
 
-setattr(ArrayBox, "reshape", wrapped_reshape)
+ArrayBox.reshape = wrapped_reshape
 
 
 def grad_sort(ans, x, axis=-1, kind="quicksort", order=None):

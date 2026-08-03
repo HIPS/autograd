@@ -293,9 +293,7 @@ def vspace(value):
             return vspace(getval(value))
         else:
             raise TypeError(
-                "Can't find vector space for value {} of type {}. Valid types are {}".format(
-                    value, type(value), VSpace.mappings.keys()
-                )
+                f"Can't find vector space for value {value} of type {type(value)}. Valid types are {VSpace.mappings.keys()}"
             )
 
 
@@ -304,7 +302,7 @@ class SparseBox(Box):
 
 
 class SparseObject:
-    __slots__ = ["vs", "mut_add"]
+    __slots__ = ["mut_add", "vs"]
 
     def __init__(self, vs, mut_add):
         self.vs = vs

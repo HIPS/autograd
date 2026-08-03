@@ -7,7 +7,7 @@ from . import fft, linalg, numpy_boxes, numpy_jvps, numpy_vjps, numpy_vspaces, n
 from .numpy_wrapper import *
 from .numpy_wrapper import numpy_version as __version__
 
-_original_where = getattr(numpy_wrapper, "where")
+_original_where = numpy_wrapper.where
 
 
 def _is_np_or_autograd(x):
@@ -36,4 +36,4 @@ def custom_where(condition, *args, **kwargs):
 
 
 where = custom_where
-setattr(numpy_wrapper, "where", where)
+numpy_wrapper.where = where

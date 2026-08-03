@@ -57,7 +57,7 @@ def const_graph(fun, *args, **kwargs):
 
 
 class FullGraphNode(Node):
-    __slots__ = ["value", "recipe"]
+    __slots__ = ["recipe", "value"]
 
     def __init__(self, value, fun, args, kwargs, parent_argnums, parents):
         self.value = value

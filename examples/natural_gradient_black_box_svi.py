@@ -4,8 +4,8 @@ import matplotlib.pyplot as plt
 from black_box_svi import black_box_variational_inference
 
 import autograd.numpy as np
-import autograd.scipy.stats.norm as norm
 from autograd.misc.optimizers import adam, sgd
+from autograd.scipy.stats import norm
 
 if __name__ == "__main__":
     # Specify an inference problem by its unnormalized log-density.

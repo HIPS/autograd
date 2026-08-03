@@ -2,7 +2,7 @@ import warnings
 
 import numpy as _np
 
-import autograd.builtins as builtins
+from autograd import builtins
 from autograd.extend import notrace_primitive, primitive
 
 if _np.lib.NumpyVersion(_np.__version__) >= "2.0.0":
@@ -127,7 +127,7 @@ def stack(arrays, axis=0):
 
     result_ndim = arrays[0].ndim + 1
     if not -result_ndim <= axis < result_ndim:
-        raise IndexError("axis {0} out of bounds [-{1}, {1})".format(axis, result_ndim))
+        raise IndexError(f"axis {axis} out of bounds [-{result_ndim}, {result_ndim})")
     if axis < 0:
         axis += result_ndim
 

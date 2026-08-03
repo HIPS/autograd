@@ -2,7 +2,7 @@ from functools import partial
 
 import numpy.linalg as npla
 
-import autograd.builtins as builtins
+from autograd import builtins
 from autograd.extend import defjvp, defvjp
 
 from . import numpy_wrapper as anp

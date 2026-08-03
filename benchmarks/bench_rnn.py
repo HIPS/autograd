@@ -61,7 +61,7 @@ class RNNSuite:
             return gout
 
         def sum_to_match_shape(sum_this, to_match_this):
-            sum_this = np.sum(sum_this, axis=tuple(range(0, np.ndim(sum_this) - np.ndim(to_match_this))))
+            sum_this = np.sum(sum_this, axis=tuple(range(np.ndim(sum_this) - np.ndim(to_match_this))))
             for axis, size in enumerate(np.shape(to_match_this)):
                 if size == 1:
                     sum_this = np.sum(sum_this, axis=axis, keepdims=True)
@@ -164,4 +164,3 @@ class RNNSuite:
             return g_W, g_b, g_Wout, g_bout
 
         _rnn_grad(self.x, self.W1, self.b1, self.Wout, self.bout, self.l, self.n)
-        pass

@@ -4,10 +4,10 @@ from data import load_mnist, save_images
 
 import autograd.numpy as np
 import autograd.numpy.random as npr
-import autograd.scipy.stats.norm as norm
 from autograd import grad
 from autograd.misc.optimizers import adam
 from autograd.scipy.special import expit as sigmoid
+from autograd.scipy.stats import norm
 
 
 def diag_gaussian_log_density(x, mu, log_std):
