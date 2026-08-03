@@ -938,20 +938,42 @@ def array_from_scalar_or_array_gradmaker(ans, array_args, array_kwargs, scarray)
 defvjp(anp._array_from_scalar_or_array, array_from_scalar_or_array_gradmaker, argnums=(2, 3))
 
 
+_untake_default_axis = object()
+
+
 @primitive
-def untake(x, idx, vs):
+def untake(x, idx, vs, axis=_untake_default_axis):
     if isinstance(idx, list) and (len(idx) == 0 or not isinstance(idx[0], slice)):
         idx = onp.array(idx, dtype="int64")
 
     def mut_add(A):
-        onp.add.at(A, idx, x)
+        if axis is _untake_default_axis:
+            onp.add.at(A, idx, x)
+        elif axis is None:
+            onp.add.at(A.ravel(), idx, x)
+        else:
+            axis_idx = axis if axis >= 0 else A.ndim + axis
+            idx_tuple = tuple(idx if dim == axis_idx else slice(None) for dim in range(A.ndim))
+            onp.add.at(A, idx_tuple, x)
         return A
 
     return SparseObject(vs, mut_add)
 
 
 defvjp(func(ArrayBox.__getitem__), lambda ans, A, idx: lambda g: untake(g, idx, vspace(A)))
-defvjp(untake, lambda ans, x, idx, _: lambda g: g[idx])
+defvjp(
+    untake,
+    lambda ans, x, idx, _, axis=_untake_default_axis: (
+        lambda g: g[idx] if axis is _untake_default_axis else anp.take(g, idx, axis=axis)
+    ),
+)
+defvjp(
+    anp.take,
+    lambda ans, A, indices, axis=None, out=None, mode="raise": (
+        lambda g: untake(g, indices, vspace(A), axis=axis)
+    ),
+    argnums=(0,),
+)
 
 
 def _unpad(array, width):
