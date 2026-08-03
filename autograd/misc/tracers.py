@@ -44,7 +44,7 @@ def const_graph_unary(fun):
                     start_node = ConstGraphNode.new_root()
                     end_value, end_node = trace(start_node, _fun.pop(), x)
                     if end_node is None:
-                        raise Exception("Output is independent of input")
+                        raise ValueError("Output is independent of input")
                     graph.append(list(toposort(end_node))[::-1])
                     return end_value
         _graph = graph[0]

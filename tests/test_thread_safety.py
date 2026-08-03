@@ -15,7 +15,7 @@ def run_threaded(worker, n_threads=8):
         try:
             barrier.wait()
             worker(i)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             errors.append(e)
 
     threads = [threading.Thread(target=target, args=(i,)) for i in range(n_threads)]
