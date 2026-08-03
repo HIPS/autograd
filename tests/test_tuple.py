@@ -6,7 +6,9 @@ from autograd import tuple as ag_tuple
 from autograd.test_util import check_grads
 
 
-def test_getter(rng):
+def test_getter():
+    rng = npr.RandomState(42)
+
     def fun(input_tuple):
         A = np.sum(input_tuple[0])
         B = np.sum(input_tuple[1])
@@ -22,7 +24,9 @@ def test_getter(rng):
     assert np.allclose(result[2], np.zeros((2, 4)))
 
 
-def test_grads(rng):
+def test_grads():
+    rng = npr.RandomState(42)
+
     def fun(input_tuple):
         A = np.sum(np.sin(input_tuple[0]))
         B = np.sum(np.cos(input_tuple[1]))

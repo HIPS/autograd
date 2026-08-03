@@ -8,7 +8,8 @@ from autograd import grad
 from autograd.test_util import check_grads
 
 
-def test_grad_fanout(rng):
+def test_grad_fanout():
+    rng = npr.RandomState(42)
     fun = lambda x: np.sin(np.sin(x) + np.sin(x))
     df = grad(fun)
     check_grads(fun)(rng.randn())
@@ -31,7 +32,8 @@ def test_grad_identity():
     assert np.allclose(ddf(2.0), 0.0)
 
 
-def test_hess_vector_prod(rng):
+def test_hess_vector_prod():
+    rng = npr.RandomState(42)
     randv = rng.randn(10)
 
     def fun(x):
@@ -65,7 +67,9 @@ def test_enclosing_scope_ref_2():
     check_grads(fun)(1.0)
 
 
-def test_mutating_outgrad(rng):
+def test_mutating_outgrad():
+    rng = npr.RandomState(42)
+
     def fun(a):
         b = a + 1.0
         c = b + 1.5
@@ -77,7 +81,9 @@ def test_mutating_outgrad(rng):
     check_grads(fun)(A)
 
 
-def test_mutating_outgrad_from_indexing(rng):
+def test_mutating_outgrad_from_indexing():
+    rng = npr.RandomState(42)
+
     def fun(a):
         b = a + 1.0
         c = b[0] + 1.5
@@ -89,7 +95,9 @@ def test_mutating_outgrad_from_indexing(rng):
     check_grads(fun)(A)
 
 
-def test_complex_mutating_outgrad_from_indexing(rng):
+def test_complex_mutating_outgrad_from_indexing():
+    rng = npr.RandomState(42)
+
     def fun(a):
         b = a + 1.0j
         c = b[0] + 1.5
@@ -116,7 +124,8 @@ def test_complex_separate_real_and_imaginary():
     check_grads(d_fun)(A)
 
 
-def test_third_derivative(rng):
+def test_third_derivative():
+    rng = npr.RandomState(42)
     fun = lambda x: np.sin(np.sin(x) + np.sin(x))
     df = grad(fun)
     ddf = grad(fun)
@@ -127,7 +136,8 @@ def test_third_derivative(rng):
     check_grads(dddf)(rng.rand())
 
 
-def test_third_derivative_other_args(rng):
+def test_third_derivative_other_args():
+    rng = npr.RandomState(42)
     fun = lambda x, y: np.sin(np.sin(x) + np.sin(y))
     df = grad(fun)
     ddf = grad(fun, 1)
@@ -138,7 +148,8 @@ def test_third_derivative_other_args(rng):
     check_grads(dddf)(rng.randn(), rng.randn())
 
 
-def test_third_derivative_other_args2(rng):
+def test_third_derivative_other_args2():
+    rng = npr.RandomState(42)
     fun = lambda x, y: np.sin(np.sin(x) + np.sin(y))
     df = grad(fun, 1)
     ddf = grad(fun)
@@ -149,37 +160,44 @@ def test_third_derivative_other_args2(rng):
     check_grads(dddf)(rng.randn(), rng.randn())
 
 
-def test_singleton_array_output(rng):
+def test_singleton_array_output():
+    rng = npr.RandomState(42)
     fun = lambda x: np.sum(np.sin(x), keepdims=True)
     check_grads(fun)(rng.randn(3, 3))
     check_grads(lambda x: np.sum(grad(fun)(x)))(rng.randn(3, 3))
 
 
-def test_singleton_array_output_axis0(rng):
+def test_singleton_array_output_axis0():
+    rng = npr.RandomState(42)
     fun = lambda x: np.sum(np.sin(x), axis=0, keepdims=False)
     check_grads(fun)(rng.randn(3, 1))
     check_grads(lambda x: np.sum(grad(fun)(x)))(rng.randn(3, 1))
 
 
-def test_singleton_array_output_axis1(rng):
+def test_singleton_array_output_axis1():
+    rng = npr.RandomState(42)
     fun = lambda x: np.sum(np.sin(x), axis=1, keepdims=False)
     check_grads(fun)(rng.randn(1, 3))
     check_grads(lambda x: np.sum(grad(fun)(x)))(rng.randn(1, 3))
 
 
-def test_singleton_array_output_axis0_keepdims(rng):
+def test_singleton_array_output_axis0_keepdims():
+    rng = npr.RandomState(42)
     fun = lambda x: np.sum(np.sin(x), axis=0, keepdims=True)
     check_grads(fun)(rng.randn(3, 1))
     check_grads(lambda x: np.sum(grad(fun)(x)))(rng.randn(3, 1))
 
 
-def test_singleton_array_output_axis1_keepdims(rng):
+def test_singleton_array_output_axis1_keepdims():
+    rng = npr.RandomState(42)
     fun = lambda x: np.sum(np.sin(x), axis=1, keepdims=True)
     check_grads(fun)(rng.randn(1, 3))
     check_grads(lambda x: np.sum(grad(fun)(x)))(rng.randn(1, 3))
 
 
-def test_assignment_raises_error(rng):
+def test_assignment_raises_error():
+    rng = npr.RandomState(42)
+
     def fun(A, b):
         A[1] = b
         return A

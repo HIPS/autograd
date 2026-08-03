@@ -51,7 +51,8 @@ def test_const_graph_args():
     assert L == ["x", "y", "z", "y"]
 
 
-def test_flatten(rng):
+def test_flatten():
+    rng = npr.RandomState(42)
     r = rng.randn
     x = (1.0, r(2, 3), [r(1, 4), {"x": 2.0, "y": r(4, 2)}])
     x_flat, unflatten = flatten(x)
@@ -65,7 +66,8 @@ def test_flatten(rng):
     assert y == unflatten(y_flat)
 
 
-def test_flatten_empty(rng):
+def test_flatten_empty():
+    rng = npr.RandomState(42)
     val = (rng.randn(4), [rng.randn(3, 4), 2.5], (), (2.0, [1.0, rng.randn(2)]))
     vect, unflatten = flatten(val)
     val_recovered = unflatten(vect)
@@ -73,7 +75,8 @@ def test_flatten_empty(rng):
     assert np.all(vect == vect_2)
 
 
-def test_flatten_dict(rng):
+def test_flatten_dict():
+    rng = npr.RandomState(42)
     val = {"k": rng.random((4, 4)), "k2": rng.random((3, 3)), "k3": 3.0, "k4": [1.0, 4.0, 7.0, 9.0]}
 
     vect, unflatten = flatten(val)

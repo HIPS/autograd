@@ -10,7 +10,9 @@ from autograd.test_util import check_grads
 check_grads = partial(check_grads, modes=["rev"])
 
 
-def test_fft(rng):
+def test_fft():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.fft.fft(x)
 
@@ -19,7 +21,9 @@ def test_fft(rng):
     check_grads(fun)(mat)
 
 
-def test_fft_ortho(rng):
+def test_fft_ortho():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.fft.fft(x, norm="ortho")
 
@@ -28,7 +32,9 @@ def test_fft_ortho(rng):
     check_grads(fun)(mat)
 
 
-def test_fft_axis(rng):
+def test_fft_axis():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.fft.fft(x, axis=0)
 
@@ -146,7 +152,9 @@ def test_irfftn_s():
 #   check_grads(rad)(fun)
 
 
-def test_ifft(rng):
+def test_ifft():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.fft.ifft(x)
 
@@ -155,7 +163,9 @@ def test_ifft(rng):
     check_grads(fun)(mat)
 
 
-def test_fft2(rng):
+def test_fft2():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.fft.fft2(x)
 
@@ -164,7 +174,9 @@ def test_fft2(rng):
     check_grads(fun)(mat)
 
 
-def test_ifft2(rng):
+def test_ifft2():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.fft.ifft2(x)
 
@@ -173,7 +185,9 @@ def test_ifft2(rng):
     check_grads(fun)(mat)
 
 
-def test_fftn(rng):
+def test_fftn():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.fft.fftn(x)
 
@@ -182,7 +196,9 @@ def test_fftn(rng):
     check_grads(fun)(mat)
 
 
-def test_ifftn(rng):
+def test_ifftn():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.fft.ifftn(x)
 
@@ -191,7 +207,9 @@ def test_ifftn(rng):
     check_grads(fun)(mat)
 
 
-def test_rfft(rng):
+def test_rfft():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.fft.rfft(x)
 
@@ -200,7 +218,9 @@ def test_rfft(rng):
     check_grads(fun)(mat)
 
 
-def test_rfft_ortho(rng):
+def test_rfft_ortho():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.fft.rfft(x, norm="ortho")
 
@@ -209,7 +229,9 @@ def test_rfft_ortho(rng):
     check_grads(fun)(mat)
 
 
-def test_rfft_axes(rng):
+def test_rfft_axes():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.fft.rfft(x, axis=0)
 
@@ -218,7 +240,9 @@ def test_rfft_axes(rng):
     check_grads(fun)(mat)
 
 
-def test_irfft(rng):
+def test_irfft():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.fft.irfft(x)
 
@@ -229,7 +253,9 @@ def test_irfft(rng):
     check_grads(fun)(mat)
 
 
-def test_irfft_ortho(rng):
+def test_irfft_ortho():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.fft.irfft(x, norm="ortho")
 
@@ -240,7 +266,9 @@ def test_irfft_ortho(rng):
     check_grads(fun)(mat)
 
 
-def test_rfft2(rng):
+def test_rfft2():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.fft.rfft2(x)
 
@@ -249,7 +277,9 @@ def test_rfft2(rng):
     check_grads(fun)(mat)
 
 
-def test_irfft2(rng):
+def test_irfft2():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.fft.irfft2(x)
 
@@ -260,7 +290,9 @@ def test_irfft2(rng):
     check_grads(fun)(mat)
 
 
-def test_rfftn(rng):
+def test_rfftn():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.fft.rfftn(x)
 
@@ -269,7 +301,9 @@ def test_rfftn(rng):
     check_grads(fun)(mat)
 
 
-def test_rfftn_odd_not_implemented(rng):
+def test_rfftn_odd_not_implemented():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.fft.rfftn(x)
 
@@ -279,7 +313,9 @@ def test_rfftn_odd_not_implemented(rng):
         check_grads(fun)(mat)
 
 
-def test_rfftn_subset(rng):
+def test_rfftn_subset():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.fft.rfftn(x)[(0, 1, 0), (3, 3, 2)]
 
@@ -288,7 +324,9 @@ def test_rfftn_subset(rng):
     check_grads(fun)(mat)
 
 
-def test_rfftn_axes(rng):
+def test_rfftn_axes():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.fft.rfftn(x, axes=(0, 2))
 
@@ -297,7 +335,9 @@ def test_rfftn_axes(rng):
     check_grads(fun)(mat)
 
 
-def test_irfftn(rng):
+def test_irfftn():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.fft.irfftn(x)
 
@@ -308,7 +348,9 @@ def test_irfftn(rng):
     check_grads(fun)(mat)
 
 
-def test_irfftn_subset(rng):
+def test_irfftn_subset():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.fft.irfftn(x)[(0, 1, 0), (3, 3, 2)]
 
@@ -319,7 +361,9 @@ def test_irfftn_subset(rng):
     check_grads(fun)(mat)
 
 
-def test_fftshift(rng):
+def test_fftshift():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.fft.fftshift(x)
 
@@ -328,7 +372,9 @@ def test_fftshift(rng):
     check_grads(fun)(mat)
 
 
-def test_fftshift_even(rng):
+def test_fftshift_even():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.fft.fftshift(x)
 
@@ -337,7 +383,9 @@ def test_fftshift_even(rng):
     check_grads(fun)(mat)
 
 
-def test_fftshift_axes(rng):
+def test_fftshift_axes():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.fft.fftshift(x, axes=1)
 
@@ -346,7 +394,9 @@ def test_fftshift_axes(rng):
     check_grads(fun)(mat)
 
 
-def test_ifftshift(rng):
+def test_ifftshift():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.fft.ifftshift(x)
 
@@ -355,7 +405,9 @@ def test_ifftshift(rng):
     check_grads(fun)(mat)
 
 
-def test_ifftshift_even(rng):
+def test_ifftshift_even():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.fft.ifftshift(x)
 
@@ -364,7 +416,9 @@ def test_ifftshift_even(rng):
     check_grads(fun)(mat)
 
 
-def test_ifftshift_axes(rng):
+def test_ifftshift_axes():
+    rng = npr.RandomState(42)
+
     def fun(x):
         return np.fft.ifftshift(x, axes=1)
 

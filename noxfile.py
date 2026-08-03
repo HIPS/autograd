@@ -96,10 +96,5 @@ def run_pytest_run_in_parallel_plugin(session):
     """Run stress tests with free threaded Python (no-GIL) using the pytest-run-parallel plugin"""
     session.run("python", "-VV")
     session.install("--group", "test-core")
-    session.install(
-        "-e",
-        ".[scipy]",
-        "pytest-run-parallel @ git+https://github.com/seberg/pytest-run-parallel.git@feature/prepare-args-hook",
-        silent=False,
-    )
+    session.install("-e", ".[scipy]", "pytest-run-parallel", silent=False)
     session.run("pytest", *session.posargs, env={"PYTHON_GIL": "0"})

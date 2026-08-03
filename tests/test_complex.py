@@ -18,14 +18,16 @@ def test_real_if_close_type():
     assert np.iscomplexobj(df(1.0j))
 
 
-def test_angle_real(rng):
+def test_angle_real():
+    rng = npr.RandomState(42)
     fun = lambda x: np.angle(x)
     d_fun = lambda x: grad(fun)(x)
     check_grads(fun)(rng.rand())
     check_grads(d_fun)(rng.rand())
 
 
-def test_angle_complex(rng):
+def test_angle_complex():
+    rng = npr.RandomState(42)
     fun = lambda x: np.angle(x)
     d_fun = lambda x: grad(fun)(x)
     check_grads(fun)(rng.rand() + 1j * rng.rand())

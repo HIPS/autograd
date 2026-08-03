@@ -18,7 +18,8 @@ def test_absolute():
     check_grads(fun, order=1)(0.0)
 
 
-def test_sin(rng):
+def test_sin():
+    rng = npr.RandomState(42)
     fun = lambda x: 3.0 * np.sin(x)
     check_grads(fun)(rng.randn())
 
@@ -29,67 +30,80 @@ def test_sign():
     check_grads(fun)(-1.1)
 
 
-def test_exp(rng):
+def test_exp():
+    rng = npr.RandomState(42)
     fun = lambda x: 3.0 * np.exp(x)
     check_grads(fun)(rng.randn())
 
 
-def test_log(rng):
+def test_log():
+    rng = npr.RandomState(42)
     fun = lambda x: 3.0 * np.log(x)
     check_grads(fun)(abs(rng.randn()))
 
 
-def test_log2(rng):
+def test_log2():
+    rng = npr.RandomState(42)
     fun = lambda x: 3.0 * np.log2(x)
     check_grads(fun)(abs(rng.randn()))
 
 
-def test_log10(rng):
+def test_log10():
+    rng = npr.RandomState(42)
     fun = lambda x: 3.0 * np.log10(x)
     check_grads(fun)(abs(rng.randn()))
 
 
-def test_log1p(rng):
+def test_log1p():
+    rng = npr.RandomState(42)
     fun = lambda x: 3.0 * np.log1p(x)
     check_grads(fun)(abs(rng.randn()))
 
 
-def test_expm1(rng):
+def test_expm1():
+    rng = npr.RandomState(42)
     fun = lambda x: 3.0 * np.expm1(x)
     check_grads(fun)(abs(rng.randn()))
 
 
-def test_exp2(rng):
+def test_exp2():
+    rng = npr.RandomState(42)
     fun = lambda x: 3.0 * np.exp2(x)
     check_grads(fun)(abs(rng.randn()))
 
 
-def test_neg(rng):
+def test_neg():
+    rng = npr.RandomState(42)
     fun = lambda x: 3.0 * -x
     check_grads(fun)(rng.randn())
 
 
-def test_cos(rng):
+def test_cos():
+    rng = npr.RandomState(42)
     fun = lambda x: 3.0 * np.cos(x)
     check_grads(fun)(rng.randn())
 
 
-def test_tan(rng):
+def test_tan():
+    rng = npr.RandomState(42)
     fun = lambda x: 3.0 * np.tan(x)
     check_grads(fun)(rng.randn())
 
 
-def test_cosh(rng):
+def test_cosh():
+    rng = npr.RandomState(42)
     fun = lambda x: 3.0 * np.cosh(x)
     check_grads(fun)(rng.randn())
 
 
-def test_sinh(rng):
+def test_sinh():
+    rng = npr.RandomState(42)
     fun = lambda x: 3.0 * np.sinh(x)
     check_grads(fun)(rng.randn())
 
 
-def test_tanh(rng):
+def test_tanh():
+    rng = npr.RandomState(42)
     fun = lambda x: 3.0 * np.tanh(x)
     check_grads(fun)(rng.randn())
 
@@ -109,12 +123,14 @@ def test_arctan():
     check_grads(fun)(0.2)
 
 
-def test_arccosh(rng):
+def test_arccosh():
+    rng = npr.RandomState(42)
     fun = lambda x: 3.0 * np.arccosh(x)
     check_grads(fun)(rng.randn() ** 2 + 1.2)
 
 
-def test_arcsinh(rng):
+def test_arcsinh():
+    rng = npr.RandomState(42)
     fun = lambda x: 3.0 * np.arcsinh(x)
     check_grads(fun)(rng.randn())
 
@@ -124,12 +140,14 @@ def test_arctanh():
     check_grads(fun)(0.2)
 
 
-def test_sqrt(rng):
+def test_sqrt():
+    rng = npr.RandomState(42)
     fun = lambda x: 3.0 * np.sqrt(x)
     check_grads(fun)(10.0 * rng.rand())
 
 
-def test_power_arg0(rng):
+def test_power_arg0():
+    rng = npr.RandomState(42)
     # the +1.'s here are to avoid regimes where numerical diffs fail
     make_fun = lambda y: lambda x: np.power(x, y)
     fun = make_fun(rng.randn() ** 2 + 1.0)
@@ -141,87 +159,104 @@ def test_power_arg0(rng):
     assert grad(grad(fun))(0.0) == 0.0
 
 
-def test_power_arg1(rng):
+def test_power_arg1():
+    rng = npr.RandomState(42)
     x = rng.randn() ** 2
     fun = lambda y: np.power(x, y)
     check_grads(fun)(rng.rand() ** 2)
 
 
-def test_power_arg1_zero(rng):
+def test_power_arg1_zero():
+    rng = npr.RandomState(42)
     fun = lambda y: np.power(0.0, y)
     check_grads(fun)(rng.rand() ** 2)
 
 
-def test_mod_arg0(rng):
+def test_mod_arg0():
+    rng = npr.RandomState(42)
     fun = lambda x, y: np.mod(x, y)
     check_grads(fun)(rng.rand(), rng.rand())
 
 
-def test_mod_arg1(rng):
+def test_mod_arg1():
+    rng = npr.RandomState(42)
     fun = lambda x, y: np.mod(x, y)
     check_grads(fun)(rng.rand(), rng.rand())
 
 
-def test_divide_arg0(rng):
+def test_divide_arg0():
+    rng = npr.RandomState(42)
     fun = lambda x, y: np.divide(x, y)
     check_grads(fun)(rng.rand(), rng.rand())
 
 
-def test_divide_arg1(rng):
+def test_divide_arg1():
+    rng = npr.RandomState(42)
     fun = lambda x, y: np.divide(x, y)
     check_grads(fun)(rng.rand(), rng.rand())
 
 
-def test_multiply_arg0(rng):
+def test_multiply_arg0():
+    rng = npr.RandomState(42)
     fun = lambda x, y: np.multiply(x, y)
     check_grads(fun)(rng.rand(), rng.rand())
 
 
-def test_multiply_arg1(rng):
+def test_multiply_arg1():
+    rng = npr.RandomState(42)
     fun = lambda x, y: np.multiply(x, y)
     check_grads(fun)(rng.rand(), rng.rand())
 
 
-def test_true_divide_arg0(rng):
+def test_true_divide_arg0():
+    rng = npr.RandomState(42)
     fun = lambda x, y: np.true_divide(x, y)
     check_grads(fun)(rng.rand(), rng.rand())
 
 
-def test_true_divide_arg1(rng):
+def test_true_divide_arg1():
+    rng = npr.RandomState(42)
     fun = lambda x, y: np.true_divide(x, y)
     check_grads(fun)(rng.rand(), rng.rand())
 
 
-def test_reciprocal(rng):
+def test_reciprocal():
+    rng = npr.RandomState(42)
     fun = lambda x: np.reciprocal(x)
     check_grads(fun)(rng.rand())
 
 
-def test_negative(rng):
+def test_negative():
+    rng = npr.RandomState(42)
     fun = lambda x: np.negative(x)
     check_grads(fun)(rng.rand())
 
 
-def test_rad2deg(rng):
+def test_rad2deg():
+    rng = npr.RandomState(42)
     fun = lambda x: 3.0 * np.rad2deg(x)
     check_grads(fun)(10.0 * rng.rand())
 
 
-def test_deg2rad(rng):
+def test_deg2rad():
+    rng = npr.RandomState(42)
     fun = lambda x: 3.0 * np.deg2rad(x)
     check_grads(fun)(10.0 * rng.rand())
 
 
-def test_radians(rng):
+def test_radians():
+    rng = npr.RandomState(42)
     fun = lambda x: 3.0 * np.radians(x)
     check_grads(fun)(10.0 * rng.rand())
 
 
-def test_degrees(rng):
+def test_degrees():
+    rng = npr.RandomState(42)
     fun = lambda x: 3.0 * np.degrees(x)
     check_grads(fun)(10.0 * rng.rand())
 
 
-def test_sinc(rng):
+def test_sinc():
+    rng = npr.RandomState(42)
     fun = lambda x: 3.0 * np.sinc(x)
     check_grads(fun)(10.0 * rng.rand())
