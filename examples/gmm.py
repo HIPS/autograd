@@ -14,7 +14,8 @@ from autograd.misc.flatten import flatten_func
 from autograd.scipy.special import logsumexp
 
 
-def init_gmm_params(num_components, D, scale, rs=npr.RandomState(0)):
+def init_gmm_params(num_components, D, scale, rs=None):
+    rs = rs if rs is not None else npr.RandomState(0)
     return {
         "log proportions": rs.randn(num_components) * scale,
         "means": rs.randn(num_components, D) * scale,

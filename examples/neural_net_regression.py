@@ -1,3 +1,5 @@
+import itertools
+
 import matplotlib.pyplot as plt
 
 import autograd.numpy as np
@@ -8,14 +10,15 @@ from autograd.misc.optimizers import adam
 from autograd.scipy.stats import norm
 
 
-def init_random_params(scale, layer_sizes, rs=npr.RandomState(0)):
+def init_random_params(scale, layer_sizes, rs=None):
     """Build a list of (weights, biases) tuples, one for each layer."""
+    rs = rs if rs is not None else npr.RandomState(0)
     return [
         (
             rs.randn(insize, outsize) * scale,  # weight matrix
             rs.randn(outsize) * scale,
         )  # bias vector
-        for insize, outsize in zip(layer_sizes[:-1], layer_sizes[1:])
+        for insize, outsize in itertools.pairwise(layer_sizes)
     ]
 
 

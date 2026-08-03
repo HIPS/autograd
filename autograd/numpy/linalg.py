@@ -128,7 +128,7 @@ def norm_vjp(ans, x, ord=None, axis=None, **kwargs):
             return expand(g / ans) * anp.conj(x)
         elif ord == "nuc":
             x_rolled = roll(x)
-            u, s, vt = svd(x_rolled, full_matrices=False)
+            u, _s, vt = svd(x_rolled, full_matrices=False)
             uvt_rolled = _dot(u, vt)
             # Roll the matrix axes back to their correct positions
             uvt = unroll(uvt_rolled)
@@ -177,7 +177,7 @@ def norm_jvp(g, ans, x, ord=None, axis=None, **kwargs):
         return contract(g * anp.conj(x)) / ans
     elif ord == "nuc":
         x_rolled = roll(x)
-        u, s, vt = svd(x_rolled, full_matrices=False)
+        u, _s, vt = svd(x_rolled, full_matrices=False)
         uvt_rolled = _dot(u, vt)
         # Roll the matrix axes back to their correct positions
         uvt = unroll(uvt_rolled)

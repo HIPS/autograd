@@ -1,3 +1,5 @@
+from contextlib import suppress
+
 from .util import subvals
 
 
@@ -29,11 +31,9 @@ def unary_to_nary(unary_operator):
 
 def wraps(fun, namestr="{fun}", docstr="{doc}", **kwargs):
     def _wraps(f):
-        try:
+        with suppress(AttributeError, KeyError, ValueError):
             f.__name__ = namestr.format(fun=get_name(fun), **kwargs)
             f.__doc__ = docstr.format(fun=get_name(fun), doc=get_doc(fun), **kwargs)
-        except BaseException:
-            pass
         return f
 
     return _wraps

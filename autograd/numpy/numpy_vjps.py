@@ -881,7 +881,7 @@ def match_complex(target, x):
 
 
 def unbroadcast(x, target_meta, broadcast_idx=0):
-    target_shape, target_ndim, dtype, target_iscomplex = target_meta
+    target_shape, target_ndim, _dtype, target_iscomplex = target_meta
     while anp.ndim(x) > target_ndim:
         x = anp.sum(x, axis=broadcast_idx)
     for axis, size in enumerate(target_shape):

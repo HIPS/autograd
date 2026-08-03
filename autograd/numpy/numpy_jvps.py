@@ -289,7 +289,7 @@ def_linear(anp.einsum)
 
 # TODO(mattjj): can we call np.broadcast_to or a related function instead?
 def broadcast(x, target):
-    target_shape, target_ndim, target_dtype, target_iscomplex = anp.metadata(target)
+    target_shape, target_ndim, _target_dtype, target_iscomplex = anp.metadata(target)
     while anp.ndim(x) < target_ndim:
         x = anp.expand_dims(x, 0)
     for axis, size in enumerate(anp.shape(x)):

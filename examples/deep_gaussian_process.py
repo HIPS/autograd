@@ -37,7 +37,7 @@ def build_deep_gp(input_dimension, hidden_dimension, covariance_function):
 
     def combined_predict_fun(all_params, X, y, xs):
         layer1_params, layer2_params, hiddens = unpack_all_params(all_params)
-        h_star_mean, h_star_cov = predict_layer1(layer1_params, X, hiddens, xs)
+        h_star_mean, _h_star_cov = predict_layer1(layer1_params, X, hiddens, xs)
         y_star_mean, y_star_cov = predict_layer2(
             layer2_params, np.atleast_2d(hiddens).T, y, np.atleast_2d(h_star_mean).T
         )

@@ -13,7 +13,9 @@ from autograd.util import func
 
 
 class RKHSFun:
-    def __init__(self, kernel, alphas={}):
+    def __init__(self, kernel, alphas=None):
+        if alphas is None:
+            alphas = {}
         self.alphas = alphas
         self.kernel = kernel
         self.vs = RKHSFunVSpace(self)

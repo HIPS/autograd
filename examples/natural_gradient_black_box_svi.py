@@ -45,7 +45,7 @@ if __name__ == "__main__":
     #   variance is wide, and we scale down our step size when the variance
     #   is small (which leads to more robust/less chaotic ascent).
     def fisher_diag(lam):
-        mu, log_sigma = unpack_params(lam)
+        _mu, log_sigma = unpack_params(lam)
         return np.concatenate([np.exp(-2.0 * log_sigma), np.ones(len(log_sigma)) * 2])
 
     # simple! basically free!
@@ -73,11 +73,13 @@ if __name__ == "__main__":
     step_sizes = [0.1, 0.25, 0.5]
     for step_size in step_sizes:
         # optimize with standard gradient + adam
-        optfun = lambda n, init, cb: adam(gradient, init, step_size=step_size, num_iters=n, callback=cb)
+        optfun = lambda n, init, cb, step_size=step_size: adam(
+            gradient, init, step_size=step_size, num_iters=n, callback=cb
+        )
         standard_lls = optimize_and_lls(optfun)
 
         # optimize with natural gradient + sgd, no momentum
-        optnat = lambda n, init, cb: sgd(
+        optnat = lambda n, init, cb, step_size=step_size: sgd(
             natural_gradient, init, step_size=step_size, num_iters=n, callback=cb, mass=0.001
         )
         natural_lls = optimize_and_lls(optnat)
@@ -91,16 +93,16 @@ if __name__ == "__main__":
             np.arange(len(stand_lls)),
             stand_lls,
             "--",
-            label="standard (adam, step-size = %2.2f)" % ss,
+            label=f"standard (adam, step-size = {ss:2.2f})",
             alpha=0.5,
             c=col,
         )
-        plt.plot(np.arange(len(nat_lls)), nat_lls, "-", label="natural (sgd, step-size = %2.2f)" % ss, c=col)
+        plt.plot(np.arange(len(nat_lls)), nat_lls, "-", label=f"natural (sgd, step-size = {ss:2.2f})", c=col)
 
     llrange = natural_lls.max() - natural_lls.min()
     plt.ylim((natural_lls.max() - llrange * 0.1, natural_lls.max() + 10))
     plt.xlabel("optimization iteration")
     plt.ylabel("ELBO")
     plt.legend(loc="lower right")
-    plt.title("%d dimensional posterior" % D)
+    plt.title(f"{D} dimensional posterior")
     plt.show()

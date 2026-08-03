@@ -37,7 +37,7 @@ def const_graph_unary(fun):
             start_node = ConstGraphNode.new_root()
             end_value, end_node = trace(start_node, _fun.pop(), x)
             if end_node is None:
-                raise Exception("Output is independent of input")
+                raise ValueError("Output is independent of input")
             graph.append(list(toposort(end_node))[::-1])
             return end_value
 
@@ -71,5 +71,5 @@ class FullGraphNode(Node):
 def full_graph(fun, *args, **kwargs):
     unary_fun = lambda args: fun(*args, **kwargs)
     start_node = FullGraphNode.new_root()
-    end_value, end_node = trace(start_node, unary_fun, args)
+    _end_value, end_node = trace(start_node, unary_fun, args)
     return end_node

@@ -57,7 +57,7 @@ if __name__ == "__main__":
 
     def callback(params):
         print(f"Log likelihood {-objective(params)}")
-        gp_params, latents = unpack_params(params)
+        _gp_params, latents = unpack_params(params)
 
         data_ax.cla()
         data_ax.plot(data[:, 0], data[:, 1], "bx")

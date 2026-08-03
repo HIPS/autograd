@@ -58,7 +58,9 @@ def check_equivalent(x, y):
 
 
 @unary_to_nary
-def check_grads(f, x, modes=["fwd", "rev"], order=2):
+def check_grads(f, x, modes=None, order=2):
+    if modes is None:
+        modes = ["fwd", "rev"]
     assert all(m in ["fwd", "rev"] for m in modes)
     if "fwd" in modes:
         check_jvp(f, x)

@@ -1,6 +1,7 @@
 import warnings
 from collections import defaultdict
 from contextlib import contextmanager
+from typing import ClassVar
 
 import numpy as np
 
@@ -154,8 +155,8 @@ trace_stack = TraceStack()
 
 
 class Box:
-    type_mappings = {}
-    types = set()
+    type_mappings: ClassVar[dict] = {}
+    types: ClassVar[set] = set()
 
     __slots__ = ["_node", "_trace", "_value"]
 

@@ -11,7 +11,7 @@ _original_where = numpy_wrapper.where
 
 
 def _is_np_or_autograd(x):
-    if isinstance(x, Box) or isinstance(x, (_np.ndarray, _np.generic)):
+    if isinstance(x, (Box, _np.ndarray, _np.generic)):
         return True
     if isinstance(x, (list, tuple)):
         for item in x:

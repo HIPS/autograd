@@ -75,7 +75,7 @@ def test_hypot():
 
 def test_comparison_grads():
     compare_funs = [
-        lambda x, y: np.sum(x < x) + 0.0,
+        lambda x, y: np.sum(x < y) + 0.0,
         lambda x, y: np.sum(x <= y) + 0.0,
         lambda x, y: np.sum(x > y) + 0.0,
         lambda x, y: np.sum(x >= y) + 0.0,
@@ -93,7 +93,7 @@ def test_comparison_grads():
 
 def test_comparison_values():
     compare_funs = [
-        lambda x, y: np.sum(x < x) + 0.0,
+        lambda x, y: np.sum(x < y) + 0.0,
         lambda x, y: np.sum(x <= y) + 0.0,
         lambda x, y: np.sum(x > y) + 0.0,
         lambda x, y: np.sum(x >= y) + 0.0,

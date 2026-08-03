@@ -47,7 +47,8 @@ def variational_lower_bound(params, t, logprob, sampler, log_density, num_sample
     return np.mean(log_ps - log_qs)
 
 
-def init_gaussian_var_params(D, mean_mean=-1, log_std_mean=-5, scale=0.1, rs=npr.RandomState(0)):
+def init_gaussian_var_params(D, mean_mean=-1, log_std_mean=-5, scale=0.1, rs=None):
+    rs = rs if rs is not None else npr.RandomState(0)
     init_mean = mean_mean * np.ones(D) + rs.randn(D) * scale
     init_log_std = log_std_mean * np.ones(D) + rs.randn(D) * scale
     return np.concatenate([init_mean, init_log_std])
@@ -57,7 +58,8 @@ def log_normalize(x):
     return x - logsumexp(x)
 
 
-def build_mog_bbsvi(logprob, num_samples, k=10, rs=npr.RandomState(0)):
+def build_mog_bbsvi(logprob, num_samples, k=10, rs=None):
+    rs = rs if rs is not None else npr.RandomState(0)
     init_component_var_params = init_gaussian_var_params
     component_log_density = variational_log_density_gaussian
     component_sample = sample_diag_gaussian
@@ -67,7 +69,8 @@ def build_mog_bbsvi(logprob, num_samples, k=10, rs=npr.RandomState(0)):
         var_params = np.reshape(mixture_params[k:], (k, -1))
         return log_weights, var_params
 
-    def init_var_params(D, rs=npr.RandomState(0), **kwargs):
+    def init_var_params(D, rs=None, **kwargs):
+        rs = rs if rs is not None else npr.RandomState(0)
         log_weights = np.ones(k)
         component_weights = [init_component_var_params(D, rs=rs, **kwargs) for i in range(k)]
         return np.concatenate([log_weights] + component_weights)
@@ -131,7 +134,11 @@ if __name__ == "__main__":
         return -elbo(params, t)
 
     # Set up plotting code
-    def plot_isocontours(ax, func, xlimits=[-2, 2], ylimits=[-4, 2], numticks=101, cmap=None):
+    def plot_isocontours(ax, func, xlimits=None, ylimits=None, numticks=101, cmap=None):
+        if ylimits is None:
+            ylimits = [-4, 2]
+        if xlimits is None:
+            xlimits = [-2, 2]
         x = np.linspace(*xlimits, num=numticks)
         y = np.linspace(*ylimits, num=numticks)
         X, Y = np.meshgrid(x, y)

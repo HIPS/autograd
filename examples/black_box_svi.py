@@ -48,7 +48,11 @@ if __name__ == "__main__":
     objective, gradient, unpack_params = black_box_variational_inference(log_density, D, num_samples=2000)
 
     # Set up plotting code
-    def plot_isocontours(ax, func, xlimits=[-2, 2], ylimits=[-4, 2], numticks=101):
+    def plot_isocontours(ax, func, xlimits=None, ylimits=None, numticks=101):
+        if ylimits is None:
+            ylimits = [-4, 2]
+        if xlimits is None:
+            xlimits = [-2, 2]
         x = np.linspace(*xlimits, num=numticks)
         y = np.linspace(*ylimits, num=numticks)
         X, Y = np.meshgrid(x, y)
