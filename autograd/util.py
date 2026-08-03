@@ -50,8 +50,10 @@ https://github.com/HIPS/autograd/blob/master/docs/updateguide.md"""
 
 
 def quick_grad_check(
-    fun, arg0, extra_args=(), kwargs={}, verbose=True, eps=1e-4, rtol=1e-4, atol=1e-6, rs=None
+    fun, arg0, extra_args=(), kwargs=None, verbose=True, eps=1e-4, rtol=1e-4, atol=1e-6, rs=None
 ):
+    if kwargs is None:
+        kwargs = {}
     warnings.warn(deprecation_msg)
     from autograd.test_util import check_grads
 

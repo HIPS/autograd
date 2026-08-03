@@ -21,7 +21,9 @@ def stat_check(fun, test_complex=True, **kwargs):
         check([B, C, D, E], axis=[None, 0], keepdims=[True, False])
 
 
-def unary_ufunc_check(fun, lims=[-2, 2], test_complex=True, **kwargs):
+def unary_ufunc_check(fun, lims=None, test_complex=True, **kwargs):
+    if lims is None:
+        lims = [-2, 2]
     rng = npr.RandomState(42)
     scalar = transform(lims, 0.4)
     vector = transform(lims, rng.rand(2))
@@ -35,7 +37,11 @@ def unary_ufunc_check(fun, lims=[-2, 2], test_complex=True, **kwargs):
         check([comp, matc])
 
 
-def binary_ufunc_check(fun, lims_A=[-2, 2], lims_B=[-2, 2], test_complex=True, **kwargs):
+def binary_ufunc_check(fun, lims_A=None, lims_B=None, test_complex=True, **kwargs):
+    if lims_B is None:
+        lims_B = [-2, 2]
+    if lims_A is None:
+        lims_A = [-2, 2]
     rng = npr.RandomState(42)
     T_A = lambda x: transform(lims_A, x)
     T_B = lambda x: transform(lims_B, x)
@@ -54,7 +60,11 @@ def binary_ufunc_check(fun, lims_A=[-2, 2], lims_B=[-2, 2], test_complex=True, *
         )
 
 
-def binary_ufunc_check_no_same_args(fun, lims_A=[-2, 2], lims_B=[-2, 2], test_complex=True, **kwargs):
+def binary_ufunc_check_no_same_args(fun, lims_A=None, lims_B=None, test_complex=True, **kwargs):
+    if lims_B is None:
+        lims_B = [-2, 2]
+    if lims_A is None:
+        lims_A = [-2, 2]
     rng = npr.RandomState(42)
     T_A = lambda x: transform(lims_A, x)
     T_B = lambda x: transform(lims_B, x)

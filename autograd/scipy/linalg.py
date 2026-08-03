@@ -113,7 +113,7 @@ defjvp(sqrtm, _jvp_sqrtm)
 
 
 def _jvp_sylvester(argnums, dms, ans, args, _):
-    a, b, q = args
+    a, b, _q = args
     if 0 in argnums:
         da = dms[0]
         db = dms[1] if 1 in argnums else 0
@@ -129,7 +129,7 @@ defjvp_argnums(solve_sylvester, _jvp_sylvester)
 
 
 def _vjp_sylvester(argnums, ans, args, _):
-    a, b, q = args
+    a, b, _q = args
 
     def vjp(g):
         vjps = []

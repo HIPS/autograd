@@ -151,7 +151,7 @@ def test_det_3d(rng):
 
 def test_slogdet(rng):
     def fun(x):
-        sign, logdet = np.linalg.slogdet(x)
+        _sign, logdet = np.linalg.slogdet(x)
         return logdet
 
     D = 6

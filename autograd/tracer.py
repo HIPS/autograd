@@ -2,6 +2,7 @@ import warnings
 from collections import defaultdict
 from contextlib import contextmanager
 from contextvars import ContextVar
+from typing import ClassVar
 
 import numpy as np
 
@@ -158,10 +159,10 @@ trace_stack = TraceStack()
 
 
 class Box:
-    type_mappings = {}
-    types = set()
+    type_mappings: ClassVar[dict] = {}
+    types: ClassVar[set] = set()
 
-    __slots__ = ["_value", "_trace", "_node"]
+    __slots__ = ["_node", "_trace", "_value"]
 
     def __init__(self, value, trace, node):
         self._value = value
@@ -174,7 +175,7 @@ class Box:
     __nonzero__ = __bool__
 
     def __str__(self):
-        return f"Autograd {type(self).__name__} with value {str(self._value)}"
+        return f"Autograd {type(self).__name__} with value {self._value!s}"
 
     @classmethod
     def register(cls, value_type):

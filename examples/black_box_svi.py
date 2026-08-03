@@ -3,9 +3,9 @@ import matplotlib.pyplot as plt
 import autograd.numpy as np
 import autograd.numpy.random as npr
 import autograd.scipy.stats.multivariate_normal as mvn
-import autograd.scipy.stats.norm as norm
 from autograd import grad
 from autograd.misc.optimizers import adam
+from autograd.scipy.stats import norm
 
 
 def black_box_variational_inference(logprob, D, num_samples):
@@ -48,7 +48,11 @@ if __name__ == "__main__":
     objective, gradient, unpack_params = black_box_variational_inference(log_density, D, num_samples=2000)
 
     # Set up plotting code
-    def plot_isocontours(ax, func, xlimits=[-2, 2], ylimits=[-4, 2], numticks=101):
+    def plot_isocontours(ax, func, xlimits=None, ylimits=None, numticks=101):
+        if ylimits is None:
+            ylimits = [-4, 2]
+        if xlimits is None:
+            xlimits = [-2, 2]
         x = np.linspace(*xlimits, num=numticks)
         y = np.linspace(*ylimits, num=numticks)
         X, Y = np.meshgrid(x, y)

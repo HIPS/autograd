@@ -69,7 +69,7 @@ def const_graph(fun, *args, **kwargs):
 
 
 class FullGraphNode(Node):
-    __slots__ = ["value", "recipe"]
+    __slots__ = ["recipe", "value"]
 
     def __init__(self, value, fun, args, kwargs, parent_argnums, parents):
         self.value = value
@@ -83,5 +83,5 @@ class FullGraphNode(Node):
 def full_graph(fun, *args, **kwargs):
     unary_fun = lambda args: fun(*args, **kwargs)
     start_node = FullGraphNode.new_root()
-    end_value, end_node = trace(start_node, unary_fun, args)
+    _end_value, end_node = trace(start_node, unary_fun, args)
     return end_node

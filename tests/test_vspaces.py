@@ -82,10 +82,8 @@ def check_vspace(value):
     # --- basis vectors and special vectors---
     def basis_orthonormality():
         return all(
-            [
-                scalar_close(inner_prod(x, y), 1.0 * (ix == iy))
-                for (ix, x), (iy, y) in it.product(enumerate(standard_basis()), enumerate(standard_basis()))
-            ]
+            scalar_close(inner_prod(x, y), 1.0 * (ix == iy))
+            for (ix, x), (iy, y) in it.product(enumerate(standard_basis()), enumerate(standard_basis()))
         )
 
     def ones_sum_of_basis_vects():

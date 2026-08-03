@@ -12,7 +12,7 @@ wrap_namespace(ffto.__dict__, globals())
 # TODO: make fft gradient work for a repeated axis,
 # e.g. by replacing fftn with repeated calls to 1d fft along each axis
 def fft_grad(get_args, fft_fun, ans, x, *args, **kwargs):
-    axes, s, norm = get_args(x, *args, **kwargs)
+    axes, _s, _norm = get_args(x, *args, **kwargs)
     check_no_repeated_axes(axes)
     vs = vspace(x)
     return lambda g: match_complex(x, truncate_pad(fft_fun(g, *args, **kwargs), vs.shape))

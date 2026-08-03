@@ -1,5 +1,7 @@
 """A multi-layer perceptron for classification of MNIST handwritten digits."""
 
+import itertools
+
 from data import load_mnist
 
 import autograd.numpy as np
@@ -10,15 +12,16 @@ from autograd.misc.optimizers import adam
 from autograd.scipy.special import logsumexp
 
 
-def init_random_params(scale, layer_sizes, rs=npr.RandomState(0)):
+def init_random_params(scale, layer_sizes, rs=None):
     """Build a list of (weights, biases) tuples,
     one for each layer in the net."""
+    rs = rs if rs is not None else npr.RandomState(0)
     return [
         (
             scale * rs.randn(m, n),  # weight matrix
             scale * rs.randn(n),
         )  # bias vector
-        for m, n in zip(layer_sizes[:-1], layer_sizes[1:])
+        for m, n in itertools.pairwise(layer_sizes)
     ]
 
 

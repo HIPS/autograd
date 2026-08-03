@@ -20,7 +20,7 @@ def time_flatten():
 
     vect, unflatten = flatten(val)
     val_recovered = unflatten(vect)
-    vect_2, _ = flatten(val_recovered)
+    _vect_2, _ = flatten(val_recovered)
 
 
 # def time_vspace_flatten():

@@ -944,7 +944,7 @@ def test_make_diagonal(rng):
 
     D = rng.randn(3, 4)
     A = np.make_diagonal(D, axis1=-1, axis2=-2)
-    assert all([np.allclose(np.diag(A[i]), D[i]) for i in range(3)])
+    assert all(np.allclose(np.diag(A[i]), D[i]) for i in range(3))
     check_grads(fun)(D)
 
 
@@ -1019,7 +1019,7 @@ def test_maximum_equal_values_2d():
 def test_linspace():
     for num in [0, 1, 5]:
 
-        def fun(x, y):
+        def fun(x, y, num=num):
             return np.linspace(x, y, num)
 
         check_grads(fun)(1.2, 3.4)

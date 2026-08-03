@@ -24,7 +24,7 @@ class PrintNode(Node):
 def make_varname_generator():
     for i in range(65, 91):
         yield chr(i)
-    raise Exception("Ran out of alphabet!")
+    raise RuntimeError("Ran out of alphabet!")
 
 
 def print_trace(f, x):

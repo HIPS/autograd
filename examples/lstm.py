@@ -13,7 +13,9 @@ from autograd.misc.optimizers import adam
 from autograd.scipy.special import logsumexp
 
 
-def init_lstm_params(input_size, state_size, output_size, param_scale=0.01, rs=npr.RandomState(0)):
+def init_lstm_params(input_size, state_size, output_size, param_scale=0.01, rs=None):
+    rs = rs if rs is not None else npr.RandomState(0)
+
     def rp(*shape):
         return rs.randn(*shape) * param_scale
 
