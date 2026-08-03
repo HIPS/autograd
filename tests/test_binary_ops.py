@@ -6,10 +6,9 @@ import autograd.numpy.random as npr
 from autograd import grad, value_and_grad
 from autograd.test_util import check_grads
 
-rs = npr.RandomState(0)
-
 
 def arg_pairs():
+    rs = npr.RandomState(0)
     scalar = 2.0
     vector = rs.randn(4)
     mat = rs.randn(3, 4)

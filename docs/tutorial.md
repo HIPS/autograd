@@ -281,6 +281,43 @@ print "Gradient: ", grad_of_example(np.array([1.5, 6.7, 1e-10])
 
 This example can be found as a Python script [here](../examples/define_gradient.py).
 
+## Thread safety
+
+Autograd runs on the free-threaded (no-GIL) builds of Python starting with Python 3.14t, and you can take gradients from several threads at once.
+
+The bookkeeping Autograd uses to record a computation is kept separately for each thread, and for each `asyncio` task too, so a differentiation running in one thread doesn't disturb one running in another.
+
+For example, you can build a gradient function once and then call it from a pool of threads, each with its own input:
+
+```python
+from concurrent.futures import ThreadPoolExecutor
+
+import autograd.numpy as np
+from autograd import grad
+
+def loss(x):
+    return np.sum(np.sin(x) ** 2 + np.exp(x))
+
+grad_loss = grad(loss)
+
+inputs = [np.full(3, float(i)) for i in range(8)]
+with ThreadPoolExecutor(max_workers=8) as pool:
+    grads = list(pool.map(grad_loss, inputs))
+```
+
+Every thread computes its own gradient and gets the right answer, with no locking on your part.
+
+A few things are worth keeping in mind once you start using threads.
+
+- Define your functions and register their gradients before you start any threads. Building a primitive with `primitive` and giving it a gradient with `defvjp` or `defjvp` updates tables that the whole process shares, so it's meant to run once when your module is imported, rather than from a worker thread while other threads are differentiating.
+
+- Let each differentiation own its inputs. A single call to `grad`, `jacobian`, or any of the other operators should run from start to finish in one thread, and handing a single boxed value or a half-finished differentiation to another thread isn't supported.
+
+- Finally, remember that Autograd is built on NumPy, and NumPy doesn't let you safely mutate the same array from more than one thread.
+
+See [NumPy's thread safety guide](https://numpy.org/doc/stable/reference/thread_safety.html) for the details.
+If you share arrays between threads, treat them as read-only or add your own locking.
+
 ## Complex numbers
 
 Autograd supports complex arrays and scalars using a convention described as follows.

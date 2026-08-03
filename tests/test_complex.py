@@ -3,8 +3,6 @@ import autograd.numpy.random as npr
 from autograd import grad
 from autograd.test_util import check_grads
 
-npr.seed(1)
-
 
 def test_real_type():
     fun = lambda x: np.sum(np.real(x))
@@ -21,17 +19,19 @@ def test_real_if_close_type():
 
 
 def test_angle_real():
+    rng = npr.RandomState(42)
     fun = lambda x: np.angle(x)
     d_fun = lambda x: grad(fun)(x)
-    check_grads(fun)(npr.rand())
-    check_grads(d_fun)(npr.rand())
+    check_grads(fun)(rng.rand())
+    check_grads(d_fun)(rng.rand())
 
 
 def test_angle_complex():
+    rng = npr.RandomState(42)
     fun = lambda x: np.angle(x)
     d_fun = lambda x: grad(fun)(x)
-    check_grads(fun)(npr.rand() + 1j * npr.rand())
-    check_grads(d_fun)(npr.rand() + 1j * npr.rand())
+    check_grads(fun)(rng.rand() + 1j * rng.rand())
+    check_grads(d_fun)(rng.rand() + 1j * rng.rand())
 
 
 def test_abs_real():

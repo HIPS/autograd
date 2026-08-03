@@ -5,10 +5,10 @@ from autograd import isinstance as ag_isinstance
 from autograd import list as ag_list
 from autograd.test_util import check_grads
 
-npr.seed(1)
-
 
 def test_getter():
+    rng = npr.RandomState(42)
+
     def fun(input_list):
         A = np.sum(input_list[0])
         B = np.sum(input_list[1])
@@ -16,7 +16,7 @@ def test_getter():
         return A + B + C
 
     d_fun = grad(fun)
-    input_list = [npr.randn(5, 6), npr.randn(4, 3), npr.randn(2, 4)]
+    input_list = [rng.randn(5, 6), rng.randn(4, 3), rng.randn(2, 4)]
 
     result = d_fun(input_list)
     assert np.allclose(result[0], np.ones((5, 6)))
@@ -25,6 +25,8 @@ def test_getter():
 
 
 def test_grads():
+    rng = npr.RandomState(42)
+
     def fun(input_list):
         A = np.sum(np.sin(input_list[0]))
         B = np.sum(np.cos(input_list[1]))
@@ -37,7 +39,7 @@ def test_grads():
         C = np.sum(np.sin(g[1]))
         return A + B + C
 
-    input_list = [npr.randn(5, 6), npr.randn(4, 3), npr.randn(2, 4)]
+    input_list = [rng.randn(5, 6), rng.randn(4, 3), rng.randn(2, 4)]
 
     check_grads(fun)(input_list)
     check_grads(d_fun)(input_list)

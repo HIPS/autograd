@@ -30,8 +30,9 @@ class ArrayVSpace(VSpace):
             vect[idxs] = 1
             yield vect
 
-    def randn(self):
-        return np.array(np.random.randn(*self.shape)).astype(self.dtype)
+    def randn(self, rng=None):
+        rng = rng if rng is not None else np.random
+        return np.array(rng.randn(*self.shape)).astype(self.dtype)
 
     def _inner_prod(self, x, y):
         return np.dot(np.ravel(x), np.ravel(y))
@@ -54,9 +55,10 @@ class ComplexArrayVSpace(ArrayVSpace):
                 vect[idxs] = v
                 yield vect
 
-    def randn(self):
-        return np.array(np.random.randn(*self.shape)).astype(self.dtype) + 1.0j * np.array(
-            np.random.randn(*self.shape)
+    def randn(self, rng=None):
+        rng = rng if rng is not None else np.random
+        return np.array(rng.randn(*self.shape)).astype(self.dtype) + 1.0j * np.array(
+            rng.randn(*self.shape)
         ).astype(self.dtype)
 
     def _inner_prod(self, x, y):
