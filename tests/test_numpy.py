@@ -1,5 +1,6 @@
 import warnings
 
+import pytest
 from numpy_utils import combo_check
 
 import autograd.numpy as np
@@ -202,6 +203,34 @@ def test_rot90():
 
     mat = npr.randn(10, 11)
     check_grads(fun)(mat)
+
+
+@pytest.mark.parametrize(
+    ("shape", "axis"),
+    [
+        ((11,), None),
+        ((11,), 0),
+        ((11,), -1),
+        ((11,), ()),
+        ((10, 11), None),
+        ((10, 11), 0),
+        ((10, 11), 1),
+        ((10, 11), -1),
+        ((10, 11), (0, 1)),
+        ((4, 5, 6), None),
+        ((4, 5, 6), 2),
+        ((4, 5, 6), -2),
+        ((4, 5, 6), (0, 2)),
+        ((4, 5, 6), (-1, -3)),
+    ],
+    ids=repr,
+)
+def test_flip(shape, axis):
+    def fun(x):
+        return np.flip(x, axis=axis)
+
+    arr = npr.randn(*shape)
+    check_grads(fun)(arr)
 
 
 def test_cumsum_axis0():
