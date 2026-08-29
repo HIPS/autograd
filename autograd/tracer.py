@@ -173,6 +173,12 @@ class Box:
     def __str__(self):
         return f"Autograd {type(self).__name__} with value {self._value!s}"
 
+    def __copy__(self):
+        return self
+
+    def __deepcopy__(self, memo):
+        return self
+
     @classmethod
     def register(cls, value_type):
         Box.types.add(cls)
