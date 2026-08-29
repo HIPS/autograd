@@ -1,3 +1,4 @@
+import copy
 import warnings
 
 import pytest
@@ -189,6 +190,15 @@ def test_assignment_raises_error():
     A = npr.randn(5)
     with pytest.raises(TypeError):
         check_grads(fun)(A, 3.0)
+
+
+def test_grad_deepcopy():
+    def fun(x):
+        return sum(i * np.sum(copy.deepcopy(x)) for i in range(1, 3))
+
+    A = npr.randn(5)
+    assert np.allclose(grad(fun)(A), 3.0)
+    check_grads(fun)(A)
 
 
 # def test_nonscalar_output_1():
