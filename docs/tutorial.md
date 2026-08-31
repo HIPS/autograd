@@ -49,12 +49,15 @@ a logistic regression model for binary classification:
 import autograd.numpy as np
 from autograd import grad
 
+
 def sigmoid(x):
-    return 0.5 * (np.tanh(x / 2.) + 1)
+    return 0.5 * (np.tanh(x / 2.0) + 1)
+
 
 def logistic_predictions(weights, inputs):
     # Outputs probability of a label being true according to logistic model.
     return sigmoid(np.dot(inputs, weights))
+
 
 def training_loss(weights):
     # Training loss is the negative log-likelihood of the training labels.
@@ -62,11 +65,9 @@ def training_loss(weights):
     label_probabilities = preds * targets + (1 - preds) * (1 - targets)
     return -np.sum(np.log(label_probabilities))
 
+
 # Build a toy dataset.
-inputs = np.array([[0.52, 1.12,  0.77],
-                   [0.88, -1.08, 0.15],
-                   [0.52, 0.06, -1.30],
-                   [0.74, -2.49, 1.39]])
+inputs = np.array([[0.52, 1.12, 0.77], [0.88, -1.08, 0.15], [0.52, 0.06, -1.30], [0.74, -2.49, 1.39]])
 targets = np.array([True, True, False, True])
 
 # Define a function that returns gradients of training loss using Autograd.
@@ -153,13 +154,11 @@ import xarray as xr
 
 # A named-axis dataset, with three features measured at four time steps.
 measurements = xr.DataArray(
-    np.array([[0.5, 1.2, -0.3],
-              [0.1, 0.4,  0.9],
-              [-0.7, 0.2, 1.1],
-              [0.3, -0.5, 0.6]]),
+    np.array([[0.5, 1.2, -0.3], [0.1, 0.4, 0.9], [-0.7, 0.2, 1.1], [0.3, -0.5, 0.6]]),
     dims=["time", "feature"],
     coords={"feature": ["a", "b", "c"]},
 )
+
 
 def loss(weights):
     # weights is what we differentiate with respect to. Broadcasting
@@ -167,7 +166,8 @@ def loss(weights):
     # along inside the DataArray.
     scores = np.tanh(measurements * weights)
     # Pull the plain array back out for the scalar reduction grad needs
-    return np.sum(scores.data ** 2)
+    return np.sum(scores.data**2)
+
 
 weights = np.array([0.5, -1.0, 2.0])
 print("loss:", loss(weights))
@@ -236,6 +236,7 @@ Next, we define our function using standard Python, using `@primitive` as a deco
 ```python
 import autograd.numpy as np
 from autograd.extend import primitive, defvjp
+
 
 @primitive
 def logsumexp(x):
@@ -326,10 +327,12 @@ We define primitive vector-Jacobian products of complex functions like this
 def f_vjp(g, z):
     z_x, z_y = real(z), imag(z)
     g_x, g_y = real(g), imag(g)
-    return (       g_x * grad(u, 0)(x, y)
-             - i * g_x * grad(u, 1)(x, y)
-             -     g_y * grad(v, 0)(x, y)
-             + i * g_y * grad(v, 1)(x, y))
+    return (
+        g_x * grad(u, 0)(x, y)
+        - i * g_x * grad(u, 1)(x, y)
+        - g_y * grad(v, 0)(x, y)
+        + i * g_y * grad(v, 1)(x, y)
+    )
 ```
 
 For holomorphic primitives, this is just the regular complex derivative multiplied by `g`,

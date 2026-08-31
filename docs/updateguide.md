@@ -38,10 +38,12 @@ First, here's an example of the old way to write custom primitives and VJPs:
 import autograd.numpy as np
 from autograd import primitive
 
+
 @primitive
 def func(x, y, z):
     assert z != 0
     return x * y**2
+
 
 func.defvjp(lambda g, ans, vs, gvs, x, y, z: g * y**2)
 func.defvjp(lambda g, ans, vs, gvs, x, y, z: 2 * g * x * y, argnum=1)
@@ -53,17 +55,16 @@ Here's the new way to write custom VJPs for that same primitive:
 import autograd.numpy as np
 from autograd.extend import primitive, defvjp  # defvjp is now a function
 
+
 # primitives look the same as before
 @primitive
 def func(x, y, z):
     assert z != 0
     return x * y**2
 
+
 # but we call defvjp differently
-defvjp(func,
-       lambda ans, x, y, z: lambda g: g * y**2,
-       lambda ans, x, y, z: lambda g: 2 * g * x * y,
-       None)
+defvjp(func, lambda ans, x, y, z: lambda g: g * y**2, lambda ans, x, y, z: lambda g: 2 * g * x * y, None)
 ```
 
 Here's a list of the `defvjp` changes illustrated in that example:
@@ -80,10 +81,7 @@ func.defvjp(lambda g, ans, vs, gvs, x, y, z, w: ..., argnum=2)
 func.defvjp(lambda g, ans, vs, gvs, x, y, z, w: ..., argnum=3)
 
 # NEW way to leave some VJPs undefined
-defvjp(func,
-       lambda ans, x, y, z, w: lambda g: ...,
-       lambda ans, x, y, z, w: lambda g: ...,
-       argnums=[2, 3])
+defvjp(func, lambda ans, x, y, z, w: lambda g: ..., lambda ans, x, y, z, w: lambda g: ..., argnums=[2, 3])
 ```
 
 ## Gradient checking
@@ -94,5 +92,5 @@ primitive with a custom VJP:
 from autograd.test_util import check_grads
 
 # check reverse-mode to second order
-check_grads(my_func, modes=['rev'], order=2)(*args_for_my_func)
+check_grads(my_func, modes=["rev"], order=2)(*args_for_my_func)
 ```
