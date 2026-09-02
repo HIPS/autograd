@@ -370,6 +370,11 @@ def test_sort():
     combo_check(np.sort, [0])([R(1), R(7)])
 
 
+def test_sort_multidim():
+    combo_check(np.sort, [0])([R(4, 3)], axis=[0, 1, -1])
+    combo_check(np.sort, [0])([R(3, 4, 5)], axis=[0, 1, 2, -1])
+
+
 if onp.lib.NumpyVersion(onp.__version__) < "2.0.0":
 
     def test_msort():
@@ -378,6 +383,11 @@ if onp.lib.NumpyVersion(onp.__version__) < "2.0.0":
 
 def test_partition():
     combo_check(np.partition, [0])([R(7), R(14)], kth=[0, 3, 6])
+
+
+def test_partition_multidim():
+    combo_check(np.partition, [0])([R(4, 3)], kth=[0, 1], axis=[0, 1, -1])
+    combo_check(np.partition, [0])([R(3, 4, 5)], kth=[0, 2], axis=[0, 1, 2])
 
 
 def test_atleast_1d():
