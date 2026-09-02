@@ -9,12 +9,13 @@ from autograd.test_util import check_grads, scalar_close
 
 def check_vspace(value):
     vs = vspace(value)
+    rng = np.random.RandomState(42)
     # --- required attributes ---
     size = vs.size
     add = vs.add
     scalar_mul = vs.scalar_mul
     inner_prod = vs.inner_prod
-    randn = vs.randn
+    randn = lambda: vs.randn(rng)
     zeros = vs.zeros
     ones = vs.ones
     standard_basis = vs.standard_basis
@@ -24,7 +25,7 @@ def check_vspace(value):
         return [randn() for i in range(N)]
 
     def rand_scalar():
-        return float(np.random.randn())
+        return float(rng.randn())
 
     def rand_scalars(N=2):
         return [rand_scalar() for i in range(N)]

@@ -10,7 +10,7 @@ UV_NIGHTLY_ENV_VARS = {
     "UV_NO_CONFIG": "1",
 }
 
-nox.needs_version = ">=2024.4.15"
+nox.needs_version = ">=2026.4.10"
 nox.options.default_venv_backend = "uv|virtualenv"
 nox.options.reuse_existing_virtualenvs = False
 nox.options.error_on_external_run = True
@@ -29,14 +29,15 @@ def check(session):
 @nox.session(name="tests", tags=["tests"])
 def run_tests(session):
     """Run unit tests and generate a coverage report"""
-    pyproject = nox.project.load_toml("pyproject.toml")
-    session.install(*nox.project.dependency_groups(pyproject, "test"))
+    session.install("--group", "test")
     # SciPy doesn't have wheels on PyPy
     if platform.python_implementation() == "PyPy":
         session.install("-e.", silent=False)
     else:
         session.install("-e", ".[scipy]", silent=False)
-    session.run("pytest", "--cov=autograd", "--cov-report=xml", "--cov-append", *session.posargs)
+    session.run(
+        "pytest", "-n", "auto", "--cov=autograd", "--cov-report=xml", "--cov-append", *session.posargs
+    )
 
 
 @nox.session(name="lint", reuse_venv=True)
@@ -50,8 +51,7 @@ def ruff(session):
 def run_nightly_tests(session):
     """Run tests against nightly versions of dependencies"""
     session.install("-e.", silent=False)
-    pyproject = nox.project.load_toml("pyproject.toml")
-    session.install(*nox.project.dependency_groups(pyproject, "test"))
+    session.install("--group", "test")
     # SciPy doesn't have wheels on PyPy
     if platform.python_implementation() == "PyPy":
         session.install(
@@ -72,4 +72,29 @@ def run_nightly_tests(session):
             silent=False,
             env=UV_NIGHTLY_ENV_VARS,
         )
-    session.run("pytest", "--cov=autograd", "--cov-report=xml", "--cov-append", *session.posargs)
+    session.run(
+        "pytest", "-n", "auto", "--cov=autograd", "--cov-report=xml", "--cov-append", *session.posargs
+    )
+
+
+# PyPy has no free-threaded build, so there is no PyPy branch here.
+#
+# When the PYTHON_GIL environment variable is set to 0, we enforce that
+# extension modules that haven't declared themselves as safe to not rely
+# on the GIL are run with the GIL disabled.
+@nox.session(name="free-threading", python=["3.14t"])
+def run_with_free_threaded_python(session):
+    """Run tests with free threaded Python (no-GIL)"""
+    session.run("python", "-VV")
+    session.install("--group", "test-core")
+    session.install("-e", ".[scipy]", silent=False)
+    session.run("pytest", *session.posargs, env={"PYTHON_GIL": "0"})
+
+
+@nox.session(name="free-threading-pytest-run-parallel", python=["3.14t"])
+def run_pytest_run_in_parallel_plugin(session):
+    """Run stress tests with free threaded Python (no-GIL) using the pytest-run-parallel plugin"""
+    session.run("python", "-VV")
+    session.install("--group", "test-core")
+    session.install("-e", ".[scipy]", "pytest-run-parallel", silent=False)
+    session.run("pytest", *session.posargs, env={"PYTHON_GIL": "0"})
