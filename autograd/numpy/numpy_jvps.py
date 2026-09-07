@@ -22,6 +22,10 @@ for fun in nograd_functions:
 
 defjvp(func(ArrayBox.__getitem__), "same")
 defjvp(untake, "same")
+defjvp(
+    anp.take,
+    lambda g, ans, x, indices, axis=None, out=None, mode="raise": anp.take(g, indices, axis=axis, mode=mode),
+)
 
 defjvp_argnum(anp.array_from_args, lambda argnum, g, ans, args, kwargs: untake(g, argnum - 2, vspace(ans)))
 defjvp(
