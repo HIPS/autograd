@@ -1,6 +1,7 @@
 """This file doesn't import the numpy wrapper, to check if core works
 on basic operations even without numpy."""
 
+import copy
 import warnings
 
 from autograd.core import make_vjp
@@ -80,3 +81,26 @@ def test_lt():
 
 def test_gt():
     check_binary_func(lambda x, y: x > y, independent=True)
+
+
+def test_copy():
+    # copy.copy of a box must not duplicate its node, otherwise the trace is
+    # split into disconnected pieces and only one of them reaches the gradient.
+    check_close(grad(lambda x: copy.copy(x) + 2 * copy.copy(x))(1.5), 3.0)
+
+
+def test_deepcopy():
+    check_close(grad(lambda x: copy.deepcopy(x) + 2 * copy.deepcopy(x))(1.5), 3.0)
+
+
+def test_deepcopy_container():
+    def fun(x):
+        d = copy.deepcopy({"a": [x, x]})
+        assert d["a"][0] is d["a"][1] is x
+        return d["a"][0] * d["a"][1]
+
+    check_close(grad(fun)(1.5), 3.0)
+
+
+def test_deepcopy_higher_order():
+    check_close(grad(grad(lambda x: copy.deepcopy(x) ** 3))(2.0), 12.0)
