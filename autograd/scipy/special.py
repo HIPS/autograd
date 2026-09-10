@@ -120,10 +120,22 @@ defvjp(expit, lambda ans, x: lambda g: g * ans * (1 - ans))
 logsumexp = primitive(scipy.special.logsumexp)
 
 
-def make_grad_logsumexp(ans, x, axis=None, b=1.0, keepdims=False):
+def make_grad_logsumexp(ans, x, axis=None, b=1.0, keepdims=False, return_sign=False):
+    if return_sign:
+        # scipy returns (log(abs(sum(b * exp(x)))), sign(sum(b * exp(x)))).
+        ans, sign = ans
     shape, dtype = np.shape(x), np.result_type(x)
 
     def vjp(g):
+        if return_sign:
+            # The sign is piecewise constant, so only the log-sum-exp part of
+            # the output has a non-zero derivative, and the sign of the sum
+            # appears in it because ``ans`` is the log of the absolute value of
+            # that sum.
+            g_repeated, _ = repeat_to_match_shape(g[0], shape, dtype, axis, keepdims)
+            ans_repeated, _ = repeat_to_match_shape(ans, shape, dtype, axis, keepdims)
+            sign_repeated, _ = repeat_to_match_shape(sign, shape, dtype, axis, keepdims)
+            return g_repeated * sign_repeated * b * np.exp(x - ans_repeated)
         g_repeated, _ = repeat_to_match_shape(g, shape, dtype, axis, keepdims)
         ans_repeated, _ = repeat_to_match_shape(ans, shape, dtype, axis, keepdims)
         return g_repeated * b * np.exp(x - ans_repeated)
@@ -134,14 +146,29 @@ def make_grad_logsumexp(ans, x, axis=None, b=1.0, keepdims=False):
 defvjp(logsumexp, make_grad_logsumexp)
 
 
-def fwd_grad_logsumexp(g, ans, x, axis=None, b=1.0, keepdims=False):
+def fwd_grad_logsumexp(g, ans, x, axis=None, b=1.0, keepdims=False, return_sign=False):
+    if return_sign:
+        ans, sign = ans
+        # The sign of the sum is piecewise constant, so its tangent is zero and
+        # the shape of the output is the shape of the unexpanded sign.
+        sign_of_sum = sign
+    else:
+        sign = 1.0
     if not keepdims:
         if isinstance(axis, int):
-            ans = np.expand_dims(ans, axis)
+            axes = (axis,)
         elif isinstance(axis, tuple):
-            for ax in sorted(axis):
-                ans = np.expand_dims(ans, ax)
-    return np.sum(g * b * np.exp(x - ans), axis=axis, keepdims=keepdims)
+            axes = axis
+        else:
+            axes = ()
+        for ax in sorted(axes):
+            ans = np.expand_dims(ans, ax)
+            if return_sign:
+                sign = np.expand_dims(sign, ax)
+    result = np.sum(g * sign * b * np.exp(x - ans), axis=axis, keepdims=keepdims)
+    if return_sign:
+        return result, np.zeros_like(sign_of_sum)
+    return result
 
 
 defjvp(logsumexp, fwd_grad_logsumexp)
