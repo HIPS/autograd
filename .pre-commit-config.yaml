@@ -22,7 +22,7 @@ repos:
         args: [--py310-plus]
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: "e8f7d69b957a30acb2c875078d5fd012de24b64c"  # frozen: v0.16.7
+    rev: "a56c0b927e6465d37cae3e97d35d4d18ab2b96cd"  # frozen: v0.16.9
     hooks:
       - id: ruff
         args: ["--fix", "--show-fixes"]
