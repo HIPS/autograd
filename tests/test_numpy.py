@@ -1,7 +1,6 @@
 import warnings
 
 import pytest
-from numpy_utils import combo_check
 
 import autograd.numpy as np
 import autograd.numpy.random as npr
@@ -801,20 +800,39 @@ def test_c_mixed():
         check_grads(fun)(A)
 
 
-def test_var_ddof():
-    B = npr.randn(3)
-    C = npr.randn(3, 4)
-    D = npr.randn(1, 3)
-    combo_check(np.var, (0,))([B, C, D], axis=[None], keepdims=[True, False], ddof=[0, 1])
-    combo_check(np.var, (0,))([C, D], axis=[None, 1], keepdims=[True, False], ddof=[2])
+_VAR_STD_DDOF_CASES = [
+    (shape, axis, keepdims, ddof)
+    for shape in [(3,), (3, 4), (1, 3)]
+    for axis in [None]
+    for keepdims in [True, False]
+    for ddof in [0, 1]
+] + [
+    (shape, axis, keepdims, ddof)
+    for shape in [(3, 4), (1, 3)]
+    for axis in [None, 1]
+    for keepdims in [True, False]
+    for ddof in [2]
+]
 
 
-def test_std_ddof():
-    B = npr.randn(3)
-    C = npr.randn(3, 4)
-    D = npr.randn(1, 3)
-    combo_check(np.std, (0,))([B, C, D], axis=[None], keepdims=[True, False], ddof=[0, 1])
-    combo_check(np.std, (0,))([C, D], axis=[None, 1], keepdims=[True, False], ddof=[2])
+@pytest.mark.parametrize(("shape", "axis", "keepdims", "ddof"), _VAR_STD_DDOF_CASES, ids=repr)
+def test_var_ddof(shape, axis, keepdims, ddof):
+    data = npr.randn(*shape)
+
+    def fun(x):
+        return np.var(x, axis=axis, keepdims=keepdims, ddof=ddof)
+
+    check_grads(fun)(data)
+
+
+@pytest.mark.parametrize(("shape", "axis", "keepdims", "ddof"), _VAR_STD_DDOF_CASES, ids=repr)
+def test_std_ddof(shape, axis, keepdims, ddof):
+    data = npr.randn(*shape)
+
+    def fun(x):
+        return np.std(x, axis=axis, keepdims=keepdims, ddof=ddof)
+
+    check_grads(fun)(data)
 
 
 def test_where():
