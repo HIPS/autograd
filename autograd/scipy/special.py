@@ -1,8 +1,9 @@
 import scipy.special
 
 import autograd.numpy as np
+from autograd.builtins import tuple as ag_tuple
 from autograd.extend import defjvp, defvjp, primitive
-from autograd.numpy.numpy_vjps import repeat_to_match_shape, unbroadcast_f
+from autograd.numpy.numpy_vjps import match_complex, repeat_to_match_shape, unbroadcast_f
 
 ### Beta function ###
 beta = primitive(scipy.special.beta)
@@ -128,14 +129,17 @@ def make_grad_logsumexp(ans, x, axis=None, b=1.0, keepdims=False, return_sign=Fa
 
     def vjp(g):
         if return_sign:
-            # The sign is piecewise constant, so only the log-sum-exp part of
-            # the output has a non-zero derivative, and the sign of the sum
-            # appears in it because ``ans`` is the log of the absolute value of
-            # that sum.
-            g_repeated, _ = repeat_to_match_shape(g[0], shape, dtype, axis, keepdims)
+            # For complex sums, sign is a phase with a non-zero derivative.
+            # If t = d(sum) / sum, d(log(abs(sum))) = real(t) and
+            # d(sign) = sign * (t - real(t)).
+            cotangent = g[0]
+            if np.iscomplexobj(sign):
+                phase_cotangent = g[1] * sign
+                cotangent = cotangent + phase_cotangent - np.real(phase_cotangent)
+            g_repeated, _ = repeat_to_match_shape(cotangent, shape, dtype, axis, keepdims)
             ans_repeated, _ = repeat_to_match_shape(ans, shape, dtype, axis, keepdims)
             sign_repeated, _ = repeat_to_match_shape(sign, shape, dtype, axis, keepdims)
-            return g_repeated * sign_repeated * b * np.exp(x - ans_repeated)
+            return match_complex(x, g_repeated * np.conj(sign_repeated) * b * np.exp(x - ans_repeated))
         g_repeated, _ = repeat_to_match_shape(g, shape, dtype, axis, keepdims)
         ans_repeated, _ = repeat_to_match_shape(ans, shape, dtype, axis, keepdims)
         return g_repeated * b * np.exp(x - ans_repeated)
@@ -149,25 +153,18 @@ defvjp(logsumexp, make_grad_logsumexp)
 def fwd_grad_logsumexp(g, ans, x, axis=None, b=1.0, keepdims=False, return_sign=False):
     if return_sign:
         ans, sign = ans
-        # The sign of the sum is piecewise constant, so its tangent is zero and
-        # the shape of the output is the shape of the unexpanded sign.
+        # Keep the output-shaped phase for its tangent below.
         sign_of_sum = sign
     else:
         sign = 1.0
-    if not keepdims:
-        if isinstance(axis, int):
-            axes = (axis,)
-        elif isinstance(axis, tuple):
-            axes = axis
-        else:
-            axes = ()
-        for ax in sorted(axes):
-            ans = np.expand_dims(ans, ax)
-            if return_sign:
-                sign = np.expand_dims(sign, ax)
-    result = np.sum(g * sign * b * np.exp(x - ans), axis=axis, keepdims=keepdims)
+    if not keepdims and axis is not None:
+        ans = np.expand_dims(ans, axis)
+        if return_sign:
+            sign = np.expand_dims(sign, axis)
+    result = np.sum(g * np.conj(sign) * b * np.exp(x - ans), axis=axis, keepdims=keepdims)
     if return_sign:
-        return result, np.zeros_like(sign_of_sum)
+        real_result = np.real(result)
+        return ag_tuple((real_result, match_complex(sign_of_sum, sign_of_sum * (result - real_result))))
     return result
 
 
