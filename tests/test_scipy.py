@@ -1,6 +1,7 @@
 from functools import partial
 
 import numpy as npo
+import pytest
 
 try:
     import scipy
@@ -393,6 +394,25 @@ else:
 
     def test_ive():
         combo_check(special.ive, [1])(U(1.0, 50.0, 4), R(4) ** 2 + 1.3)
+
+    @pytest.mark.parametrize("name", ["polygamma", "jn", "yn", "iv", "ive"])
+    @pytest.mark.parametrize("x", [2.0, npo.array([[2.0, 2.5]]), npo.array([[2.0, 2.5], [3.0, 3.5]])])
+    def test_special_broadcast_x_gradient(name, x):
+        orders = npo.array([[0, 1], [2, 3]])
+        autograd_fun = getattr(special, name)
+        scipy_fun = getattr(scipy.special, name)
+        actual = grad(lambda value: np.sum(autograd_fun(orders, value)))(x)
+
+        step = 1e-5
+        expected = npo.zeros_like(x, dtype=float)
+        for index in npo.ndindex(npo.shape(x)):
+            offset = npo.zeros_like(x, dtype=float)
+            offset[index] = step
+            expected[index] = (
+                npo.sum(scipy_fun(orders, x + offset)) - npo.sum(scipy_fun(orders, x - offset))
+            ) / (2 * step)
+
+        npo.testing.assert_allclose(actual, expected, rtol=1e-5, atol=1e-7)
 
     def test_erf():
         unary_ufunc_check(special.erf, lims=[-3.0, 3.0], test_complex=True)
