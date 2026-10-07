@@ -306,6 +306,17 @@ def test_norm_nuclear_axis_complex():
     check_grads(fun)(mat)
 
 
+@pytest.mark.parametrize("ord", [None, "fro", "nuc"])
+@pytest.mark.parametrize("axis", [(-2, -1), (-1, -2), (0, -1)])
+def test_matrix_norm_negative_axes(axis, ord):
+    def fun(x):
+        return np.linalg.norm(x, ord=ord, axis=axis)
+
+    arr = npr.randn(6, 5, 4)
+    # Order 1 because the jvp of the svd is not implemented
+    check_grads(fun, modes=["fwd", "rev"], order=1)(arr)
+
+
 def test_eigvalh_lower():
     def fun(x):
         w, v = np.linalg.eigh(x)
