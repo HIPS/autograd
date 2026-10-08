@@ -620,6 +620,21 @@ def test_prod_4():
     check_grads(fun)(mat)
 
 
+@pytest.mark.parametrize(
+    "x, axis",
+    [
+        (np.array([0.0]), None),
+        (np.array([0.0, 2.0, 3.0]), None),
+        (np.array([0.0, 0.0, 3.0]), None),
+        (np.array([1.0, 2.0, 0.0, 4.0, 5.0]), None),
+        (np.array([[0.0, 2.0, 1.0], [3.0, 4.0, 0.0]]), 0),
+        (np.array([[0.0, 2.0, 1.0], [3.0, 0.0, 0.0]]), -1),
+    ],
+)
+def test_prod_with_zeros(x, axis):
+    check_grads(lambda x: np.prod(x, axis=axis))(x)
+
+
 def test_1d_array():
     def fun(x):
         return np.array([x, x * 1.0, x + 2.5])
