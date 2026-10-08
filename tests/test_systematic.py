@@ -5,7 +5,8 @@ from numpy_utils import binary_ufunc_check, binary_ufunc_check_no_same_args, sta
 
 import autograd.numpy as np
 import autograd.numpy.random as npr
-from autograd.test_util import combo_check
+from autograd import grad
+from autograd.test_util import check_grads, combo_check
 
 npr.seed(0)
 
@@ -632,3 +633,46 @@ def test_pad():
     combo_check(np.pad, [0])(
         [R(2, 2)], [0, 3, (3,), (3, 2), ((3, 2),), ((1, 2), (3, 4)), ((0, 0), (0, 0))], ["constant"]
     )
+
+
+def test_reductions_with_where():
+    # A reduction with a `where` argument ignores the elements it excludes, so
+    # the derivatives must give them a zero gradient.
+    mask = onp.array(
+        [
+            [True, True, False, True],
+            [True, False, True, True],
+            [False, True, True, True],
+        ]
+    )
+    # `where` may also be broadcast against the input instead of matching its
+    # shape, as long as no slice of the reduction is left empty.
+    broadcast_mask = onp.array([True, True, False, True])
+    for fun in [np.sum, np.mean, np.prod]:
+        combo_check(fun, [0])([R(3, 4)], where=[mask], axis=[None, 0, 1], keepdims=[True, False])
+        combo_check(fun, [0])([R(3, 4)], where=[broadcast_mask], axis=[None, 1], keepdims=[True, False])
+    for fun in [np.var, np.std]:
+        combo_check(fun, [0])(
+            [R(3, 4)],
+            where=[mask],
+            axis=[None, 0, 1],
+            keepdims=[True, False],
+            ddof=[0, 1],
+        )
+        combo_check(fun, [0])(
+            [R(3, 4)],
+            where=[broadcast_mask],
+            axis=[None, 1],
+            keepdims=[True, False],
+            ddof=[0, 1],
+        )
+
+
+def test_reduction_where_is_skipped():
+    # The gradient of an excluded element must be zero, whatever the reduction.
+    x = onp.array([1.0, 2.0, 3.0, 4.0])
+    mask = onp.array([True, False, True, True])
+    for fun in [np.sum, np.mean, np.prod, np.var, np.std]:
+        f = lambda a, fun=fun: fun(a, where=mask)
+        check_grads(f, modes=["fwd", "rev"])(x)
+        assert np.allclose(grad(f)(x)[1], 0.0)
