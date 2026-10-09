@@ -632,3 +632,10 @@ def test_pad():
     combo_check(np.pad, [0])(
         [R(2, 2)], [0, 3, (3,), (3, 2), ((3, 2),), ((1, 2), (3, 4)), ((0, 0), (0, 0))], ["constant"]
     )
+
+
+def test_pad_default_mode():
+    # The mode argument of np.pad is optional and defaults to "constant",
+    # so the derivatives must be defined for calls that do not pass it.
+    combo_check(np.pad, [0])([R(2, 2)], [0, 3, (3,), (3, 2), ((3, 2),), ((1, 2), (3, 4)), ((0, 0), (0, 0))])
+    combo_check(np.pad, [0])([R(2, 2)], [2], constant_values=[0.0, 5.0])

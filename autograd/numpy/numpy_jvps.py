@@ -301,4 +301,7 @@ def broadcast(x, target):
     return x
 
 
-defjvp(anp.pad, lambda g, ans, array, width, mode, **kwargs: anp.pad(g, width, mode))
+defjvp(
+    anp.pad,
+    lambda g, ans, array, width, mode="constant", **kwargs: anp.pad(g, width, mode),
+)

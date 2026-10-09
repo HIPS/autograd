@@ -968,7 +968,7 @@ def _unpad(array, width):
     return array[idxs]
 
 
-def pad_vjp(ans, array, pad_width, mode, **kwargs):
+def pad_vjp(ans, array, pad_width, mode="constant", **kwargs):
     assert mode == "constant", "Only constant mode padding is supported."
     return lambda g: _unpad(g, pad_width)
 
