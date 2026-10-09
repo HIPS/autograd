@@ -72,6 +72,13 @@ def test_arctanh():
     unary_ufunc_check(np.arctanh, lims=[-0.9, 0.9])
 
 
+def test_cbrt():
+    # Real-only, and its slope is vertical at the origin, so keep the sampled
+    # range off zero instead of asking gradcheck to resolve an infinite slope.
+    unary_ufunc_check(np.cbrt, lims=[0.5, 4.0], test_complex=False)
+    unary_ufunc_check(np.cbrt, lims=[-4.0, -0.5], test_complex=False)
+
+
 def test_ceil():
     unary_ufunc_check(np.ceil, lims=[-1.5, 1.5], test_complex=False)
 
