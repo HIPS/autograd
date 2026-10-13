@@ -74,19 +74,17 @@ def grad_solve_banded(argnum, ans, l_and_u, a, b):
         # Compute tensor product of vectors uu and vv.
         # Tensor product elements are resticted to the bands specified by l_and_u.
 
-        # TODO: replace the brute-force ravel() by smarter dimension handeling of uu and vv
-
         # main diagonal
-        banded_uv = anp.ravel(uu) * anp.ravel(vv)
+        banded_uv = anp.sum(uu * vv, axis=1)[None, :]
 
         # stack below the sub-diagonals
         for rr in range(1, l_and_u[0] + 1):
-            banded_uv_rr = anp.hstack([anp.ravel(uu)[rr:] * anp.ravel(vv)[:-rr], anp.zeros(rr)])
+            banded_uv_rr = anp.hstack([anp.sum(uu[rr:] * vv[:-rr], axis=1), anp.zeros(rr)])
             banded_uv = anp.vstack([banded_uv, banded_uv_rr])
 
         # stack above the sup-diagonals
         for rr in range(1, l_and_u[1] + 1):
-            banded_uv_rr = anp.hstack([anp.zeros(rr), anp.ravel(uu)[:-rr] * anp.ravel(vv)[rr:]])
+            banded_uv_rr = anp.hstack([anp.zeros(rr), anp.sum(uu[:-rr] * vv[rr:], axis=1)])
             banded_uv = anp.vstack([banded_uv_rr, banded_uv])
 
         return banded_uv
@@ -94,9 +92,7 @@ def grad_solve_banded(argnum, ans, l_and_u, a, b):
     T_l_and_u, T_a = transpose_banded(l_and_u, a)
 
     if argnum == 1:
-        return lambda g: (
-            -banded_dot(l_and_u, updim(solve_banded(T_l_and_u, T_a, g)), anp.transpose(updim(ans)))
-        )
+        return lambda g: -banded_dot(l_and_u, updim(solve_banded(T_l_and_u, T_a, g)), updim(ans))
     elif argnum == 2:
         return lambda g: solve_banded(T_l_and_u, T_a, g)
 
