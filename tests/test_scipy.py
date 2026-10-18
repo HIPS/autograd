@@ -1,6 +1,7 @@
 from functools import partial
 
 import numpy as npo
+import pytest
 
 try:
     import scipy
@@ -222,6 +223,19 @@ else:
 
     def test_dirichlet_logpdf_alpha():
         combo_check(stats.dirichlet.logpdf, [1])([x], [alpha])
+
+    @pytest.mark.parametrize("func", [stats.dirichlet.pdf, stats.dirichlet.logpdf])
+    @pytest.mark.parametrize("n_samples", [1, 2, 3])
+    def test_dirichlet_batched_gradients(func, n_samples):
+        alpha = np.array([1.5, 2.0, 3.0])
+        x = np.array([[0.2, 0.3, 0.4], [0.3, 0.5, 0.2], [0.5, 0.2, 0.4]])[:, :n_samples]
+        weights = np.array([0.5, 1.5, 2.0])[:n_samples]
+
+        def objective(x, alpha):
+            # Perturb coordinates within the simplex when checking derivatives.
+            return np.dot(weights, func(x / np.sum(x, axis=0, keepdims=True), alpha))
+
+        check_grads(objective, argnum=(0, 1), order=2)(x, alpha)
 
     ### Misc ###
     def test_logsumexp1():
