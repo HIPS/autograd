@@ -426,6 +426,28 @@ else:
     def test_sqrtm():
         combo_check(symmetrize_matrix_arg(spla.sqrtm, 0), modes=["fwd", "rev"], order=2)([R(3, 3)])
 
+    def test_sqrtm_complex_trace_gradient():
+        diagonal = np.array([4.0 + 1.0j, 3.0 + 0.5j])
+        matrix = np.diag(diagonal)
+        actual = grad(lambda a: np.real(np.trace(spla.sqrtm(a))))(matrix)
+        npo.testing.assert_allclose(actual, np.diag(0.5 / np.sqrt(diagonal)))
+
+    def test_sqrtm_complex():
+        matrix = np.array([[4.0 + 1.0j, 0.2 + 0.1j], [0.1 - 0.3j, 3.0 + 0.5j]])
+        check_grads(spla.sqrtm, modes=["fwd", "rev"], order=2)(matrix)
+
+    def test_sqrtm_real_input_complex_output():
+        matrix = np.diag(np.array([-4.0, 9.0]))
+
+        def objective(a):
+            value = np.trace(spla.sqrtm(a))
+            return np.real(value) + np.imag(value)
+
+        actual = grad(objective)(matrix)
+        npo.testing.assert_allclose(actual, np.diag(np.array([-0.25, 1.0 / 6.0])))
+        assert not np.iscomplexobj(actual)
+        check_grads(objective, modes=["rev"], order=2)(matrix)
+
     def test_solve_sylvester():
         combo_check(spla.solve_sylvester, [0, 1, 2], modes=["rev", "fwd"], order=2)(
             [R(3, 3)], [R(3, 3)], [R(3, 3)]
