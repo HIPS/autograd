@@ -103,6 +103,12 @@ def test_solve_arg1_1d():
     check_grads(fun)(A)
 
 
+def test_solve_arg1_list_rhs():
+    a = npr.randn(3, 3) + 4 * np.eye(3)
+    b = [1.0, 2.0, 3.0]
+    check_grads(lambda a: np.linalg.solve(a, b))(a)
+
+
 def test_solve_arg2():
     D = 6
     A = npr.randn(D, D) + 1.0 * np.eye(D)
@@ -131,6 +137,21 @@ def test_solve_arg1_3d_3d():
     B = npr.randn(D + 1, D, D + 2)
     fun = lambda A: np.linalg.solve(A, B)
     check_grads(fun)(A)
+
+
+@pytest.mark.parametrize("a_batch, b_batch", [((), (3,)), ((1,), (3,)), ((2, 1), (1, 3))])
+def test_solve_broadcast_matrix_rhs(a_batch, b_batch):
+    a = npr.randn(*a_batch, 2, 2) + 4 * np.eye(2)
+    b = npr.randn(*b_batch, 2, 4)
+    check_grads(np.linalg.solve, argnum=(0, 1))(a, b)
+
+
+@pytest.mark.skipif(onp.lib.NumpyVersion(onp.__version__) < "2.0.0", reason="NumPy 2 vector RHS semantics")
+@pytest.mark.parametrize("a_batch", [(3,), (2, 3)])
+def test_solve_broadcast_vector_rhs(a_batch):
+    a = npr.randn(*a_batch, 2, 2) + 4 * np.eye(2)
+    b = npr.randn(2)
+    check_grads(np.linalg.solve, argnum=(0, 1))(a, b)
 
 
 def test_det():
