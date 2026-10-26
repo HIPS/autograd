@@ -11,7 +11,7 @@ pdf = primitive(scipy.stats.chi2.pdf)
 
 
 def grad_chi2_logpdf(x, df):
-    return np.where(df % 1 == 0, (df - x - 2) / (2 * x), 0)
+    return (df - x - 2) / (2 * x)
 
 
 defvjp(

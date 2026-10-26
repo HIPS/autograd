@@ -46,13 +46,13 @@ else:
 
     ### Stats ###
     def test_chi2_pdf():
-        combo_check(stats.chi2.pdf, [0])([R(4) ** 2 + 1.1], [1, 2, 3])
+        combo_check(stats.chi2.pdf, [0])([R(4) ** 2 + 1.1], [1, 2, 2.5, 3])
 
     def test_chi2_cdf():
         combo_check(stats.chi2.cdf, [0])([R(4) ** 2 + 1.1], [1, 2, 3])
 
     def test_chi2_logpdf():
-        combo_check(stats.chi2.logpdf, [0])([R(4) ** 2 + 1.1], [1, 2, 3])
+        combo_check(stats.chi2.logpdf, [0])([R(4) ** 2 + 1.1], [1, 2, 2.5, 3])
 
     def test_beta_cdf():
         combo_check(stats.beta.cdf, [0])([U(0.0, 1.0, 4)], [R(4) ** 2 + 1.1], [R(4) ** 2 + 1.1])
