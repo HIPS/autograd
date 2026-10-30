@@ -24,7 +24,11 @@ def wrap_intdtype(cls):
 
 def wrap_namespace(old, new):
     unchanged_types = {float, int, type(None), type}
-    int_types = {_np.int8, _np.int16, _np.int32, _np.int64, _np.integer}
+    # Concrete integer dtypes need a notrace __new__. Leave abstract
+    # bases such as integer alone so issubdtype(np.int32, np.integer)
+    # keeps working (see #551); type(obj) is type then copies them through
+    # unchanged_types.
+    int_types = {_np.int8, _np.int16, _np.int32, _np.int64}
     obj_to_wrapped = []
     for name, obj in old.items():
         # Map multiple names of the same object (e.g. conj/conjugate)
