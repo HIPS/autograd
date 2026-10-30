@@ -1,3 +1,4 @@
+import inspect
 import warnings
 from collections import defaultdict
 from contextlib import contextmanager
@@ -41,6 +42,37 @@ class Node:
 trace_primitives_map = {}
 
 
+def _canonicalize_call(f_raw, args, kwargs):
+    """Bind keyword-passed boxed parameters into *args when the signature allows.
+
+    ``find_top_boxed_args`` only inspects positional ``args``. User primitives
+    are often invoked as ``f(x=boxed)``; without binding, the box stays in
+    ``kwargs`` and the raw function sees an ArrayBox on the forward pass
+    (see HIPS/autograd#681).
+
+    Only rewrites calls that actually pass a boxed value by keyword, so
+    ordinary NumPy kwargs (``out=None``, ``keepdims=_NoValue``, …) stay
+    untouched. Uses ``BoundArguments.args`` / ``.kwargs`` so trailing
+    keyword parameters are not shifted into earlier positional slots.
+    """
+    if not kwargs:
+        return args, kwargs
+    # ``box_types`` is assigned later in this module; look it up at call time.
+    if not any(type(v) in box_types for v in kwargs.values()):
+        return args, kwargs
+    try:
+        sig = inspect.signature(f_raw)
+    except (ValueError, TypeError):
+        return args, kwargs
+    if not sig.parameters:
+        return args, kwargs
+    try:
+        bound = sig.bind_partial(*args, **kwargs)
+    except TypeError:
+        return args, kwargs
+    return bound.args, dict(bound.kwargs)
+
+
 def primitive(f_raw):
     """
     Wraps a function so that its gradient can be specified and its invocation
@@ -50,6 +82,7 @@ def primitive(f_raw):
 
     @wraps(f_raw)
     def f_wrapped(*args, called_by_autograd_dispatcher=False, **kwargs):
+        args, kwargs = _canonicalize_call(f_raw, args, kwargs)
         boxed_args, trace, node_constructor, ufunc_dispatch_needed = find_top_boxed_args(args)
         if boxed_args:
             # If we are a wrapper around a ufunc, and if there is at least one ArrayBox
@@ -109,6 +142,7 @@ def register_notrace(trace_type, primitive_fun):
 def notrace_primitive(f_raw):
     @wraps(f_raw)
     def f_wrapped(*args, **kwargs):
+        args, kwargs = _canonicalize_call(f_raw, args, kwargs)
         argvals = map(getval, args)
         return f_raw(*argvals, **kwargs)
 
