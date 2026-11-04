@@ -119,11 +119,11 @@ def check_even_shape(shape):
         raise NotImplementedError("Real FFT gradient for odd lengthed last axes is not implemented.")
 
 
-def get_fft_args(a, d=None, axis=-1, norm=None, *args, **kwargs):
+def get_fft_args(a, n=None, axis=-1, norm=None, *args, **kwargs):
     axes = [axis]
-    if d is not None:
-        d = [d]
-    return axes, d, norm
+    if n is not None:
+        n = [n]
+    return axes, n, norm
 
 
 def get_fft2_args(a, s=None, axes=(-2, -1), norm=None, *args, **kwargs):
@@ -156,6 +156,8 @@ def make_rfft_factors(axes, resshape, facshape, normshape, norm):
     else:
         index[axes[-1]] = (0,)
     fac[tuple(index)] = 1
-    if norm is None:
+    if norm is None or norm == "backward":
         fac /= N
+    elif norm == "forward":
+        fac *= N
     return fac
