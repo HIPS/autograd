@@ -11,6 +11,7 @@ from .numpy_vjps import (
     dot_adjoint_1,
     match_complex,
     nograd_functions,
+    reduction_mask,
     replace_zero,
     tensordot_adjoint_0,
     tensordot_adjoint_1,
@@ -161,12 +162,18 @@ defjvp(anp.tile, "same")
 defjvp(anp.transpose, "same")
 defjvp(anp.sum, "same")
 defjvp(anp._primitive_mean, "same")
-defjvp(
-    anp.prod,
-    lambda g, ans, x, axis=None, keepdims=False, **kwargs: (
-        ans * anp.sum(g / x, axis=axis, keepdims=keepdims)
-    ),
-)
+
+
+def fwd_grad_prod(g, ans, x, axis=None, keepdims=False, where=None, **kwargs):
+    mask = reduction_mask(where, anp.shape(x))
+    if mask is None:
+        return ans * anp.sum(g / x, axis=axis, keepdims=keepdims)
+    # The excluded elements are not part of the product, so they can hold any
+    # value, including zero: replace them before dividing by x.
+    return ans * anp.sum(g * mask / anp.where(mask, x, 1.0), axis=axis, keepdims=keepdims)
+
+
+defjvp(anp.prod, fwd_grad_prod)
 defjvp(
     anp.linspace,
     lambda g, ans, start, stop, *args, **kwargs: anp.linspace(g, 0, *args, **kwargs),
@@ -174,7 +181,17 @@ defjvp(
 )
 
 
-def forward_grad_np_var(g, ans, x, axis=None, ddof=0, keepdims=False, **kwargs):
+def forward_grad_np_var(g, ans, x, axis=None, ddof=0, keepdims=False, where=None, **kwargs):
+    mask = reduction_mask(where, anp.shape(x))
+    if mask is not None:
+        num_reps = anp.sum(mask, axis=axis, keepdims=keepdims)
+        x_minus_mean = anp.conj(x - anp.mean(x, axis=axis, keepdims=True, where=where))
+        return (
+            2.0
+            * anp.sum(anp.real(g * x_minus_mean) * mask, axis=axis, keepdims=keepdims)
+            / (num_reps - ddof)
+        )
+
     if axis is None:
         num_reps = anp.size(g)
     elif isinstance(axis, int):
@@ -189,7 +206,15 @@ def forward_grad_np_var(g, ans, x, axis=None, ddof=0, keepdims=False, **kwargs):
 defjvp(anp._primitive_var, forward_grad_np_var)
 
 
-def forward_grad_np_std(g, ans, x, axis=None, ddof=0, keepdims=False, **kwargs):
+def forward_grad_np_std(g, ans, x, axis=None, ddof=0, keepdims=False, where=None, **kwargs):
+    mask = reduction_mask(where, anp.shape(x))
+    if mask is not None:
+        num_reps = anp.sum(mask, axis=axis, keepdims=keepdims)
+        x_minus_mean = anp.conj(x - anp.mean(x, axis=axis, keepdims=True, where=where))
+        return anp.sum(anp.real(g * x_minus_mean) * mask, axis=axis, keepdims=keepdims) / (
+            (num_reps - ddof) * ans
+        )
+
     if axis is None:
         num_reps = anp.size(g)
     elif isinstance(axis, int):

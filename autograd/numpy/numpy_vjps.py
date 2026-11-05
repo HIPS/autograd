@@ -441,20 +441,47 @@ def grad_broadcast_to(ans, x, new_shape):
 defvjp(anp.broadcast_to, grad_broadcast_to)
 
 
-def grad_np_sum(ans, x, axis=None, keepdims=False, dtype=None, **kwargs):
+def reduction_mask(where, shape):
+    """Broadcast the ``where`` mask of a reduction to the shape of its input.
+
+    A reduction with a ``where`` argument only looks at the selected elements,
+    so its derivatives have to skip the others: otherwise the gradient is
+    non-zero for an element that the result does not depend on.
+    """
+    if where is None:
+        return None
+    return anp.zeros(shape, dtype=bool) + where
+
+
+def grad_np_sum(ans, x, axis=None, keepdims=False, dtype=None, where=None, **kwargs):
     shape, dtype = anp.shape(x), anp.result_type(x)
-    return lambda g: repeat_to_match_shape(g, shape, dtype, axis, keepdims)[0]
+
+    def vjp(g):
+        g_repeated, _ = repeat_to_match_shape(g, shape, dtype, axis, keepdims)
+        mask = reduction_mask(where, shape)
+        if mask is None:
+            return g_repeated
+        return g_repeated * mask
+
+    return vjp
 
 
 defvjp(anp.sum, grad_np_sum)
 
 
-def grad_np_mean(ans, x, axis=None, keepdims=False, **kwargs):
+def grad_np_mean(ans, x, axis=None, keepdims=False, where=None, **kwargs):
     shape, dtype = anp.shape(x), anp.result_type(x)
 
     def vjp(g):
         g_repeated, num_reps = repeat_to_match_shape(g, shape, dtype, axis, keepdims)
-        return g_repeated / num_reps
+        mask = reduction_mask(where, shape)
+        if mask is None:
+            return g_repeated / num_reps
+        # The mean of the selected elements divides by their number, which is
+        # not the number of elements of the reduced axes. Keep the reduced axes
+        # in the count so that it broadcasts against the input.
+        count = anp.sum(mask, axis=axis, keepdims=True)
+        return g_repeated * mask / count
 
     return vjp
 
@@ -462,12 +489,17 @@ def grad_np_mean(ans, x, axis=None, keepdims=False, **kwargs):
 defvjp(anp._primitive_mean, grad_np_mean)
 
 
-def grad_np_prod(ans, x, axis=None, keepdims=False, **kwargs):  # TODO: Support tuples of axes.
+def grad_np_prod(ans, x, axis=None, keepdims=False, where=None, **kwargs):  # TODO: Support tuples of axes.
     shape, dtype = anp.shape(x), anp.result_type(x)
 
     def vjp(g):
         g_repeated, _ = repeat_to_match_shape(g * ans, shape, dtype, axis, keepdims)
-        return g_repeated / x
+        mask = reduction_mask(where, shape)
+        if mask is None:
+            return g_repeated / x
+        # The excluded elements are not part of the product, so they can hold
+        # any value, including zero: replace them before dividing by x.
+        return g_repeated / anp.where(mask, x, 1.0) * mask
 
     return vjp
 
@@ -475,15 +507,20 @@ def grad_np_prod(ans, x, axis=None, keepdims=False, **kwargs):  # TODO: Support 
 defvjp(anp.prod, grad_np_prod)
 
 
-def grad_np_var(ans, x, axis=None, ddof=0, keepdims=False, **kwargs):
+def grad_np_var(ans, x, axis=None, ddof=0, keepdims=False, where=None, **kwargs):
     shape, _, dtype, iscomplex = anp.metadata(x)
 
     def vjp(g):
         if iscomplex:
             g = g + 0j
         g_repeated, num_reps = repeat_to_match_shape(g, shape, dtype, axis, keepdims)
-        x_minus_mean = anp.conj(x - anp.mean(x, axis=axis, keepdims=True))
-        return 2.0 * g_repeated * x_minus_mean / (num_reps - ddof)
+        mask = reduction_mask(where, shape)
+        if mask is None:
+            x_minus_mean = anp.conj(x - anp.mean(x, axis=axis, keepdims=True))
+            return 2.0 * g_repeated * x_minus_mean / (num_reps - ddof)
+        num_reps = anp.sum(mask, axis=axis, keepdims=True)
+        x_minus_mean = anp.conj(x - anp.mean(x, axis=axis, keepdims=True, where=where))
+        return 2.0 * g_repeated * x_minus_mean * mask / (num_reps - ddof)
 
     return vjp
 
@@ -491,7 +528,7 @@ def grad_np_var(ans, x, axis=None, ddof=0, keepdims=False, **kwargs):
 defvjp(anp._primitive_var, grad_np_var)
 
 
-def grad_np_std(ans, x, axis=None, ddof=0, keepdims=False, **kwargs):
+def grad_np_std(ans, x, axis=None, ddof=0, keepdims=False, where=None, **kwargs):
     shape, _, dtype, iscomplex = anp.metadata(x)
 
     def vjp(g):
@@ -500,12 +537,17 @@ def grad_np_std(ans, x, axis=None, ddof=0, keepdims=False, **kwargs):
         g_repeated, num_reps = repeat_to_match_shape(
             g, shape, dtype, axis, keepdims
         )  # Avoid division by zero.
-        if num_reps <= 1:
-            return g_repeated * 0.0
-        else:
+        mask = reduction_mask(where, shape)
+        if mask is None:
+            if num_reps <= 1:
+                return g_repeated * 0.0
             g_repeated, num_reps = repeat_to_match_shape(g / ans, shape, dtype, axis, keepdims)
             x_minus_mean = anp.conj(x - anp.mean(x, axis=axis, keepdims=True))
             return g_repeated * x_minus_mean / (num_reps - ddof)
+        num_reps = anp.sum(mask, axis=axis, keepdims=True)
+        g_repeated, _ = repeat_to_match_shape(g / ans, shape, dtype, axis, keepdims)
+        x_minus_mean = anp.conj(x - anp.mean(x, axis=axis, keepdims=True, where=where))
+        return g_repeated * mask * x_minus_mean / (num_reps - ddof)
 
     return vjp
 
