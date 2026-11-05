@@ -133,6 +133,7 @@ defjvp(anp.arccosh, lambda g, ans, x: g / anp.sqrt(x**2 - 1))
 defjvp(anp.arctanh, lambda g, ans, x: g / (1 - x**2))
 defjvp(anp.square, lambda g, ans, x: g * 2 * x)
 defjvp(anp.sqrt, lambda g, ans, x: g * 0.5 * x**-0.5)
+defjvp(anp.cbrt, lambda g, ans, x: g / (3.0 * ans**2))
 defjvp(
     anp.sinc,
     lambda g, ans, x: g * (anp.cos(anp.pi * x) * anp.pi * x - anp.sin(anp.pi * x)) / (anp.pi * x**2),
