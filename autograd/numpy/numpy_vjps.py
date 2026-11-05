@@ -537,7 +537,10 @@ def reverse_axis(x, axis):
     return x.swapaxes(0, axis)
 
 
-def grad_np_cumsum(ans, x, axis=None):
+def grad_np_cumsum(ans, x, axis=None, dtype=None):
+    # dtype is accepted so reverse mode matches NumPy's cumsum signature
+    # (including dtype=None). The cast is a forward-only detail; the VJP
+    # broadcasts the upstream cotangent the same way as when dtype is omitted.
     def vjp(g):
         if axis:
             return reverse_axis(anp.cumsum(reverse_axis(g, axis), axis), axis)
