@@ -106,3 +106,14 @@ def test_flatten_complex():
     val = 1 + 1j
     flat, unflatten = flatten(val)
     assert np.all(val == unflatten(flat))
+
+
+def test_issubdtype_with_wrapped_int_and_integer_abc():
+    """Regression for #551: np.integer must remain the NumPy ABC."""
+    import numpy as numpy_mod
+
+    import autograd.numpy as anp
+
+    assert anp.issubdtype(anp.int32, numpy_mod.integer)
+    assert anp.issubdtype(anp.int32, anp.integer)
+    assert anp.integer is numpy_mod.integer
