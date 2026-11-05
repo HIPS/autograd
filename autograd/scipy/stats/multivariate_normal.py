@@ -34,21 +34,33 @@ def covgrad(x, mean, cov, allow_singular=False):
 
 def solve(allow_singular):
     if allow_singular:
-        return lambda A, x: np.dot(np.linalg.pinv(A), x)
+        solver = lambda A, x: np.dot(np.linalg.pinv(A), x)
     else:
-        return np.linalg.solve
+        solver = np.linalg.solve
+
+    def solve_batch(A, x):
+        shape = np.shape(x)
+        rhs = np.reshape(x, (-1, shape[-1])).T
+        return np.reshape(solver(A, rhs).T, shape)
+
+    return solve_batch
+
+
+def reshape_weights(g, x, mean):
+    return np.reshape(g, np.shape(x - mean)[:-1] + (1,))
 
 
 defvjp(
     logpdf,
     lambda ans, x, mean, cov, allow_singular=False: unbroadcast_f(
-        x, lambda g: -np.expand_dims(np.atleast_1d(g), 1) * solve(allow_singular)(cov, (x - mean).T).T
+        x, lambda g: -reshape_weights(g, x, mean) * solve(allow_singular)(cov, x - mean)
     ),
     lambda ans, x, mean, cov, allow_singular=False: unbroadcast_f(
-        mean, lambda g: np.expand_dims(np.atleast_1d(g), 1) * solve(allow_singular)(cov, (x - mean).T).T
+        mean, lambda g: reshape_weights(g, x, mean) * solve(allow_singular)(cov, x - mean)
     ),
     lambda ans, x, mean, cov, allow_singular=False: unbroadcast_f(
-        cov, lambda g: np.reshape(g, np.shape(g) + (1, 1)) * covgrad(x, mean, cov, allow_singular)
+        cov,
+        lambda g: np.expand_dims(reshape_weights(g, x, mean), -1) * covgrad(x, mean, cov, allow_singular),
     ),
 )
 
@@ -56,14 +68,17 @@ defvjp(
 defvjp(
     pdf,
     lambda ans, x, mean, cov, allow_singular=False: unbroadcast_f(
-        x, lambda g: -np.expand_dims(np.atleast_1d(ans * g), 1) * solve(allow_singular)(cov, (x - mean).T).T
+        x, lambda g: -reshape_weights(ans * g, x, mean) * solve(allow_singular)(cov, x - mean)
     ),
     lambda ans, x, mean, cov, allow_singular=False: unbroadcast_f(
         mean,
-        lambda g: np.expand_dims(np.atleast_1d(ans * g), 1) * solve(allow_singular)(cov, (x - mean).T).T,
+        lambda g: reshape_weights(ans * g, x, mean) * solve(allow_singular)(cov, x - mean),
     ),
     lambda ans, x, mean, cov, allow_singular=False: unbroadcast_f(
-        cov, lambda g: np.reshape(ans * g, np.shape(g) + (1, 1)) * covgrad(x, mean, cov, allow_singular)
+        cov,
+        lambda g: (
+            np.expand_dims(reshape_weights(ans * g, x, mean), -1) * covgrad(x, mean, cov, allow_singular)
+        ),
     ),
 )
 
