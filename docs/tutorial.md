@@ -186,6 +186,9 @@ Numpy has [a lot of features](http://docs.scipy.org/doc/numpy/reference/). We've
 * [N-dimensional convolutions](../autograd/scipy/signal.py)
 * Some scipy routines, including [`scipy.stats.norm`](../autograd/scipy/stats/norm.py)
 
+For cumulative sums, `np.cumsum(x, dtype=np.float64)` can accumulate a `float32` input in higher precision without breaking differentiation.
+The reverse-mode gradient is accumulated before being cast back to the input's dtype, and retains the input's shape.
+
 Some things remain to be implemented. For example, we support indexing (`x = A[i, j, :]`) but not assignment (`A[i,j] = x`) in arrays that are being differentiated with respect to.
 Assignment is hard to support because it requires keeping copies of the overwritten data, and so even when you write code that looks like it's performing assignment, the system would have to be making copies behind the scenes, often defeating the purpose of in-place operations.
 
