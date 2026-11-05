@@ -184,7 +184,12 @@ defvjp(anp.degrees, lambda ans, x: lambda g: g / anp.pi * 180.0)
 defvjp(anp.deg2rad, lambda ans, x: lambda g: g * anp.pi / 180.0)
 defvjp(anp.radians, lambda ans, x: lambda g: g * anp.pi / 180.0)
 defvjp(anp.square, lambda ans, x: lambda g: g * 2 * x)
-defvjp(anp.sqrt, lambda ans, x: lambda g: g * 0.5 * x**-0.5)
+defvjp(
+    anp.sqrt,
+    # Use ans (=sqrt(x)) and gate on finite ans so a zero cotangent through an
+    # inactive where-branch cannot become 0*nan (see #802). Works for complex.
+    lambda ans, x: lambda g: anp.where(anp.isfinite(ans) & (ans != 0), g * 0.5 / ans, 0.0 * g),
+)
 defvjp(
     anp.sinc,
     lambda ans, x: lambda g: g * (anp.cos(anp.pi * x) * anp.pi * x - anp.sin(anp.pi * x)) / (anp.pi * x**2),

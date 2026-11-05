@@ -817,6 +817,17 @@ def test_std_ddof():
     combo_check(np.std, (0,))([C, D], axis=[None, 1], keepdims=[True, False], ddof=[2])
 
 
+def test_where_inactive_sqrt_branch_grad():
+    # Inactive branch may evaluate to NaN (e.g. sqrt of a negative); its
+    # cotangent must still be zeroed so the active branch stays finite (#802).
+    def f(x):
+        return np.where(x >= 0, x, np.sqrt(-x))
+
+    assert np.allclose(f(1.0), 1.0)
+    assert np.allclose(grad(f)(1.0), 1.0)
+    assert np.allclose(grad(f)(-1.0), -0.5)
+
+
 def test_where():
     def fun(x, y):
         b = np.where(C, x, y)
