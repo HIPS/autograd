@@ -40,7 +40,7 @@ rgamma = primitive(scipy.special.rgamma)
 multigammaln = primitive(scipy.special.multigammaln)
 
 defvjp(gammasgn, None)
-defvjp(polygamma, None, lambda ans, n, x: lambda g: g * polygamma(n + 1, x))
+defvjp(polygamma, None, lambda ans, n, x: unbroadcast_f(x, lambda g: g * polygamma(n + 1, x)))
 defvjp(psi, lambda ans, x: lambda g: g * polygamma(1, x))
 defvjp(digamma, lambda ans, x: lambda g: g * polygamma(1, x))
 defvjp(gamma, lambda ans, x: lambda g: g * ans * psi(x))
@@ -77,8 +77,8 @@ defvjp(j0, lambda ans, x: lambda g: -g * j1(x))
 defvjp(y0, lambda ans, x: lambda g: -g * y1(x))
 defvjp(j1, lambda ans, x: lambda g: g * (j0(x) - jn(2, x)) / 2.0)
 defvjp(y1, lambda ans, x: lambda g: g * (y0(x) - yn(2, x)) / 2.0)
-defvjp(jn, None, lambda ans, n, x: lambda g: g * (jn(n - 1, x) - jn(n + 1, x)) / 2.0)
-defvjp(yn, None, lambda ans, n, x: lambda g: g * (yn(n - 1, x) - yn(n + 1, x)) / 2.0)
+defvjp(jn, None, lambda ans, n, x: unbroadcast_f(x, lambda g: g * (jn(n - 1, x) - jn(n + 1, x)) / 2.0))
+defvjp(yn, None, lambda ans, n, x: unbroadcast_f(x, lambda g: g * (yn(n - 1, x) - yn(n + 1, x)) / 2.0))
 
 
 ### Faster versions of common Bessel functions ###
@@ -89,8 +89,10 @@ ive = primitive(scipy.special.ive)
 
 defvjp(i0, lambda ans, x: lambda g: g * i1(x))
 defvjp(i1, lambda ans, x: lambda g: g * (i0(x) + iv(2, x)) / 2.0)
-defvjp(iv, None, lambda ans, n, x: lambda g: g * (iv(n - 1, x) + iv(n + 1, x)) / 2.0)
-defvjp(ive, None, lambda ans, n, x: lambda g: g * (ans * (n / x - np.sign(x)) + ive(n + 1, x)))
+defvjp(iv, None, lambda ans, n, x: unbroadcast_f(x, lambda g: g * (iv(n - 1, x) + iv(n + 1, x)) / 2.0))
+defvjp(
+    ive, None, lambda ans, n, x: unbroadcast_f(x, lambda g: g * (ans * (n / x - np.sign(x)) + ive(n + 1, x)))
+)
 
 ### Error Function ###
 inv_root_pi = 0.56418958354775627928
