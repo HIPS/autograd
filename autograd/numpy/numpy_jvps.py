@@ -180,7 +180,7 @@ def forward_grad_np_var(g, ans, x, axis=None, ddof=0, keepdims=False, **kwargs):
     elif isinstance(axis, int):
         num_reps = anp.shape(g)[axis]
     elif isinstance(axis, tuple):
-        num_reps = anp.prod(anp.array(np.shape(g))[list(axis)])
+        num_reps = anp.prod(anp.array(anp.shape(g))[list(axis)])
 
     x_minus_mean = anp.conj(x - anp.mean(x, axis=axis, keepdims=True))
     return 2.0 * anp.sum(anp.real(g * x_minus_mean), axis=axis, keepdims=keepdims) / (num_reps - ddof)
