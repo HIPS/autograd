@@ -154,10 +154,8 @@ def norm_jvp(g, ans, x, ord=None, axis=None, **kwargs):
         elif not (ord is None or ord > 1):
             raise NotImplementedError(f"Gradient of norm not implemented for ord={ord}")
 
-    if axis is None:
-        contract = lambda a: anp.sum(a)
-    else:
-        contract = partial(anp.sum, axis=axis)
+    # Norms are real-valued, also for complex inputs.
+    contract = lambda a: anp.real(anp.sum(a, axis=axis))
 
     if ord == "nuc":
         if axis is None:

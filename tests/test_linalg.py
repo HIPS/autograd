@@ -5,7 +5,7 @@ import pytest
 
 import autograd.numpy as np
 import autograd.numpy.random as npr
-from autograd import tuple
+from autograd import make_jvp, tuple
 from autograd.test_util import check_grads
 
 npr.seed(1)
@@ -189,7 +189,7 @@ def test_vector_2norm_complex():
 
     D = 6
     vec = npr.randn(D) + 1j * npr.randn(D)
-    check_grads(fun)(vec)
+    check_grads(fun, modes=["fwd", "rev"])(vec)
 
 
 def test_frobenius_norm():
@@ -207,7 +207,7 @@ def test_frobenius_norm_complex():
 
     D = 6
     mat = npr.randn(D, D - 1) + 1j * npr.randn(D, D - 1)
-    check_grads(fun)(mat)
+    check_grads(fun, modes=["fwd", "rev"])(mat)
 
 
 def test_frobenius_norm_axis():
@@ -225,7 +225,7 @@ def test_frobenius_norm_axis_complex():
 
     D = 6
     mat = npr.randn(D, D - 1, D - 2) + 1j * npr.randn(D, D - 1, D - 2)
-    check_grads(fun)(mat)
+    check_grads(fun, modes=["fwd", "rev"])(mat)
 
 
 @pytest.mark.parametrize("ord", range(2, 5))
@@ -245,7 +245,7 @@ def test_vector_norm_ord_complex(size, ord):
         return np.linalg.norm(x, ord=ord)
 
     vec = npr.randn(size) + 1j * npr.randn(size)
-    check_grads(fun)(vec)
+    check_grads(fun, modes=["fwd", "rev"])(vec)
 
 
 @pytest.mark.parametrize("axis", range(3))
@@ -265,7 +265,7 @@ def test_norm_axis_complex(shape, axis):
         return np.linalg.norm(x, axis=axis)
 
     arr = npr.randn(*shape) + 1j * npr.randn(*shape)
-    check_grads(fun)(arr)
+    check_grads(fun, modes=["fwd", "rev"])(arr)
 
 
 def test_norm_nuclear():
@@ -285,6 +285,8 @@ def test_norm_nuclear_complex():
     D = 6
     mat = npr.randn(D, D - 1) + 1j * npr.randn(D, D - 1)
     check_grads(fun)(mat)
+    # Order 1 because the jvp of the svd is not implemented
+    check_grads(fun, modes=["fwd"], order=1)(mat)
 
 
 def test_norm_nuclear_axis():
@@ -304,6 +306,21 @@ def test_norm_nuclear_axis_complex():
     D = 6
     mat = npr.randn(D, D - 1, D - 2) + 1j * npr.randn(D, D - 1, D - 2)
     check_grads(fun)(mat)
+    # Order 1 because the jvp of the svd is not implemented
+    check_grads(fun, modes=["fwd"], order=1)(mat)
+
+
+@pytest.mark.parametrize("ord, axis", [(None, None), (3, 0), ("fro", (0, 1)), ("nuc", (0, 1))])
+def test_complex_norm_jvp_phase_and_scale(ord, axis):
+    def fun(x):
+        return np.linalg.norm(x, ord=ord, axis=axis)
+
+    mat = np.array([[1 + 2j, 3 + 4j], [2 - 1j, 1 + 0j], [1 + 3j, 2 + 1j]])
+    for scale in (1j, -2 + 3j):
+        value, tangent = make_jvp(fun)(mat)(scale * mat)
+        assert onp.isrealobj(tangent)
+        assert onp.shape(tangent) == onp.shape(value)
+        onp.testing.assert_allclose(tangent, scale.real * value, rtol=1e-12, atol=1e-12)
 
 
 def test_eigvalh_lower():
