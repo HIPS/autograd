@@ -6,6 +6,7 @@ from ..util import func
 from . import numpy_wrapper as anp
 from .numpy_boxes import ArrayBox
 from .numpy_vjps import (
+    _reshape_order,
     balanced_eq,
     dot_adjoint_0,
     dot_adjoint_1,
@@ -73,20 +74,31 @@ defjvp(
 )
 defjvp(anp.arctan2, lambda g, ans, x, y: g * y / (x**2 + y**2), lambda g, ans, x, y: g * -x / (x**2 + y**2))
 
+
 # ----- Simple grads (linear) -----
+def reshape_jvp(g, ans, x, *args, **kwargs):
+    if len(args) == 2 and args[1] == "A":
+        args = (args[0], _reshape_order(x, args[1]))
+    elif kwargs.get("order") == "A":
+        kwargs = dict(kwargs, order=_reshape_order(x, kwargs["order"]))
+    # The primal's no-copy restriction does not constrain the tangent layout.
+    kwargs.pop("copy", None)
+    return anp.reshape(g, *args, **kwargs)
+
+
 defjvp(anp.negative, "same")
 defjvp(anp.rad2deg, "same")
 defjvp(anp.degrees, "same")
 defjvp(anp.deg2rad, "same")
 defjvp(anp.radians, "same")
-defjvp(anp.reshape, "same")
+defjvp(anp.reshape, reshape_jvp)
 defjvp(anp.roll, "same")
 defjvp(anp.array_split, "same")
 defjvp(anp.split, "same")
 defjvp(anp.vsplit, "same")
 defjvp(anp.hsplit, "same")
 defjvp(anp.dsplit, "same")
-defjvp(anp.ravel, "same")
+defjvp(anp.ravel, lambda g, ans, x, order="C": anp.ravel(g, order=_reshape_order(x, order)))
 defjvp(anp.expand_dims, "same")
 defjvp(anp.squeeze, "same")
 defjvp(anp.diag, "same")

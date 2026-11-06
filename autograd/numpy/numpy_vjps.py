@@ -3,6 +3,7 @@ from functools import partial
 import numpy as onp
 
 from autograd.extend import SparseObject, VJPNode, defvjp, defvjp_argnum, primitive, register_notrace, vspace
+from autograd.tracer import getval
 
 from ..util import func
 from . import numpy_wrapper as anp
@@ -189,14 +190,29 @@ defvjp(
     anp.sinc,
     lambda ans, x: lambda g: g * (anp.cos(anp.pi * x) * anp.pi * x - anp.sin(anp.pi * x)) / (anp.pi * x**2),
 )
-defvjp(anp.reshape, lambda ans, x, shape, order=None: lambda g: anp.reshape(g, anp.shape(x), order=order))
+
+
+def _reshape_order(x, order):
+    if order == "A":
+        flags = onp.asarray(getval(x)).flags
+        return "F" if flags.f_contiguous and not flags.c_contiguous else "C"
+    return order
+
+
+defvjp(
+    anp.reshape,
+    lambda ans, x, shape, order=None: lambda g: anp.reshape(g, anp.shape(x), order=_reshape_order(x, order)),
+)
 defvjp(anp.roll, lambda ans, x, shift, axis=None: lambda g: anp.roll(g, -shift, axis=axis))
 defvjp(anp.array_split, lambda ans, ary, idxs, axis=0: lambda g: anp.concatenate(g, axis=axis))
 defvjp(anp.split, lambda ans, ary, idxs, axis=0: lambda g: anp.concatenate(g, axis=axis))
 defvjp(anp.vsplit, lambda ans, ary, idxs: lambda g: anp.concatenate(g, axis=0))
 defvjp(anp.hsplit, lambda ans, ary, idxs: lambda g: anp.concatenate(g, axis=1))
 defvjp(anp.dsplit, lambda ans, ary, idxs: lambda g: anp.concatenate(g, axis=2))
-defvjp(anp.ravel, lambda ans, x, order=None: lambda g: anp.reshape(g, anp.shape(x), order=order))
+defvjp(
+    anp.ravel,
+    lambda ans, x, order=None: lambda g: anp.reshape(g, anp.shape(x), order=_reshape_order(x, order)),
+)
 defvjp(anp.expand_dims, lambda ans, x, axis: lambda g: anp.reshape(g, anp.shape(x)))
 defvjp(anp.squeeze, lambda ans, x, axis=None: lambda g: anp.reshape(g, anp.shape(x)))
 defvjp(anp.diag, lambda ans, x, k=0: lambda g: anp.diag(g, k))
