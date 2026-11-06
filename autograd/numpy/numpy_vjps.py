@@ -813,6 +813,38 @@ defvjp(anp.atleast_2d, grad_reshape_list)
 defvjp(anp.atleast_3d, grad_reshape_list)
 
 
+def grad_einsum_repeated(g, op_num, in_subs, out_subs, operands, result_meta):
+    subs_wrt = in_subs[op_num]
+    unique_subs = "".join(dict.fromkeys(subs_wrt))
+    first_axes = [subs_wrt.index(sub) for sub in unique_subs]
+    target_shape = result_meta[0]
+    unique_shape = tuple(target_shape[axis] for axis in first_axes)
+    rest_subs = in_subs[:op_num] + in_subs[op_num + 1 :]
+    rest_ops = tuple(operands[:op_num]) + tuple(operands[op_num + 1 :])
+    input_subs = [out_subs] + rest_subs
+    input_ops = (g,) + rest_ops
+    other_subs = set("".join(input_subs))
+    naked_subs = "".join(sub for sub in unique_subs if sub not in other_subs)
+    if naked_subs:
+        ones_shape = tuple(target_shape[subs_wrt.index(sub)] for sub in naked_subs)
+        input_subs.append(naked_subs)
+        input_ops += (onp.ones(ones_shape, dtype=result_meta[2]),)
+    result = anp.einsum(",".join(input_subs) + "->" + unique_subs, *input_ops)
+    unique_meta = (unique_shape, len(unique_shape), result_meta[2], result_meta[3])
+    result = anp.broadcast_to(unbroadcast(result, unique_meta), unique_shape)
+    # Embed the unique-index gradient on the original operand's diagonals.
+    shape = [target_shape[axis] if axis in first_axes else 1 for axis in range(len(subs_wrt))]
+    result = anp.broadcast_to(anp.reshape(result, shape), target_shape)
+    for axis, sub in enumerate(subs_wrt):
+        first_axis = subs_wrt.index(sub)
+        if axis != first_axis:
+            mask_shape = [1] * len(subs_wrt)
+            mask_shape[first_axis] = mask_shape[axis] = target_shape[axis]
+            mask = onp.eye(target_shape[axis], dtype=bool).reshape(mask_shape)
+            result = anp.where(mask, result, 0)
+    return result
+
+
 def grad_einsum(argnum, ans, operands_, kwargs):
     result_meta = anp.metadata(operands_[argnum])
 
@@ -825,6 +857,8 @@ def grad_einsum(argnum, ans, operands_, kwargs):
             in_subs_list = in_subs.split(",")
             op_num = argnum - 1
             subs_wrt = in_subs_list[op_num]
+            if len(set(subs_wrt)) != len(subs_wrt):
+                return grad_einsum_repeated(g, op_num, in_subs_list, out_subs, operands, result_meta)
             rest_of_ops = operands[:op_num] + operands[op_num + 1 :]
             rest_of_subs = in_subs_list[:op_num] + in_subs_list[op_num + 1 :]
 
@@ -849,6 +883,12 @@ def grad_einsum(argnum, ans, operands_, kwargs):
         else:  # using (op0, sublist0, op1, sublist1, ..., sublistout) convention
             if len(operands) % 2 == 0:
                 raise NotImplementedError("Need sublistout argument")
+            target_subs = operands[argnum + 1]
+            if len(set(target_subs)) != len(target_subs):
+                in_subs, out_subs, _ = anp.parse_einsum_input(*operands)
+                return grad_einsum_repeated(
+                    g, argnum // 2, in_subs.split(","), out_subs, operands[:-1:2], result_meta
+                )
             operands = list(operands)
             rest_of_ops = (
                 [operands[-1]] + operands[:argnum] + operands[(argnum + 2) : -1] + [operands[argnum + 1]]
