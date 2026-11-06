@@ -147,8 +147,10 @@ class TraceStack:
     @contextmanager
     def new_trace(self):
         self.top += 1
-        yield self.top
-        self.top -= 1
+        try:
+            yield self.top
+        finally:
+            self.top -= 1
 
 
 trace_stack = TraceStack()

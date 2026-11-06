@@ -4,6 +4,7 @@ on basic operations even without numpy."""
 import warnings
 
 from autograd.core import make_vjp
+from autograd.tracer import trace_stack
 from autograd.wrap_util import unary_to_nary
 
 
@@ -80,3 +81,19 @@ def test_lt():
 
 def test_gt():
     check_binary_func(lambda x, y: x > y, independent=True)
+
+
+def test_trace_stack_is_restored_when_traced_function_raises():
+    initial_trace = trace_stack.top
+
+    def raises(x):
+        raise ValueError("failure during tracing")
+
+    try:
+        make_vjp(raises, 1.0)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("expected the traced function to raise")
+
+    assert trace_stack.top == initial_trace
