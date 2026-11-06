@@ -117,3 +117,46 @@ def test_issubdtype_with_wrapped_int_and_integer_abc():
     assert anp.issubdtype(anp.int32, numpy_mod.integer)
     assert anp.issubdtype(anp.int32, anp.integer)
     assert anp.integer is numpy_mod.integer
+
+
+def test_primitive_keyword_arg_unboxes_forward():
+    """Boxed values passed by keyword must be unboxed before the raw call (#681)."""
+    from autograd.extend import defvjp
+    from autograd.tracer import isbox
+
+    seen = []
+
+    @primitive
+    def f(x):
+        seen.append(isbox(x))
+        return x**2
+
+    defvjp(f, lambda ans, x: lambda g: 2 * g * x)
+
+    assert grad(lambda y: f(y))(1.5) == 3.0
+    assert seen == [False]
+
+    seen.clear()
+    assert grad(lambda y: f(x=y))(1.5) == 3.0
+    assert seen == [False]
+
+
+def test_primitive_mixed_keyword_args_unbox():
+    from autograd.extend import defvjp
+    from autograd.tracer import isbox
+
+    seen = []
+
+    @primitive
+    def add(x, y):
+        seen.append((isbox(x), isbox(y)))
+        return x + y
+
+    defvjp(add, lambda ans, x, y: lambda g: g, lambda ans, x, y: lambda g: g)
+
+    assert grad(lambda t: add(1.0, y=t))(2.0) == 1.0
+    assert seen[-1] == (False, False)
+
+    seen.clear()
+    assert grad(lambda t: add(x=t, y=3.0))(2.0) == 1.0
+    assert seen[-1] == (False, False)
