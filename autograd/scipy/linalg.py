@@ -29,14 +29,16 @@ def _flip(a, trans):
         return "T" if trans in ("N", 0) else "N"
 
 
-def grad_solve_triangular(ans, a, b, trans=0, lower=False, **kwargs):
+def grad_solve_triangular(ans, a, b, trans=0, lower=False, unit_diagonal=False, **kwargs):
     tri = anp.tril if (lower ^ (_flip(a, trans) == "N")) else anp.triu
+    # With unit_diagonal the diagonal of a is not referenced, so it gets no gradient.
+    k = (-1 if tri is anp.tril else 1) if unit_diagonal else 0
     transpose = lambda x: x if _flip(a, trans) != "N" else x.T
     al2d = lambda x: x if x.ndim > 1 else x[..., None]
 
     def vjp(g):
-        v = al2d(solve_triangular(a, g, trans=_flip(a, trans), lower=lower))
-        return -transpose(tri(anp.dot(v, al2d(ans).T)))
+        v = al2d(solve_triangular(a, g, trans=_flip(a, trans), lower=lower, unit_diagonal=unit_diagonal))
+        return -transpose(tri(anp.dot(v, al2d(ans).T), k))
 
     return vjp
 
@@ -44,8 +46,8 @@ def grad_solve_triangular(ans, a, b, trans=0, lower=False, **kwargs):
 defvjp(
     solve_triangular,
     grad_solve_triangular,
-    lambda ans, a, b, trans=0, lower=False, **kwargs: (
-        lambda g: solve_triangular(a, g, trans=_flip(a, trans), lower=lower)
+    lambda ans, a, b, trans=0, lower=False, unit_diagonal=False, **kwargs: (
+        lambda g: solve_triangular(a, g, trans=_flip(a, trans), lower=lower, unit_diagonal=unit_diagonal)
     ),
 )
 
