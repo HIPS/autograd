@@ -3,7 +3,7 @@ import scipy.stats
 import autograd.numpy as np
 from autograd.extend import defvjp, primitive
 from autograd.numpy.numpy_vjps import unbroadcast_f
-from autograd.scipy.special import gamma, psi
+from autograd.scipy.special import _gamma_density, psi
 
 cdf = primitive(scipy.stats.gamma.cdf)
 logpdf = primitive(scipy.stats.gamma.logpdf)
@@ -18,9 +18,15 @@ def grad_gamma_logpdf_arg1(x, a):
     return np.log(x) - psi(a)
 
 
+def grad_gamma_cdf(x, a):
+    below_support = x < 0
+    safe_x = np.where(below_support, 1.0, x)
+    return np.where(below_support, 0.0, _gamma_density(a, safe_x))
+
+
 defvjp(
     cdf,
-    lambda ans, x, a: unbroadcast_f(x, lambda g: g * np.exp(-x) * np.power(x, a - 1) / gamma(a)),
+    lambda ans, x, a: unbroadcast_f(x, lambda g: g * grad_gamma_cdf(x, a)),
     argnums=[0],
 )
 defvjp(

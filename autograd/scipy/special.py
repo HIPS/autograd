@@ -53,9 +53,28 @@ defvjp(
 )
 
 
+def _gamma_density(a, x):
+    # Avoid overflow in x**(a - 1) and gamma(a) before their ratio is taken.
+    infinite_shape = np.isposinf(a)
+    a = np.where(infinite_shape, 1.0, a)
+    at_infinity = np.isposinf(x)
+    x = np.where(at_infinity, 1.0, x)
+    use_power = x <= 1
+    log_x = np.where(use_power, 1.0, x)
+    power_x = np.where(use_power, x, 1.0)
+    log_gamma = gammaln(a)
+    logarithmic = np.exp((a - 1) * np.log(log_x) - log_x - log_gamma)
+    # For 0 <= x <= 1 and a >= 1, the power is bounded by 1. Retaining it
+    # avoids divisions by tiny x in higher derivatives, including at zero.
+    # Sanitize both inactive branches before evaluating them.
+    power = np.power(power_x, a - 1) * np.exp(-power_x - log_gamma)
+    density = np.where(use_power, power, logarithmic)
+    return np.where(infinite_shape, 0.0, np.where(at_infinity, 0.0, density))
+
+
 def make_gammainc_vjp_arg1(sign):
     def gammainc_vjp_arg1(ans, a, x):
-        coeffs = sign * np.exp(-x) * np.power(x, a - 1) / gamma(a)
+        coeffs = sign * _gamma_density(a, x)
         return unbroadcast_f(x, lambda g: g * coeffs)
 
     return gammainc_vjp_arg1
