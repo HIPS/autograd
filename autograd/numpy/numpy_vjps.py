@@ -345,6 +345,8 @@ defvjp(anp.gradient, grad_gradient)
 
 def grad_repeat(ans, x, repeats, axis=None):
     shape = anp.shape(x)
+    if axis is not None and axis < 0:
+        axis += len(shape)
 
     def vjp(g):
         if axis is None:  # If axis is none, np.repeat() repeats the flattened array.
@@ -407,7 +409,7 @@ defvjp(anp.kron, partial(grad_kron, 0), partial(grad_kron, 1))
 
 def grad_transpose(ans, x, axes=None):
     if axes is not None:
-        axes = anp.argsort(axes)
+        axes = anp.argsort(onp.mod(axes, anp.ndim(x)))
     return lambda g: anp.transpose(g, axes)
 
 

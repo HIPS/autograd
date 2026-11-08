@@ -255,12 +255,21 @@ def test_transpose():
     )
 
 
+def test_transpose_negative_axes():
+    combo_check(np.transpose, [0])([R(2, 3, 4)], axes=[[-1, 0, 1], [0, -1, -2]])
+    combo_check(np.transpose, [0])([R(3)], axes=[0, -1])
+
+
 def test_moveaxis():
     combo_check(np.moveaxis, [0])([R(2, 3, 4)], source=[0, 1, 2], destination=[0, 1, 2])
 
 
 def test_repeat():
     combo_check(np.repeat, [0])([R(2, 3, 4), R(3, 1)], repeats=[0, 1, 2], axis=[None, 0, 1])
+
+
+def test_repeat_negative_axis():
+    combo_check(np.repeat, [0])([R(2, 3, 4), R(3, 1)], repeats=[1, 2], axis=[-1, -2])
 
 
 def test_diff():
