@@ -1,11 +1,13 @@
 import operator as op
 
 import numpy as onp
+import pytest
 from numpy_utils import binary_ufunc_check, binary_ufunc_check_no_same_args, stat_check, unary_ufunc_check
 
 import autograd.numpy as np
 import autograd.numpy.random as npr
-from autograd.test_util import combo_check
+from autograd import grad, make_jvp
+from autograd.test_util import check_grads, combo_check
 
 npr.seed(0)
 
@@ -284,6 +286,64 @@ def test_kron():
     combo_check(np.kron, [0, 1])(
         [R(5, 5), R(4, 4), R(5), R(5, 1), R(1, 5), R(), C(5, 5)],
         [R(3, 3), R(2, 2), R(3), R(1, 3), R(3, 1), R(), C(3, 3)],
+    )
+
+
+@pytest.mark.parametrize(
+    "a_shape,b_shape",
+    [
+        ((), ()),
+        ((), (2, 2, 2)),
+        ((2, 2, 2), ()),
+        ((2,), (3,)),
+        ((2, 3), (2, 2)),
+        ((2, 2, 2), (2, 2, 2)),
+        ((2, 1, 2), (2, 2)),
+        ((2, 2), (2, 1, 2)),
+        ((2,), (2, 1, 3)),
+        ((2, 1, 3), (2,)),
+        ((2, 1, 2, 1), (1, 2, 1, 2)),
+        ((2, 3, 1), (3, 1, 2)),
+        ((1, 2, 1), (2, 1, 3)),
+        ((1, 2, 1, 3), (2, 2)),
+        ((0, 2, 1), (2, 1, 3)),
+        ((2, 1), (1, 0, 3)),
+    ],
+)
+def test_kron_nd(a_shape, b_shape):
+    a = onp.arange(1.0, onp.prod(a_shape) + 1).reshape(a_shape) / 3
+    b = onp.arange(1.0, onp.prod(b_shape) + 1).reshape(b_shape) / 5
+    expected_value = onp.kron(a, b)
+    weights = onp.arange(1.0, expected_value.size + 1).reshape(expected_value.shape) / 7
+    assert onp.array_equal(np.kron(a, b), expected_value)
+
+    for argnum, x, other in [(0, a, b), (1, b, a)]:
+        # The forward image of each basis vector is a coefficient of this
+        # linear functional, independently of the reverse rule's bookkeeping.
+        expected_grad = onp.empty_like(x)
+        for i in range(x.size):
+            basis = onp.zeros_like(x)
+            basis.flat[i] = 1
+            image = onp.kron(basis, other) if argnum == 0 else onp.kron(other, basis)
+            expected_grad.flat[i] = onp.sum(image * weights)
+
+        fun = (lambda z: np.kron(z, b)) if argnum == 0 else (lambda z: np.kron(a, z))
+        tangent = onp.ones_like(x) / 11
+        value, jvp = make_jvp(fun)(x)(tangent)
+        expected_jvp = onp.kron(tangent, other) if argnum == 0 else onp.kron(other, tangent)
+        assert onp.array_equal(value, expected_value)
+        assert onp.allclose(jvp, expected_jvp, rtol=1e-12, atol=1e-12)
+        actual_grad = grad(lambda z, fun=fun: np.sum(fun(z) * weights))(x)
+        assert actual_grad.shape == x.shape
+        assert onp.allclose(actual_grad, expected_grad, rtol=1e-12, atol=1e-12)
+
+    if a.size and b.size:
+        check_grads(lambda x, y: np.sin(np.kron(x, y)), (0, 1), modes=["fwd", "rev"], order=2)(a, b)
+
+
+def test_kron_nd_complex():
+    combo_check(lambda a, b: np.sin(np.kron(a, b)), (0, 1), order=2)(
+        [R(2, 1, 2), C(2, 1, 2)], [R(2, 2, 1), C(2, 2, 1)]
     )
 
 

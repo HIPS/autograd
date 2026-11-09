@@ -379,17 +379,18 @@ defvjp(anp.tile, grad_tile)
 
 
 def grad_kron(argnum, ans, orig_A, orig_B):
-    # kron has different promotion rules than dot. the reshapes are necessary if
-    # and only if (1) orig_B is 1D or (2) orig_A and/or orig_B are 0D
     orig_A_shape = anp.shape(orig_A)
     orig_B_shape = anp.shape(orig_B)
 
     def vjp(G):
         A, B = anp.atleast_2d(orig_A), anp.atleast_2d(orig_B)
-        shape = list(A.shape + B.shape)
-        n = anp.ndim(A)
-        shape[n - 1], shape[n] = shape[n], shape[n - 1]
-        reshaped_G = anp.swapaxes(anp.reshape(G, shape), n - 1, n)
+        n = max(A.ndim, B.ndim)
+        A = anp.reshape(A, (1,) * (n - A.ndim) + A.shape)
+        B = anp.reshape(B, (1,) * (n - B.ndim) + B.shape)
+        # NumPy interleaves the axes of the rank-promoted operands.
+        shape = tuple(d for pair in zip(A.shape, B.shape) for d in pair)
+        axes = tuple(range(0, 2 * n, 2)) + tuple(range(1, 2 * n, 2))
+        reshaped_G = anp.transpose(anp.reshape(G, shape), axes)
         if argnum == 0:
             return match_complex(
                 orig_A, anp.reshape(anp.tensordot(reshaped_G, B, axes=anp.ndim(B)), orig_A_shape)
