@@ -405,6 +405,25 @@ def grad_kron(argnum, ans, orig_A, orig_B):
 defvjp(anp.kron, partial(grad_kron, 0), partial(grad_kron, 1))
 
 
+def grad_convolve(argnum, ans, a, v, mode="full"):
+    mode = {0: "valid", 1: "same", 2: "full"}.get(mode, mode)  # numpy also accepts ints
+    a1, v1 = anp.atleast_1d(a), anp.atleast_1d(v)
+    M, N = len(a1), len(v1)
+    L, S = max(M, N), min(M, N)
+    start, n = {"full": (0, M + N - 1), "same": ((S - 1) // 2, L), "valid": (S - 1, L - S + 1)}[mode]
+    other = v1 if argnum == 0 else a1
+    shape = anp.shape(a if argnum == 0 else v)
+
+    def vjp(g):
+        g_full = anp.pad(anp.atleast_1d(g), (start, M + N - 1 - start - n), "constant")
+        return anp.reshape(anp.convolve(g_full, other[::-1], "valid"), shape)
+
+    return vjp
+
+
+defvjp(anp.convolve, partial(grad_convolve, 0), partial(grad_convolve, 1))
+
+
 def grad_transpose(ans, x, axes=None):
     if axes is not None:
         axes = anp.argsort(axes)

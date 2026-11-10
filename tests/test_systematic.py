@@ -5,7 +5,7 @@ from numpy_utils import binary_ufunc_check, binary_ufunc_check_no_same_args, sta
 
 import autograd.numpy as np
 import autograd.numpy.random as npr
-from autograd.test_util import combo_check
+from autograd.test_util import check_grads, combo_check
 
 npr.seed(0)
 
@@ -285,6 +285,24 @@ def test_kron():
         [R(5, 5), R(4, 4), R(5), R(5, 1), R(1, 5), R(), C(5, 5)],
         [R(3, 3), R(2, 2), R(3), R(1, 3), R(3, 1), R(), C(3, 3)],
     )
+
+
+def test_convolve():
+    # Covers first longer, first shorter, equal lengths and length-1 inputs
+    combo_check(np.convolve, [0, 1], modes=["rev"])(
+        [R(5), R(3), R(1)], [R(3), R(5), R(1)], mode=["full", "valid", "same"]
+    )
+
+
+def test_convolve_second_order():
+    fun = lambda a, v: np.convolve(a, v, mode="same")
+    check_grads(fun, modes=["rev"], order=2)(R(4), R(6))
+
+
+def test_convolve_int_mode_and_complex():
+    for mode in [0, 1, 2]:
+        check_grads(lambda a, v, mode=mode: np.convolve(a, v, mode), modes=["rev"])(R(4), R(3))
+    check_grads(lambda a, v: np.convolve(a, v, "same"), modes=["rev"])(C(3), C(5))
 
 
 def test_inner():
