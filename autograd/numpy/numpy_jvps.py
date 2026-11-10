@@ -1,11 +1,13 @@
 import numpy as onp
 
+from autograd.core import make_jvp
 from autograd.extend import JVPNode, def_linear, defjvp, defjvp_argnum, register_notrace, vspace
 
 from ..util import func
 from . import numpy_wrapper as anp
 from .numpy_boxes import ArrayBox
 from .numpy_vjps import (
+    _prod_tree,
     balanced_eq,
     dot_adjoint_0,
     dot_adjoint_1,
@@ -163,9 +165,9 @@ defjvp(anp.sum, "same")
 defjvp(anp._primitive_mean, "same")
 defjvp(
     anp.prod,
-    lambda g, ans, x, axis=None, keepdims=False, **kwargs: (
-        ans * anp.sum(g / x, axis=axis, keepdims=keepdims)
-    ),
+    lambda g, ans, x, axis=None, keepdims=False, **kwargs: make_jvp(
+        lambda x: _prod_tree(x, axis, anp.shape(ans)), x
+    )(g)[1],
 )
 defjvp(
     anp.linspace,

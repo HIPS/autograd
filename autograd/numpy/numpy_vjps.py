@@ -2,6 +2,7 @@ from functools import partial
 
 import numpy as onp
 
+from autograd.core import make_vjp
 from autograd.extend import SparseObject, VJPNode, defvjp, defvjp_argnum, primitive, register_notrace, vspace
 
 from ..util import func
@@ -462,14 +463,23 @@ def grad_np_mean(ans, x, axis=None, keepdims=False, **kwargs):
 defvjp(anp._primitive_mean, grad_np_mean)
 
 
+def _prod_tree(x, axis, out_shape):
+    """np.prod computed as a pairwise product tree, so its derivatives avoid dividing by x."""
+    if axis is None:
+        x = anp.reshape(x, (-1,))
+    else:
+        axes = tuple(a % anp.ndim(x) for a in (axis if isinstance(axis, tuple) else (axis,)))
+        x = anp.moveaxis(x, axes, tuple(range(-len(axes), 0)))
+        x = anp.reshape(x, anp.shape(x)[: anp.ndim(x) - len(axes)] + (-1,))
+    if anp.shape(x)[-1] == 0:
+        return onp.ones(out_shape)
+    while anp.shape(x)[-1] > 1:
+        x = anp.concatenate([x[..., :-1:2] * x[..., 1::2], x[..., anp.shape(x)[-1] // 2 * 2 :]], axis=-1)
+    return anp.reshape(x, out_shape)
+
+
 def grad_np_prod(ans, x, axis=None, keepdims=False, **kwargs):  # TODO: Support tuples of axes.
-    shape, dtype = anp.shape(x), anp.result_type(x)
-
-    def vjp(g):
-        g_repeated, _ = repeat_to_match_shape(g * ans, shape, dtype, axis, keepdims)
-        return g_repeated / x
-
-    return vjp
+    return make_vjp(lambda x: _prod_tree(x, axis, anp.shape(ans)), x)[0]
 
 
 defvjp(anp.prod, grad_np_prod)
