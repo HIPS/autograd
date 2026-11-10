@@ -229,15 +229,25 @@ defvjp(
     lambda ans, c, x=None, y=None: lambda g: anp.where(c, g, anp.zeros(g.shape)),
     lambda ans, c, x=None, y=None: lambda g: anp.where(c, anp.zeros(g.shape), g),
 )
-defvjp(
-    anp.cross,
-    lambda ans, a, b, axisa=-1, axisb=-1, axisc=-1, axis=None: (
-        lambda g: anp.cross(b, g, axisb, axisc, axisa, axis)
-    ),
-    lambda ans, a, b, axisa=-1, axisb=-1, axisc=-1, axis=None: (
-        lambda g: anp.cross(g, a, axisc, axisa, axisb, axis)
-    ),
-)
+
+
+def grad_cross(argnum, ans, a, b, axisa=-1, axisb=-1, axisc=-1, axis=None):
+    if axis is not None:
+        axisa = axisb = axisc = axis
+    a = anp.moveaxis(a, axisa, -1)
+    b = anp.moveaxis(b, axisb, -1)
+    target_meta = anp.metadata(a if argnum == 0 else b)
+    target_axis = axisa if argnum == 0 else axisb
+
+    def vjp(g):
+        g = anp.moveaxis(g, axisc, -1)
+        result = anp.cross(b, g) if argnum == 0 else anp.cross(g, a)
+        return anp.moveaxis(unbroadcast(result, target_meta), -1, target_axis)
+
+    return vjp
+
+
+defvjp(anp.cross, partial(grad_cross, 0), partial(grad_cross, 1))
 defvjp(
     anp.linspace,
     lambda ans, start, stop, num: lambda g: anp.dot(anp.linspace(1.0, 0.0, num), g),
