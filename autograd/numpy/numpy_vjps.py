@@ -240,8 +240,12 @@ defvjp(
 )
 defvjp(
     anp.linspace,
-    lambda ans, start, stop, num: lambda g: anp.dot(anp.linspace(1.0, 0.0, num), g),
-    lambda ans, start, stop, num: lambda g: anp.dot(anp.linspace(0.0, 1.0, num), g),
+    lambda ans, start, stop, num=50, endpoint=True: (
+        lambda g: anp.dot(anp.linspace(1.0, 0.0, num, endpoint=endpoint), g)
+    ),
+    lambda ans, start, stop, num=50, endpoint=True: (
+        lambda g: anp.dot(anp.linspace(0.0, 1.0, num, endpoint=endpoint), g)
+    ),
 )
 
 defvjp(

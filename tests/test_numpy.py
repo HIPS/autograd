@@ -1058,6 +1058,19 @@ def test_linspace():
         check_grads(fun)(1.2, 1.2)
 
 
+@pytest.mark.parametrize("num", [0, 1, 5])
+@pytest.mark.parametrize("endpoint", [True, False])
+def test_linspace_endpoint(num, endpoint):
+    def fun(x, y):
+        return np.linspace(x, y, num, endpoint=endpoint)
+
+    check_grads(fun, (0, 1))(1.2, 3.4)
+
+
+def test_linspace_default_num():
+    check_grads(lambda x, y: np.linspace(x, y), (0, 1))(1.2, 3.4)
+
+
 def test_astype():
     x = np.arange(3, dtype="float32")
 
