@@ -185,10 +185,36 @@ defvjp(anp.deg2rad, lambda ans, x: lambda g: g * anp.pi / 180.0)
 defvjp(anp.radians, lambda ans, x: lambda g: g * anp.pi / 180.0)
 defvjp(anp.square, lambda ans, x: lambda g: g * 2 * x)
 defvjp(anp.sqrt, lambda ans, x: lambda g: g * 0.5 * x**-0.5)
+
+
+@primitive
+def _sinc_zero_derivative(order, x):
+    """Return the derivative at zero, retaining its higher-order derivative rules."""
+    coefficient = 0.0 if order % 2 else (-1.0) ** (order // 2) * onp.pi**order / (order + 1)
+    return onp.full_like(x, coefficient)
+
+
 defvjp(
-    anp.sinc,
-    lambda ans, x: lambda g: g * (anp.cos(anp.pi * x) * anp.pi * x - anp.sin(anp.pi * x)) / (anp.pi * x**2),
+    _sinc_zero_derivative,
+    lambda ans, order, x: lambda g: g * _sinc_zero_derivative(order + 1, x),
+    argnums=(1,),
 )
+
+
+def _sinc_grad(g, x):
+    # Normalize scalar tangents for the array-based where derivative rules.
+    if anp.ndim(x) == 0:
+        x = anp.array(x)
+    at_zero = x == 0
+    # Keep the unused regular branch finite, including when differentiating again.
+    safe_x = anp.where(at_zero, 1.0, x)
+    regular = (
+        g * (anp.cos(anp.pi * safe_x) * anp.pi * safe_x - anp.sin(anp.pi * safe_x)) / (anp.pi * safe_x**2)
+    )
+    return anp.where(at_zero, g * _sinc_zero_derivative(1, x), regular)
+
+
+defvjp(anp.sinc, lambda ans, x: lambda g: _sinc_grad(g, x))
 defvjp(anp.reshape, lambda ans, x, shape, order=None: lambda g: anp.reshape(g, anp.shape(x), order=order))
 defvjp(anp.roll, lambda ans, x, shift, axis=None: lambda g: anp.roll(g, -shift, axis=axis))
 defvjp(anp.array_split, lambda ans, ary, idxs, axis=0: lambda g: anp.concatenate(g, axis=axis))
