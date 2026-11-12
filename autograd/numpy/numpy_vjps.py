@@ -204,12 +204,16 @@ defvjp(anp.flipud, lambda ans, x,: lambda g: anp.flipud(g))
 defvjp(anp.fliplr, lambda ans, x,: lambda g: anp.fliplr(g))
 defvjp(anp.flip, lambda ans, x, axis=None: lambda g: anp.flip(g, axis))
 defvjp(anp.rot90, lambda ans, x, k=1: lambda g: anp.rot90(g, -k))
-defvjp(
-    anp.trace,
-    lambda ans, x, offset=0: (
-        lambda g: anp.einsum("ij,...->ij...", anp.eye(x.shape[0], x.shape[1], k=offset), g)
-    ),
-)
+
+
+def grad_trace(ans, x, offset=0, axis1=0, axis2=1):
+    eye = anp.eye(x.shape[axis1], x.shape[axis2], k=offset)
+    return lambda g: match_complex(
+        x, anp.moveaxis(anp.einsum("ij,...->ij...", eye, g), (0, 1), (axis1, axis2))
+    )
+
+
+defvjp(anp.trace, grad_trace)
 defvjp(anp.full, lambda ans, shape, fill_value, dtype=None: lambda g: anp.sum(g), argnums=(1,))
 defvjp(anp.triu, lambda ans, x, k=0: lambda g: anp.triu(g, k=k))
 defvjp(anp.tril, lambda ans, x, k=0: lambda g: anp.tril(g, k=k))
