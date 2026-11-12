@@ -163,7 +163,7 @@ defjvp(anp.sum, "same")
 defjvp(anp._primitive_mean, "same")
 defjvp(
     anp.prod,
-    lambda g, ans, x, axis=None, keepdims=False, **kwargs: (
+    lambda g, ans, x, axis=None, dtype=None, out=None, keepdims=False, **kwargs: (
         ans * anp.sum(g / x, axis=axis, keepdims=keepdims)
     ),
 )
@@ -174,7 +174,7 @@ defjvp(
 )
 
 
-def forward_grad_np_var(g, ans, x, axis=None, ddof=0, keepdims=False, **kwargs):
+def forward_grad_np_var(g, ans, x, axis=None, dtype=None, out=None, ddof=0, keepdims=False, **kwargs):
     if axis is None:
         num_reps = anp.size(g)
     elif isinstance(axis, int):
@@ -189,7 +189,7 @@ def forward_grad_np_var(g, ans, x, axis=None, ddof=0, keepdims=False, **kwargs):
 defjvp(anp._primitive_var, forward_grad_np_var)
 
 
-def forward_grad_np_std(g, ans, x, axis=None, ddof=0, keepdims=False, **kwargs):
+def forward_grad_np_std(g, ans, x, axis=None, dtype=None, out=None, ddof=0, keepdims=False, **kwargs):
     if axis is None:
         num_reps = anp.size(g)
     elif isinstance(axis, int):
