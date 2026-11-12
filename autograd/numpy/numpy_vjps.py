@@ -920,8 +920,15 @@ def replace_zero(x, val):
 # ----- extra functions used internally  -----
 
 
+def array_from_args_index(argnum, ans, args):
+    # ndmin prepends singleton axes before the sequence axis.
+    leading = anp.ndim(ans) - anp.ndim(args[argnum]) - 1
+    return (0,) * leading + (argnum - 2,)
+
+
 def array_from_args_gradmaker(argnum, ans, args, kwargs):
-    return lambda g: g[argnum - 2]
+    index = array_from_args_index(argnum, ans, args)
+    return lambda g: g[index]
 
 
 defvjp_argnum(anp.array_from_args, array_from_args_gradmaker)
