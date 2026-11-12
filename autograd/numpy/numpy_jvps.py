@@ -6,6 +6,7 @@ from ..util import func
 from . import numpy_wrapper as anp
 from .numpy_boxes import ArrayBox
 from .numpy_vjps import (
+    array_from_args_index,
     balanced_eq,
     dot_adjoint_0,
     dot_adjoint_1,
@@ -23,7 +24,10 @@ for fun in nograd_functions:
 defjvp(func(ArrayBox.__getitem__), "same")
 defjvp(untake, "same")
 
-defjvp_argnum(anp.array_from_args, lambda argnum, g, ans, args, kwargs: untake(g, argnum - 2, vspace(ans)))
+defjvp_argnum(
+    anp.array_from_args,
+    lambda argnum, g, ans, args, kwargs: untake(g, array_from_args_index(argnum, ans, args), vspace(ans)),
+)
 defjvp(
     anp._array_from_scalar_or_array,
     None,
