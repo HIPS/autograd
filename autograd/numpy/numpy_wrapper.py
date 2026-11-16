@@ -191,7 +191,19 @@ def make_diagonal(D, offset=0, axis1=0, axis2=1):
 
 @notrace_primitive
 def metadata(A):
-    return _np.shape(A), _np.ndim(A), _np.result_type(A), _np.iscomplexobj(A)
+    t = builtins.type_(A)
+    native = t is _np.float64 or t in (_np.ndarray, _np.float32, _np.complex128, _np.complex64)
+    if native:
+        shape, ndim = A.shape, A.ndim
+        dtype = A.dtype
+        iscomplex = dtype.kind == "c"
+        if not dtype.isnative:
+            dtype = _np.result_type(A)
+    else:
+        shape, ndim = _np.shape(A), _np.ndim(A)
+        dtype = _np.result_type(A)
+        iscomplex = _np.iscomplexobj(A)
+    return shape, ndim, dtype, iscomplex
 
 
 @notrace_primitive
