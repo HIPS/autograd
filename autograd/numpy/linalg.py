@@ -88,7 +88,7 @@ def grad_solve(argnum, ans, a, b):
 defvjp(solve, partial(grad_solve, 0), partial(grad_solve, 1))
 
 
-def norm_vjp(ans, x, ord=None, axis=None, **kwargs):
+def norm_vjp(ans, x, ord=None, axis=None, keepdims=False, **kwargs):
     def check_implemented():
         matrix_norm = (x.ndim == 2 and axis is None) or isinstance(axis, tuple)
 
@@ -98,7 +98,7 @@ def norm_vjp(ans, x, ord=None, axis=None, **kwargs):
         elif not (ord is None or ord > 1):
             raise NotImplementedError(f"Gradient of norm not implemented for ord={ord}")
 
-    if axis is None:
+    if axis is None or keepdims:
         expand = lambda a: a
     elif isinstance(axis, tuple):
         row_axis, col_axis = axis
@@ -144,7 +144,7 @@ def norm_vjp(ans, x, ord=None, axis=None, **kwargs):
 defvjp(_primitive_norm, norm_vjp)
 
 
-def norm_jvp(g, ans, x, ord=None, axis=None, **kwargs):
+def norm_jvp(g, ans, x, ord=None, axis=None, keepdims=False, **kwargs):
     def check_implemented():
         matrix_norm = (x.ndim == 2 and axis is None) or isinstance(axis, tuple)
 
@@ -154,10 +154,7 @@ def norm_jvp(g, ans, x, ord=None, axis=None, **kwargs):
         elif not (ord is None or ord > 1):
             raise NotImplementedError(f"Gradient of norm not implemented for ord={ord}")
 
-    if axis is None:
-        contract = lambda a: anp.sum(a)
-    else:
-        contract = partial(anp.sum, axis=axis)
+    contract = partial(anp.sum, axis=axis, keepdims=keepdims)
 
     if ord == "nuc":
         if axis is None:
