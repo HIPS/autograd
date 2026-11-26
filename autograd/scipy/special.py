@@ -45,7 +45,25 @@ defvjp(psi, lambda ans, x: lambda g: g * polygamma(1, x))
 defvjp(digamma, lambda ans, x: lambda g: g * polygamma(1, x))
 defvjp(gamma, lambda ans, x: lambda g: g * ans * psi(x))
 defvjp(gammaln, lambda ans, x: lambda g: g * psi(x))
-defvjp(rgamma, lambda ans, x: lambda g: g * psi(x) / -gamma(x))
+
+
+def make_rgamma_vjp(ans, x):
+    if np.iscomplexobj(x):
+        return lambda g: g * psi(x) / -gamma(x)
+
+    # Differentiate the reflection formula where Gamma and digamma have poles.
+    # Safe inactive inputs also keep higher derivatives finite at rgamma's zeros.
+    reflect = x < 0.5
+    reflected_x = np.where(reflect, x, 0.0)
+    positive_x = np.where(reflect, 1.0, x)
+    reflected_derivative = gamma(1 - reflected_x) * (
+        np.cos(np.pi * reflected_x) - np.sin(np.pi * reflected_x) * psi(1 - reflected_x) / np.pi
+    )
+    derivative = np.where(reflect, reflected_derivative, -ans * psi(positive_x))
+    return lambda g: g * derivative
+
+
+defvjp(rgamma, make_rgamma_vjp)
 defvjp(
     multigammaln,
     lambda ans, a, d: lambda g: g * np.sum(digamma(np.expand_dims(a, -1) - np.arange(d) / 2.0), -1),
