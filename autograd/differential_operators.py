@@ -67,6 +67,8 @@ def jacobian(fun, x):
     vjp, ans = _make_vjp(fun, x)
     ans_vspace = vspace(ans)
     jacobian_shape = ans_vspace.shape + vspace(x).shape
+    if ans_vspace.size == 0:
+        return np.zeros(jacobian_shape, dtype=vspace(x).dtype)
     grads = map(vjp, ans_vspace.standard_basis())
     return np.reshape(np.stack(grads), jacobian_shape)
 
