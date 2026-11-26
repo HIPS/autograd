@@ -743,8 +743,8 @@ defvjp(
 )
 defvjp(
     anp.outer,
-    lambda ans, a, b: lambda g: match_complex(a, anp.dot(g, b.T)),
-    lambda ans, a, b: lambda g: match_complex(b, anp.dot(a.T, g)),
+    lambda ans, a, b: lambda g: match_complex(a, anp.reshape(anp.dot(g, anp.ravel(b)), anp.shape(a))),
+    lambda ans, a, b: lambda g: match_complex(b, anp.reshape(anp.dot(anp.ravel(a), g), anp.shape(b))),
 )
 
 
