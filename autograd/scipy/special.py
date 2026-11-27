@@ -3,6 +3,7 @@ import scipy.special
 import autograd.numpy as np
 from autograd.extend import defjvp, defvjp, primitive
 from autograd.numpy.numpy_vjps import repeat_to_match_shape, unbroadcast_f
+from autograd.tracer import getval
 
 ### Beta function ###
 beta = primitive(scipy.special.beta)
@@ -120,13 +121,27 @@ defvjp(expit, lambda ans, x: lambda g: g * ans * (1 - ans))
 logsumexp = primitive(scipy.special.logsumexp)
 
 
+def logsumexp_weights(x, axis, b):
+    if b is None:
+        b = 1.0
+    # Exclude zero-weight terms from the shift, as scipy.special.logsumexp does.
+    if not np.isscalar(b):
+        x = np.where(np.asarray(b) != 0, x, -np.inf)
+    # The weights are invariant under a common real shift of each reduction.
+    # Keep the shift outside the trace so it need not be differentiated at ties.
+    shift = np.max(np.real(getval(x)), axis=axis, keepdims=True, initial=-np.inf)
+    centered = x - np.where(np.isfinite(shift), shift, 0)
+    centered_ans = logsumexp(centered, axis=axis, b=b, keepdims=True)
+    return b * np.exp(centered - centered_ans)
+
+
 def make_grad_logsumexp(ans, x, axis=None, b=1.0, keepdims=False):
     shape, dtype = np.shape(x), np.result_type(x)
+    weights = logsumexp_weights(x, axis, b)
 
     def vjp(g):
         g_repeated, _ = repeat_to_match_shape(g, shape, dtype, axis, keepdims)
-        ans_repeated, _ = repeat_to_match_shape(ans, shape, dtype, axis, keepdims)
-        return g_repeated * b * np.exp(x - ans_repeated)
+        return g_repeated * weights
 
     return vjp
 
@@ -135,13 +150,7 @@ defvjp(logsumexp, make_grad_logsumexp)
 
 
 def fwd_grad_logsumexp(g, ans, x, axis=None, b=1.0, keepdims=False):
-    if not keepdims:
-        if isinstance(axis, int):
-            ans = np.expand_dims(ans, axis)
-        elif isinstance(axis, tuple):
-            for ax in sorted(axis):
-                ans = np.expand_dims(ans, ax)
-    return np.sum(g * b * np.exp(x - ans), axis=axis, keepdims=keepdims)
+    return np.sum(g * logsumexp_weights(x, axis, b), axis=axis, keepdims=keepdims)
 
 
 defjvp(logsumexp, fwd_grad_logsumexp)

@@ -1,6 +1,7 @@
 from functools import partial
 
 import numpy as npo
+import pytest
 
 try:
     import scipy
@@ -17,7 +18,7 @@ else:
     import autograd.scipy.linalg as spla
     import autograd.scipy.signal
     import autograd.scipy.stats.multivariate_normal as mvn
-    from autograd import grad
+    from autograd import grad, make_jvp
     from autograd.scipy import integrate, special, stats
     from autograd.test_util import check_grads, combo_check
 
@@ -262,6 +263,30 @@ else:
 
         check_grads(f, modes=["fwd", "rev"])(x)
         check_grads(lambda a: grad(f)(a), modes=["fwd", "rev"])(x)
+
+    @pytest.mark.parametrize("gap", [0.0, 1.0])
+    def test_logsumexp_derivatives_at_large_offset(gap):
+        x = npo.array([2.0**53, 2.0**53 - gap])
+        ratio = npo.exp(-gap)
+        expected = npo.array([1.0, ratio]) / (1.0 + ratio)
+        assert special.logsumexp(x) == x[0]
+        npo.testing.assert_allclose(grad(special.logsumexp)(x), expected, rtol=1e-15, atol=0)
+        jvp = make_jvp(special.logsumexp)(x)
+        npo.testing.assert_allclose([jvp(v)[1] for v in npo.eye(2)], expected, rtol=1e-15, atol=0)
+
+    @pytest.mark.parametrize("keepdims", [False, True])
+    def test_logsumexp_derivatives_with_weighted_axes_at_large_offset(keepdims):
+        x = npo.broadcast_to(npo.array([2.0**53, 2.0**53, 2.0**1000]), (2, 3, 3))
+        weights = npo.array([[1.0, 3.0, 0.0], [2.0, 2.0, 0.0]])
+        weights = weights[:, None, :]
+        expected = npo.broadcast_to(weights / 8.0, x.shape)
+
+        def f(a):
+            return np.sum(special.logsumexp(a, axis=(0, -1), b=weights, keepdims=keepdims))
+
+        direction = npo.arange(x.size).reshape(x.shape).astype(float)
+        npo.testing.assert_allclose(grad(f)(x), expected, rtol=1e-15, atol=0)
+        npo.testing.assert_allclose(make_jvp(f)(x)(direction)[1], npo.sum(expected * direction))
 
     ### Signal ###
     def test_convolve_generalization():
