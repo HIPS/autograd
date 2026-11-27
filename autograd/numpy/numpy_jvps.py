@@ -9,6 +9,8 @@ from .numpy_vjps import (
     balanced_eq,
     dot_adjoint_0,
     dot_adjoint_1,
+    logaddexp2_weight,
+    logaddexp_weight,
     match_complex,
     nograd_functions,
     replace_zero,
@@ -61,8 +63,16 @@ defjvp(
     lambda g, ans, x, y: g * balanced_eq(x, ans, y),
     lambda g, ans, x, y: g * balanced_eq(y, ans, x),
 )
-defjvp(anp.logaddexp, lambda g, ans, x, y: g * anp.exp(x - ans), lambda g, ans, x, y: g * anp.exp(y - ans))
-defjvp(anp.logaddexp2, lambda g, ans, x, y: g * 2 ** (x - ans), lambda g, ans, x, y: g * 2 ** (y - ans))
+defjvp(
+    anp.logaddexp,
+    lambda g, ans, x, y: g * logaddexp_weight(ans, x, y),
+    lambda g, ans, x, y: g * logaddexp_weight(ans, y, x),
+)
+defjvp(
+    anp.logaddexp2,
+    lambda g, ans, x, y: g * logaddexp2_weight(ans, x, y),
+    lambda g, ans, x, y: g * logaddexp2_weight(ans, y, x),
+)
 defjvp(anp.true_divide, "same", lambda g, ans, x, y: -g * x / y**2)
 defjvp(anp.mod, lambda g, ans, x, y: broadcast(g, ans), lambda g, ans, x, y: -g * anp.floor(x / y))
 defjvp(anp.remainder, lambda g, ans, x, y: broadcast(g, ans), lambda g, ans, x, y: -g * anp.floor(x / y))

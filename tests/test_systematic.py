@@ -1,10 +1,12 @@
 import operator as op
 
 import numpy as onp
+import pytest
 from numpy_utils import binary_ufunc_check, binary_ufunc_check_no_same_args, stat_check, unary_ufunc_check
 
 import autograd.numpy as np
 import autograd.numpy.random as npr
+from autograd import grad, make_jvp
 from autograd.test_util import combo_check
 
 npr.seed(0)
@@ -201,6 +203,21 @@ def test_logaddexp():
 
 def test_logaddexp2():
     binary_ufunc_check(np.logaddexp2, test_complex=False)
+
+
+@pytest.mark.parametrize("fun, exp_minus_one", [(np.logaddexp, onp.exp(-1.0)), (np.logaddexp2, 0.5)])
+@pytest.mark.parametrize("gap", [0.0, 1.0])
+def test_logaddexp_derivatives_at_large_offset(fun, exp_minus_one, gap):
+    x = onp.array([2.0**53, 2.0**53 - gap])
+    ratio = exp_minus_one if gap else 1.0
+    expected = onp.array([1.0, ratio]) / (1.0 + ratio)
+    f = lambda values: fun(values[0], values[1])
+
+    # The primal rounds to the larger input in these cases.
+    assert f(x) == x[0]
+    onp.testing.assert_allclose(grad(f)(x), expected, rtol=1e-15, atol=0)
+    jvp = make_jvp(f)(x)
+    onp.testing.assert_allclose([jvp(v)[1] for v in onp.eye(2)], expected, rtol=1e-15, atol=0)
 
 
 def test_remainder():
