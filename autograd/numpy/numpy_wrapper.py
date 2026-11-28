@@ -1,14 +1,10 @@
 import warnings
 
 import numpy as _np
+from numpy._core.einsumfunc import _parse_einsum_input
 
 from autograd import builtins
 from autograd.extend import notrace_primitive, primitive
-
-if _np.lib.NumpyVersion(_np.__version__) >= "2.0.0":
-    from numpy._core.einsumfunc import _parse_einsum_input
-else:
-    from numpy.core.einsumfunc import _parse_einsum_input
 
 numpy_version = _np.__version__
 
@@ -199,14 +195,8 @@ def parse_einsum_input(*args):
     return _parse_einsum_input(args)
 
 
-if _np.lib.NumpyVersion(_np.__version__) >= "2.0.0":
-    # Wrapped above
-    _astype = astype
-else:
-
-    @primitive
-    def _astype(A, dtype, order="K", casting="unsafe", subok=True, copy=True):
-        return A.astype(dtype, order, casting, subok, copy)
+# Wrapped above
+_astype = astype
 
 
 # Store the primitive-wrapped mean for internal use
