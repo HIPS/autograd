@@ -193,10 +193,14 @@ else:
         )
 
     def test_mvn_pdf_broadcast():
-        combo_check(symmetrize_matrix_arg(mvn.pdf, 2), [0, 1, 2])([R(5, 4)], [R(4)], [make_psd(R(4, 4))])
+        combo_check(symmetrize_matrix_arg(mvn.pdf, 2), [0, 1, 2])(
+            [R(5, 4), R(2, 5, 4), R(2, 1, 4), R(1, 2, 4)], [R(4)], [make_psd(R(4, 4))]
+        )
 
     def test_mvn_logpdf_broadcast():
-        combo_check(symmetrize_matrix_arg(mvn.logpdf, 2), [0, 1, 2])([R(5, 4)], [R(4)], [make_psd(R(4, 4))])
+        combo_check(symmetrize_matrix_arg(mvn.logpdf, 2), [0, 1, 2])(
+            [R(5, 4), R(2, 5, 4), R(2, 1, 4), R(1, 2, 4)], [R(4)], [make_psd(R(4, 4))]
+        )
 
     alpha = npr.random(4) ** 2 + 1.2
     x = stats.dirichlet.rvs(alpha, size=1)[0, :]
