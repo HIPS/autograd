@@ -49,7 +49,7 @@ def match_complex(fft_fun, mat):
 
 def check_fft_n(fft_fun, D, n):
     def fun(x):
-        return fft_fun(x, D + n)
+        return fft_fun(x, n=D + n)
 
     mat = npr.randn(D, D)
     mat = match_complex(fft_fun, mat)
@@ -189,9 +189,10 @@ def test_ifftn():
     check_grads(fun)(mat)
 
 
-def test_rfft():
+@pytest.mark.parametrize("norm", [None, "backward", "ortho", "forward"])
+def test_rfft(norm):
     def fun(x):
-        return np.fft.rfft(x)
+        return np.fft.rfft(x, norm=norm)
 
     D = 4
     mat = npr.randn(D, D) / 10.0
@@ -216,9 +217,10 @@ def test_rfft_axes():
     check_grads(fun)(mat)
 
 
-def test_irfft():
+@pytest.mark.parametrize("norm", [None, "backward", "ortho", "forward"])
+def test_irfft(norm):
     def fun(x):
-        return np.fft.irfft(x)
+        return np.fft.irfft(x, norm=norm)
 
     D = 4
     mat = npr.randn(D, D) / 10.0
@@ -238,18 +240,20 @@ def test_irfft_ortho():
     check_grads(fun)(mat)
 
 
-def test_rfft2():
+@pytest.mark.parametrize("norm", [None, "backward", "ortho", "forward"])
+def test_rfft2(norm):
     def fun(x):
-        return np.fft.rfft2(x)
+        return np.fft.rfft2(x, norm=norm)
 
     D = 4
     mat = npr.randn(D, D) / 10.0
     check_grads(fun)(mat)
 
 
-def test_irfft2():
+@pytest.mark.parametrize("norm", [None, "backward", "ortho", "forward"])
+def test_irfft2(norm):
     def fun(x):
-        return np.fft.irfft2(x)
+        return np.fft.irfft2(x, norm=norm)
 
     D = 4
     mat = npr.randn(D, D) / 10.0
@@ -258,9 +262,10 @@ def test_irfft2():
     check_grads(fun)(mat)
 
 
-def test_rfftn():
+@pytest.mark.parametrize("norm", [None, "backward", "ortho", "forward"])
+def test_rfftn(norm):
     def fun(x):
-        return np.fft.rfftn(x)
+        return np.fft.rfftn(x, norm=norm)
 
     D = 4
     mat = npr.randn(D, D, D) / 10.0
@@ -295,9 +300,10 @@ def test_rfftn_axes():
     check_grads(fun)(mat)
 
 
-def test_irfftn():
+@pytest.mark.parametrize("norm", [None, "backward", "ortho", "forward"])
+def test_irfftn(norm):
     def fun(x):
-        return np.fft.irfftn(x)
+        return np.fft.irfftn(x, norm=norm)
 
     D = 4
     mat = npr.randn(D, D, D) / 10.0
