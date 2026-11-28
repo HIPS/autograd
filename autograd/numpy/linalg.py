@@ -67,10 +67,12 @@ defvjp(inv, grad_inv)
 
 def grad_pinv(ans, x):
     # https://mathoverflow.net/questions/25778/analytical-formula-for-numerical-derivative-of-the-matrix-pseudo-inverse
+    # The projector terms depend on the adjoint of the input perturbation.
+    ans_h = anp.conj(T(ans))
     return lambda g: T(
         -_dot(_dot(ans, T(g)), ans)
-        + _dot(_dot(_dot(ans, T(ans)), g), anp.eye(x.shape[-2]) - _dot(x, ans))
-        + _dot(_dot(_dot(anp.eye(ans.shape[-2]) - _dot(ans, x), g), T(ans)), ans)
+        + _dot(_dot(_dot(ans, ans_h), anp.conj(g)), anp.eye(x.shape[-2]) - _dot(x, ans))
+        + _dot(_dot(_dot(anp.eye(ans.shape[-2]) - _dot(ans, x), anp.conj(g)), ans_h), ans)
     )
 
 
