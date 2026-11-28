@@ -111,15 +111,29 @@ defvjp(
     lambda ans, x, y: unbroadcast_f(x, lambda g: g * balanced_eq(x, ans, y)),
     lambda ans, x, y: unbroadcast_f(y, lambda g: g * balanced_eq(y, ans, x)),
 )
+
+
+def logaddexp_weight(ans, x, y):
+    # Express the weight in terms of the input difference so the rounded
+    # forward value cannot discard the logarithmic correction.
+    delta = anp.where(anp.isfinite(ans), y - x, ans - x)
+    return anp.exp(-anp.logaddexp(0, delta))
+
+
+def logaddexp2_weight(ans, x, y):
+    delta = anp.where(anp.isfinite(ans), y - x, ans - x)
+    return anp.exp2(-anp.logaddexp2(0, delta))
+
+
 defvjp(
     anp.logaddexp,
-    lambda ans, x, y: unbroadcast_f(x, lambda g: g * anp.exp(x - ans)),
-    lambda ans, x, y: unbroadcast_f(y, lambda g: g * anp.exp(y - ans)),
+    lambda ans, x, y: unbroadcast_f(x, lambda g: g * logaddexp_weight(ans, x, y)),
+    lambda ans, x, y: unbroadcast_f(y, lambda g: g * logaddexp_weight(ans, y, x)),
 )
 defvjp(
     anp.logaddexp2,
-    lambda ans, x, y: unbroadcast_f(x, lambda g: g * 2 ** (x - ans)),
-    lambda ans, x, y: unbroadcast_f(y, lambda g: g * 2 ** (y - ans)),
+    lambda ans, x, y: unbroadcast_f(x, lambda g: g * logaddexp2_weight(ans, x, y)),
+    lambda ans, x, y: unbroadcast_f(y, lambda g: g * logaddexp2_weight(ans, y, x)),
 )
 defvjp(
     anp.true_divide,
