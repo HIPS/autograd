@@ -1,11 +1,12 @@
 import warnings
 
+import numpy as onp
 import pytest
 from numpy_utils import combo_check
 
 import autograd.numpy as np
 import autograd.numpy.random as npr
-from autograd import grad
+from autograd import grad, make_jvp
 from autograd.test_util import check_grads
 
 npr.seed(1)
@@ -558,10 +559,80 @@ def test_roll():
 
 def test_roll_no_axis():
     def fun(x):
-        return np.roll(x, 2, axis=1)
+        return np.roll(x, 2)
 
     mat = npr.randn(4, 5)
     check_grads(fun)(mat)
+
+
+@pytest.mark.parametrize(
+    "shift,axis",
+    [
+        pytest.param((1, 2), (0, 1), id="tuple"),
+        pytest.param([1, 2], [0, 1], id="list"),
+        pytest.param(range(1, 3), (0, 1), id="range"),
+        pytest.param((1,), 1, id="singleton-tuple"),
+        pytest.param((1, -2), (-2, -1), id="negative-axes"),
+        pytest.param((1, 2), (1, 1), id="repeated-axis"),
+        pytest.param((1, 2), None, id="tuple-no-axis"),
+        pytest.param([1, 2], None, id="list-no-axis"),
+        pytest.param(range(1, 3), None, id="range-no-axis"),
+        pytest.param(1, (0, 1), id="scalar-broadcast"),
+        pytest.param(onp.array([1, 2]), (0, 1), id="signed-array"),
+        pytest.param(onp.array(1), 1, id="zero-dimensional-array"),
+        pytest.param(onp.int32(1), 1, id="int32"),
+        pytest.param(onp.int64(-1), 1, id="int64"),
+        pytest.param(onp.int64(onp.iinfo(onp.int64).min), 1, id="int64-min"),
+        pytest.param(onp.uint8(1), 1, id="uint8"),
+        pytest.param(onp.uint64(1), 1, id="uint64"),
+        pytest.param(onp.uint64(onp.iinfo(onp.uint64).max), 1, id="uint64-max"),
+        pytest.param(onp.array([1, 2], dtype=onp.uint8), (0, 1), id="uint8-array"),
+        pytest.param(onp.array([1, 2], dtype=onp.uint64), (0, 1), id="uint64-array"),
+        pytest.param(True, 1, id="python-bool"),
+        pytest.param(onp.bool_(True), 1, id="numpy-bool"),
+        pytest.param(onp.array([True, False]), (0, 1), id="bool-array"),
+        pytest.param(
+            onp.array([onp.iinfo(onp.int64).min, onp.iinfo(onp.int64).max]),
+            (0, 1),
+            id="signed-extremes-distinct-axes",
+        ),
+        pytest.param(
+            onp.array([onp.iinfo(onp.int64).min, onp.iinfo(onp.int64).max]),
+            (1, 1),
+            id="signed-extremes-repeated-axis",
+        ),
+        pytest.param(
+            onp.array([onp.iinfo(onp.uint64).max, 1], dtype=onp.uint64),
+            (0, 1),
+            id="unsigned-extremes",
+        ),
+        pytest.param(0, None, id="zero"),
+        pytest.param((), None, id="empty-tuple"),
+        pytest.param([], 1, id="empty-list"),
+        pytest.param(range(0), (), id="empty-range"),
+        pytest.param(onp.array([], dtype=int), (), id="empty-array"),
+        pytest.param(1, (), id="empty-axis"),
+    ],
+)
+def test_roll_shift_forms(shift, axis):
+    mat = onp.arange(1.0, 7.0).reshape(2, 3) / 4
+    weights = onp.arange(1.0, 7.0).reshape(mat.shape)
+    tangent = weights / 7
+
+    # Invert the forward permutation independently of shift arithmetic.
+    labels = onp.arange(mat.size).reshape(mat.shape)
+    permutation = onp.roll(labels, shift, axis=axis).ravel()
+    expected_grad = onp.empty_like(mat)
+    expected_grad.ravel()[permutation] = weights.ravel()
+
+    def fun(x):
+        return np.roll(x, shift, axis=axis)
+
+    value, jvp = make_jvp(fun)(mat)(tangent)
+    assert onp.array_equal(value, onp.roll(mat, shift, axis=axis))
+    assert onp.array_equal(jvp, onp.roll(tangent, shift, axis=axis))
+    assert onp.array_equal(grad(lambda x: np.sum(fun(x) * weights))(mat), expected_grad)
+    check_grads(lambda x: np.sin(fun(x)), modes=["fwd", "rev"], order=2)(mat)
 
 
 def test_triu():

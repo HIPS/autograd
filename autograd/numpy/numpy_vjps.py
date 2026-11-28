@@ -190,7 +190,15 @@ defvjp(
     lambda ans, x: lambda g: g * (anp.cos(anp.pi * x) * anp.pi * x - anp.sin(anp.pi * x)) / (anp.pi * x**2),
 )
 defvjp(anp.reshape, lambda ans, x, shape, order=None: lambda g: anp.reshape(g, anp.shape(x), order=order))
-defvjp(anp.roll, lambda ans, x, shift, axis=None: lambda g: anp.roll(g, -shift, axis=axis))
+
+
+def grad_roll(ans, x, shift, axis=None):
+    # Avoid integer overflow and float coercion when inverting shifts.
+    inverse_shift = onp.array([-int(s) for s in onp.atleast_1d(shift)], dtype=object)
+    return lambda g: anp.roll(g, inverse_shift, axis=axis)
+
+
+defvjp(anp.roll, grad_roll)
 defvjp(anp.array_split, lambda ans, ary, idxs, axis=0: lambda g: anp.concatenate(g, axis=axis))
 defvjp(anp.split, lambda ans, ary, idxs, axis=0: lambda g: anp.concatenate(g, axis=axis))
 defvjp(anp.vsplit, lambda ans, ary, idxs: lambda g: anp.concatenate(g, axis=0))
