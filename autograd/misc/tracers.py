@@ -1,5 +1,7 @@
+from collections.abc import Sequence
 from functools import partial
 from itertools import repeat
+from typing import Any
 
 from autograd.tracer import Node, trace
 from autograd.util import subvals, toposort
@@ -8,6 +10,7 @@ from autograd.wrap_util import wraps
 
 class ConstGraphNode(Node):
     __slots__ = ["parents", "partial_fun"]
+    parents: Sequence[Any]
 
     def __init__(self, value, fun, args, kwargs, parent_argnums, parents):
         args = subvals(args, zip(parent_argnums, repeat(None)))
@@ -18,12 +21,12 @@ class ConstGraphNode(Node):
         self.parents = parents
         self.partial_fun = partial_fun
 
-    def initialize_root(self):
+    def initialize_root(self):  # pyrefly: ignore[bad-override]
         self.parents = []
 
 
 def const_graph_unary(fun):
-    graph = []
+    graph: list[Any] = []
     _fun = [fun]  # Allow fun to be freed, since it may have bound args
 
     def maybe_cached_fun(x):
@@ -58,12 +61,13 @@ def const_graph(fun, *args, **kwargs):
 
 class FullGraphNode(Node):
     __slots__ = ["recipe", "value"]
+    recipe: tuple[Any, ...]
 
     def __init__(self, value, fun, args, kwargs, parent_argnums, parents):
         self.value = value
         self.recipe = (fun, args, kwargs, zip(parent_argnums, parents))
 
-    def initialize_root(self):
+    def initialize_root(self):  # pyrefly: ignore[bad-override]
         self.value = None
         self.recipe = (lambda x: x, (), {}, [])
 

@@ -552,6 +552,7 @@ defvjp(anp.cumsum, grad_np_cumsum)
 
 def grad_inner(argnum, ans, A, B):
     A_ndim, B_ndim = anp.ndim(A), anp.ndim(B)
+    axes: tuple[list[int], list[int]]
     if A_ndim == 0 or B_ndim == 0:
         axes = ([], [])
     else:

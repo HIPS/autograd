@@ -1,6 +1,7 @@
+from collections.abc import Callable, Sequence
 from functools import reduce
 from itertools import count
-from typing import ClassVar
+from typing import Any, ClassVar
 
 from .tracer import Box, Node, getval, isbox, primitive, toposort, trace
 from .util import func, subval
@@ -24,7 +25,8 @@ def make_vjp(fun, x):
 
 
 def backward_pass(g, end_node):
-    outgrads = {end_node: (g, False)}
+    outgrad = (g, False)
+    outgrads = {end_node: outgrad}
     for node in toposort(end_node):
         outgrad = outgrads.pop(node)
         ingrads = node.vjp(outgrad[0])
@@ -35,6 +37,7 @@ def backward_pass(g, end_node):
 
 class VJPNode(Node):
     __slots__ = ["parents", "vjp"]
+    parents: Sequence[Any]
 
     def __init__(self, value, fun, args, kwargs, parent_argnums, parents):
         self.parents = parents
@@ -45,12 +48,12 @@ class VJPNode(Node):
             raise NotImplementedError(f"VJP of {fun_name} wrt argnums {parent_argnums} not defined")
         self.vjp = vjpmaker(parent_argnums, value, args, kwargs)
 
-    def initialize_root(self):
+    def initialize_root(self):  # pyrefly: ignore[bad-override]
         self.parents = []
         self.vjp = lambda g: ()
 
 
-primitive_vjps = {}
+primitive_vjps: dict[Callable[..., Any], Callable[..., Any]] = {}
 
 
 def defvjp_argnums(fun, vjpmaker):
@@ -135,11 +138,11 @@ class JVPNode(Node):
             raise NotImplementedError(f"JVP of {name} wrt argnums {parent_argnums} not defined")
         self.g = jvpmaker(parent_argnums, parent_gs, value, args, kwargs)
 
-    def initialize_root(self, g):
+    def initialize_root(self, g):  # pyrefly: ignore[bad-override]
         self.g = g
 
 
-primitive_jvps = {}
+primitive_jvps: dict[Callable[..., Any], Callable[..., Any]] = {}
 
 
 def defjvp_argnums(fun, jvpmaker):
@@ -206,7 +209,8 @@ def add_outgrads(prev_g_flagged, g):
 
 
 def sum_outgrads(gs):
-    return reduce(add_outgrads, gs, None)[0]
+    # gs is never empty, so the result is never the initial None
+    return reduce(add_outgrads, gs, None)[0]  # pyrefly: ignore[unsupported-operation]
 
 
 @primitive
@@ -216,23 +220,23 @@ def sparse_add(vs, x_prev, x_new):
 
 
 class VSpace:
-    __slots__ = []
-    mappings: ClassVar[dict] = {}
+    __slots__ = ()
+    mappings: ClassVar[dict[type, Callable[..., Any]]] = {}
     iscomplex = False
 
     def __init__(self, value):
         pass
 
-    def zeros(self):
+    def zeros(self) -> Any:
         assert False, repr(self)
 
-    def ones(self):
+    def ones(self) -> Any:
         assert False, repr(self)
 
-    def standard_basis(self):
+    def standard_basis(self) -> Any:
         assert False, repr(self)
 
-    def randn(self):
+    def randn(self) -> Any:
         assert False, repr(self)
 
     @primitive
@@ -266,7 +270,7 @@ class VSpace:
     def _scalar_mul(self, x, a):
         return x * a
 
-    def _inner_prod(self, x, y):
+    def _inner_prod(self, x, y) -> Any:
         assert False
 
     def _covector(self, x):
@@ -299,7 +303,7 @@ def vspace(value):
 
 
 class SparseBox(Box):
-    __slots__ = []
+    __slots__ = ()
 
 
 class SparseObject:

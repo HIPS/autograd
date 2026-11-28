@@ -1,3 +1,6 @@
+from collections.abc import Callable
+from typing import Any, ClassVar
+
 from .extend import (
     Box,
     SparseObject,
@@ -35,7 +38,7 @@ defjvp(container_take, "same")
 
 
 class SequenceBox(Box):
-    __slots__ = []
+    __slots__ = ()
     __getitem__ = container_take
 
     def __len__(self):
@@ -59,7 +62,7 @@ SequenceBox.register(list_)
 
 
 class DictBox(Box):
-    __slots__ = []
+    __slots__ = ()
     __getitem__ = container_take
 
     def __len__(self):
@@ -159,7 +162,7 @@ class TupleMeta(type(tuple_)):
         return isinstance(instance, tuple_)
 
 
-class tuple(tuple_, metaclass=TupleMeta):
+class tuple(tuple_[Any, ...], metaclass=TupleMeta):
     def __new__(cls, xs):
         return make_sequence(tuple_, *xs)
 
@@ -169,7 +172,7 @@ class ListMeta(type_):
         return isinstance(instance, list_)
 
 
-class list(list_, metaclass=ListMeta):
+class list(list_[Any], metaclass=ListMeta):
     def __new__(cls, xs):
         return make_sequence(list_, *xs)
 
@@ -179,7 +182,7 @@ class DictMeta(type_):
         return isinstance(instance, dict_)
 
 
-class dict(dict_, metaclass=DictMeta):
+class dict(dict_[Any, Any], metaclass=DictMeta):
     def __new__(cls, *args, **kwargs):
         result = dict_(*args, **kwargs)
         if result:
@@ -200,6 +203,19 @@ class ContainerVSpace(VSpace):
         self.shape = value
         self.shape = self._map(vspace)
 
+    # Subclasses define how their container is traversed and rebuilt
+    def _values(self, x) -> Any:
+        raise NotImplementedError
+
+    def _kv_pairs(self, x) -> Any:
+        raise NotImplementedError
+
+    def _map(self, f, *args) -> Any:
+        raise NotImplementedError
+
+    def _subval(self, xs, idx, x) -> Any:
+        raise NotImplementedError
+
     @property
     def size(self):
         return sum(self._values(self._map(lambda vs: vs.size)))
@@ -219,23 +235,25 @@ class ContainerVSpace(VSpace):
             for x in vs.standard_basis():
                 yield self._subval(zero, i, x)
 
-    def _add(self, xs, ys):
-        return self._map(lambda vs, x, y: vs._add(x, y), xs, ys)
+    def _add(self, x, y):
+        return self._map(lambda vs, xi, yi: vs._add(xi, yi), x, y)
 
-    def _mut_add(self, xs, ys):
-        return self._map(lambda vs, x, y: vs._mut_add(x, y), xs, ys)
+    def _mut_add(self, x, y):
+        return self._map(lambda vs, xi, yi: vs._mut_add(xi, yi), x, y)
 
-    def _scalar_mul(self, xs, a):
-        return self._map(lambda vs, x: vs._scalar_mul(x, a), xs)
+    def _scalar_mul(self, x, a):
+        return self._map(lambda vs, xi: vs._scalar_mul(xi, a), x)
 
-    def _inner_prod(self, xs, ys):
-        return sum(self._values(self._map(lambda vs, x, y: vs._inner_prod(x, y), xs, ys)))
+    def _inner_prod(self, x, y):
+        return sum(self._values(self._map(lambda vs, xi, yi: vs._inner_prod(xi, yi), x, y)))
 
-    def _covector(self, xs):
-        return self._map(lambda vs, x: vs._covector(x), xs)
+    def _covector(self, x):
+        return self._map(lambda vs, xi: vs._covector(xi), x)
 
 
 class SequenceVSpace(ContainerVSpace):
+    seq_type: ClassVar[Callable[..., Any]]
+
     def _values(self, x):
         return x
 

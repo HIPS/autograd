@@ -1,7 +1,7 @@
 import warnings
 from collections import defaultdict
 from contextlib import contextmanager
-from typing import ClassVar
+from typing import Any, ClassVar
 
 import numpy as np
 
@@ -23,7 +23,7 @@ def trace(start_node, fun, x):
 
 
 class Node:
-    __slots__ = []
+    __slots__ = ()
 
     def __init__(self, value, fun, args, kwargs, parent_argnums, parents):
         assert False
@@ -82,7 +82,8 @@ def primitive(f_raw):
             parents = tuple(box._node for _, box in boxed_args)
             argnums = tuple(argnum for argnum, _ in boxed_args)
             ans = f_wrapped(*argvals, called_by_autograd_dispatcher=called_by_autograd_dispatcher, **kwargs)
-            node = node_constructor(ans, f_wrapped, argvals, kwargs, argnums, parents)
+            # node_constructor is set whenever there are boxed args
+            node = node_constructor(ans, f_wrapped, argvals, kwargs, argnums, parents)  # pyrefly: ignore[not-callable]
             try:
                 box = new_box(ans, trace, node)
                 return box
@@ -118,14 +119,14 @@ def notrace_primitive(f_raw):
 
 def find_top_boxed_args(args):
     top_trace = -1
-    top_boxes = []
+    top_boxes: list[tuple[int, Any]] = []
     top_node_type = None
     any_arraybox = False
     any_unboxed_ufunc_overrider = False
     for argnum, arg in enumerate(args):
         t = type(arg)
         if t in box_types:
-            if t == autograd.numpy.numpy_boxes.ArrayBox:
+            if t == autograd.numpy.numpy_boxes.ArrayBox:  # pyrefly: ignore[implicit-import]
                 any_arraybox = True
             trace = arg._trace
             if trace > top_trace:
@@ -155,8 +156,8 @@ trace_stack = TraceStack()
 
 
 class Box:
-    type_mappings: ClassVar[dict] = {}
-    types: ClassVar[set] = set()
+    type_mappings: ClassVar[dict[type, type]] = {}
+    types: ClassVar[set[type]] = set()
 
     __slots__ = ["_node", "_trace", "_value"]
 

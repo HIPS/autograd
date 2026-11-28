@@ -155,7 +155,7 @@ def make_rfft_factors(axes, resshape, facshape, normshape, norm):
     # but we already imported anp, so use it instead.
     fac = anp.zeros(resshape)
     fac[...] = 2
-    index = [slice(None)] * len(resshape)
+    index: list[_typing.Any] = [slice(None)] * len(resshape)
     if facshape[-1] <= resshape[axes[-1]]:
         index[axes[-1]] = (0, facshape[-1] - 1)
     else:

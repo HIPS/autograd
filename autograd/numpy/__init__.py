@@ -1,11 +1,14 @@
 # Overwrite where to preserve native Python types
+from typing import Any as _Any
+from typing import cast as _cast
+
 import numpy as _np
 
 from autograd.tracer import Box
 
 from . import fft, linalg, numpy_boxes, numpy_jvps, numpy_vjps, numpy_vspaces, numpy_wrapper, random
 from .numpy_wrapper import *
-from .numpy_wrapper import numpy_version as __version__
+from .numpy_wrapper import numpy_version as __version__  # pyrefly: ignore[bad-assignment]
 
 _original_where = numpy_wrapper.where
 
@@ -36,4 +39,4 @@ def custom_where(condition, *args, **kwargs):
 
 
 where = custom_where
-numpy_wrapper.where = where
+numpy_wrapper.where = _cast(_Any, where)
