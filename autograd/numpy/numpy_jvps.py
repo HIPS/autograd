@@ -10,6 +10,7 @@ from .numpy_vjps import (
     dot_adjoint_0,
     dot_adjoint_1,
     match_complex,
+    nan_to_num_grad,
     nograd_functions,
     replace_zero,
     tensordot_adjoint_0,
@@ -32,7 +33,7 @@ defjvp(
 )
 
 # ----- Functions that are constant w.r.t. continuous inputs -----
-defjvp(anp.nan_to_num, lambda g, ans, x: anp.where(anp.isfinite(x), g, 0.0))
+defjvp(anp.nan_to_num, lambda g, ans, x: nan_to_num_grad(x, g))
 
 # ----- Binary ufuncs (linear) -----
 def_linear(anp.multiply)

@@ -69,7 +69,16 @@ for fun in nograd_functions:
 
 # ----- Functions that are constant w.r.t. continuous inputs -----
 
-defvjp(anp.nan_to_num, lambda ans, x: lambda g: anp.where(anp.isfinite(x), g, 0.0))
+
+def nan_to_num_grad(x, g):
+    if anp.iscomplexobj(x):
+        return anp.where(anp.isfinite(anp.real(x)), anp.real(g), 0.0) + 1j * anp.where(
+            anp.isfinite(anp.imag(x)), anp.imag(g), 0.0
+        )
+    return anp.where(anp.isfinite(x), g, 0.0)
+
+
+defvjp(anp.nan_to_num, lambda ans, x: lambda g: nan_to_num_grad(x, g))
 
 # ----- Binary ufuncs -----
 
