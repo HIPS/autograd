@@ -322,16 +322,28 @@ def grad_gradient(ans, x, *vargs, **kwargs):
             # swap gradient axis to the front
             g_swap = anp.swapaxes(g[i], 0, a)[:, anp.newaxis]
 
-            out_axis = anp.concatenate(
-                (
-                    -g_swap[0] - 0.5 * g_swap[1],
-                    g_swap[0] - 0.5 * g_swap[2],
-                    (-1.0) * anp.gradient(g_swap, axis=0)[2:-2, 0],
-                    0.5 * g_swap[-3] - g_swap[-1],
-                    0.5 * g_swap[-2] + g_swap[-1],
-                ),
-                axis=0,
-            )
+            if x_shape[a] == 2:
+                out_axis = anp.concatenate((-g_swap[0] - g_swap[1], g_swap[0] + g_swap[1]), axis=0)
+            elif x_shape[a] == 3:
+                out_axis = anp.concatenate(
+                    (
+                        -g_swap[0] - 0.5 * g_swap[1],
+                        g_swap[0] - g_swap[2],
+                        0.5 * g_swap[1] + g_swap[2],
+                    ),
+                    axis=0,
+                )
+            else:
+                out_axis = anp.concatenate(
+                    (
+                        -g_swap[0] - 0.5 * g_swap[1],
+                        g_swap[0] - 0.5 * g_swap[2],
+                        (-1.0) * anp.gradient(g_swap, axis=0)[2:-2, 0],
+                        0.5 * g_swap[-3] - g_swap[-1],
+                        0.5 * g_swap[-2] + g_swap[-1],
+                    ),
+                    axis=0,
+                )
 
             out = out + anp.swapaxes(out_axis, 0, a)
 
