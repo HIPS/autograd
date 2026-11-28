@@ -33,6 +33,36 @@ def run_tests(session):
     session.run("pytest", "--cov=autograd", "--cov-report=xml", "--cov-append", *session.posargs)
 
 
+@nox.session(name="oldest-tests", venv_backend="uv", tags=["tests"])
+def run_oldest_tests(session):
+    """Run tests against the oldest supported versions of NumPy and SciPy"""
+    pyproject = nox.project.load_toml("pyproject.toml")
+    # Pin our direct dependencies to their lower bounds
+    constraints = f"{session.create_tmp()}/oldest.txt"
+    session.run(
+        "uv",
+        "pip",
+        "compile",
+        "pyproject.toml",
+        "--extra",
+        "scipy",
+        "--resolution",
+        "lowest-direct",
+        "--output-file",
+        constraints,
+        silent=True,
+    )
+    session.install(
+        "-e",
+        ".[scipy]",
+        *nox.project.dependency_groups(pyproject, "test"),
+        "--constraint",
+        constraints,
+        silent=False,
+    )
+    session.run("pytest", "--cov=autograd", "--cov-report=xml", "--cov-append", *session.posargs)
+
+
 @nox.session(name="lint", reuse_venv=True)
 def ruff(session):
     """Lightning-fast linting for Python"""

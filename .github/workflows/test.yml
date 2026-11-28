@@ -69,3 +69,24 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Run tests against nightly wheels for NumPy and SciPy
         run: uvx nox -s nightly-tests
+
+  # In this job, we test against the oldest NumPy and SciPy versions
+  # allowed by pyproject.toml, on the oldest Python version we support.
+  oldest:
+    name: Oldest dependencies / ${{ matrix.platform }} / Python ${{ matrix.python-version }}
+    runs-on: ${{ matrix.platform }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [ubuntu-latest]
+        python-version: ["3.11"]
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Run tests against the oldest supported NumPy and SciPy
+        run: uvx nox -s oldest-tests
