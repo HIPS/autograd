@@ -263,6 +263,63 @@ else:
         check_grads(f, modes=["fwd", "rev"])(x)
         check_grads(lambda a: grad(f)(a), modes=["fwd", "rev"])(x)
 
+    def test_logsumexp_return_sign():
+        # scipy returns a (logsumexp, sign) pair, and the sign belongs to the
+        # gradient: d/dx log(abs(sum(b * exp(x)))) = sign * b * exp(x - ans)
+        f = lambda a, **kwargs: special.logsumexp(a, return_sign=True, **kwargs)[0]
+        combo_check(f, [0], modes=["fwd", "rev"])(
+            [R(4)],
+            b=[npo.array([1.0, -1.0, 1.0, -1.0])],
+            axis=[None, 0],
+            keepdims=[True, False],
+        )
+        combo_check(f, [0], modes=["fwd", "rev"])(
+            [R(3, 4)],
+            b=[npo.exp(R(3, 4)) * npo.array([[1.0], [-1.0], [1.0]])],
+            axis=[None, 0, 1],
+            keepdims=[True, False],
+        )
+
+    def test_logsumexp_negative_sum():
+        # The sum is negative, so the gradient is negated with respect to the
+        # sign-blind formula.
+        x = npo.array([0.0, 0.0])
+        b = npo.array([1.0, -3.0])
+        ans, sign = special.logsumexp(x, b=b, return_sign=True)
+        assert sign == -1.0
+        assert npo.allclose(ans, npo.log(2.0))
+
+        g = grad(lambda a: special.logsumexp(a, b=b, return_sign=True)[0])(x)
+        assert npo.allclose(g, b * npo.exp(x) / (b * npo.exp(x)).sum())
+        check_grads(
+            lambda a: special.logsumexp(a, b=b, return_sign=True)[0],
+            modes=["fwd", "rev"],
+        )(x)
+
+    def test_logsumexp_return_sign_complex():
+        # Both the log-magnitude and phase vary for complex sums. Check the
+        # complete tuple, including second derivatives in both modes.
+        x = npo.array([1 + 0.2j, 0.4 - 0.7j])
+        b = npo.array([1 + 2j, -0.5 + 0.3j])
+        f = lambda a, **kwargs: special.logsumexp(a, return_sign=True, **kwargs)
+        combo_check(f, [0], modes=["fwd", "rev"])(
+            [x, x.real], b=[b, b.real, 1.0], axis=[None, 0], keepdims=[True, False]
+        )
+        expected = b * npo.exp(x) / npo.sum(b * npo.exp(x))
+        actual = grad(lambda a: f(a, b=b)[0])(x)
+        npo.testing.assert_allclose(actual, expected)
+
+    def test_logsumexp_return_sign_complex_axes():
+        x = npo.arange(24).reshape(2, 3, 4) / 30 * (1 + 0.3j)
+        b = npo.arange(4) + 1j
+        combo_check(special.logsumexp, [0], modes=["fwd", "rev"])(
+            [x, x.real],
+            b=[b, 1.0],
+            axis=[None, 0, 1, 2, (0, 2), (-3, -1)],
+            keepdims=[True, False],
+            return_sign=[True],
+        )
+
     ### Signal ###
     def test_convolve_generalization():
         ag_convolve = autograd.scipy.signal.convolve
