@@ -1,4 +1,5 @@
 from functools import partial
+from itertools import pairwise
 
 import numpy as onp
 
@@ -191,11 +192,51 @@ defvjp(
 )
 defvjp(anp.reshape, lambda ans, x, shape, order=None: lambda g: anp.reshape(g, anp.shape(x), order=order))
 defvjp(anp.roll, lambda ans, x, shift, axis=None: lambda g: anp.roll(g, -shift, axis=axis))
-defvjp(anp.array_split, lambda ans, ary, idxs, axis=0: lambda g: anp.concatenate(g, axis=axis))
-defvjp(anp.split, lambda ans, ary, idxs, axis=0: lambda g: anp.concatenate(g, axis=axis))
-defvjp(anp.vsplit, lambda ans, ary, idxs: lambda g: anp.concatenate(g, axis=0))
-defvjp(anp.hsplit, lambda ans, ary, idxs: lambda g: anp.concatenate(g, axis=1))
-defvjp(anp.dsplit, lambda ans, ary, idxs: lambda g: anp.concatenate(g, axis=2))
+
+
+def grad_split(ans, ary, idxs, axis=0):
+    try:
+        len(idxs)
+    except TypeError:
+        return lambda g: anp.concatenate(g, axis=axis)
+
+    shape = anp.shape(ary)
+    size = shape[axis]
+    boundaries = [0] + list(idxs) + [size]
+    spans = []
+    for start, end in pairwise(boundaries):
+        start, end, _ = slice(start, end).indices(size)
+        spans.append((start, max(start, end)))
+
+    cursor = 0
+    for start, end in spans:
+        if start != end:
+            if start != cursor:
+                break
+            cursor = end
+    else:
+        if cursor == size:
+            return lambda g: anp.concatenate(g, axis=axis)
+
+    def vjp(g):
+        contributions = []
+        for piece, (start, end) in zip(g, spans):
+            pad_shape = list(shape)
+            pad_shape[axis] = start
+            before = anp.zeros(pad_shape, dtype=anp.result_type(piece))
+            pad_shape[axis] = size - end
+            after = anp.zeros(pad_shape, dtype=anp.result_type(piece))
+            contributions.append(anp.concatenate((before, piece, after), axis=axis))
+        return sum(contributions)
+
+    return vjp
+
+
+defvjp(anp.array_split, grad_split)
+defvjp(anp.split, grad_split)
+defvjp(anp.vsplit, lambda ans, ary, idxs: grad_split(ans, ary, idxs, axis=0))
+defvjp(anp.hsplit, lambda ans, ary, idxs: grad_split(ans, ary, idxs, axis=1))
+defvjp(anp.dsplit, lambda ans, ary, idxs: grad_split(ans, ary, idxs, axis=2))
 defvjp(anp.ravel, lambda ans, x, order=None: lambda g: anp.reshape(g, anp.shape(x), order=order))
 defvjp(anp.expand_dims, lambda ans, x, axis: lambda g: anp.reshape(g, anp.shape(x)))
 defvjp(anp.squeeze, lambda ans, x, axis=None: lambda g: anp.reshape(g, anp.shape(x)))
