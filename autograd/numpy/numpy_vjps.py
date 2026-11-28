@@ -199,7 +199,22 @@ defvjp(anp.dsplit, lambda ans, ary, idxs: lambda g: anp.concatenate(g, axis=2))
 defvjp(anp.ravel, lambda ans, x, order=None: lambda g: anp.reshape(g, anp.shape(x), order=order))
 defvjp(anp.expand_dims, lambda ans, x, axis: lambda g: anp.reshape(g, anp.shape(x)))
 defvjp(anp.squeeze, lambda ans, x, axis=None: lambda g: anp.reshape(g, anp.shape(x)))
-defvjp(anp.diag, lambda ans, x, k=0: lambda g: anp.diag(g, k))
+
+
+def grad_diag(ans, x, k=0):
+    if anp.ndim(x) == 1:
+        return lambda g: anp.diag(g, k)
+    if not hasattr(x, "shape"):
+        x = anp.array(x)
+    vs = vspace(x)
+    if anp.size(ans) == 0:
+        return lambda g: vs.zeros()
+    indices = onp.arange(anp.shape(ans)[0])
+    idx = (indices + max(0, -k), indices + max(0, k))
+    return lambda g: untake(g, idx, vs)
+
+
+defvjp(anp.diag, grad_diag)
 defvjp(anp.flipud, lambda ans, x,: lambda g: anp.flipud(g))
 defvjp(anp.fliplr, lambda ans, x,: lambda g: anp.fliplr(g))
 defvjp(anp.flip, lambda ans, x, axis=None: lambda g: anp.flip(g, axis))
