@@ -1,3 +1,5 @@
+import os
+
 import nox
 
 NIGHTLY_INDEX_URL = "https://pypi.anaconda.org/scientific-python-nightly-wheels/simple"
@@ -8,7 +10,7 @@ UV_NIGHTLY_ENV_VARS = {
     "UV_NO_CONFIG": "1",
 }
 
-nox.needs_version = ">=2024.4.15"
+nox.needs_version = ">=2025.2.9"
 nox.options.default_venv_backend = "uv|virtualenv"
 nox.options.reuse_existing_virtualenvs = False
 nox.options.error_on_external_run = True
@@ -67,7 +69,19 @@ def run_oldest_tests(session):
 def ruff(session):
     """Lightning-fast linting for Python"""
     session.install("prek", silent=False)
-    session.run("prek", "-a")
+    session.run("prek", "-a", *session.posargs)
+    # Type checking has its own job in CI
+    if "CI" not in os.environ:
+        session.notify("typecheck", posargs=[])
+
+
+@nox.session(name="typecheck")
+def pyrefly(session):
+    """Static type checking with Pyrefly"""
+    pyproject = nox.project.load_toml("pyproject.toml")
+    session.install(*nox.project.dependency_groups(pyproject, "typecheck"))
+    session.install("-e", ".[scipy]", silent=False)
+    session.run("pyrefly", "check", *session.posargs)
 
 
 @nox.session(name="nightly-tests", tags=["tests"])

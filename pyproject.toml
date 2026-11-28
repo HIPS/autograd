@@ -64,9 +64,36 @@ test = [
   "xarray",
 ]
 examples = ["matplotlib"]
+typecheck = [
+  "pyrefly==1.5.0",
+  # pyrefly cannot resolve `from numpy import *` with older NumPy stubs
+  "numpy>=2.2",
+  "scipy-stubs",
+]
 
 [tool.uv]
 exclude-newer = "3 days ago"
+
+[tool.pyrefly]
+project-includes = ["autograd"]
+preset = "strict"
+
+[tool.pyrefly.errors]
+# These need annotations on every parameter and lambda
+implicit-any-parameter = "ignore"
+implicit-any-lambda = "ignore"
+# typing.override needs Python 3.12
+missing-override-decorator = "ignore"
+
+# Boxes and traced values are passed to functions that are typed with
+# NumPy's and SciPy's own signatures
+[[tool.pyrefly.sub-config]]
+matches = "autograd/numpy/*.py"
+errors = { no-matching-overload = "ignore", bad-argument-type = "ignore" }
+
+[[tool.pyrefly.sub-config]]
+matches = "autograd/scipy/**/*.py"
+errors = { no-matching-overload = "ignore", bad-argument-type = "ignore", deprecated = "ignore" }
 
 [tool.coverage.run]
 source = ["autograd"]

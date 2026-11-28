@@ -14,6 +14,7 @@ pip install nox
 | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `nox --list`              | Lists all available Nox sessions, including selected ones                                                                                                       |
 | `nox -s lint`             | Runs code style checks with pre-commit and pre-commit hooks as listed in `.pre-commit-config.yaml`. Accepts posargs to pass additional arguments to the linter. |
+| `nox -s typecheck`        | Runs static type checks with Pyrefly. Outside CI, it also runs after `nox -s lint`. Accepts posargs to pass additional arguments to `pyrefly check`.            |
 | `nox -s tests`            | Runs tests with your default Python interpreter. Accepts posargs to pass additional arguments and configuration to `pytest`.                                    |
 | `nox -s nightly-tests`    | Similar to `nox -s tests`, except that it runs tests with nightly versions of dependencies (NumPy, SciPy, etc.).                                                |
 | `nox -s oldest-tests`     | Similar to `nox -s tests`, except that it runs tests with the oldest supported versions of NumPy and SciPy. Requires `uv`.                                      |
