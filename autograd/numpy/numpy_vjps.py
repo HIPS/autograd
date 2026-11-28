@@ -781,8 +781,6 @@ def grad_sort(ans, x, axis=-1, kind="quicksort", order=None):
 
 
 defvjp(anp.sort, grad_sort)
-if onp.lib.NumpyVersion(onp.__version__) < "2.0.0":
-    defvjp(anp.msort, grad_sort)  # Until multi-D is allowed, these are the same.
 
 
 def grad_partition(ans, x, kth, axis=-1, kind="introselect", order=None):
