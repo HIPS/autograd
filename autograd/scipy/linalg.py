@@ -14,7 +14,8 @@ def _vjp_sqrtm(ans, A, disp=True, blocksize=64):
     ans_transp = anp.transpose(ans)
 
     def vjp(g):
-        return anp.real(solve_sylvester(ans_transp, ans_transp, g))
+        grad = solve_sylvester(ans_transp, ans_transp, g)
+        return grad if anp.iscomplexobj(A) else anp.real(grad)
 
     return vjp
 
