@@ -265,6 +265,31 @@ def test_cumsum_no_axis():
     check_grads(fun)(mat)
 
 
+def test_cumsum_dtype_keyword():
+    # Regression for #824: reverse mode must accept cumsum(..., dtype=...).
+    # Use grad() rather than check_grads(): forward-mode "same" JVP does not
+    # forward dtype, so numeric/analytic JVPs diverge when casting.
+    from autograd import grad
+
+    def fun(x):
+        return np.sum(np.cumsum(x, dtype=np.float64))
+
+    x = np.array([1.0, 2.0, 3.0], dtype=np.float32)
+    g = grad(fun)(x)
+    assert np.allclose(g, np.array([3.0, 2.0, 1.0]))
+
+
+def test_cumsum_dtype_positional():
+    from autograd import grad
+
+    def fun(x):
+        return np.sum(np.cumsum(x, None, np.float64))
+
+    x = np.array([1.0, 2.0, 3.0], dtype=np.float32)
+    g = grad(fun)(x)
+    assert np.allclose(g, np.array([3.0, 2.0, 1.0]))
+
+
 def test_non_numpy_sum():
     def fun(x, y):
         return sum([x, y])
