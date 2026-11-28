@@ -90,6 +90,12 @@ else:
     def test_norm_logsf():
         combo_check(stats.norm.logsf, [0, 1, 2])([R(4)], [R(4)], [R(4) ** 2 + 1.1])
 
+    def test_norm_ppf():
+        combo_check(stats.norm.ppf, [0, 1, 2])([U(0.05, 0.95, 4)], [R(4)], [R(4) ** 2 + 1.1])
+
+    def test_norm_isf():
+        combo_check(stats.norm.isf, [0, 1, 2])([U(0.05, 0.95, 4)], [R(4)], [R(4) ** 2 + 1.1])
+
     def test_norm_pdf_broadcast():
         combo_check(stats.norm.pdf, [0, 1, 2])([R(4, 3)], [R(1, 3)], [R(4, 1) ** 2 + 1.1])
 
@@ -107,6 +113,12 @@ else:
 
     def test_norm_logsf_broadcast():
         combo_check(stats.norm.logcdf, [0, 1, 2])([R(4, 3)], [R(1, 3)], [R(4, 1) ** 2 + 1.1])
+
+    def test_norm_ppf_broadcast():
+        combo_check(stats.norm.ppf, [0, 1, 2])([U(0.05, 0.95, (4, 3))], [R(1, 3)], [R(4, 1) ** 2 + 1.1])
+
+    def test_norm_isf_broadcast():
+        combo_check(stats.norm.isf, [0, 1, 2])([U(0.05, 0.95, (4, 3))], [R(1, 3)], [R(4, 1) ** 2 + 1.1])
 
     def test_poisson_cdf():
         combo_check(stats.poisson.cdf, [1])([np.round(R(4) ** 2)], [R(4) ** 2 + 1.1])

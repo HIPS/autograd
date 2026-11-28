@@ -12,6 +12,8 @@ sf = primitive(scipy.stats.norm.sf)
 logpdf = primitive(scipy.stats.norm.logpdf)
 logcdf = primitive(scipy.stats.norm.logcdf)
 logsf = primitive(scipy.stats.norm.logsf)
+ppf = primitive(scipy.stats.norm.ppf)
+isf = primitive(scipy.stats.norm.isf)
 
 defvjp(
     pdf,
@@ -73,4 +75,23 @@ defvjp(
     lambda ans, x, loc=0.0, scale=1.0: unbroadcast_f(
         scale, lambda g: g * pdf(x, loc, scale) * (x - loc) / scale
     ),
+)
+
+defvjp(
+    ppf,
+    # ppf(q) is the inverse of cdf, so d/dq ppf(q) = 1 / pdf(ppf(q)). The pdf at
+    # the shifted and scaled quantile already carries the 1 / scale factor, so
+    # no extra scale factor belongs here.
+    lambda ans, x, loc=0.0, scale=1.0: unbroadcast_f(x, lambda g: g / pdf(ppf(x, loc, scale), loc, scale)),
+    # ppf(q, loc, scale) = loc + scale * z, with z independent of loc.
+    lambda ans, x, loc=0.0, scale=1.0: unbroadcast_f(loc, lambda g: g),
+    lambda ans, x, loc=0.0, scale=1.0: unbroadcast_f(scale, lambda g: g * (ans - loc) / scale),
+)
+
+defvjp(
+    isf,
+    # isf(q) = ppf(1 - q), which flips the sign of the q derivative.
+    lambda ans, x, loc=0.0, scale=1.0: unbroadcast_f(x, lambda g: -g / pdf(isf(x, loc, scale), loc, scale)),
+    lambda ans, x, loc=0.0, scale=1.0: unbroadcast_f(loc, lambda g: g),
+    lambda ans, x, loc=0.0, scale=1.0: unbroadcast_f(scale, lambda g: g * (ans - loc) / scale),
 )
