@@ -213,7 +213,10 @@ defvjp(
 defvjp(anp.full, lambda ans, shape, fill_value, dtype=None: lambda g: anp.sum(g), argnums=(1,))
 defvjp(anp.triu, lambda ans, x, k=0: lambda g: anp.triu(g, k=k))
 defvjp(anp.tril, lambda ans, x, k=0: lambda g: anp.tril(g, k=k))
-defvjp(anp.clip, lambda ans, x, a_min, a_max: lambda g: g * anp.logical_and(ans != a_min, ans != a_max))
+defvjp(
+    anp.clip,
+    lambda ans, x, a_min, a_max: unbroadcast_f(x, lambda g: g * anp.logical_and(ans != a_min, ans != a_max)),
+)
 defvjp(anp.swapaxes, lambda ans, x, axis1, axis2: lambda g: anp.swapaxes(g, axis2, axis1))
 defvjp(anp.moveaxis, lambda ans, a, source, destination: lambda g: anp.moveaxis(g, destination, source))
 defvjp(anp.real_if_close, lambda ans, x: lambda g: match_complex(x, g))
