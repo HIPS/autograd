@@ -75,47 +75,28 @@ for type_ in [complex, np.clongdouble, np.complex64, np.complex128]:
     ComplexArrayVSpace.register(type_)
 
 
-if np.lib.NumpyVersion(np.__version__) >= "2.0.0":
+class EigResultVSpace(NamedTupleVSpace):
+    seq_type = np.linalg._linalg.EigResult
 
-    class EigResultVSpace(NamedTupleVSpace):
-        seq_type = np.linalg._linalg.EigResult
 
-    class EighResultVSpace(NamedTupleVSpace):
-        seq_type = np.linalg._linalg.EighResult
+class EighResultVSpace(NamedTupleVSpace):
+    seq_type = np.linalg._linalg.EighResult
 
-    class QRResultVSpace(NamedTupleVSpace):
-        seq_type = np.linalg._linalg.QRResult
 
-    class SlogdetResultVSpace(NamedTupleVSpace):
-        seq_type = np.linalg._linalg.SlogdetResult
+class QRResultVSpace(NamedTupleVSpace):
+    seq_type = np.linalg._linalg.QRResult
 
-    class SVDResultVSpace(NamedTupleVSpace):
-        seq_type = np.linalg._linalg.SVDResult
 
-    EigResultVSpace.register(np.linalg._linalg.EigResult)
-    EighResultVSpace.register(np.linalg._linalg.EighResult)
-    QRResultVSpace.register(np.linalg._linalg.QRResult)
-    SlogdetResultVSpace.register(np.linalg._linalg.SlogdetResult)
-    SVDResultVSpace.register(np.linalg._linalg.SVDResult)
-elif np.__version__ >= "1.25":
+class SlogdetResultVSpace(NamedTupleVSpace):
+    seq_type = np.linalg._linalg.SlogdetResult
 
-    class EigResultVSpace(NamedTupleVSpace):
-        seq_type = np.linalg.linalg.EigResult
 
-    class EighResultVSpace(NamedTupleVSpace):
-        seq_type = np.linalg.linalg.EighResult
+class SVDResultVSpace(NamedTupleVSpace):
+    seq_type = np.linalg._linalg.SVDResult
 
-    class QRResultVSpace(NamedTupleVSpace):
-        seq_type = np.linalg.linalg.QRResult
 
-    class SlogdetResultVSpace(NamedTupleVSpace):
-        seq_type = np.linalg.linalg.SlogdetResult
-
-    class SVDResultVSpace(NamedTupleVSpace):
-        seq_type = np.linalg.linalg.SVDResult
-
-    EigResultVSpace.register(np.linalg.linalg.EigResult)
-    EighResultVSpace.register(np.linalg.linalg.EighResult)
-    QRResultVSpace.register(np.linalg.linalg.QRResult)
-    SlogdetResultVSpace.register(np.linalg.linalg.SlogdetResult)
-    SVDResultVSpace.register(np.linalg.linalg.SVDResult)
+EigResultVSpace.register(np.linalg._linalg.EigResult)
+EighResultVSpace.register(np.linalg._linalg.EighResult)
+QRResultVSpace.register(np.linalg._linalg.QRResult)
+SlogdetResultVSpace.register(np.linalg._linalg.SlogdetResult)
+SVDResultVSpace.register(np.linalg._linalg.SVDResult)
