@@ -90,7 +90,7 @@ ive = primitive(scipy.special.ive)
 defvjp(i0, lambda ans, x: lambda g: g * i1(x))
 defvjp(i1, lambda ans, x: lambda g: g * (i0(x) + iv(2, x)) / 2.0)
 defvjp(iv, None, lambda ans, n, x: lambda g: g * (iv(n - 1, x) + iv(n + 1, x)) / 2.0)
-defvjp(ive, None, lambda ans, n, x: lambda g: g * (ans * (n / x - np.sign(x)) + ive(n + 1, x)))
+defvjp(ive, None, lambda ans, n, x: lambda g: g * ((ive(n - 1, x) + ive(n + 1, x)) / 2.0 - np.sign(x) * ans))
 
 ### Error Function ###
 inv_root_pi = 0.56418958354775627928
