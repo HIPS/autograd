@@ -431,5 +431,14 @@ else:
             [R(3, 3)], [R(3, 3)], [R(3, 3)]
         )
 
+    def test_solve_triangular():
+        combo_check(spla.solve_triangular, [0, 1])(
+            [R(4, 4) + 4 * np.eye(4)],
+            [R(4), R(4, 3)],
+            trans=[0, 1],
+            lower=[False, True],
+            unit_diagonal=[False, True],
+        )
+
     def test_solve_banded():
         combo_check(spla.solve_banded, [1, 2], modes=["rev"], order=1)([(1, 1)], [R(3, 5)], [R(5)])
