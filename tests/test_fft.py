@@ -153,6 +153,24 @@ def test_ifft():
     check_grads(fun)(mat)
 
 
+def test_hfft_gradient():
+    def fun(x):
+        transformed = np.fft.hfft(x)
+        return np.sum(transformed**2)
+
+    mat = np.array([0.5 + 0.0j, 1.0 + 0.3j, -0.2 + 0.0j])
+    check_grads(fun)(mat)
+
+
+def test_ihfft_gradient():
+    def fun(x):
+        transformed = np.fft.ihfft(x)
+        return np.sum(np.real(transformed * np.conj(transformed)))
+
+    mat = np.array([0.5, 1.0, -0.2, 0.3])
+    check_grads(fun, order=1)(mat)
+
+
 def test_fft2():
     def fun(x):
         return np.fft.fft2(x)
@@ -205,6 +223,36 @@ def test_rfft_ortho():
     D = 4
     mat = npr.randn(D, D) / 10.0
     check_grads(fun)(mat)
+
+
+def test_rfft_keyword_n_gradient():
+    def fun(x):
+        transformed = np.fft.rfft(x, n=6)
+        return np.sum(np.real(transformed * np.conj(transformed)))
+
+    check_grads(fun)(np.array([0.2, -0.4, 0.7, 0.1]))
+
+
+def test_irfft_keyword_n_gradient():
+    def fun(x):
+        return np.sum(np.fft.irfft(x, n=6) ** 2)
+
+    check_grads(fun)(np.array([0.2, 0.1 + 0.3j, -0.4 + 0.2j, 0.5]))
+
+
+def test_rfft_explicit_backward_norm_gradient():
+    def fun(x):
+        transformed = np.fft.rfft(x, norm="backward")
+        return np.sum(np.real(transformed * np.conj(transformed)))
+
+    check_grads(fun)(np.array([0.2, -0.4, 0.7, 0.1]))
+
+
+def test_irfft_explicit_backward_norm_gradient():
+    def fun(x):
+        return np.sum(np.fft.irfft(x, norm="backward") ** 2)
+
+    check_grads(fun)(np.array([0.2, 0.1 + 0.3j, -0.4 + 0.2j]))
 
 
 def test_rfft_axes():

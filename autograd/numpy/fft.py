@@ -86,6 +86,32 @@ defvjp(rfftn, lambda *args, **kwargs: rfft_grad(get_fftn_args, irfftn, *args, **
 
 defvjp(irfftn, lambda *args, **kwargs: irfft_grad(get_fftn_args, rfftn, *args, **kwargs))
 
+
+def hfft(a, n=None, axis=-1, norm=None):
+    """FFT of a Hermitian-symmetric sequence represented by its first half."""
+    if n is None:
+        n = 2 * (a.shape[axis] - 1)
+    shape = list(a.shape)
+    shape[axis] = n // 2 + 1
+    half = truncate_pad(a, shape)
+    index = [slice(None)] * half.ndim
+    index[axis] = slice(1, -1 if n % 2 == 0 else None)
+    reverse = [slice(None)] * half.ndim
+    reverse[axis] = slice(None, None, -1)
+    reflected = anp.conj(half[tuple(index)][tuple(reverse)])
+    full = anp.concatenate((half, reflected), axis=axis)
+    return anp.real(fft(full, axis=axis, norm=norm))
+
+
+def ihfft(a, n=None, axis=-1, norm=None):
+    """Inverse FFT of a real sequence, returning its Hermitian half-spectrum."""
+    if norm in (None, "backward"):
+        length = a.shape[axis] if n is None else n
+        return anp.conj(rfft(a, n=n, axis=axis)) / length
+    paired_norm = "backward" if norm == "forward" else norm
+    return anp.conj(rfft(a, n=n, axis=axis, norm=paired_norm))
+
+
 defvjp(
     fftshift, lambda ans, x, axes=None: lambda g: match_complex(x, anp.conj(ifftshift(anp.conj(g), axes)))
 )
@@ -120,6 +146,10 @@ def check_even_shape(shape):
 
 
 def get_fft_args(a, d=None, axis=-1, norm=None, *args, **kwargs):
+    # ``n`` is normally passed as a keyword; the FFT functions accept it but
+    # the VJP also needs it to compute the real-FFT normalization factors.
+    if d is None:
+        d = kwargs.get("n")
     axes = [axis]
     if d is not None:
         d = [d]
@@ -156,6 +186,6 @@ def make_rfft_factors(axes, resshape, facshape, normshape, norm):
     else:
         index[axes[-1]] = (0,)
     fac[tuple(index)] = 1
-    if norm is None:
+    if norm in (None, "backward"):
         fac /= N
     return fac
