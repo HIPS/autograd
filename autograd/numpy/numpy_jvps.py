@@ -6,6 +6,8 @@ from ..util import func
 from . import numpy_wrapper as anp
 from .numpy_boxes import ArrayBox
 from .numpy_vjps import (
+    _sinc_grad,
+    _sinc_zero_derivative,
     balanced_eq,
     dot_adjoint_0,
     dot_adjoint_1,
@@ -134,9 +136,11 @@ defjvp(anp.arctanh, lambda g, ans, x: g / (1 - x**2))
 defjvp(anp.square, lambda g, ans, x: g * 2 * x)
 defjvp(anp.sqrt, lambda g, ans, x: g * 0.5 * x**-0.5)
 defjvp(
-    anp.sinc,
-    lambda g, ans, x: g * (anp.cos(anp.pi * x) * anp.pi * x - anp.sin(anp.pi * x)) / (anp.pi * x**2),
+    _sinc_zero_derivative,
+    lambda g, ans, order, x: g * _sinc_zero_derivative(order + 1, x),
+    argnums=(1,),
 )
+defjvp(anp.sinc, lambda g, ans, x: _sinc_grad(g, x))
 defjvp(anp.clip, lambda g, ans, x, a_min, a_max: g * anp.logical_and(ans != a_min, ans != a_max))
 defjvp(anp.real_if_close, lambda g, ans, x: match_complex(ans, g))
 defjvp(anp.real, lambda g, ans, x: anp.real(g))
