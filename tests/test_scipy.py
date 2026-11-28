@@ -17,7 +17,7 @@ else:
     import autograd.scipy.linalg as spla
     import autograd.scipy.signal
     import autograd.scipy.stats.multivariate_normal as mvn
-    from autograd import grad
+    from autograd import grad, hessian
     from autograd.scipy import integrate, special, stats
     from autograd.test_util import check_grads, combo_check
 
@@ -432,4 +432,16 @@ else:
         )
 
     def test_solve_banded():
-        combo_check(spla.solve_banded, [1, 2], modes=["rev"], order=1)([(1, 1)], [R(3, 5)], [R(5)])
+        combo_check(spla.solve_banded, [1, 2], modes=["rev"], order=1)(
+            [(1, 1)], [R(3, 5)], [R(5), R(5, 1), R(5, 3)]
+        )
+
+    def test_solve_banded_diagonal():
+        a = np.array([[2.0, 3.0]])
+        b = np.array([[1.0, 2.0], [3.0, 4.0]])
+        fun = lambda ab: np.sum(spla.solve_banded((0, 0), ab, b) ** 2)
+        gradient = grad(fun)(a)
+        assert gradient.shape == a.shape
+        npo.testing.assert_allclose(gradient, -2 * np.sum(b * b, axis=1)[None, :] / a**3)
+        expected_hessian = np.diag(6 * np.sum(b * b, axis=1) / a[0] ** 4)
+        npo.testing.assert_allclose(hessian(fun)(a).reshape(2, 2), expected_hessian)
