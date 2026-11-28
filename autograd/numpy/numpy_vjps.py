@@ -185,6 +185,10 @@ defvjp(anp.deg2rad, lambda ans, x: lambda g: g * anp.pi / 180.0)
 defvjp(anp.radians, lambda ans, x: lambda g: g * anp.pi / 180.0)
 defvjp(anp.square, lambda ans, x: lambda g: g * 2 * x)
 defvjp(anp.sqrt, lambda ans, x: lambda g: g * 0.5 * x**-0.5)
+# cbrt is odd and smooth away from the origin, so the same expression works for
+# negative inputs: ans**2 is positive there too. The slope is vertical at x == 0,
+# matching numpy's own inf for the reciprocal of zero.
+defvjp(anp.cbrt, lambda ans, x: lambda g: g / (3.0 * ans**2))
 defvjp(
     anp.sinc,
     lambda ans, x: lambda g: g * (anp.cos(anp.pi * x) * anp.pi * x - anp.sin(anp.pi * x)) / (anp.pi * x**2),
