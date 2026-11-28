@@ -1,6 +1,5 @@
 from functools import partial
 
-import numpy as onp
 import pytest
 
 import autograd.numpy as np
@@ -118,10 +117,7 @@ def test_solve_arg1_3d():
     D = 4
     A = npr.randn(D + 1, D, D) + 5 * np.eye(D)
     B = npr.randn(D + 1, D)
-    if onp.lib.NumpyVersion(onp.__version__) < "2.0.0":
-        fun = lambda A: np.linalg.solve(A, B)
-    else:
-        fun = lambda A: np.linalg.solve(A, B[..., None])[..., 0]
+    fun = lambda A: np.linalg.solve(A, B[..., None])[..., 0]
     check_grads(fun)(A)
 
 

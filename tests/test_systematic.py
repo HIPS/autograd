@@ -1,6 +1,5 @@
 import operator as op
 
-import numpy as onp
 from numpy_utils import binary_ufunc_check, binary_ufunc_check_no_same_args, stat_check, unary_ufunc_check
 
 import autograd.numpy as np
@@ -368,12 +367,6 @@ def test_fmin():
 
 def test_sort():
     combo_check(np.sort, [0])([R(1), R(7)])
-
-
-if onp.lib.NumpyVersion(onp.__version__) < "2.0.0":
-
-    def test_msort():
-        combo_check(np.msort, [0])([R(1), R(7)])
 
 
 def test_partition():

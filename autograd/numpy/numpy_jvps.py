@@ -1,5 +1,3 @@
-import numpy as onp
-
 from autograd.extend import JVPNode, def_linear, defjvp, defjvp_argnum, register_notrace, vspace
 
 from ..util import func
@@ -260,8 +258,6 @@ def fwd_grad_sort(g, ans, x, axis=-1, kind="quicksort", order=None):
 
 
 defjvp(anp.sort, fwd_grad_sort)
-if onp.lib.NumpyVersion(onp.__version__) < "2.0.0":
-    defjvp(anp.msort, lambda g, ans, x: fwd_grad_sort(g, ans, x, axis=0))
 
 
 def fwd_grad_partition(g, ans, x, kth, axis=-1, kind="introselect", order=None):

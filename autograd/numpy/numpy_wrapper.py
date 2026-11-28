@@ -1,14 +1,10 @@
 import warnings
 
 import numpy as _np
+from numpy._core.einsumfunc import _parse_einsum_input
 
 from autograd import builtins
 from autograd.extend import notrace_primitive, primitive
-
-if _np.lib.NumpyVersion(_np.__version__) >= "2.0.0":
-    from numpy._core.einsumfunc import _parse_einsum_input
-else:
-    from numpy.core.einsumfunc import _parse_einsum_input
 
 numpy_version = _np.__version__
 
@@ -24,7 +20,11 @@ def wrap_intdtype(cls):
 
 def wrap_namespace(old, new):
     unchanged_types = {float, int, type(None), type}
-    int_types = {_np.int8, _np.int16, _np.int32, _np.int64, _np.integer}
+    # Concrete integer dtypes need a notrace __new__. Leave abstract
+    # bases such as integer alone so issubdtype(np.int32, np.integer)
+    # keeps working (see #551); type(obj) is type then copies them through
+    # unchanged_types.
+    int_types = {_np.int8, _np.int16, _np.int32, _np.int64}
     obj_to_wrapped = []
     for name, obj in old.items():
         # Map multiple names of the same object (e.g. conj/conjugate)
@@ -195,14 +195,8 @@ def parse_einsum_input(*args):
     return _parse_einsum_input(args)
 
 
-if _np.lib.NumpyVersion(_np.__version__) >= "2.0.0":
-    # Wrapped above
-    _astype = astype
-else:
-
-    @primitive
-    def _astype(A, dtype, order="K", casting="unsafe", subok=True, copy=True):
-        return A.astype(dtype, order, casting, subok, copy)
+# Wrapped above
+_astype = astype
 
 
 # Store the primitive-wrapped mean for internal use

@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "autograd"
 version = "1.9.1"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 description = "Efficiently computes derivatives of NumPy code."
 readme = "README.md"
 license = "MIT"
@@ -25,7 +25,6 @@ classifiers = [
   "Development Status :: 4 - Beta",
   "Intended Audience :: Information Technology",
   "Intended Audience :: Science/Research",
-  "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
@@ -45,7 +44,7 @@ keywords = [
   "SciPy",
 ]
 dependencies = [
-  "numpy<3",
+  "numpy>=2.0,<3",
 ]
 # dynamic = ["version"]
 
@@ -54,7 +53,7 @@ Source = "https://github.com/HIPS/autograd"
 
 [project.optional-dependencies]
 scipy = [
-  "scipy",
+  "scipy>=1.13",
 ]
 
 [dependency-groups]
