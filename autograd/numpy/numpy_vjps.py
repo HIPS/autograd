@@ -269,6 +269,8 @@ defvjp(anp.rollaxis, grad_rollaxis)
 
 
 def grad_diff(ans, a, n=1, axis=-1):
+    if anp.size(ans) == 0:
+        return lambda g: vspace(a).zeros()
     nd = anp.ndim(a)
     ans_shape = anp.shape(ans)
     sl1 = [slice(None)] * nd
