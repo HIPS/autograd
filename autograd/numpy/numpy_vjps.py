@@ -364,8 +364,15 @@ defvjp(anp.repeat, grad_repeat)
 
 
 def grad_tile(ans, x, reps):
-    reps = [reps] if anp.isscalar(reps) else reps
+    try:
+        reps = tuple(reps)
+    except TypeError:
+        reps = (reps,)
+    reps = tuple(int(rep) for rep in reps)
     x_shape = anp.shape(x)
+    reps = (1,) * (len(x_shape) - len(reps)) + reps
+    if 0 in reps:
+        return lambda g: vspace(x).zeros()
 
     def vjp(g):
         for axis, rep in enumerate(reps):
