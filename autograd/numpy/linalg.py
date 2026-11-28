@@ -1,11 +1,13 @@
 from functools import partial
 
+import numpy as onp
 import numpy.linalg as npla
 
 from autograd import builtins
 from autograd.extend import defjvp, defvjp
 
 from . import numpy_wrapper as anp
+from .numpy_vjps import unbroadcast_f
 from .numpy_wrapper import wrap_namespace
 
 wrap_namespace(npla.__dict__, globals())
@@ -78,11 +80,19 @@ defvjp(pinv, grad_pinv)
 
 
 def grad_solve(argnum, ans, a, b):
-    updim = lambda x: x if x.ndim == a.ndim else x[..., None]
-    if argnum == 0:
-        return lambda g: -_dot(updim(solve(T(a), g)), T(updim(ans)))
+    if onp.lib.NumpyVersion(onp.__version__) < "2.0.0":
+        vector_rhs = anp.ndim(b) == anp.ndim(a) - 1
     else:
-        return lambda g: solve(T(a), g)
+        vector_rhs = anp.ndim(b) == 1
+    updim = lambda x: x[..., None] if vector_rhs else x
+
+    def vjp(g):
+        solved = solve(T(a), updim(g))
+        if argnum == 0:
+            return -_dot(solved, T(updim(ans)))
+        return solved[..., 0] if vector_rhs else solved
+
+    return unbroadcast_f(a if argnum == 0 else b, vjp)
 
 
 defvjp(solve, partial(grad_solve, 0), partial(grad_solve, 1))
