@@ -210,7 +210,20 @@ defvjp(
         lambda g: anp.einsum("ij,...->ij...", anp.eye(x.shape[0], x.shape[1], k=offset), g)
     ),
 )
-defvjp(anp.full, lambda ans, shape, fill_value, dtype=None: lambda g: anp.sum(g), argnums=(1,))
+
+
+def grad_full(ans, shape, fill_value, dtype=None):
+    target_meta = anp.metadata(fill_value)
+
+    def vjp(g):
+        if target_meta[1] > anp.ndim(g):
+            g = anp.reshape(g, (1,) * (target_meta[1] - anp.ndim(g)) + anp.shape(g))
+        return match_complex(fill_value, unbroadcast(g, target_meta))
+
+    return vjp
+
+
+defvjp(anp.full, grad_full, argnums=(1,))
 defvjp(anp.triu, lambda ans, x, k=0: lambda g: anp.triu(g, k=k))
 defvjp(anp.tril, lambda ans, x, k=0: lambda g: anp.tril(g, k=k))
 defvjp(anp.clip, lambda ans, x, a_min, a_max: lambda g: g * anp.logical_and(ans != a_min, ans != a_max))
