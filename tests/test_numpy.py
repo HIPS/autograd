@@ -1,11 +1,12 @@
 import warnings
 
+import numpy as onp
 import pytest
 from numpy_utils import combo_check
 
 import autograd.numpy as np
 import autograd.numpy.random as npr
-from autograd import grad
+from autograd import grad, make_jvp
 from autograd.test_util import check_grads
 
 npr.seed(1)
@@ -263,6 +264,92 @@ def test_cumsum_no_axis():
 
     mat = npr.randn(10, 11)
     check_grads(fun)(mat)
+
+
+@pytest.mark.parametrize("axis", [None, 0, 1, -1, -2])
+@pytest.mark.parametrize("input_dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("dtype", [None, np.float32, np.float64])
+@pytest.mark.parametrize("positional", [False, True])
+def test_cumsum_dtype(axis, input_dtype, dtype, positional):
+    def fun(x):
+        if positional:
+            return np.cumsum(x, axis, dtype)
+        return np.cumsum(x, axis=axis, dtype=dtype)
+
+    x = np.arange(6, dtype=input_dtype).reshape(2, 3)
+    result = fun(x)
+    reference = onp.cumsum(x, axis=axis, dtype=dtype)
+    onp.testing.assert_array_equal(result, reference)
+    assert result.dtype == reference.dtype
+
+    weights = np.arange(1, 7, dtype=result.dtype).reshape(result.shape)
+    expected = {
+        None: [[21, 20, 18], [15, 11, 6]],
+        0: [[5, 7, 9], [4, 5, 6]],
+        1: [[6, 5, 3], [15, 11, 6]],
+    }[None if axis is None else axis % x.ndim]
+    actual = grad(lambda values: np.sum(fun(values) * weights))(x)
+    onp.testing.assert_array_equal(actual, expected)
+    assert actual.dtype == x.dtype
+
+
+@pytest.mark.parametrize("axis", [None, 0, 1, -1, -2])
+@pytest.mark.parametrize("dtype", [np.float64, np.complex128])
+def test_cumsum_dtype_gradients(axis, dtype):
+    check_grads(lambda x: np.cumsum(x, axis=axis, dtype=dtype))(npr.randn(2, 3))
+
+
+@pytest.mark.parametrize("axis", [None, 0, 1, -1, -2])
+@pytest.mark.parametrize(
+    "fun",
+    [
+        lambda x, axis: np.cumsum(x, axis, np.float64, None),
+        lambda x, axis: x.cumsum(axis=axis, dtype=np.float64, out=None),
+        lambda x, axis: onp.cumsum(x, axis=axis, dtype=np.float64),
+    ],
+    ids=["positional-out", "method", "numpy"],
+)
+def test_cumsum_dtype_dispatch(axis, fun):
+    check_grads(lambda x: fun(x, axis))(npr.randn(2, 3))
+
+
+def test_cumsum_dtype_preserves_accumulation_precision():
+    x = np.zeros(3, dtype=np.float32)
+    weights = np.array([1e8, -1e8, 1.0], dtype=np.float64)
+    actual = grad(lambda values: np.sum(np.cumsum(values, dtype=np.float64) * weights))(x)
+    onp.testing.assert_array_equal(actual, np.array([1.0, -1e8, 1.0], dtype=x.dtype))
+    assert actual.dtype == x.dtype
+
+
+@pytest.mark.parametrize("shape", [(), (0,), (0, 3), (2, 0), (1,)])
+def test_cumsum_dtype_shapes(shape):
+    x = np.zeros(shape, dtype=np.float32)
+    actual = grad(lambda values: np.sum(np.cumsum(values, dtype=np.float64)))(x)
+    onp.testing.assert_array_equal(actual, np.ones_like(x))
+    assert actual.dtype == x.dtype
+
+
+def test_cumsum_dtype_mixed_precision_higher_order():
+    x = np.array([1.0, 2.0, 3.0], dtype=np.float32)
+    grad_fun = grad(lambda values: np.sum(np.cumsum(values, dtype=np.float64) ** 2))
+    expected = np.array([20.0, 18.0, 12.0], dtype=x.dtype)
+    forward = make_jvp(grad_fun)(x)(x)[1]
+    reverse = grad(lambda values: np.sum(grad_fun(values) * x))(x)
+    for actual in [forward, reverse]:
+        onp.testing.assert_array_equal(actual, expected)
+        assert actual.dtype == x.dtype
+
+
+@pytest.mark.parametrize(
+    ("input_dtype", "dtype"),
+    [(np.complex64, np.complex128), (np.complex128, np.complex64)],
+)
+def test_cumsum_complex_dtype(input_dtype, dtype):
+    x = np.array([1.0 + 2j, 3.0 - 1j, 2.0 + 1j], dtype=input_dtype)
+    weights = np.array([1.0 + 2j, 3.0 - 1j, 4.0 + 3j], dtype=dtype)
+    actual = grad(lambda values: np.real(np.sum(np.cumsum(values, dtype=dtype) * weights)))(x)
+    onp.testing.assert_array_equal(actual, np.array([8.0 + 4j, 7.0 + 2j, 4.0 + 3j], dtype=x.dtype))
+    assert actual.dtype == x.dtype
 
 
 def test_non_numpy_sum():

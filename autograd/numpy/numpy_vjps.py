@@ -537,12 +537,13 @@ def reverse_axis(x, axis):
     return x.swapaxes(0, axis)
 
 
-def grad_np_cumsum(ans, x, axis=None):
+def grad_np_cumsum(ans, x, axis=None, dtype=None, out=None):
     def vjp(g):
         if axis:
-            return reverse_axis(anp.cumsum(reverse_axis(g, axis), axis), axis)
+            result = reverse_axis(anp.cumsum(reverse_axis(g, axis), axis), axis)
         else:
-            return anp.reshape(anp.cumsum(g[::-1], axis)[::-1], x.shape)
+            result = anp.reshape(anp.cumsum(g[::-1], axis)[::-1], x.shape)
+        return anp.array(match_complex(x, result), dtype=x.dtype)
 
     return vjp
 
