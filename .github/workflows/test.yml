@@ -28,7 +28,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [ubuntu-latest, ubuntu-22.04-arm, macos-15-intel, macos-latest, windows-latest]
+        platform: [ubuntu-latest, ubuntu-22.04-arm, macos-15-intel, macos-latest, windows-latest, windows-11-arm]
         python-version:
           ["3.11", "3.12", "3.13", "3.14", "3.15"]
     steps:
@@ -57,7 +57,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [ubuntu-latest, ubuntu-22.04-arm, macos-15-intel, macos-latest, windows-latest]
+        platform: [ubuntu-latest, ubuntu-22.04-arm, macos-15-intel, macos-latest, windows-latest, windows-11-arm]
         python-version: ["3.14"]
 
     steps:
