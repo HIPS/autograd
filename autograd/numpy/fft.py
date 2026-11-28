@@ -1,3 +1,5 @@
+import typing as _typing
+
 import numpy.fft as ffto
 
 from autograd.extend import defvjp, primitive, vspace
@@ -5,6 +7,9 @@ from autograd.extend import defvjp, primitive, vspace
 from . import numpy_wrapper as anp
 from .numpy_vjps import match_complex
 from .numpy_wrapper import wrap_namespace
+
+if _typing.TYPE_CHECKING:
+    from numpy.fft import *
 
 wrap_namespace(ffto.__dict__, globals())
 
@@ -150,7 +155,7 @@ def make_rfft_factors(axes, resshape, facshape, normshape, norm):
     # but we already imported anp, so use it instead.
     fac = anp.zeros(resshape)
     fac[...] = 2
-    index = [slice(None)] * len(resshape)
+    index: list[_typing.Any] = [slice(None)] * len(resshape)
     if facshape[-1] <= resshape[axes[-1]]:
         index[axes[-1]] = (0, facshape[-1] - 1)
     else:

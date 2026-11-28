@@ -322,6 +322,17 @@ def test_eigvalh_upper():
     check_grads(fun)(mat)
 
 
+@pytest.mark.parametrize("UPLO", ["l", "u"])
+def test_eigvalh_lowercase_uplo(UPLO):
+    def fun(x):
+        w, v = np.linalg.eigh(x, UPLO)
+        return tuple((w, v))
+
+    D = 6
+    mat = npr.randn(D, D)
+    check_grads(fun)(mat)
+
+
 broadcast_dot_transpose = partial(np.einsum, "...ij,...kj->...ik")
 
 

@@ -1,10 +1,16 @@
+import typing as _typing
 import warnings
 
 import numpy as _np
-from numpy._core.einsumfunc import _parse_einsum_input
+from numpy._core.einsumfunc import _parse_einsum_input  # pyrefly: ignore[missing-module-attribute]
 
 from autograd import builtins
 from autograd.extend import notrace_primitive, primitive
+
+if _typing.TYPE_CHECKING:
+    # wrap_namespace() adds these names at runtime, apart from the
+    # submodules and the few objects that it does not wrap
+    from numpy import *
 
 numpy_version = _np.__version__
 
@@ -25,7 +31,7 @@ def wrap_namespace(old, new):
     # keeps working (see #551); type(obj) is type then copies them through
     # unchanged_types.
     int_types = {_np.int8, _np.int16, _np.int32, _np.int64}
-    obj_to_wrapped = []
+    obj_to_wrapped: list[tuple[_typing.Any, _typing.Any]] = []
     for name, obj in old.items():
         # Map multiple names of the same object (e.g. conj/conjugate)
         # to the same wrapped object
@@ -155,7 +161,7 @@ class r_class:
         return wrap_if_boxes_inside(raw_array, slow_op_name="r_")
 
 
-r_ = r_class()
+r_ = r_class()  # pyrefly: ignore[bad-assignment]
 
 
 class c_class:
@@ -164,7 +170,7 @@ class c_class:
         return wrap_if_boxes_inside(raw_array, slow_op_name="c_")
 
 
-c_ = c_class()
+c_ = c_class()  # pyrefly: ignore[bad-assignment]
 
 
 # ----- misc -----

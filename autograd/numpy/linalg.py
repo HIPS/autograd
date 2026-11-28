@@ -1,3 +1,4 @@
+import typing as _typing
 from functools import partial
 
 import numpy.linalg as npla
@@ -7,6 +8,9 @@ from autograd.extend import defjvp, defvjp
 
 from . import numpy_wrapper as anp
 from .numpy_wrapper import wrap_namespace
+
+if _typing.TYPE_CHECKING:
+    from numpy.linalg import *
 
 wrap_namespace(npla.__dict__, globals())
 
@@ -159,18 +163,15 @@ def norm_jvp(g, ans, x, ord=None, axis=None, **kwargs):
     else:
         contract = partial(anp.sum, axis=axis)
 
-    if ord == "nuc":
-        if axis is None:
-            roll = lambda a: a
-            unroll = lambda a: a
-        else:
-            row_axis, col_axis = axis
-            if row_axis > col_axis:
-                row_axis = row_axis - 1
-            # Roll matrix axes to the back
-            roll = lambda a: anp.rollaxis(anp.rollaxis(a, col_axis, a.ndim), row_axis, a.ndim - 1)
-            # Roll matrix axes to their original position
-            unroll = lambda a: anp.rollaxis(anp.rollaxis(a, a.ndim - 2, row_axis), a.ndim - 1, col_axis)
+    roll = unroll = lambda a: a
+    if ord == "nuc" and axis is not None:
+        row_axis, col_axis = axis
+        if row_axis > col_axis:
+            row_axis = row_axis - 1
+        # Roll matrix axes to the back
+        roll = lambda a: anp.rollaxis(anp.rollaxis(a, col_axis, a.ndim), row_axis, a.ndim - 1)
+        # Roll matrix axes to their original position
+        unroll = lambda a: anp.rollaxis(anp.rollaxis(a, a.ndim - 2, row_axis), a.ndim - 1, col_axis)
 
     check_implemented()
     if ord in (None, 2, "fro"):
@@ -216,9 +217,9 @@ def grad_eigh(ans, x, UPLO="L"):
         reps = anp.array(x.shape)
         reps[-2:] = 1
 
-        if UPLO == "L":
+        if UPLO.upper() == "L":
             tri = anp.tile(anp.tril(anp.ones(N), -1), reps)
-        elif UPLO == "U":
+        else:
             tri = anp.tile(anp.triu(anp.ones(N), 1), reps)
 
         return anp.real(vjp_temp) * anp.eye(vjp_temp.shape[-1]) + (vjp_temp + anp.conj(T(vjp_temp))) * tri

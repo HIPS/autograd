@@ -10,7 +10,7 @@ Box.__array_priority__ = 90.0
 
 
 class ArrayBox(Box):
-    __slots__ = []
+    __slots__ = ()
     __array_priority__ = 100.0
 
     @primitive

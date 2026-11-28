@@ -117,7 +117,7 @@ def parse_axes(A_shape, B_shape, conv_axes, dot_axes, mode):
         "ignore_B": tuple(range(i1, i2)),
         "conv": tuple(range(i2, i3)),
     }
-    conv_shape = (
+    conv_shape = tuple(
         compute_conv_size(A_shape[i], B_shape[j], mode) for i, j in zip(axes["A"]["conv"], axes["B"]["conv"])
     )
     shapes = {

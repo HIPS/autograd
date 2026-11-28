@@ -817,6 +817,12 @@ def test_std_ddof():
     combo_check(np.std, (0,))([C, D], axis=[None, 1], keepdims=[True, False], ddof=[2])
 
 
+def test_var_std_tuple_axis():
+    A = npr.randn(3, 4, 2)
+    combo_check(np.var, (0,))([A], axis=[(0, 1), (0, 2)], keepdims=[True, False])
+    combo_check(np.std, (0,))([A], axis=[(0, 1), (0, 2)], keepdims=[True, False])
+
+
 def test_where():
     def fun(x, y):
         b = np.where(C, x, y)

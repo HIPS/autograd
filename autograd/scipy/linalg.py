@@ -1,3 +1,4 @@
+import typing as _typing
 from functools import partial
 
 import scipy.linalg
@@ -5,6 +6,9 @@ import scipy.linalg
 import autograd.numpy as anp
 from autograd.extend import defjvp, defjvp_argnums, defvjp, defvjp_argnums
 from autograd.numpy.numpy_wrapper import wrap_namespace
+
+if _typing.TYPE_CHECKING:
+    from scipy.linalg import *
 
 wrap_namespace(scipy.linalg.__dict__, globals())  # populates module namespace
 

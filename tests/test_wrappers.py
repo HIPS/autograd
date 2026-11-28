@@ -16,6 +16,7 @@ from autograd import (
     make_ggnvp,
     make_hvp,
     make_jvp,
+    multigrad_dict,
     tensor_jacobian_product,
     value_and_grad,
 )
@@ -363,6 +364,17 @@ def test_make_jvp():
     jvp = make_jvp(fun)
 
     check_equivalent(jvp_explicit(x)(v), jvp(x)(v)[1])
+
+
+def test_multigrad_dict():
+    fun = lambda a, b: np.sum(np.sin(a) * b)
+    a = npr.randn(3)
+    b = npr.randn(3)
+
+    grads = multigrad_dict(fun)(a, b)
+
+    check_equivalent(grads["a"], grad(fun, 0)(a, b))
+    check_equivalent(grads["b"], grad(fun, 1)(a, b))
 
 
 def _make_explicit_ggnvp(f, g=lambda x: 1.0 / 2 * np.dot(x, x)):
