@@ -1,5 +1,3 @@
-import platform
-
 import nox
 
 NIGHTLY_INDEX_URL = "https://pypi.anaconda.org/scientific-python-nightly-wheels/simple"
@@ -31,11 +29,7 @@ def run_tests(session):
     """Run unit tests and generate a coverage report"""
     pyproject = nox.project.load_toml("pyproject.toml")
     session.install(*nox.project.dependency_groups(pyproject, "test"))
-    # SciPy doesn't have wheels on PyPy
-    if platform.python_implementation() == "PyPy":
-        session.install("-e.", silent=False)
-    else:
-        session.install("-e", ".[scipy]", silent=False)
+    session.install("-e", ".[scipy]", silent=False)
     session.run("pytest", "--cov=autograd", "--cov-report=xml", "--cov-append", *session.posargs)
 
 
@@ -52,24 +46,13 @@ def run_nightly_tests(session):
     session.install("-e.", silent=False)
     pyproject = nox.project.load_toml("pyproject.toml")
     session.install(*nox.project.dependency_groups(pyproject, "test"))
-    # SciPy doesn't have wheels on PyPy
-    if platform.python_implementation() == "PyPy":
-        session.install(
-            "numpy",
-            "--upgrade",
-            "--only-binary",
-            ":all:",
-            silent=False,
-            env=UV_NIGHTLY_ENV_VARS,
-        )
-    else:
-        session.install(
-            "numpy",
-            "scipy",
-            "--upgrade",
-            "--only-binary",
-            ":all:",
-            silent=False,
-            env=UV_NIGHTLY_ENV_VARS,
-        )
+    session.install(
+        "numpy",
+        "scipy",
+        "--upgrade",
+        "--only-binary",
+        ":all:",
+        silent=False,
+        env=UV_NIGHTLY_ENV_VARS,
+    )
     session.run("pytest", "--cov=autograd", "--cov-report=xml", "--cov-append", *session.posargs)
