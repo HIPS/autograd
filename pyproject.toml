@@ -53,7 +53,7 @@ Source = "https://github.com/HIPS/autograd"
 
 [project.optional-dependencies]
 scipy = [
-  "scipy",
+  "scipy>=1.13",
 ]
 
 [dependency-groups]
