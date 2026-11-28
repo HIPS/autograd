@@ -1,3 +1,5 @@
+import typing as _typing
+
 import numpy.fft as ffto
 
 from autograd.extend import defvjp, primitive, vspace
@@ -5,6 +7,9 @@ from autograd.extend import defvjp, primitive, vspace
 from . import numpy_wrapper as anp
 from .numpy_vjps import match_complex
 from .numpy_wrapper import wrap_namespace
+
+if _typing.TYPE_CHECKING:
+    from numpy.fft import *
 
 wrap_namespace(ffto.__dict__, globals())
 

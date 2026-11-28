@@ -1,3 +1,4 @@
+import typing as _typing
 from functools import partial
 
 import numpy.linalg as npla
@@ -7,6 +8,9 @@ from autograd.extend import defjvp, defvjp
 
 from . import numpy_wrapper as anp
 from .numpy_wrapper import wrap_namespace
+
+if _typing.TYPE_CHECKING:
+    from numpy.linalg import *
 
 wrap_namespace(npla.__dict__, globals())
 

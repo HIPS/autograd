@@ -1,3 +1,4 @@
+import typing as _typing
 import warnings
 
 import numpy as _np
@@ -5,6 +6,11 @@ from numpy._core.einsumfunc import _parse_einsum_input
 
 from autograd import builtins
 from autograd.extend import notrace_primitive, primitive
+
+if _typing.TYPE_CHECKING:
+    # wrap_namespace() adds these names at runtime, apart from the
+    # submodules and the few objects that it does not wrap
+    from numpy import *
 
 numpy_version = _np.__version__
 
