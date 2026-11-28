@@ -1,12 +1,8 @@
 """Convenience functions built on top of `make_vjp`."""
 
-from collections import OrderedDict
-
-try:
-    from inspect import getfullargspec as _getargspec  # Python 3
-except ImportError:
-    from inspect import getargspec as _getargspec  # Python 2
+import inspect
 import warnings
+from collections import OrderedDict
 
 import autograd.numpy as np
 
@@ -81,7 +77,7 @@ def holomorphic_grad(fun, x):
 def grad_named(fun, argname):
     """Takes gradients with respect to a named argument.
     Doesn't work on *args or **kwargs."""
-    arg_index = _getargspec(fun).args.index(argname)
+    arg_index = inspect.getfullargspec(fun).args.index(argname)
     return grad(fun, arg_index)
 
 
@@ -186,9 +182,7 @@ def multigrad_dict(fun):
     "Takes gradients wrt all arguments simultaneously,"
     "returns a dict mapping 'argname' to 'gradval'"
 
-    import funcsigs
-
-    sig = funcsigs.signature(fun)
+    sig = inspect.signature(fun)
 
     def select(preds, lst):
         idx = lambda item: next((i for i, pred in enumerate(preds) if pred(item)), len(preds))
