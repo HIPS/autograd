@@ -216,9 +216,9 @@ def grad_eigh(ans, x, UPLO="L"):
         reps = anp.array(x.shape)
         reps[-2:] = 1
 
-        if UPLO == "L":
+        if UPLO.upper() == "L":
             tri = anp.tile(anp.tril(anp.ones(N), -1), reps)
-        elif UPLO == "U":
+        else:
             tri = anp.tile(anp.triu(anp.ones(N), 1), reps)
 
         return anp.real(vjp_temp) * anp.eye(vjp_temp.shape[-1]) + (vjp_temp + anp.conj(T(vjp_temp))) * tri
