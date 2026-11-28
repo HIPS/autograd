@@ -441,7 +441,7 @@ def grad_broadcast_to(ans, x, new_shape):
 defvjp(anp.broadcast_to, grad_broadcast_to)
 
 
-def grad_np_sum(ans, x, axis=None, keepdims=False, dtype=None, **kwargs):
+def grad_np_sum(ans, x, axis=None, dtype=None, out=None, keepdims=False, **kwargs):
     shape, dtype = anp.shape(x), anp.result_type(x)
     return lambda g: repeat_to_match_shape(g, shape, dtype, axis, keepdims)[0]
 
@@ -449,7 +449,7 @@ def grad_np_sum(ans, x, axis=None, keepdims=False, dtype=None, **kwargs):
 defvjp(anp.sum, grad_np_sum)
 
 
-def grad_np_mean(ans, x, axis=None, keepdims=False, **kwargs):
+def grad_np_mean(ans, x, axis=None, dtype=None, out=None, keepdims=False, **kwargs):
     shape, dtype = anp.shape(x), anp.result_type(x)
 
     def vjp(g):
@@ -462,7 +462,9 @@ def grad_np_mean(ans, x, axis=None, keepdims=False, **kwargs):
 defvjp(anp._primitive_mean, grad_np_mean)
 
 
-def grad_np_prod(ans, x, axis=None, keepdims=False, **kwargs):  # TODO: Support tuples of axes.
+def grad_np_prod(
+    ans, x, axis=None, dtype=None, out=None, keepdims=False, **kwargs
+):  # TODO: Support tuples of axes.
     shape, dtype = anp.shape(x), anp.result_type(x)
 
     def vjp(g):
@@ -475,7 +477,7 @@ def grad_np_prod(ans, x, axis=None, keepdims=False, **kwargs):  # TODO: Support 
 defvjp(anp.prod, grad_np_prod)
 
 
-def grad_np_var(ans, x, axis=None, ddof=0, keepdims=False, **kwargs):
+def grad_np_var(ans, x, axis=None, dtype=None, out=None, ddof=0, keepdims=False, **kwargs):
     shape, _, dtype, iscomplex = anp.metadata(x)
 
     def vjp(g):
@@ -491,7 +493,7 @@ def grad_np_var(ans, x, axis=None, ddof=0, keepdims=False, **kwargs):
 defvjp(anp._primitive_var, grad_np_var)
 
 
-def grad_np_std(ans, x, axis=None, ddof=0, keepdims=False, **kwargs):
+def grad_np_std(ans, x, axis=None, dtype=None, out=None, ddof=0, keepdims=False, **kwargs):
     shape, _, dtype, iscomplex = anp.metadata(x)
 
     def vjp(g):
